@@ -91,6 +91,50 @@ describe("événements de conversation", () => {
     ]);
   });
 
+  it("clôt le groupe d’outils dès que le texte agent reprend", () => {
+    const announced = applyConversationEvent([], {
+      method: "item/agentMessage/delta",
+      params: { itemId: "answer", delta: "Je lance les vérifications." },
+    });
+    const withTool = applyConversationEvent(announced, {
+      method: "item/started",
+      params: {
+        item: {
+          id: "command-1",
+          type: "commandExecution",
+          command: "npm test",
+          status: "inProgress",
+        },
+      },
+    });
+    const reviewed = applyConversationEvent(withTool, {
+      method: "item/agentMessage/delta",
+      params: { itemId: "answer", delta: "Les tests sont concluants. " },
+    });
+    const continued = applyConversationEvent(reviewed, {
+      method: "item/agentMessage/delta",
+      params: { itemId: "answer", delta: "Je poursuis." },
+    });
+
+    expect(continued).toHaveLength(2);
+    expect(continued[0]).toEqual(
+      expect.objectContaining({
+        id: "answer",
+        content: "Je lance les vérifications.",
+        streaming: false,
+        tools: [expect.objectContaining({ id: "command-1" })],
+      }),
+    );
+    expect(continued[1]).toEqual(
+      expect.objectContaining({
+        sourceItemId: "answer",
+        content: "Les tests sont concluants. Je poursuis.",
+        streaming: true,
+      }),
+    );
+    expect(continued[1].tools).toBeUndefined();
+  });
+
   it("diffuse la sortie et les interactions d’une commande puis garde le résultat final", () => {
     const started = applyConversationEvent([assistantMessage], {
       method: "item/started",

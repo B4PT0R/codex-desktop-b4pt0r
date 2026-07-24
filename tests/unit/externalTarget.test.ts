@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const openUrlMock = vi.hoisted(() => vi.fn());
 const openChromiumMock = vi.hoisted(() => vi.fn());
-vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: openUrlMock }));
+vi.mock("../../src/lib/nativeBridge", () => ({ openUrl: openUrlMock }));
 vi.mock("../../src/lib/useChromium", () => ({
   openInChromium: openChromiumMock,
 }));

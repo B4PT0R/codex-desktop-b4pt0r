@@ -1,6 +1,6 @@
 import { ExternalLink, Image as ImageIcon } from "lucide-react";
 import { useState } from "react";
-import { openPath, openUrl } from "@tauri-apps/plugin-opener";
+import { openPath, openUrl } from "../lib/nativeBridge";
 import { useI18n } from "../i18n/I18nProvider";
 import { openImageInChromium, openInChromium } from "../lib/useChromium";
 import type { ToolArtifact } from "../types";

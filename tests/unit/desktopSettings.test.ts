@@ -2,14 +2,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const invokeMock = vi.hoisted(() => vi.fn());
-vi.mock("@tauri-apps/api/core", () => ({ invoke: invokeMock }));
+const desktopRuntime = vi.hoisted(() => ({ active: false }));
+vi.mock("../../src/lib/nativeBridge", () => ({
+  invoke: invokeMock,
+  isDesktopApp: () => desktopRuntime.active,
+}));
 
 beforeEach(() => {
   vi.resetModules();
   invokeMock.mockReset();
   localStorage.clear();
-  delete (window as Window & { __TAURI_INTERNALS__?: unknown })
-    .__TAURI_INTERNALS__;
+  desktopRuntime.active = false;
 });
 
 describe("préférences desktop", () => {
@@ -22,6 +25,8 @@ describe("préférences desktop", () => {
       lastWorkspace: "/work/app",
       theme: "light",
       fontSize: "large",
+      realtimeVoice: "juniper",
+      sidebarWidth: 320,
     });
 
     expect(await loadDesktopSettings()).toEqual({
@@ -30,15 +35,14 @@ describe("préférences desktop", () => {
       lastWorkspace: "/work/app",
       theme: "light",
       fontSize: "large",
+      realtimeVoice: "juniper",
+      sidebarWidth: 320,
     });
     expect(invokeMock).not.toHaveBeenCalled();
   });
 
   it("migre les anciennes clés vers le fichier natif unique", async () => {
-    Object.defineProperty(window, "__TAURI_INTERNALS__", {
-      configurable: true,
-      value: {},
-    });
+    desktopRuntime.active = true;
     localStorage.setItem("codex-desktop.locale", "fr");
     localStorage.setItem("codex-desktop.cwd", "/work/codex");
     invokeMock.mockResolvedValueOnce({ version: 1 }).mockResolvedValueOnce({

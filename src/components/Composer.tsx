@@ -5,8 +5,8 @@ import {
   type KeyboardEvent,
 } from "react";
 import { ArrowUp, AudioWaveform, Mic, Plus, Square } from "lucide-react";
-import { open } from "@tauri-apps/plugin-dialog";
-import { isTauri } from "../lib/codex";
+import { openDialog as open } from "../lib/nativeBridge";
+import { isDesktopApp } from "../lib/codex";
 import { AddMenu, AppsMenu, CommandMenu } from "./ComposerMenus";
 import { FileSearchMenu } from "./FileSearchMenu";
 import type { AppInfo } from "../lib/appServerTypes";
@@ -26,6 +26,9 @@ type ComposerProps = {
   cwd: string;
   hasThread: boolean;
   recording: boolean;
+  dictating: boolean;
+  dictationProcessing: boolean;
+  dictationInsertion?: { id: number; text: string };
   onOpenMcp: () => void;
   onOpenPlugins: () => void;
   onNeedApps: () => void;
@@ -33,6 +36,7 @@ type ComposerProps = {
   onSend: (text: string, context: TurnContextItem[]) => void;
   onStop: () => void;
   onToggleVoice: () => void;
+  onToggleDictation: () => void;
 };
 
 export function Composer({
@@ -45,6 +49,9 @@ export function Composer({
   cwd,
   hasThread,
   recording,
+  dictating,
+  dictationProcessing,
+  dictationInsertion,
   onOpenMcp,
   onOpenPlugins,
   onNeedApps,
@@ -52,6 +59,7 @@ export function Composer({
   onSend,
   onStop,
   onToggleVoice,
+  onToggleDictation,
 }: ComposerProps) {
   const { t } = useI18n();
   const [text, setText] = useState("");
@@ -64,9 +72,25 @@ export function Composer({
   const textarea = useRef<HTMLTextAreaElement>(null);
   const addButton = useRef<HTMLButtonElement>(null);
   const menuSurface = useRef<HTMLDivElement>(null);
+  const insertedDictation = useRef(0);
   const hasInput = Boolean(text.trim() || context.length);
   const canSubmit = hasInput && (!busy || canSteer);
   const fileSearch = useFileSearch(menu === "files", cwd);
+
+  useEffect(() => {
+    if (
+      !dictationInsertion ||
+      dictationInsertion.id === insertedDictation.current
+    )
+      return;
+    insertedDictation.current = dictationInsertion.id;
+    setText((current) =>
+      [current.trimEnd(), dictationInsertion.text.trim()]
+        .filter(Boolean)
+        .join(" "),
+    );
+    textarea.current?.focus();
+  }, [dictationInsertion]);
 
   function submit() {
     if (!canSubmit) return;
@@ -129,7 +153,7 @@ export function Composer({
   }
 
   async function pick() {
-    if (isTauri()) {
+    if (isDesktopApp()) {
       const selected = await open({
         multiple: true,
         directory: false,
@@ -321,6 +345,16 @@ export function Composer({
               <AudioWaveform /> {t("composer.voice.listening")}
             </span>
           )}
+          {dictating && (
+            <span className="listening dictating">
+              <Mic />{" "}
+              {t(
+                dictationProcessing
+                  ? "composer.dictation.processing"
+                  : "composer.dictation.listening",
+              )}
+            </span>
+          )}
           <ContextGauge
             context={contextUsage}
             disabled={busy || !hasThread}
@@ -329,7 +363,16 @@ export function Composer({
           <button
             className={recording ? "active" : ""}
             aria-label={t("composer.voice")}
+            disabled={dictating}
             onClick={onToggleVoice}
+          >
+            <AudioWaveform />
+          </button>
+          <button
+            className={dictating ? "active dictating" : ""}
+            aria-label={t("composer.dictation")}
+            disabled={recording || dictationProcessing}
+            onClick={onToggleDictation}
           >
             <Mic />
           </button>

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { listen } from "@tauri-apps/api/event";
+import { listen } from "../../src/lib/nativeBridge";
 import {
   connect,
   reconnect,
@@ -14,10 +14,10 @@ import {
 } from "../../src/lib/useAppServerConnection";
 import { threadSummary } from "../../src/lib/threadSummary";
 
-vi.mock("@tauri-apps/api/event", () => ({ listen: vi.fn() }));
+vi.mock("../../src/lib/nativeBridge", () => ({ listen: vi.fn() }));
 vi.mock("../../src/lib/codex", () => ({
   connect: vi.fn(),
-  isTauri: vi.fn(() => true),
+  isDesktopApp: vi.fn(() => true),
   reconnect: vi.fn(),
   request: vi.fn(),
 }));

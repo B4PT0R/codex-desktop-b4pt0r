@@ -32,8 +32,8 @@ dump of every protocol field into the UI.
 - Treat accessibility, keyboard navigation, responsive window sizes, readable
   contrast, and clear focus states as product requirements.
 - Preserve a useful browser preview where practical, but never let its mocked
-  behavior hide errors in the real Tauri/App Server integration.
-- Do not embed a general-purpose browser as another WebView inside the Tauri
+  behavior hide errors in the real Electron/App Server integration.
+- Do not embed a general-purpose browser as another WebView inside the Electron
   application. Browser automation should own a separate open-source Chromium
   instance (not Google Chrome or Microsoft Edge) and
   expose its state, actions, results, and recovery controls through focused client
@@ -52,8 +52,8 @@ dump of every protocol field into the UI.
 
 ## Technical stack
 
-- **Desktop shell:** Tauri 2.
-- **Native layer:** Rust 2024, Tokio, and Tauri plugins.
+- **Desktop shell:** Electron with context isolation and renderer sandboxing.
+- **Native layer:** Node.js ESM in `electron/`, exposed through a narrow preload.
 - **Frontend:** React 19, TypeScript in strict mode, and Vite.
 - **Styling:** plain CSS, organized by feature or visual responsibility.
 - **Icons:** Lucide React.
@@ -61,7 +61,7 @@ dump of every protocol field into the UI.
 - **Backend:** the installed `codex app-server`, launched as a child process and
   connected over newline-delimited JSON-RPC via stdin/stdout.
 - **Tests:** Vitest, Testing Library, App Server JSON Schema contract tests, and
-  Rust tests for the native layer.
+  Node tests for the Electron layer.
 
 Do not introduce another framework, state-management library, design system, or
 native dependency unless it solves a demonstrated need and the maintenance cost
@@ -71,8 +71,8 @@ is justified.
 
 Keep boundaries explicit:
 
-- `src-tauri/` owns operating-system integration, process lifecycle, the secure
-  Tauri boundary, tray/window behavior, and transport to App Server.
+- `electron/` owns operating-system integration, process lifecycle, the secure
+  IPC boundary, tray/window behavior, and transport to App Server.
 - `src/lib/codex.ts` owns the frontend JSON-RPC connection and request lifecycle.
 - `src/lib/protocol.ts` owns typed construction and normalization of App Server
   payloads.
@@ -131,9 +131,9 @@ reviewed without rewriting the interface.
   and avoid generic dumping grounds such as oversized `utils`, `helpers`, or
   `common` modules.
 - Treat rapid file growth as a design signal. When extending an already central
-  file such as `src/App.tsx` or `src-tauri/src/lib.rs`, prefer a focused feature
+  file such as `src/App.tsx` or `electron/main.mjs`, prefer a focused feature
   module or component unless the change is genuinely trivial.
-- Write clear, idiomatic TypeScript, React, Rust, and CSS. Optimize first for
+- Write clear, idiomatic TypeScript, React, JavaScript, and CSS. Optimize first for
   correctness and readability, then for concision.
 - Keep TypeScript strict. Prefer `unknown` plus validation or narrowing over
   `any`; legacy `any` usage should not be copied into new code.
@@ -146,10 +146,10 @@ reviewed without rewriting the interface.
 - Do not block the UI thread with protocol parsing, large transformations, or
   synchronous native work. Keep streaming updates efficient and avoid
   unnecessary whole-tree renders.
-- In Rust, return useful errors across the Tauri boundary, avoid panics for
-  recoverable runtime failures, and keep child-process ownership explicit.
+- In Electron, return useful errors across IPC, reject malformed renderer input,
+  and keep child-process ownership explicit.
 - Never log secrets, tokens, full environment dumps, or sensitive workspace
-  content. Do not expose arbitrary native commands through Tauri.
+  content. Do not expose arbitrary native commands through Electron IPC.
 - Comment decisions and invariants, not syntax. Remove dead code instead of
   preserving speculative abstractions.
 - Follow the surrounding style while improving readability. New or substantially
@@ -204,8 +204,8 @@ reviewed without rewriting the interface.
   Native updates must be atomic, preserve unknown fields for forward compatibility,
   and avoid exposing arbitrary filesystem writes to the frontend. `localStorage`
   may only serve the browser preview and backward-compatible migration.
-- Linux is the primary platform. Validate behavior under the WebKitGTK/Tauri
-  runtime, not only Chromium browser preview.
+- Linux is the primary platform. Validate behavior in packaged Electron, not
+  only the Vite browser preview.
 - Prefer portable Linux behavior, and document distribution-specific packaging
   or sandbox requirements.
 - Do not weaken system sandboxing globally. Keep mitigations narrow and
@@ -216,7 +216,7 @@ reviewed without rewriting the interface.
   discovery. Errors should identify what users can fix without leaking
   unrelated environment data.
 - Changes to autostart, tray behavior, close semantics, permissions, file access,
-  or process lifetime require native-layer tests where feasible and manual Tauri
+  or process lifetime require Electron-layer tests where feasible and manual Electron
   verification.
 
 ## Testing and verification
@@ -228,7 +228,7 @@ and review screenshots at representative window sizes. Repeat this visual loop
 throughout implementation rather than waiting until the end. Cover the relevant
 empty, loading, streaming, success, error, modal, and narrow-window states when
 they are affected. Browser validation complements component and contract tests;
-it does not replace focused Tauri/WebKitGTK checks for native behavior.
+it does not replace focused packaged-Electron checks for native behavior.
 
 Ergonomic and visual direction remains collaborative. Consult the user at
 regular, meaningful checkpoints and share screenshots or clearly described
@@ -247,7 +247,7 @@ Add tests with the change, at the lowest useful layer:
   Testing Library, querying by role or accessible name where possible.
 - Request compatibility: `tests/contract/`, generated from the installed
   `codex app-server` schema.
-- Native process, path, and lifecycle behavior: Rust tests in `src-tauri/`.
+- Native process, path, and lifecycle behavior: Node tests in `electron/`.
 
 For bug fixes, add a regression test that fails for the original behavior when
 practical. Test outcomes rather than implementation details. Cover unhappy paths
@@ -259,18 +259,18 @@ Run the checks relevant to every change:
 npm run check
 npm test
 npm run build
-npm run test:native
+npm run test:electron
 ```
 
 Also run `npm run test:contract` for App Server request or protocol changes. It
 requires an installed, runnable `codex` binary and intentionally tests against
 that binary's current experimental schema.
 
-For native UI, tray, audio, permissions, packaging, or WebKit-specific changes,
+For native UI, tray, audio, permissions, or packaging changes,
 perform a focused manual check with:
 
 ```bash
-npm run tauri dev
+npm run electron:dev
 ```
 
 If a check cannot run in the current environment, state exactly which check was
@@ -318,7 +318,7 @@ A change is complete when:
 4. Relevant automated tests cover the behavior and compatibility surface.
 5. Type checking, tests, and builds pass, or any environmental limitation is
    explicitly documented.
-6. Linux/Tauri behavior has been considered, not inferred solely from browser
+6. Packaged Linux/Electron behavior has been considered, not inferred solely from browser
    preview.
 7. Affected interface states have been exercised and visually reviewed through
    Playwright MCP, when the browser preview can represent them.

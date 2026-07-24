@@ -9,11 +9,11 @@ const openUrlMock = vi.hoisted(() => vi.fn());
 const openChromiumMock = vi.hoisted(() => vi.fn());
 const nativeMock = vi.hoisted(() => ({ value: true }));
 vi.mock("../../src/lib/codex", () => ({
-  isTauri: () => nativeMock.value,
+  isDesktopApp: () => nativeMock.value,
   request: requestMock,
   subscribeAppServerMessages: subscribeMock,
 }));
-vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: openUrlMock }));
+vi.mock("../../src/lib/nativeBridge", () => ({ openUrl: openUrlMock }));
 vi.mock("../../src/lib/useChromium", () => ({
   openInChromium: openChromiumMock,
 }));

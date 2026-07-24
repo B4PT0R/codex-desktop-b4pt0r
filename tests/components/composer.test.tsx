@@ -15,10 +15,8 @@ import { I18nProvider } from "../../src/i18n/I18nProvider";
 afterEach(cleanup);
 beforeEach(() => localStorage.setItem("codex-desktop.locale", "fr"));
 
-function renderComposer(
-  overrides: Partial<ComponentProps<typeof Composer>> = {},
-) {
-  const props: ComponentProps<typeof Composer> = {
+function renderlessComposerProps(): ComponentProps<typeof Composer> {
+  return {
     apps: [],
     appsLoading: false,
     busy: false,
@@ -26,6 +24,8 @@ function renderComposer(
     cwd: "/work/project",
     hasThread: false,
     recording: false,
+    dictating: false,
+    dictationProcessing: false,
     onOpenMcp: vi.fn(),
     onOpenPlugins: vi.fn(),
     onNeedApps: vi.fn(),
@@ -33,6 +33,15 @@ function renderComposer(
     onSend: vi.fn(),
     onStop: vi.fn(),
     onToggleVoice: vi.fn(),
+    onToggleDictation: vi.fn(),
+  };
+}
+
+function renderComposer(
+  overrides: Partial<ComponentProps<typeof Composer>> = {},
+) {
+  const props: ComponentProps<typeof Composer> = {
+    ...renderlessComposerProps(),
     ...overrides,
   };
   render(
@@ -44,6 +53,56 @@ function renderComposer(
 }
 
 describe("composer", () => {
+  it("distingue Realtime de la dictée et injecte celle-ci sans envoyer", () => {
+    const props = renderComposer();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Démarrer la conversation vocale Realtime",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Dicter dans le message" }),
+    );
+    expect(props.onToggleVoice).toHaveBeenCalledOnce();
+    expect(props.onToggleDictation).toHaveBeenCalledOnce();
+
+    cleanup();
+    const dictated = renderComposer({
+      dictationInsertion: { id: 1, text: "texte dicté" },
+    });
+    expect(screen.getByRole("textbox")).toHaveValue("texte dicté");
+    expect(dictated.onSend).not.toHaveBeenCalled();
+  });
+
+  it("empêche le chevauchement des deux sessions audio", () => {
+    const { rerender } = render(
+      <I18nProvider>
+        <Composer
+          {...renderlessComposerProps()}
+          recording
+          dictating={false}
+        />
+      </I18nProvider>,
+    );
+    expect(
+      screen.getByRole("button", { name: "Dicter dans le message" }),
+    ).toBeDisabled();
+    rerender(
+      <I18nProvider>
+        <Composer
+          {...renderlessComposerProps()}
+          recording={false}
+          dictating
+        />
+      </I18nProvider>,
+    );
+    expect(
+      screen.getByRole("button", {
+        name: "Démarrer la conversation vocale Realtime",
+      }),
+    ).toBeDisabled();
+  });
+
   it("ouvre et parcourt le menu de contexte au clavier", async () => {
     renderComposer();
     const textarea = screen.getByRole("textbox");

@@ -10,14 +10,18 @@ import {
   backgroundTerminalsListParams,
   backgroundTerminalTerminateParams,
   collaborationModeListParams,
+  configReadParams,
   consumeRateLimitResetCreditParams,
   creditsNudgeParams,
+  externalAgentDetectParams,
+  externalAgentImportParams,
   fuzzyFileSearchSessionStartParams,
   fuzzyFileSearchSessionStopParams,
   fuzzyFileSearchSessionUpdateParams,
   cancelLoginParams,
   chatgptLoginParams,
   realtimeStartParams,
+  realtimeListVoicesParams,
   mcpServerStatusListParams,
   mcpServerOauthLoginParams,
   hooksListParams,
@@ -73,7 +77,16 @@ function validates(name: string, value: unknown) {
   }
   expect(validate(value), JSON.stringify(validate.errors, null, 2)).toBe(true);
 }
+function schema(name: string): Record<string, unknown> {
+  const v2Path = join(directory, "v2", `${name}.json`);
+  const schemaPath = existsSync(v2Path)
+    ? v2Path
+    : join(directory, `${name}.json`);
+  return JSON.parse(readFileSync(schemaPath, "utf8")) as Record<string, unknown>;
+}
 describe("contrat Codex installé", () => {
+  it("accepte la lecture de la configuration Codex effective", () =>
+    validates("ConfigReadParams", configReadParams("/tmp/project")));
   it("accepte le démarrage et l’annulation du login ChatGPT", () => {
     validates("LoginAccountParams", chatgptLoginParams());
     validates("CancelLoginAccountParams", cancelLoginParams("login-1"));
@@ -92,6 +105,11 @@ describe("contrat Codex installé", () => {
       "ThreadStartParams",
       threadStartParams("/tmp/project", "gpt-5.4", ":workspace"),
     ));
+  it("laisse Codex choisir le profil par défaut d'un nouveau thread", () =>
+    validates(
+      "ThreadStartParams",
+      threadStartParams("/tmp/project", "gpt-5.4", undefined),
+    ));
   it("accepte thread/archive", () =>
     validates("ThreadArchiveParams", threadArchiveParams("thr_1")));
   it("accepte thread/unarchive", () =>
@@ -109,6 +127,15 @@ describe("contrat Codex installé", () => {
     validates("ThreadForkParams", threadForkParams("thr_1")));
   it("accepte une reprise avec une page initiale récente", () =>
     validates("ThreadResumeParams", threadResumeParams("thr_1")));
+  it("expose les réglages effectifs après création et reprise", () => {
+    for (const name of ["ThreadStartResponse", "ThreadResumeResponse"]) {
+      const properties = schema(name).properties as Record<string, unknown>;
+      expect(properties).toHaveProperty("cwd");
+      expect(properties).toHaveProperty("model");
+      expect(properties).toHaveProperty("reasoningEffort");
+      expect(properties).toHaveProperty("activePermissionProfile");
+    }
+  });
   it("accepte la pagination des tours précédents", () =>
     validates(
       "ThreadTurnsListParams",
@@ -175,13 +202,25 @@ describe("contrat Codex installé", () => {
   it("accepte Realtime WebSocket", () =>
     validates(
       "ThreadRealtimeStartParams",
-      realtimeStartParams("thr_1", { type: "websocket" }),
+      realtimeStartParams("thr_1", { type: "websocket" }, "juniper"),
     ));
   it("accepte Realtime WebRTC", () =>
     validates(
       "ThreadRealtimeStartParams",
-      realtimeStartParams("thr_1", { type: "webrtc", sdp: "v=0" }),
+      realtimeStartParams("thr_1", { type: "webrtc", sdp: "v=0" }, "maple"),
     ));
+  it("accepte Realtime v2 texte en mode dictée sans handoff", () =>
+    validates(
+      "ThreadRealtimeStartParams",
+      realtimeStartParams(
+        "thr_1",
+        { type: "websocket" },
+        "juniper",
+        "dictation",
+      ),
+    ));
+  it("accepte l’inventaire vocal Realtime v3", () =>
+    validates("ThreadRealtimeListVoicesParams", realtimeListVoicesParams()));
   it("accepte une réponse à request_user_input", () =>
     validates(
       "ToolRequestUserInputResponse",
@@ -242,6 +281,26 @@ describe("contrat Codex installé", () => {
     validates(
       "ListMcpServerStatusParams",
       mcpServerStatusListParams("thr_1", "cursor-1"),
+    );
+  });
+  it("accepte la détection, l’import et l’historique d’agents externes", () => {
+    validates(
+      "ExternalAgentConfigDetectParams",
+      externalAgentDetectParams("/tmp/project", "cursor"),
+    );
+    validates(
+      "ExternalAgentConfigImportParams",
+      externalAgentImportParams(
+        [
+          {
+            itemType: "SKILLS",
+            description: "Skills détectés",
+            cwd: "/tmp/project",
+            details: { skills: [{ name: "review" }] },
+          },
+        ],
+        "cursor",
+      ),
     );
   });
   it("accepte le démarrage OAuth d’un serveur MCP", () =>

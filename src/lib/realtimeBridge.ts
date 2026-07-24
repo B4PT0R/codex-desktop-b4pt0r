@@ -12,10 +12,12 @@ function loadRealtime() {
 
 export async function startRealtime(
   threadId: string,
+  voice: import("./appServerTypes").RealtimeVoice,
+  mode: "conversation" | "dictation",
   onFailure?: (error: unknown) => void,
 ) {
   const realtime = await loadRealtime();
-  await realtime.startRealtime(threadId, onFailure);
+  await realtime.startRealtime(threadId, voice, mode, onFailure);
 }
 
 export async function acceptRealtimeAnswer(threadId: string, sdp: string) {

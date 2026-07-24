@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { createRef } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { FileSearchMenu } from "../../src/components/FileSearchMenu";
 import { I18nProvider } from "../../src/i18n/I18nProvider";
+
+afterEach(cleanup);
 
 describe("palette de fichiers", () => {
   it("affiche un chemin relatif et sélectionne le résultat", () => {

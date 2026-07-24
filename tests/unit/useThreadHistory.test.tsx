@@ -19,6 +19,7 @@ vi.mock("../../src/i18n/I18nProvider", async () => {
 });
 
 import { useThreadHistory } from "../../src/lib/useThreadHistory";
+import type { ThreadRuntimeSettings } from "../../src/lib/threadRuntimeSettings";
 import type { ChatMessage } from "../../src/types";
 
 function deferred<T>() {
@@ -35,7 +36,8 @@ function options(activeThreadId?: string) {
     onError: vi.fn(),
     onMessagesPrepended: vi.fn<(messages: ChatMessage[]) => void>(),
     onMessagesReplaced: vi.fn<(messages: ChatMessage[]) => void>(),
-    onThreadResumed: vi.fn<(threadId: string, cwd?: string) => void>(),
+    onThreadResumed:
+      vi.fn<(threadId: string, settings: ThreadRuntimeSettings) => void>(),
   };
 }
 
@@ -49,6 +51,10 @@ describe("historique paginé", () => {
     const callbacks = options();
     requestMock.mockResolvedValue({
       thread: { id: "thread-1", cwd: "/tmp/project" },
+      cwd: "/tmp/project",
+      model: "gpt-5.4",
+      reasoningEffort: "high",
+      activePermissionProfile: { id: ":danger-full-access" },
       initialTurnsPage: {
         data: [
           {
@@ -69,7 +75,12 @@ describe("historique paginé", () => {
     ]);
     expect(callbacks.onThreadResumed).toHaveBeenCalledWith(
       "thread-1",
-      "/tmp/project",
+      {
+        cwd: "/tmp/project",
+        model: "gpt-5.4",
+        effort: "high",
+        permission: ":danger-full-access",
+      },
     );
     expect(result.current.canLoadOlder).toBe(true);
   });
@@ -97,7 +108,12 @@ describe("historique paginé", () => {
     expect(callbacks.onThreadResumed).toHaveBeenCalledOnce();
     expect(callbacks.onThreadResumed).toHaveBeenCalledWith(
       "thread-2",
-      undefined,
+      {
+        cwd: undefined,
+        model: undefined,
+        effort: undefined,
+        permission: undefined,
+      },
     );
   });
 

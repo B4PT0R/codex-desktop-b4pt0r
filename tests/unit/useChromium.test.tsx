@@ -3,7 +3,10 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const invokeMock = vi.hoisted(() => vi.fn());
-vi.mock("@tauri-apps/api/core", () => ({ invoke: invokeMock }));
+vi.mock("../../src/lib/nativeBridge", () => ({
+  invoke: invokeMock,
+  isDesktopApp: () => true,
+}));
 
 import { useChromium } from "../../src/lib/useChromium";
 
@@ -16,10 +19,6 @@ const missing = {
 
 beforeEach(() => {
   invokeMock.mockReset();
-  Object.defineProperty(window, "__TAURI_INTERNALS__", {
-    configurable: true,
-    value: {},
-  });
 });
 
 describe("navigateur Chromium géré", () => {

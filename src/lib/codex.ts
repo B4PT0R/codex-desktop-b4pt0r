@@ -1,5 +1,9 @@
-import { invoke } from "@tauri-apps/api/core";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import {
+  invoke,
+  isDesktopApp,
+  listen,
+  type UnlistenFn,
+} from "./nativeBridge";
 import { JsonRpcClient } from "./jsonRpc";
 import { defaultTranslate, type Translate } from "../i18n/translate";
 
@@ -35,7 +39,7 @@ export function configureCodexTranslation(nextTranslate: Translate) {
   translate = nextTranslate;
 }
 
-export const isTauri = () => "__TAURI_INTERNALS__" in window;
+export { isDesktopApp };
 
 export async function connect(
   messageHandler: MessageHandler,
@@ -43,7 +47,7 @@ export async function connect(
 ) {
   messageHandlers.add(messageHandler);
   if (connectionHandler) connectionHandlers.add(connectionHandler);
-  if (!isTauri()) {
+  if (!isDesktopApp()) {
     return () => removeHandlers(messageHandler, connectionHandler);
   }
 
@@ -70,13 +74,13 @@ export function request<T = unknown>(
   method: string,
   params?: unknown,
 ): Promise<T> {
-  if (!isTauri())
+  if (!isDesktopApp())
     return Promise.reject(new Error(translate("transport.browserPreview")));
   return rpc.request<T>(method, params);
 }
 
 export async function notify(method: string, params?: unknown) {
-  if (!isTauri()) return;
+  if (!isDesktopApp()) return;
   await invoke("send_app_server", {
     message: JSON.stringify({
       method,
@@ -86,12 +90,12 @@ export async function notify(method: string, params?: unknown) {
 }
 
 export async function respond(id: number | string, result: unknown) {
-  if (!isTauri()) return;
+  if (!isDesktopApp()) return;
   await invoke("send_app_server", { message: JSON.stringify({ id, result }) });
 }
 
 export async function reconnect() {
-  if (!isTauri()) return;
+  if (!isDesktopApp()) return;
   try {
     await ensureConnected();
   } catch (cause) {

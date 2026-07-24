@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AppInfo, AppsListResponse } from "./appServerTypes";
-import { isTauri, request, subscribeAppServerMessages } from "./codex";
+import { isDesktopApp, request, subscribeAppServerMessages } from "./codex";
 import { appsListParams } from "./protocol";
 import { useI18n } from "../i18n/I18nProvider";
 
@@ -26,7 +26,7 @@ export function useApps({
 
   const refresh = useCallback(async () => {
     const current = ++generation.current;
-    if (!isTauri()) {
+    if (!isDesktopApp()) {
       setError(t("apps.nativeOnly"));
       return;
     }
@@ -52,7 +52,7 @@ export function useApps({
   }, [enabled, refresh]);
 
   useEffect(() => {
-    if (!enabled || !isTauri()) return;
+    if (!enabled || !isDesktopApp()) return;
     return subscribeAppServerMessages((message) => {
       if (message.method !== "app/list/updated") return;
       const data = appListFromNotification(message.params);

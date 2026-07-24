@@ -77,7 +77,30 @@
   box-shadow: 0 0 7px #aaa;
 }
 .signal-card.reasoning {
-  border-color: #68627a;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.signal-card.reasoning summary {
+  gap: 6px;
+  padding: 5px 2px;
+  color: #777772;
+  font-size: 11px;
+}
+.signal-card.reasoning summary > svg:first-child {
+  width: 12px;
+  color: #777183;
+}
+.signal-card.reasoning .signal-state:not(.spin) {
+  display: none;
+}
+.signal-card.reasoning .signal-body {
+  margin-left: 7px;
+  padding: 5px 0 5px 17px;
+  border-top: 0;
+  border-left: 1px solid #3b383f;
+  color: #777772;
+  font-size: 11px;
 }
 .signal-card.plan {
   border-color: #557184;
@@ -97,11 +120,150 @@
 .signal-card.warning summary {
   color: #c39286;
 }
+.plan-progress-widget {
+  width: min(520px, calc(100% - 44px));
+  max-height: 320px;
+  margin: 18px auto 0;
+  overflow: auto;
+  border: 1px solid #3a3a36;
+  border-radius: 12px;
+  color: #b8b8b3;
+  background: #232321f2;
+  box-shadow: 0 16px 45px #0008;
+  backdrop-filter: blur(12px);
+  transform-origin: bottom right;
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease,
+    border-color 220ms ease,
+    max-height 450ms ease,
+    margin 450ms ease;
+}
+.plan-progress-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+}
+.plan-progress-icon {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #454540;
+  border-radius: 50%;
+  color: #8fa9ba;
+}
+.plan-progress-icon svg {
+  width: 13px;
+}
+.plan-progress-heading > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.plan-progress-heading strong {
+  overflow: hidden;
+  color: #d5d5d0;
+  font-size: 12px;
+  font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.plan-progress-heading small {
+  color: #777772;
+  font-size: 9px;
+}
+.plan-progress-heading > svg {
+  width: 14px;
+  margin-left: auto;
+  color: #8fa9ba;
+}
+.plan-progress-detail {
+  margin: -2px 12px 9px 48px;
+  color: #858580;
+  font-size: 10px;
+  line-height: 1.4;
+}
+.plan-progress-widget ol {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 9px 12px 11px;
+  border-top: 1px solid #343431;
+  list-style: none;
+}
+.plan-progress-widget li {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  line-height: 1.35;
+}
+.plan-progress-widget li > span {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  place-items: center;
+}
+.plan-progress-widget li svg {
+  width: 12px;
+}
+.plan-progress-widget li i {
+  width: 7px;
+  height: 7px;
+  border: 1px solid #666661;
+  border-radius: 50%;
+}
+.plan-progress-widget li.completed {
+  color: #6f6f6a;
+}
+.plan-progress-widget li.completed svg {
+  color: #7f9d82;
+}
+.plan-progress-widget li.inProgress {
+  color: #d0d0cb;
+}
+.plan-progress-widget li.inProgress svg {
+  color: #8fa9ba;
+}
+.plan-progress-widget.plan-done {
+  border-color: #4c654f;
+  transform: scale(0.98);
+}
+.plan-progress-widget.plan-done .plan-progress-icon {
+  color: #91ad94;
+  border-color: #4c654f;
+  background: #304132;
+}
+.plan-progress-widget.plan-done ol,
+.plan-progress-widget.plan-done .plan-progress-detail {
+  display: none;
+}
+.plan-progress-widget.exiting {
+  max-height: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  opacity: 0;
+  transform: translateY(10px) scale(0.96);
+}
+@media (prefers-reduced-motion: reduce) {
+  .plan-progress-widget {
+    transition: none;
+  }
+}
 @media (max-width: 600px) {
   .signal-card summary {
     padding: 7px 9px;
   }
   .signal-body {
     padding: 8px 10px;
+  }
+  .plan-progress-widget {
+    width: calc(100% - 24px);
+    margin-top: 14px;
   }
 }

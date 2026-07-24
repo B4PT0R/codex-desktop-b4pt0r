@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { open } from "@tauri-apps/plugin-dialog";
+import { openDialog as open } from "./lib/nativeBridge";
 import { ApprovalDialog } from "./components/ApprovalDialog";
 import { ArchiveNotice } from "./components/ArchiveNotice";
 import { ChatFooter } from "./components/ChatFooter";
@@ -13,7 +13,7 @@ import { McpElicitationLoader } from "./components/McpElicitationLoader";
 import { WorkPanel } from "./components/WorkPanel";
 import {
   configureCodexTranslation,
-  isTauri,
+  isDesktopApp,
   request,
   type AppServerMessage,
 } from "./lib/codex";
@@ -24,9 +24,11 @@ import {
   startRealtime,
   stopRealtime,
 } from "./lib/realtimeBridge";
+import { finishDictationCapture, startDictationCapture } from "./lib/dictation";
 import {
   threadBehaviorUpdateParams,
   threadCwdUpdateParams,
+  realtimeThreadStartParams,
   threadStartParams,
   turnStartParams,
   turnSteerParams,
@@ -35,7 +37,16 @@ import {
 } from "./lib/protocol";
 import { activityFromEvent, type AgentActivity } from "./lib/activity";
 import { applyConversationEvent } from "./lib/conversationEvents";
+import {
+  demoTelemetry,
+  demoQuotas,
+  demoResetCredits,
+  demoThreads,
+  initialPreviewMessages,
+  isDemoPreview,
+} from "./lib/demoConversation";
 import { useThreadHistory } from "./lib/useThreadHistory";
+import { useDemoPlayback } from "./lib/useDemoPlayback";
 import { useInteractiveRequests } from "./lib/useInteractiveRequests";
 import { useThreadActions } from "./lib/useThreadActions";
 import { useIntegrations } from "./lib/useIntegrations";
@@ -67,6 +78,13 @@ import { useI18n } from "./i18n/I18nProvider";
 import { useAppServerConnection } from "./lib/useAppServerConnection";
 import { useThreadSearch } from "./lib/useThreadSearch";
 import { useShellCommand } from "./lib/useShellCommand";
+import { useExternalAgentImport } from "./lib/useExternalAgentImport";
+import { useRealtimeSettings } from "./lib/useRealtimeSettings";
+import { useCodexDefaults } from "./lib/useCodexDefaults";
+import {
+  threadRuntimeSettings,
+  type ThreadRuntimeSettings,
+} from "./lib/threadRuntimeSettings";
 import {
   appServerRecord,
   appServerString,
@@ -87,9 +105,30 @@ import "./elicitation.css";
 import "./background-terminals.css";
 import "./shell-command.css";
 const fallbackModels: Model[] = [
-  { id: "gpt-5.4", label: "GPT-5.4" },
-  { id: "gpt-5.3-codex", label: "GPT-5.3 Codex" },
-  { id: "gpt-5.2-codex", label: "GPT-5.2 Codex" },
+  {
+    id: "gpt-5.4",
+    label: "GPT-5.4",
+    defaultReasoningEffort: "medium",
+    supportedReasoningEfforts: ["low", "medium", "high", "xhigh"].map(
+      (reasoningEffort) => ({ reasoningEffort, description: "" }),
+    ),
+  },
+  {
+    id: "gpt-5.3-codex",
+    label: "GPT-5.3 Codex",
+    defaultReasoningEffort: "medium",
+    supportedReasoningEfforts: ["low", "medium", "high", "xhigh"].map(
+      (reasoningEffort) => ({ reasoningEffort, description: "" }),
+    ),
+  },
+  {
+    id: "gpt-5.2-codex",
+    label: "GPT-5.2 Codex",
+    defaultReasoningEffort: "medium",
+    supportedReasoningEfforts: ["low", "medium", "high"].map(
+      (reasoningEffort) => ({ reasoningEffort, description: "" }),
+    ),
+  },
 ];
 
 export default function App() {
@@ -98,8 +137,12 @@ export default function App() {
   const translateRef = useRef(t);
   translateRef.current = t;
   const activeThreadRef = useRef<string | undefined>(undefined);
+  const activeRealtimeThreadRef = useRef<string | undefined>(undefined);
   const workspaceChanged = useRef(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]),
+  const permissionSource = useRef<"fallback" | "user" | "server">("fallback");
+  const [messages, setMessages] = useState<ChatMessage[]>(
+      initialPreviewMessages,
+    ),
     [models, setModels] = useState(fallbackModels),
     [model, setModel] = useState(fallbackModels[0].id),
     [effort, setEffort] = useState("medium"),
@@ -109,21 +152,39 @@ export default function App() {
     [busy, setBusy] = useState(false),
     [activity, setActivity] = useState<AgentActivity>(null),
     [recording, setRecording] = useState(false),
+    [dictating, setDictating] = useState(false),
+    [dictationProcessing, setDictationProcessing] = useState(false),
+    [dictationInsertion, setDictationInsertion] = useState<{
+      id: number;
+      text: string;
+    }>(),
     [voiceTranscript, setVoiceTranscript] = useState(""),
     [threadId, setThreadId] = useState<string>(),
     [turnId, setTurnId] = useState<string>(),
-    [threads, setThreads] = useState<ThreadSummary[]>([]),
+    [threads, setThreads] = useState<ThreadSummary[]>(() =>
+      isDemoPreview() ? demoThreads : [],
+    ),
     [threadTelemetry, setThreadTelemetry] = useState<
       Record<string, ThreadTelemetry>
     >({}),
     [sidebar, setSidebar] = useState(true),
+    [sidebarWidth, setSidebarWidth] = useState(260),
     [settings, setSettings] = useState<SettingsSectionId | null>(null),
     [appsEnabled, setAppsEnabled] = useState(false),
     [workPanel, setWorkPanel] = useState<ToolCall>(),
     [permission, setPermission] = useState<Permission>(":workspace");
+  const audioModeRef = useRef<"conversation" | "dictation" | undefined>(
+    undefined,
+  );
+  const dictationSequence = useRef(0);
   const [cwd, setCwd] = useState(
     () => localStorage.getItem("codex-desktop.cwd") ?? "",
   );
+  const demoPlayback = useDemoPlayback({
+    enabled: isDemoPreview(),
+    setActivity,
+    setMessages,
+  });
   useEffect(() => {
     let disposed = false;
     void import("./lib/desktopSettings")
@@ -131,6 +192,9 @@ export default function App() {
       .then((settings) => {
         if (!disposed && !workspaceChanged.current && settings.lastWorkspace) {
           setCwd(settings.lastWorkspace);
+        }
+        if (!disposed && settings.sidebarWidth) {
+          setSidebarWidth(settings.sidebarWidth);
         }
       })
       .catch((error) => {
@@ -151,6 +215,11 @@ export default function App() {
     enabled: settings === "agent" || settings === "permissions",
   });
   const account = useAccount(settings === "account");
+  const externalAgentImport = useExternalAgentImport({
+    cwd,
+    enabled: settings === "advanced",
+  });
+  const realtime = useRealtimeSettings(settings === "voice");
   const connection = useAppServerConnection({
     onDisconnected: () => setBusy(false),
     onError: showError,
@@ -169,6 +238,16 @@ export default function App() {
     },
     onMessage: handle,
     onNewChat: newChat,
+  });
+  useCodexDefaults({
+    connected: connection.connected,
+    cwd,
+    enabled: !threadId,
+    onDefaults: (defaults) => {
+      if (defaults.model) setModel(defaults.model);
+      if (defaults.effort) setEffort(defaults.effort);
+    },
+    onError: (error) => showError(t("app.initializationIncomplete"), error),
   });
   const threadSearch = useThreadSearch(connection.connected);
   const rateLimits = useRateLimits(connection.connected);
@@ -193,12 +272,9 @@ export default function App() {
     onMessagesPrepended: (older) =>
       setMessages((items) => [...older, ...items]),
     onMessagesReplaced: setMessages,
-    onThreadResumed: (id, resumedCwd) => {
+    onThreadResumed: (id, runtimeSettings) => {
       setThreadId(id);
-      if (resumedCwd) {
-        setCwd(resumedCwd);
-        persistWorkspace(resumedCwd);
-      }
+      applyThreadRuntimeSettings(runtimeSettings);
     },
   });
   const interactiveRequests = useInteractiveRequests({ onError: showError });
@@ -230,7 +306,9 @@ export default function App() {
   });
   function newChat() {
     stopRealtime();
+    audioModeRef.current = undefined;
     setRecording(false);
+    setDictating(false);
     setVoiceTranscript("");
     setActivity(null);
     setMessages([]);
@@ -238,6 +316,8 @@ export default function App() {
     setTurnId(undefined);
     threadHistory.reset();
     setBusy(false);
+    permissionSource.current = "fallback";
+    setPermission(":workspace");
   }
   activeThreadRef.current = threadId;
   async function selectDirectory() {
@@ -357,6 +437,14 @@ export default function App() {
           },
         }));
     }
+    const realtimeThreadId = msg.method?.startsWith("thread/realtime/")
+      ? appServerString(params?.threadId)
+      : undefined;
+    if (
+      realtimeThreadId &&
+      realtimeThreadId !== activeRealtimeThreadRef.current
+    )
+      return;
     if (msg.method === "thread/realtime/sdp")
       acceptRealtimeAnswer(
         appServerString(params?.threadId) ?? "",
@@ -367,40 +455,68 @@ export default function App() {
         appServerString(params?.threadId) ?? "",
         realtimeAudioFromValue(params?.audio),
       );
-    if (msg.method === "thread/realtime/transcript/delta")
+    if (
+      msg.method === "thread/realtime/transcript/delta" &&
+      (audioModeRef.current !== "dictation" || params?.role === "user")
+    )
       setVoiceTranscript((x) => x + (appServerString(params?.delta) ?? ""));
     if (msg.method === "thread/realtime/transcript/done") {
       const role = params?.role === "user" ? "user" : "assistant";
-      setMessages((x) => [
-        ...x,
-        {
-          id: crypto.randomUUID(),
-          role,
-          content: appServerString(params?.text) ?? "",
-        },
-      ]);
+      const transcript = appServerString(params?.text)?.trim() ?? "";
+      if (audioModeRef.current === "dictation") {
+        if (role === "user" && transcript)
+          setDictationInsertion({
+            id: ++dictationSequence.current,
+            text: transcript,
+          });
+      } else if (transcript)
+        setMessages((x) => [
+          ...x,
+          {
+            id: crypto.randomUUID(),
+            role,
+            content: transcript,
+          },
+        ]);
       setVoiceTranscript("");
     }
     if (
       msg.method === "thread/realtime/closed" ||
       msg.method === "thread/realtime/error"
     ) {
+      const interruptedMode = audioModeRef.current;
       setRecording(false);
+      setDictating(false);
+      activeRealtimeThreadRef.current = undefined;
+      audioModeRef.current = undefined;
       setVoiceTranscript("");
       stopRealtime(false);
+      if (msg.method === "thread/realtime/error")
+        showError(
+          translateRef.current(
+            interruptedMode === "dictation"
+              ? "app.dictationInterrupted"
+              : "app.audioInterrupted",
+          ),
+          appServerString(params?.message) ??
+            translateRef.current("app.realtimeUnavailable"),
+        );
     }
   }
   async function createThread() {
     const r = await request<ThreadStartResponse>(
       "thread/start",
-      threadStartParams(cwd || undefined, model, permission, personality),
+      threadStartParams(
+        cwd || undefined,
+        model,
+        permissionSource.current === "fallback" ? undefined : permission,
+        personality,
+      ),
     );
     const id = r.thread.id as string;
-    const resolvedCwd = (r.cwd ?? r.thread.cwd ?? cwd) as string;
-    if (resolvedCwd) {
-      setCwd(resolvedCwd);
-      persistWorkspace(resolvedCwd);
-    }
+    const runtimeSettings = threadRuntimeSettings(r);
+    const resolvedCwd = runtimeSettings.cwd ?? cwd;
+    applyThreadRuntimeSettings(runtimeSettings);
     setThreadId(id);
     setThreads((x) => [{ id, name: t("app.newChat"), cwd: resolvedCwd }, ...x]);
     return id;
@@ -497,7 +613,7 @@ export default function App() {
       return;
     }
     setBusy(true);
-    if (!isTauri()) {
+    if (!isDesktopApp()) {
       if (!threadId) {
         const previewThread: ThreadSummary = {
           id: "browser-preview",
@@ -592,18 +708,36 @@ export default function App() {
     if (recording) {
       await stopRealtime();
       setRecording(false);
+      activeRealtimeThreadRef.current = undefined;
+      audioModeRef.current = undefined;
       setVoiceTranscript("");
       return;
     }
+    if (dictating) return;
     try {
-      const id = threadId ?? (await createThread());
-      await startRealtime(id, (error) => {
+      const started = await request<ThreadStartResponse>(
+        "thread/start",
+        realtimeThreadStartParams(
+          cwd || undefined,
+          model,
+          permissionSource.current === "fallback" ? undefined : permission,
+          personality,
+        ),
+      );
+      const id = started.thread.id as string;
+      activeRealtimeThreadRef.current = id;
+      audioModeRef.current = "conversation";
+      await startRealtime(id, realtime.voice, "conversation", (error) => {
         setRecording(false);
+        activeRealtimeThreadRef.current = undefined;
+        audioModeRef.current = undefined;
         setVoiceTranscript("");
         showError(translateRef.current("app.audioInterrupted"), error);
       });
       setRecording(true);
     } catch (e) {
+      activeRealtimeThreadRef.current = undefined;
+      audioModeRef.current = undefined;
       setMessages((x) => [
         ...x,
         {
@@ -613,6 +747,34 @@ export default function App() {
         },
       ]);
       setRecording(false);
+    }
+  }
+  async function toggleDictation() {
+    if (dictationProcessing) return;
+    if (dictating) {
+      setDictationProcessing(true);
+      try {
+        const text = await finishDictationCapture();
+        if (text.trim())
+          setDictationInsertion({
+            id: ++dictationSequence.current,
+            text,
+          });
+      } catch (error) {
+        showError(t("app.dictationInterrupted"), error);
+      } finally {
+        setDictating(false);
+        setDictationProcessing(false);
+      }
+      return;
+    }
+    if (recording) return;
+    try {
+      await startDictationCapture();
+      setDictating(true);
+    } catch (error) {
+      setDictating(false);
+      showError(t("app.dictationUnavailable"), error);
     }
   }
   async function interrupt() {
@@ -634,6 +796,16 @@ export default function App() {
     );
     if (!selected?.supportsPersonality) setPersonality("none");
   }
+  function applyThreadRuntimeSettings(settings: ThreadRuntimeSettings) {
+    if (settings.cwd) {
+      setCwd(settings.cwd);
+      persistWorkspace(settings.cwd);
+    }
+    if (settings.model) setModel(settings.model);
+    if (settings.effort) setEffort(settings.effort);
+    if (settings.permission) setPermission(settings.permission);
+    if (settings.permission) permissionSource.current = "server";
+  }
   async function saveSettings() {
     if (threadId)
       try {
@@ -654,6 +826,30 @@ export default function App() {
       }
     setSettings(null);
   }
+  async function changePermission(nextPermission: Permission) {
+    const previousPermission = permission;
+    setPermission(nextPermission);
+    permissionSource.current = "user";
+    if (!threadId) return true;
+    try {
+      await request(
+        "thread/settings/update",
+        threadBehaviorUpdateParams(
+          threadId,
+          model,
+          effort,
+          personality,
+          collaborationMode,
+          nextPermission,
+        ),
+      );
+      return true;
+    } catch (error) {
+      setPermission(previousPermission);
+      showError(t("app.saveSettingsError"), error);
+      return false;
+    }
+  }
   function persistWorkspace(path: string) {
     workspaceChanged.current = true;
     void import("./lib/desktopSettings")
@@ -671,17 +867,22 @@ export default function App() {
         capabilities={capabilities}
         collaborationMode={collaborationMode}
         effort={effort}
+        externalAgentImport={externalAgentImport}
         integrations={integrations}
         model={model}
         models={models}
         permission={permission}
         personality={personality}
         rateLimits={rateLimits}
+        realtime={realtime}
         section={settings}
         onChangeCollaborationMode={setCollaborationMode}
         onChangeEffort={setEffort}
         onChangeModel={changeModel}
-        onChangePermission={setPermission}
+        onChangePermission={(nextPermission) => {
+          permissionSource.current = "user";
+          setPermission(nextPermission);
+        }}
         onChangePersonality={setPersonality}
         onClose={() => setSettings(null)}
         onSave={saveSettings}
@@ -694,7 +895,10 @@ export default function App() {
       <Sidebar
         cwd={cwd}
         open={sidebar}
-        selectedThreadId={threadId}
+        width={sidebarWidth}
+        selectedThreadId={
+          threadId ?? (isDemoPreview() ? demoThreads[0]?.id : undefined)
+        }
         threads={threads}
         search={threadSearch}
         onArchive={(thread) => {
@@ -702,22 +906,51 @@ export default function App() {
             if (archived) threadSearch.remove(thread.id);
           });
         }}
+        onDelete={async (thread) => {
+          if (isDemoPreview()) {
+            setThreads((items) => items.filter((item) => item.id !== thread.id));
+            return true;
+          }
+          const deleted = await threadActions.deleteThread(thread.id);
+          if (deleted) threadSearch.remove(thread.id);
+          return deleted;
+        }}
         onClose={() => setSidebar(false)}
         onNewChat={newChat}
         onOpenSettings={() => setSettings("general")}
         onResume={threadHistory.resume}
         onSelectDirectory={selectDirectory}
+        onWidthChange={setSidebarWidth}
+        onWidthCommit={(width) => {
+          void import("./lib/desktopSettings")
+            .then(({ updateDesktopSettings }) =>
+              updateDesktopSettings({ sidebarWidth: width }),
+            )
+            .catch((error) =>
+              showError(t("desktopSettings.sidebarWidthError"), error),
+            );
+        }}
       />
       <main>
         <ChatHeader
           busy={busy}
           connected={connection.connected}
-          nativeApp={isTauri()}
+          nativeApp={isDesktopApp()}
           reconnecting={connection.reconnecting}
           sidebarOpen={sidebar}
           threadId={threadId}
           title={
             currentThread?.name ?? currentThread?.preview ?? t("app.newChat")
+          }
+          demoPlayback={
+            demoPlayback.enabled
+              ? {
+                  hasPlayed: demoPlayback.hasPlayed,
+                  running: demoPlayback.running,
+                  onPlay: demoPlayback.play,
+                  onStop: demoPlayback.stop,
+                }
+              : undefined
           }
           onCompact={threadActions.compact}
           onDelete={threadActions.deleteThread}
@@ -740,22 +973,44 @@ export default function App() {
           canSteer={Boolean(threadId && turnId)}
           cwd={cwd}
           model={model}
+          effort={effort}
           models={models}
           permission={permission}
-          quotas={rateLimits.quotas}
+          permissionProfiles={capabilities.permissionProfiles.data}
+          quotas={isDemoPreview() ? demoQuotas : rateLimits.quotas}
+          quotaConsuming={rateLimits.consuming}
+          quotaError={rateLimits.error}
+          quotaResetCredits={
+            isDemoPreview() ? demoResetCredits : rateLimits.resetCredits
+          }
+          quotaResetMessage={rateLimits.resetMessage}
           recording={recording}
-          hasThread={Boolean(threadId)}
-          telemetry={threadId ? threadTelemetry[threadId] : undefined}
+          dictating={dictating}
+          dictationProcessing={dictationProcessing}
+          dictationInsertion={dictationInsertion}
+          hasThread={Boolean(threadId) || isDemoPreview()}
+          telemetry={
+            threadId
+              ? threadTelemetry[threadId]
+              : isDemoPreview()
+                ? demoTelemetry
+                : undefined
+          }
           voiceTranscript={voiceTranscript}
           onCompact={() => void threadActions.compact()}
-          onOpenModelSettings={() => setSettings("agent")}
+          onChangeEffort={setEffort}
+          onChangeModel={changeModel}
+          onChangePermission={changePermission}
+          onConsumeQuotaReset={
+            isDemoPreview() ? async () => undefined : rateLimits.consumeReset
+          }
           onNeedApps={() => setAppsEnabled(true)}
           onOpenMcpSettings={() => setSettings("mcp")}
-          onOpenPermissionSettings={() => setSettings("permissions")}
           onOpenPluginSettings={() => setSettings("plugins")}
           onSend={send}
           onStop={interrupt}
           onToggleVoice={toggleVoice}
+          onToggleDictation={toggleDictation}
         />
       </main>
       {workPanel && (

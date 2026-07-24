@@ -1,4 +1,5 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke, isDesktopApp } from "./nativeBridge";
+import { isRealtimeVoice } from "./realtimeVoices";
 
 export type DesktopSettings = {
   version: number;
@@ -6,15 +7,27 @@ export type DesktopSettings = {
   lastWorkspace?: string;
   theme?: "system" | "dark" | "light";
   fontSize?: "small" | "default" | "large";
+  realtimeVoice?: string;
+  sidebarWidth?: number;
 };
 
 export type DesktopSettingsPatch = Partial<
-  Pick<DesktopSettings, "locale" | "lastWorkspace" | "theme" | "fontSize">
+  Pick<
+    DesktopSettings,
+    | "locale"
+    | "lastWorkspace"
+    | "theme"
+    | "fontSize"
+    | "realtimeVoice"
+    | "sidebarWidth"
+  >
 >;
 
 const legacyLocaleKey = "codex-desktop.locale";
 const legacyWorkspaceKey = "codex-desktop.cwd";
 const browserAppearanceKey = "codex-desktop.appearance";
+const browserVoiceKey = "codex-desktop.realtimeVoice";
+const browserSidebarWidthKey = "codex-desktop.sidebarWidth";
 let loadPromise: Promise<DesktopSettings> | undefined;
 let writeQueue: Promise<DesktopSettings> = Promise.resolve({ version: 1 });
 
@@ -68,6 +81,10 @@ function browserSettings(): DesktopSettings {
     ...(locale === "fr" || locale === "en" ? { locale } : {}),
     ...(lastWorkspace ? { lastWorkspace } : {}),
     ...appearance,
+    ...(localStorage.getItem(browserVoiceKey)
+      ? { realtimeVoice: localStorage.getItem(browserVoiceKey) ?? undefined }
+      : {}),
+    ...parseBrowserSidebarWidth(localStorage.getItem(browserSidebarWidthKey)),
   };
 }
 
@@ -80,6 +97,15 @@ function writeBrowserSettings(settings: DesktopSettings) {
     browserAppearanceKey,
     JSON.stringify({ theme: settings.theme, fontSize: settings.fontSize }),
   );
+  if (settings.realtimeVoice) {
+    localStorage.setItem(browserVoiceKey, settings.realtimeVoice);
+  }
+  if (settings.sidebarWidth) {
+    localStorage.setItem(
+      browserSidebarWidthKey,
+      String(settings.sidebarWidth),
+    );
+  }
 }
 
 function validatePatch(patch: DesktopSettingsPatch) {
@@ -105,6 +131,29 @@ function validatePatch(patch: DesktopSettingsPatch) {
   ) {
     throw new Error("Unsupported desktop font size");
   }
+  if (patch.realtimeVoice && !isRealtimeVoice(patch.realtimeVoice)) {
+    throw new Error("Unsupported realtime voice");
+  }
+  if (
+    patch.sidebarWidth !== undefined &&
+    (!Number.isInteger(patch.sidebarWidth) ||
+      patch.sidebarWidth < 220 ||
+      patch.sidebarWidth > 420)
+  ) {
+    throw new Error("Unsupported sidebar width");
+  }
+}
+
+function parseBrowserSidebarWidth(
+  value: string | null,
+): Pick<DesktopSettings, "sidebarWidth"> {
+  if (!value) return {};
+  const sidebarWidth = Number(value);
+  return Number.isInteger(sidebarWidth) &&
+    sidebarWidth >= 220 &&
+    sidebarWidth <= 420
+    ? { sidebarWidth }
+    : {};
 }
 
 function parseBrowserAppearance(
@@ -131,5 +180,5 @@ function parseBrowserAppearance(
 }
 
 function isNative() {
-  return "__TAURI_INTERNALS__" in window;
+  return isDesktopApp();
 }

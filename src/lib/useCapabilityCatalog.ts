@@ -5,7 +5,7 @@ import type {
   PermissionProfileListResponse,
   PermissionProfileSummary,
 } from "./appServerTypes";
-import { isTauri, request } from "./codex";
+import { isDesktopApp, request } from "./codex";
 import {
   collaborationModeListParams,
   permissionProfileListParams,
@@ -49,7 +49,7 @@ export function useCapabilityCatalog({
 
   const refresh = useCallback(async () => {
     const current = ++generation.current;
-    if (!isTauri()) {
+    if (!isDesktopApp()) {
       const error = t("capabilities.nativeOnly");
       setCollaborationModes({
         data: fallbackModes(t),

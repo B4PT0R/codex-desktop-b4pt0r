@@ -60,7 +60,7 @@ const settingsGroupDefinitions: SettingsGroupDefinition[] = [
         id: "voice",
         labelKey: "settings.section.voice",
         keywords: "audio realtime microphone micro",
-        available: false,
+        available: true,
       },
       {
         id: "account",
@@ -112,7 +112,7 @@ const settingsGroupDefinitions: SettingsGroupDefinition[] = [
         id: "advanced",
         labelKey: "settings.section.advanced",
         keywords: "experimental expérimental import diagnostics feedback",
-        available: false,
+        available: true,
       },
     ],
   },

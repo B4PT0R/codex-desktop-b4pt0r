@@ -1,6 +1,11 @@
 import type { Quota } from "../types";
 import type { CollaborationMode, Personality } from "../types";
-import type { RateLimitSnapshot, RateLimitWindow } from "./appServerTypes";
+import type {
+  RateLimitSnapshot,
+  RateLimitWindow,
+  RealtimeVoice,
+} from "./appServerTypes";
+import type { ExternalAgentMigrationItem } from "./appServerTypes";
 
 export type Permission = string;
 export type TurnContextItem =
@@ -10,15 +15,29 @@ export type TurnContextItem =
 export function threadStartParams(
   cwd: string | undefined,
   model: string,
-  permission: Permission,
+  permission?: Permission,
   personality: Personality = "pragmatic",
 ) {
   return {
     ...(cwd ? { cwd } : {}),
     model,
-    permissions: permission,
+    ...(permission ? { permissions: permission } : {}),
     personality,
   };
+}
+export function realtimeThreadStartParams(
+  cwd: string | undefined,
+  model: string,
+  permission?: Permission,
+  personality: Personality = "pragmatic",
+) {
+  return {
+    ...threadStartParams(cwd, model, permission, personality),
+    ephemeral: true,
+  };
+}
+export function configReadParams(cwd?: string) {
+  return { cwd: cwd ?? null, includeLayers: false };
 }
 export function turnStartParams(
   threadId: string,
@@ -67,14 +86,32 @@ export function turnSteerParams(
 export function realtimeStartParams(
   threadId: string,
   transport: { type: "websocket" } | { type: "webrtc"; sdp: string },
+  voice: RealtimeVoice,
+  mode: "conversation" | "dictation" = "conversation",
 ) {
   return {
     threadId,
-    outputModality: "audio",
+    outputModality: mode === "dictation" ? "text" : "audio",
     transport,
-    flushTranscriptTailOnSessionEnd: true,
-    voice: "marin",
+    version: mode === "dictation" ? "v2" : "v3",
+    includeStartupContext: false,
+    flushTranscriptTailOnSessionEnd: mode !== "dictation",
+    ...(mode === "conversation"
+      ? {
+          model: "gpt-live-1-codex",
+          voice,
+          codexResponseHandoffPrefix: "",
+          codexResponseItemPrefix: null,
+          codexResponsesAsItems: false,
+          initialItems: [],
+          realtimeSessionId: null,
+        }
+      : { clientManagedHandoffs: true }),
   };
+}
+
+export function realtimeListVoicesParams() {
+  return {};
 }
 export function threadCwdUpdateParams(threadId: string, cwd: string) {
   return { threadId, cwd };
@@ -189,6 +226,33 @@ export function appsListParams(threadId?: string, forceRefetch = false) {
     threadId: threadId ?? null,
     forceRefetch,
   };
+}
+
+export function externalAgentDetectParams(
+  cwd?: string,
+  migrationSource: "claude-code" | "cursor" = "claude-code",
+) {
+  return {
+    includeHome: true,
+    cwds: cwd ? [cwd] : [],
+    source: null,
+    migrationSource,
+  };
+}
+
+export function externalAgentImportParams(
+  migrationItems: ExternalAgentMigrationItem[],
+  migrationSource: "claude-code" | "cursor" = "claude-code",
+) {
+  return {
+    migrationItems,
+    source: "codex-desktop-linux",
+    migrationSource,
+  };
+}
+
+export function externalAgentImportHistoriesReadParams() {
+  return undefined;
 }
 export function threadBehaviorUpdateParams(
   threadId: string,

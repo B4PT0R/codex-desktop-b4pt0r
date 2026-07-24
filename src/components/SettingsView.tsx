@@ -28,6 +28,7 @@ import {
 } from "../lib/settingsSections";
 import { useI18n } from "../i18n/I18nProvider";
 import type { MessageKey } from "../i18n/locales/fr";
+import { reasoningEffortLabel } from "../lib/reasoningEffort";
 import type { CollaborationMode, Model, Personality } from "../types";
 import type { IntegrationsController } from "../lib/useIntegrations";
 import { McpSettings, SkillsSettings } from "./IntegrationSettings";
@@ -40,6 +41,10 @@ import { useLaunchAtLogin } from "../lib/useLaunchAtLogin";
 import { useChromium } from "../lib/useChromium";
 import { AppearanceSettings } from "./AppearanceSettings";
 import { HooksSettings } from "./HooksSettings";
+import { ExternalAgentImportSettings } from "./ExternalAgentImportSettings";
+import type { ExternalAgentImportController } from "../lib/useExternalAgentImport";
+import type { RealtimeSettingsController } from "../lib/useRealtimeSettings";
+import { VoiceSettings } from "./VoiceSettings";
 
 export type SettingsViewProps = {
   account: AccountController;
@@ -47,12 +52,14 @@ export type SettingsViewProps = {
   capabilities: CapabilityCatalog;
   collaborationMode: CollaborationMode;
   effort: string;
+  externalAgentImport: ExternalAgentImportController;
   integrations: IntegrationsController;
   model: string;
   models: Model[];
   permission: Permission;
   personality: Personality;
   rateLimits: RateLimitsController;
+  realtime: RealtimeSettingsController;
   section: SettingsSectionId;
   onChangeCollaborationMode: (mode: CollaborationMode) => void;
   onChangeEffort: (effort: string) => void;
@@ -148,6 +155,8 @@ function SettingsSection(props: SettingsViewProps) {
   if (props.section === "general") return <GeneralSettings />;
   if (props.section === "agent") return <AgentSettings {...props} />;
   if (props.section === "appearance") return <AppearanceSettings />;
+  if (props.section === "voice")
+    return <VoiceSettings controller={props.realtime} />;
   if (props.section === "permissions") return <PermissionSettings {...props} />;
   if (props.section === "plugins")
     return (
@@ -164,7 +173,36 @@ function SettingsSection(props: SettingsViewProps) {
         rateLimits={props.rateLimits}
       />
     );
+  if (props.section === "advanced")
+    return <AdvancedSettings controller={props.externalAgentImport} />;
   return <PlannedSettings section={props.section} />;
+}
+
+function AdvancedSettings({
+  controller,
+}: {
+  controller: ExternalAgentImportController;
+}) {
+  const { t } = useI18n();
+  return (
+    <section className="settings-page">
+      <header>
+        <p>{t("settings.advanced.description")}</p>
+      </header>
+      <ExternalAgentImportSettings controller={controller} />
+      <div className="settings-card planned-settings">
+        {plannedSections.advanced.items.map((item) => (
+          <div key={item.title}>
+            <span>
+              <strong>{t(item.title)}</strong>
+              <small>{t(item.detail)}</small>
+            </span>
+            <em>{t("settings.toConnect")}</em>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 }
 
 function GeneralSettings() {
@@ -366,7 +404,7 @@ function AgentSettings(props: SettingsViewProps) {
         >
           {efforts.map((option) => (
             <option value={option.reasoningEffort} key={option.reasoningEffort}>
-              {effortLabel(option.reasoningEffort, t)}
+              {reasoningEffortLabel(option.reasoningEffort, t)}
             </option>
           ))}
         </SettingSelect>
@@ -489,6 +527,7 @@ const plannedSections: Record<
     | "general"
     | "agent"
     | "appearance"
+    | "voice"
     | "permissions"
     | "plugins"
     | "mcp"
@@ -500,16 +539,6 @@ const plannedSections: Record<
     items: Array<{ title: MessageKey; detail: MessageKey }>;
   }
 > = {
-  voice: {
-    description: "settings.voice.description",
-    items: [
-      {
-        title: "settings.voice.microphone",
-        detail: "settings.voice.microphoneDetail",
-      },
-      { title: "settings.voice.voice", detail: "settings.voice.voiceDetail" },
-    ],
-  },
   git: {
     description: "settings.git.description",
     items: [
@@ -531,32 +560,12 @@ const plannedSections: Record<
         detail: "settings.advanced.experimentalDetail",
       },
       {
-        title: "settings.advanced.import",
-        detail: "settings.advanced.importDetail",
-      },
-      {
         title: "settings.advanced.diagnostics",
         detail: "settings.advanced.diagnosticsDetail",
       },
     ],
   },
 };
-
-function effortLabel(effort: string, t: (key: MessageKey) => string) {
-  return (
-    (
-      {
-        none: t("settings.effort.minimal"),
-        minimal: t("settings.effort.minimal"),
-        low: t("settings.effort.low"),
-        medium: t("settings.effort.medium"),
-        high: t("settings.effort.high"),
-        xhigh: t("settings.effort.xhigh"),
-        ultra: t("settings.effort.ultra"),
-      } as Record<string, string>
-    )[effort] ?? effort
-  );
-}
 
 function permissionLabel(id: string, t: (key: MessageKey) => string) {
   if (id === ":read-only") return t("settings.permissions.readOnly");

@@ -14,6 +14,13 @@ export type ModelListResponse = {
   models?: AppServerModel[];
 };
 
+export type ConfigReadResponse = {
+  config: {
+    model?: string | null;
+    model_reasoning_effort?: string | null;
+  };
+};
+
 export type RateLimitWindow = {
   usedPercent: number;
   windowDurationMins: number | null;
@@ -118,10 +125,27 @@ export type ThreadSearchResponse = {
   data?: Array<{ thread: AppServerThread; snippet?: string }>;
   nextCursor?: string | null;
 };
-export type ThreadStartResponse = { thread: AppServerThread; cwd?: string };
-export type ThreadForkResponse = { thread: AppServerThread; cwd: string };
+export type ActivePermissionProfile = {
+  id: string;
+  extends?: string | null;
+};
+
+export type ThreadRuntimeResponse = {
+  thread: AppServerThread;
+  cwd: string;
+  model: string;
+  reasoningEffort?: string | null;
+  activePermissionProfile?: ActivePermissionProfile | null;
+};
+
+export type ThreadStartResponse = ThreadRuntimeResponse;
+export type ThreadForkResponse = ThreadRuntimeResponse;
 export type ThreadResumeResponse = {
   thread: AppServerThread;
+  cwd: string;
+  model: string;
+  reasoningEffort?: string | null;
+  activePermissionProfile?: ActivePermissionProfile | null;
   initialTurnsPage?: TurnsPage | null;
 };
 
@@ -284,3 +308,105 @@ export type ThreadGoal = {
 
 export type ThreadGoalGetResponse = { goal: ThreadGoal | null };
 export type ThreadGoalSetResponse = { goal: ThreadGoal };
+
+export type ExternalAgentMigrationItemType =
+  | "AGENTS_MD"
+  | "CONFIG"
+  | "SKILLS"
+  | "PLUGINS"
+  | "MCP_SERVER_CONFIG"
+  | "SUBAGENTS"
+  | "HOOKS"
+  | "COMMANDS"
+  | "MEMORY"
+  | "SESSIONS";
+
+export type ExternalAgentMigrationSource = "claude-code" | "cursor";
+
+export const realtimeVoices = [
+  "alloy",
+  "arbor",
+  "ash",
+  "ballad",
+  "breeze",
+  "cedar",
+  "coral",
+  "cove",
+  "echo",
+  "ember",
+  "juniper",
+  "maple",
+  "marin",
+  "sage",
+  "shimmer",
+  "sol",
+  "spruce",
+  "vale",
+  "verse",
+] as const;
+
+export type RealtimeVoice = (typeof realtimeVoices)[number];
+
+export type RealtimeVoicesList = {
+  v1: RealtimeVoice[];
+  v2: RealtimeVoice[];
+  defaultV1: RealtimeVoice;
+  defaultV2: RealtimeVoice;
+};
+
+export type ExternalAgentMigrationDetails = {
+  plugins?: Array<{ marketplaceName: string; pluginNames: string[] }>;
+  skills?: Array<{ name: string }>;
+  sessions?: Array<{ path: string; cwd: string; title?: string | null }>;
+  mcpServers?: Array<{ name: string }>;
+  hooks?: Array<{ name: string }>;
+  subagents?: Array<{ name: string }>;
+  commands?: Array<{ name: string }>;
+  memory?: string[];
+};
+
+export type ExternalAgentMigrationItem = {
+  itemType: ExternalAgentMigrationItemType;
+  description: string;
+  cwd?: string | null;
+  details?: ExternalAgentMigrationDetails | null;
+};
+
+export type ExternalAgentImportSuccess = {
+  itemType: ExternalAgentMigrationItemType;
+  cwd?: string | null;
+  source?: string | null;
+  target?: string | null;
+};
+
+export type ExternalAgentImportFailure = {
+  itemType: ExternalAgentMigrationItemType;
+  errorType?: string | null;
+  subErrorType?: string | null;
+  failureStage: string;
+  message: string;
+  cwd?: string | null;
+  source?: string | null;
+};
+
+export type ExternalAgentImportTypeResult = {
+  itemType: ExternalAgentMigrationItemType;
+  successes: ExternalAgentImportSuccess[];
+  failures: ExternalAgentImportFailure[];
+};
+
+export type ExternalAgentImportHistory = {
+  importId: string;
+  completedAtMs: number;
+  successes: ExternalAgentImportSuccess[];
+  failures: ExternalAgentImportFailure[];
+};
+
+export type ExternalAgentImportHistoriesReadResponse = {
+  data: ExternalAgentImportHistory[];
+  connectors: Array<{
+    name: string;
+    sessionCount: number;
+    source: "remoteMcpServersConfig";
+  }>;
+};

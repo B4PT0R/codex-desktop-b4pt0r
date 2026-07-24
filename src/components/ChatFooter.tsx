@@ -1,6 +1,5 @@
-import { AudioWaveform, ChevronDown, ShieldCheck } from "lucide-react";
+import { AudioWaveform } from "lucide-react";
 import type { Permission } from "../lib/protocol";
-import { quotaWindowLabel } from "../lib/quotaPresentation";
 import type { Model, Quota } from "../types";
 import type { ThreadTelemetry } from "../lib/sessionTelemetry";
 import { Composer } from "./Composer";
@@ -8,6 +7,11 @@ import { SessionTelemetry } from "./SessionTelemetry";
 import type { AppsController } from "../lib/useApps";
 import type { TurnContextItem } from "../lib/protocol";
 import { useI18n } from "../i18n/I18nProvider";
+import { ModelQuickPicker } from "./ModelQuickPicker";
+import { PermissionQuickPicker } from "./PermissionQuickPicker";
+import type { PermissionProfileSummary } from "../lib/appServerTypes";
+import type { RateLimitResetCreditsSummary } from "../lib/appServerTypes";
+import { QuotaQuickPicker } from "./QuotaQuickPicker";
 
 type ChatFooterProps = {
   apps: AppsController;
@@ -15,22 +19,34 @@ type ChatFooterProps = {
   canSteer: boolean;
   cwd: string;
   model: string;
+  effort: string;
   models: Model[];
   permission: Permission;
+  permissionProfiles: PermissionProfileSummary[];
   quotas: Quota[];
+  quotaConsuming: boolean;
+  quotaError?: string;
+  quotaResetCredits: RateLimitResetCreditsSummary | null;
+  quotaResetMessage?: string;
   recording: boolean;
+  dictating: boolean;
+  dictationProcessing: boolean;
+  dictationInsertion?: { id: number; text: string };
   hasThread: boolean;
   telemetry?: ThreadTelemetry;
   voiceTranscript: string;
-  onOpenModelSettings: () => void;
+  onChangeEffort: (effort: string) => void;
+  onChangeModel: (model: string) => void;
   onCompact: () => void;
   onNeedApps: () => void;
   onOpenMcpSettings: () => void;
-  onOpenPermissionSettings: () => void;
+  onChangePermission: (permission: Permission) => Promise<boolean>;
+  onConsumeQuotaReset: (creditId?: string) => Promise<void>;
   onOpenPluginSettings: () => void;
   onSend: (text: string, context: TurnContextItem[]) => void;
   onStop: () => void;
   onToggleVoice: () => void;
+  onToggleDictation: () => void;
 };
 
 export function ChatFooter({
@@ -39,24 +55,36 @@ export function ChatFooter({
   canSteer,
   cwd,
   model,
+  effort,
   models,
   permission,
+  permissionProfiles,
   quotas,
+  quotaConsuming,
+  quotaError,
+  quotaResetCredits,
+  quotaResetMessage,
   recording,
+  dictating,
+  dictationProcessing,
+  dictationInsertion,
   hasThread,
   telemetry,
   voiceTranscript,
-  onOpenModelSettings,
+  onChangeEffort,
+  onChangeModel,
   onCompact,
   onNeedApps,
   onOpenMcpSettings,
-  onOpenPermissionSettings,
+  onChangePermission,
+  onConsumeQuotaReset,
   onOpenPluginSettings,
   onSend,
   onStop,
   onToggleVoice,
+  onToggleDictation,
 }: ChatFooterProps) {
-  const { locale, t } = useI18n();
+  const { t } = useI18n();
   return (
     <footer>
       {voiceTranscript && (
@@ -74,6 +102,9 @@ export function ChatFooter({
         cwd={cwd}
         hasThread={hasThread}
         recording={recording}
+        dictating={dictating}
+        dictationProcessing={dictationProcessing}
+        dictationInsertion={dictationInsertion}
         onNeedApps={onNeedApps}
         onCompact={onCompact}
         onOpenMcp={onOpenMcpSettings}
@@ -81,39 +112,30 @@ export function ChatFooter({
         onSend={onSend}
         onStop={onStop}
         onToggleVoice={onToggleVoice}
+        onToggleDictation={onToggleDictation}
       />
       <div className="footer-settings">
-        <button className="model-select" onClick={onOpenModelSettings}>
-          {models.find((candidate) => candidate.id === model)?.label}
-          <ChevronDown />
-        </button>
-        <button onClick={onOpenPermissionSettings}>
-          <ShieldCheck />
-          {permission === "workspace-write" || permission === ":workspace"
-            ? t("chat.permission.workspace")
-            : permission === "read-only" || permission === ":read-only"
-              ? t("chat.permission.readOnly")
-              : t("chat.permission.fullAccess")}
-        </button>
+        <ModelQuickPicker
+          effort={effort}
+          model={model}
+          models={models}
+          onChangeEffort={onChangeEffort}
+          onChangeModel={onChangeModel}
+        />
+        <PermissionQuickPicker
+          onChange={onChangePermission}
+          permission={permission}
+          profiles={permissionProfiles}
+        />
         <SessionTelemetry reroute={telemetry?.reroute} />
-        <div className="quota">
-          {quotas.map((quota, index) => (
-            <span
-              key={index}
-              title={
-                quota.resetsAt
-                  ? `${t("chat.quota.resets")} ${new Date(
-                      quota.resetsAt * 1000,
-                    ).toLocaleString(locale)}`
-                  : undefined
-              }
-            >
-              <i style={{ width: `${quota.used}%` }} />
-              {quotaWindowLabel(quota.durationMinutes, index)}&nbsp;{" "}
-              {100 - quota.used} %
-            </span>
-          ))}
-        </div>
+        <QuotaQuickPicker
+          consuming={quotaConsuming}
+          error={quotaError}
+          onConsumeReset={onConsumeQuotaReset}
+          quotas={quotas}
+          resetCredits={quotaResetCredits}
+          resetMessage={quotaResetMessage}
+        />
       </div>
     </footer>
   );

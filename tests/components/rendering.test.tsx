@@ -29,6 +29,40 @@ describe("rendu du chat", () => {
       await screen.findByRole("heading", { name: "Résultat final" }),
     ).toBeVisible();
   });
+  it("rend les syntaxes LaTeX inline et bloc avec KaTeX", async () => {
+    const { container } = render(
+      <Markdown>
+        {
+          "Dollar $E=mc^2$ et parenthèses \\(a^2+b^2=c^2\\).\n\n$$\\sum_{n=1}^{\\infty} n^{-2}$$\n\n\\[\\int_0^1 x\\,dx\\]"
+        }
+      </Markdown>,
+    );
+
+    await screen.findByText("Dollar", { exact: false });
+    expect(container.querySelectorAll(".katex")).toHaveLength(4);
+    expect(container.querySelectorAll(".katex-display")).toHaveLength(2);
+  });
+  it("affiche une formule LaTeX invalide sans faire tomber le message", async () => {
+    const { container } = render(
+      <Markdown>{"Avant $\\frac{$ après"}</Markdown>,
+    );
+    expect(await screen.findByText("Avant", { exact: false })).toBeVisible();
+    expect(container.querySelector(".katex-error")).toBeVisible();
+  });
+  it("rend les environnements alignés, matrices et définitions par morceaux", async () => {
+    const { container } = render(
+      <Markdown>
+        {
+          "\\[\n\\begin{aligned}a &= b + c \\\\ d &= e\\end{aligned}\n\\]\n\n\\[\nA=\\begin{bmatrix}1 & 2 \\\\ 3 & 4\\end{bmatrix}\n\\]\n\n\\[\nf(x)=\\begin{cases}x^2,&x\\ge0\\\\-x,&x<0\\end{cases}\n\\]"
+        }
+      </Markdown>,
+    );
+
+    await screen.findAllByText("a", { exact: true });
+    expect(container.querySelectorAll(".katex-display")).toHaveLength(3);
+    expect(container.querySelector(".katex-error")).toBeNull();
+    expect(container.textContent).toContain("f(x)");
+  });
   it("regroupe les outils", () => {
     render(
       <ToolGroup

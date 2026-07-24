@@ -1,19 +1,35 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { openPath, openUrl } from "@tauri-apps/plugin-opener";
-import { invoke } from "@tauri-apps/api/core";
-import { ToolGroup } from "../../src/components/ToolGroup";
+import { invoke, openPath, openUrl } from "../../src/lib/nativeBridge";
+import {
+  TOOL_COLLAPSE_MS,
+  TOOL_COMPLETION_DWELL_MS,
+  TOOL_GROUP_COLLAPSE_MS,
+  ToolGroup,
+} from "../../src/components/ToolGroup";
 import { I18nProvider } from "../../src/i18n/I18nProvider";
+import {
+  CLOSED_STEP_GROUP_DWELL_MS,
+  CLOSED_STEP_TOOL_DWELL_MS,
+} from "../../src/lib/toolActivityTiming";
 
-vi.mock("@tauri-apps/plugin-opener", () => ({
+vi.mock("../../src/lib/nativeBridge", () => ({
   openPath: vi.fn(),
   openUrl: vi.fn(),
+  invoke: vi.fn(),
 }));
-vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
 afterEach(() => {
+  vi.useRealTimers();
   cleanup();
   localStorage.clear();
   vi.mocked(invoke).mockReset();
@@ -125,6 +141,7 @@ describe("activité des outils", () => {
   });
 
   it("retire du DOM les anciennes actions quand une longue série se termine", () => {
+    vi.useFakeTimers();
     const tools = Array.from({ length: 6 }, (_, index) => ({
       id: `command-${index}`,
       kind: "commandExecution" as const,
@@ -137,12 +154,66 @@ describe("activité des outils", () => {
 
     rerender(
       <ToolGroup
+        stepClosed
         tools={tools.map((tool) => ({ ...tool, status: "done" as const }))}
       />,
     );
+    for (const _tool of tools) {
+      act(() => {
+        vi.advanceTimersByTime(
+          CLOSED_STEP_TOOL_DWELL_MS + TOOL_COLLAPSE_MS,
+        );
+      });
+    }
+    act(() => {
+      vi.advanceTimersByTime(
+        CLOSED_STEP_GROUP_DWELL_MS + TOOL_GROUP_COLLAPSE_MS,
+      );
+    });
     expect(screen.queryByText("Commande 1")).toBeNull();
     fireEvent.click(screen.getByText("6 actions effectuées"));
     expect(screen.getByText("Commande 4")).toBeVisible();
+  });
+
+  it("présente les outils d’un step un par un après leur repli", () => {
+    vi.useFakeTimers();
+    const tools = [
+      {
+        id: "command-1",
+        kind: "commandExecution" as const,
+        title: "Première commande",
+        detail: "npm test",
+        status: "running" as const,
+      },
+      {
+        id: "command-2",
+        kind: "commandExecution" as const,
+        title: "Commande suivante",
+        detail: "npm run build",
+        status: "running" as const,
+      },
+    ];
+    const { rerender } = render(<ToolGroup tools={tools} />);
+
+    expect(screen.getByText("Première commande")).toBeVisible();
+    expect(screen.queryByText("Commande suivante")).toBeNull();
+
+    rerender(
+      <ToolGroup
+        tools={tools.map((tool) => ({ ...tool, status: "done" as const }))}
+      />,
+    );
+    act(() => {
+      vi.advanceTimersByTime(
+        TOOL_COMPLETION_DWELL_MS + TOOL_COLLAPSE_MS - 1,
+      );
+    });
+    expect(screen.queryByText("Commande suivante")).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(screen.getByText("Commande suivante")).toBeVisible();
   });
 
   it("affiche immédiatement une image générée et révèle les résultats web", async () => {
@@ -190,17 +261,21 @@ describe("activité des outils", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Ouvrir l’image dans Chromium" }),
     );
-    expect(invoke).toHaveBeenCalledWith("open_chromium_target", {
-      target: "/tmp/square.png",
-    });
+    await waitFor(() =>
+      expect(invoke).toHaveBeenCalledWith("open_chromium_target", {
+        target: "/tmp/square.png",
+      }),
+    );
     expect(screen.getByText("Documentation Codex")).not.toBeVisible();
     fireEvent.click(screen.getByText("Codex docs"));
     fireEvent.click(
       screen.getByRole("button", { name: /Documentation Codex/ }),
     );
-    expect(invoke).toHaveBeenCalledWith("open_chromium_target", {
-      target: "https://developers.openai.com/codex/",
-    });
+    await waitFor(() =>
+      expect(invoke).toHaveBeenCalledWith("open_chromium_target", {
+        target: "https://developers.openai.com/codex/",
+      }),
+    );
     expect(openUrl).not.toHaveBeenCalled();
   });
 
@@ -229,9 +304,11 @@ describe("activité des outils", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Ouvrir l’image dans Chromium" }),
     );
-    expect(invoke).toHaveBeenCalledWith("open_chromium_image", {
-      dataUrl: "data:image/png;base64,iVBORw0KGgo=",
-    });
+    await waitFor(() =>
+      expect(invoke).toHaveBeenCalledWith("open_chromium_image", {
+        dataUrl: "data:image/png;base64,iVBORw0KGgo=",
+      }),
+    );
   });
 
   it("rend l’échec d’ouverture d’un résultat récupérable", async () => {
@@ -267,7 +344,9 @@ describe("activité des outils", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Ouvrir avec le navigateur système" }),
     );
-    expect(openUrl).toHaveBeenCalledWith("https://example.com/");
+    await waitFor(() =>
+      expect(openUrl).toHaveBeenCalledWith("https://example.com/"),
+    );
   });
 
   it("rend aussi visible l’échec du navigateur système", async () => {

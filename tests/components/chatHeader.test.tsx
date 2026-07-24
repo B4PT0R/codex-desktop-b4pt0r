@@ -15,6 +15,64 @@ afterEach(cleanup);
 beforeEach(() => localStorage.setItem("codex-desktop.locale", "fr"));
 
 describe("en-tête de conversation", () => {
+  it("pilote la lecture et l’arrêt de la démo visuelle", () => {
+    const onPlay = vi.fn();
+    const onStop = vi.fn();
+    const { rerender } = render(
+      <I18nProvider>
+        <ChatHeader
+          busy={false}
+          connected={false}
+          demoPlayback={{
+            hasPlayed: false,
+            running: false,
+            onPlay,
+            onStop,
+          }}
+          nativeApp={false}
+          reconnecting={false}
+          sidebarOpen
+          title="Démo"
+          onCompact={vi.fn()}
+          onDelete={vi.fn()}
+          onFork={vi.fn()}
+          onOpenSidebar={vi.fn()}
+          onReconnect={vi.fn()}
+          onRename={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Lire la démo" }));
+    expect(onPlay).toHaveBeenCalledOnce();
+
+    rerender(
+      <I18nProvider>
+        <ChatHeader
+          busy={false}
+          connected={false}
+          demoPlayback={{
+            hasPlayed: true,
+            running: true,
+            onPlay,
+            onStop,
+          }}
+          nativeApp={false}
+          reconnecting={false}
+          sidebarOpen
+          title="Démo"
+          onCompact={vi.fn()}
+          onDelete={vi.fn()}
+          onFork={vi.fn()}
+          onOpenSidebar={vi.fn()}
+          onReconnect={vi.fn()}
+          onRename={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Arrêter" }));
+    expect(onStop).toHaveBeenCalledOnce();
+  });
+
   it("place le focus dans les actions et le restitue avec Échap", async () => {
     render(
       <I18nProvider>

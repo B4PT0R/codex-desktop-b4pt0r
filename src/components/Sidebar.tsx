@@ -6,15 +6,18 @@ import {
   Search,
   Settings2,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { ThreadSummary } from "../types";
 import type { ThreadSearchController } from "../lib/useThreadSearch";
+import { ThreadDeleteDialog } from "./ThreadDeleteDialog";
 
 type SidebarProps = {
   cwd: string;
   open: boolean;
+  width: number;
   selectedThreadId?: string;
   threads: ThreadSummary[];
   search: ThreadSearchController;
@@ -22,13 +25,17 @@ type SidebarProps = {
   onNewChat: () => void;
   onOpenSettings: () => void;
   onArchive: (thread: ThreadSummary) => void;
+  onDelete: (thread: ThreadSummary) => Promise<boolean>;
   onResume: (threadId: string) => void;
   onSelectDirectory: () => void;
+  onWidthChange: (width: number) => void;
+  onWidthCommit: (width: number) => void;
 };
 
 export function Sidebar({
   cwd,
   open,
+  width,
   selectedThreadId,
   threads,
   search,
@@ -36,11 +43,21 @@ export function Sidebar({
   onNewChat,
   onOpenSettings,
   onArchive,
+  onDelete,
   onResume,
   onSelectDirectory,
+  onWidthChange,
+  onWidthCommit,
 }: SidebarProps) {
   const { t } = useI18n();
+  const [deleting, setDeleting] = useState(false);
+  const [deleteCandidate, setDeleteCandidate] = useState<ThreadSummary>();
   const searchInput = useRef<HTMLInputElement>(null);
+  const resizeStart = useRef<{
+    pointerId: number;
+    pointerX: number;
+    width: number;
+  } | undefined>(undefined);
   const visibleThreads = useMemo(() => {
     const normalizedQuery = search.query.trim().toLocaleLowerCase();
     if (!normalizedQuery) return threads;
@@ -81,6 +98,7 @@ export function Sidebar({
     <aside
       className={open ? "sidebar" : "sidebar collapsed"}
       aria-label={t("sidebar.navigation")}
+      style={open ? { width } : undefined}
     >
       <div className="brand">
         <span className="logo">
@@ -153,6 +171,14 @@ export function Sidebar({
                   >
                     <Archive />
                   </button>
+                  <button
+                    className="thread-delete"
+                    aria-label={`${t("sidebar.delete")} ${label}`}
+                    title={t("sidebar.deleteTitle")}
+                    onClick={() => setDeleteCandidate(thread)}
+                  >
+                    <Trash2 />
+                  </button>
                 </div>
               );
             })}
@@ -191,8 +217,88 @@ export function Sidebar({
           <Settings2 /> {t("sidebar.settings")}
         </button>
       </div>
+      {deleteCandidate && (
+        <ThreadDeleteDialog
+          deleting={deleting}
+          title={
+            deleteCandidate.name ||
+            deleteCandidate.preview ||
+            t("sidebar.untitled")
+          }
+          onCancel={() => setDeleteCandidate(undefined)}
+          onConfirm={() => {
+            setDeleting(true);
+            void onDelete(deleteCandidate).then((deleted) => {
+              setDeleting(false);
+              if (deleted) setDeleteCandidate(undefined);
+            });
+          }}
+        />
+      )}
+      <div
+        aria-label={t("sidebar.resize")}
+        aria-orientation="vertical"
+        aria-valuemax={420}
+        aria-valuemin={220}
+        aria-valuenow={width}
+        className="sidebar-resize-handle"
+        onDoubleClick={() => {
+          onWidthChange(260);
+          onWidthCommit(260);
+        }}
+        onKeyDown={(event) => {
+          let next = width;
+          if (event.key === "ArrowLeft") next -= 16;
+          else if (event.key === "ArrowRight") next += 16;
+          else if (event.key === "Home") next = 220;
+          else if (event.key === "End") next = 420;
+          else return;
+          event.preventDefault();
+          const clamped = clampSidebarWidth(next);
+          onWidthChange(clamped);
+          onWidthCommit(clamped);
+        }}
+        onPointerDown={(event) => {
+          resizeStart.current = {
+            pointerId: event.pointerId,
+            pointerX: event.clientX,
+            width,
+          };
+          event.currentTarget.setPointerCapture(event.pointerId);
+          document.documentElement.classList.add("resizing-sidebar");
+        }}
+        onPointerMove={(event) => {
+          const start = resizeStart.current;
+          if (!start || start.pointerId !== event.pointerId) return;
+          onWidthChange(
+            clampSidebarWidth(start.width + event.clientX - start.pointerX),
+          );
+        }}
+        onPointerCancel={() => {
+          resizeStart.current = undefined;
+          document.documentElement.classList.remove("resizing-sidebar");
+        }}
+        onPointerUp={(event) => {
+          if (resizeStart.current?.pointerId !== event.pointerId) return;
+          const start = resizeStart.current;
+          const next = clampSidebarWidth(
+            start.width + event.clientX - start.pointerX,
+          );
+          resizeStart.current = undefined;
+          document.documentElement.classList.remove("resizing-sidebar");
+          event.currentTarget.releasePointerCapture(event.pointerId);
+          onWidthChange(next);
+          onWidthCommit(next);
+        }}
+        role="separator"
+        tabIndex={0}
+      />
     </aside>
   );
+}
+
+function clampSidebarWidth(width: number) {
+  return Math.round(Math.min(420, Math.max(220, width)));
 }
 
 function projectName(path: string) {

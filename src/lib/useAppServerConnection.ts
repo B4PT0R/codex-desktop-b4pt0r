@@ -1,11 +1,11 @@
-import { listen } from "@tauri-apps/api/event";
+import { listen } from "./nativeBridge";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { Model, ThreadSummary } from "../types";
 import type { ModelListResponse, ThreadListResponse } from "./appServerTypes";
 import {
   connect,
-  isTauri,
+  isDesktopApp,
   reconnect,
   request,
   type AppServerMessage,
@@ -53,7 +53,7 @@ export function useAppServerConnection(options: Options) {
           return;
         }
         cleanup = disconnect;
-        if (!isTauri()) return;
+        if (!isDesktopApp()) return;
         try {
           unlistenNewChat = await listen("new-chat", () =>
             callbacks.current.onNewChat(),

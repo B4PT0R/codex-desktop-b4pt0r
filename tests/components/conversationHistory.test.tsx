@@ -1,12 +1,22 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ComponentProps } from "react";
 import { Conversation } from "../../src/components/Conversation";
 import { I18nProvider } from "../../src/i18n/I18nProvider";
+import { closedStepRevealDelay } from "../../src/lib/toolActivityTiming";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 const scrollTo = vi.fn();
 
 function renderConversation(props: ComponentProps<typeof Conversation>) {
@@ -51,6 +61,105 @@ describe("historique de conversation", () => {
     );
 
     expect(onLoadOlder).toHaveBeenCalledOnce();
+  });
+
+  it("sort le dernier plan du fil pour n’afficher qu’un widget persistant", async () => {
+    renderConversation({
+      activity: "thinking",
+      messages: [
+        {
+          id: "assistant-plan",
+          role: "assistant",
+          content: "Je commence.",
+          signals: [
+            {
+              id: "plan-1",
+              kind: "plan",
+              title: "Plan",
+              status: "running",
+              steps: [{ step: "Analyser", status: "inProgress" }],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(
+      await screen.findByRole("complementary", {
+        name: "Progression du plan",
+      }),
+    ).toBeVisible();
+    expect(screen.getAllByText("Plan")).toHaveLength(1);
+  });
+
+  it("place le raisonnement avant le texte streamé de l’agent", () => {
+    renderConversation({
+      activity: "talking",
+      messages: [
+        {
+          id: "assistant-stream",
+          role: "assistant",
+          content: "Je lance maintenant les vérifications.",
+          streaming: true,
+          signals: [
+            {
+              id: "reasoning-1",
+              kind: "reasoning",
+              title: "Analyse",
+              detail: "Je détermine les contrôles nécessaires.",
+              status: "done",
+            },
+          ],
+        },
+      ],
+    });
+
+    const reasoning = screen.getByText("Analyse");
+    const streamedText = screen.getByText(
+      "Je lance maintenant les vérifications.",
+    );
+    expect(
+      reasoning.compareDocumentPosition(streamedText) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("attend la fin du repli technique avant de révéler le texte suivant", () => {
+    vi.useFakeTimers();
+    const now = Date.now();
+    const revealDelay = closedStepRevealDelay(1);
+    renderConversation({
+      activity: "talking",
+      messages: [
+        {
+          id: "assistant-tools",
+          role: "assistant",
+          content: "Je vérifie.",
+          tools: [
+            {
+              id: "command-1",
+              kind: "commandExecution",
+              title: "Tests",
+              detail: "npm test",
+              status: "done",
+            },
+          ],
+        },
+        {
+          id: "assistant-review",
+          role: "assistant",
+          content: "Les tests sont concluants.",
+          streaming: true,
+          revealAfter: now + revealDelay,
+        },
+      ],
+    });
+
+    expect(screen.queryByText("Les tests sont concluants.")).toBeNull();
+    act(() => {
+      vi.advanceTimersByTime(revealDelay);
+    });
+    expect(screen.getByText("Les tests sont concluants.")).toBeVisible();
   });
 
   it("désactive le contrôle pendant le chargement", () => {

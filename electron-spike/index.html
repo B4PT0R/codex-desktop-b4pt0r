@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Electron audio probe</title>
+    <link rel="stylesheet" href="/probe.css" />
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Codex Desktop Linux</p>
+      <h1>Probe audio Electron</h1>
+      <p class="intro">
+        Ce test utilise directement Chromium et <code>getUserMedia</code>. Aucun
+        son n’est envoyé au réseau ou enregistré sur disque.
+      </p>
+
+      <section aria-labelledby="status-title">
+        <div class="status-heading">
+          <h2 id="status-title">Microphone</h2>
+          <span id="status" class="status idle" role="status">Inactif</span>
+        </div>
+        <canvas
+          id="meter"
+          width="640"
+          height="96"
+          aria-label="Niveau sonore du microphone"
+        ></canvas>
+        <p id="details" class="details">Clique sur Démarrer pour autoriser le micro.</p>
+        <div class="actions">
+          <button id="start" type="button">Démarrer</button>
+          <button id="stop" type="button" disabled>Arrêter</button>
+          <button id="realtime" class="secondary" type="button">
+            Tester Realtime v3
+          </button>
+        </div>
+        <p id="transcript" class="transcript" aria-live="polite"></p>
+      </section>
+
+      <section class="diagnostics" aria-labelledby="diagnostics-title">
+        <h2 id="diagnostics-title">Diagnostic</h2>
+        <dl>
+          <div><dt>Moteur</dt><dd id="engine">Chromium</dd></div>
+          <div><dt>Canaux</dt><dd id="channels">—</dd></div>
+          <div><dt>Fréquence</dt><dd id="sample-rate">—</dd></div>
+          <div><dt>Périphérique</dt><dd id="device">—</dd></div>
+        </dl>
+      </section>
+    </main>
+    <script src="/probe.js" type="module"></script>
+  </body>
+</html>

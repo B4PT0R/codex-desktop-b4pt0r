@@ -5,9 +5,7 @@ const requestMock = vi.hoisted(() => vi.fn());
 vi.mock("../../src/lib/codex", () => ({ request: requestMock }));
 
 import {
-  encodePcm,
-  playRealtimeAudio,
-  resample,
+  acceptRealtimeAnswer,
   startRealtime,
   stopRealtime,
 } from "../../src/lib/realtime";
@@ -17,63 +15,98 @@ afterEach(async () => {
   vi.unstubAllGlobals();
   requestMock.mockReset();
 });
-describe("audio realtime", () => {
-  it("rééchantillonne vers 24 kHz", () =>
-    expect(resample(new Float32Array(480), 48000, 24000)).toHaveLength(240));
-  it("encode en PCM16 little-endian", () => {
-    const bytes = Uint8Array.from(
-      atob(encodePcm(new Float32Array([-1, 0, 1]))),
-      (c) => c.charCodeAt(0),
-    );
-    expect([...bytes]).toEqual([1, 128, 0, 0, 255, 127]);
+
+function installWebRtc() {
+  const track = { stop: vi.fn() };
+  const stream = {
+    getAudioTracks: () => [track],
+    getTracks: () => [track],
+  };
+  const pc = {
+    addTrack: vi.fn(),
+    addTransceiver: vi.fn(),
+    close: vi.fn(),
+    createDataChannel: vi.fn(),
+    createOffer: vi.fn(async () => ({ type: "offer", sdp: "v=0" })),
+    setLocalDescription: vi.fn(async () => undefined),
+    setRemoteDescription: vi.fn(async () => undefined),
+    ontrack: null as ((event: { streams: MediaStream[] }) => void) | null,
+  };
+  vi.stubGlobal("RTCPeerConnection", class {
+    constructor() {
+      return pc;
+    }
   });
-  it("sature hors plage", () =>
-    expect(encodePcm(new Float32Array([-2, 2]))).toBe(
-      encodePcm(new Float32Array([-1, 1])),
-    ));
+  vi.stubGlobal("Audio", class {
+    autoplay = false;
+    srcObject: MediaStream | null = null;
+    pause = vi.fn();
+    play = vi.fn(async () => undefined);
+  });
+  const getUserMedia = vi.fn(async () => stream);
+  Object.defineProperty(navigator, "mediaDevices", {
+    configurable: true,
+    value: { getUserMedia },
+  });
+  requestMock.mockResolvedValue(undefined);
+  return { getUserMedia, pc, stream, track };
+}
 
-  it("arrête et signale une seule fois un flux audio illisible", async () => {
-    const close = vi.fn(async () => undefined);
-    vi.stubGlobal(
-      "AudioContext",
-      class {
-        currentTime = 0;
-        destination = {};
-        sampleRate = 48_000;
-        close = close;
-        resume = vi.fn(async () => undefined);
-        createMediaStreamSource = () => ({ connect: vi.fn() });
-        createScriptProcessor = () => ({
-          connect: vi.fn(),
-          disconnect: vi.fn(),
-          onaudioprocess: null,
-        });
+describe("audio realtime Electron", () => {
+  it("négocie WebRTC en mono avec Chromium", async () => {
+    const { getUserMedia, pc, stream, track } = installWebRtc();
+
+    await startRealtime("thread-1", "juniper", "conversation");
+
+    expect(getUserMedia).toHaveBeenCalledWith({
+      audio: {
+        channelCount: { exact: 1 },
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
       },
+      video: false,
+    });
+    expect(pc.addTrack).toHaveBeenCalledWith(track, stream);
+    expect(requestMock).toHaveBeenCalledWith(
+      "thread/realtime/start",
+      expect.objectContaining({
+        threadId: "thread-1",
+        transport: { type: "webrtc", sdp: "v=0" },
+      }),
     );
-    Object.defineProperty(navigator, "mediaDevices", {
-      configurable: true,
-      value: {
-        getUserMedia: vi.fn(async () => ({
-          getTracks: () => [{ stop: vi.fn() }],
-        })),
-      },
-    });
-    requestMock.mockResolvedValue(undefined);
-    const onFailure = vi.fn();
+  });
 
-    await startRealtime("thread-1", onFailure);
-    playRealtimeAudio("thread-1", {
-      data: "%%%",
-      sampleRate: 24_000,
-      numChannels: 1,
-    });
-    playRealtimeAudio("thread-1", {
-      data: "%%%",
-      sampleRate: 24_000,
-      numChannels: 1,
-    });
+  it("accepte seulement la réponse SDP de la session active", async () => {
+    const { pc } = installWebRtc();
+    await startRealtime("thread-1", "juniper", "conversation");
 
-    expect(onFailure).toHaveBeenCalledOnce();
-    expect(close).toHaveBeenCalledOnce();
+    await acceptRealtimeAnswer("other-thread", "ignored");
+    await acceptRealtimeAnswer("thread-1", "answer");
+
+    expect(pc.setRemoteDescription).toHaveBeenCalledOnce();
+    expect(pc.setRemoteDescription).toHaveBeenCalledWith({
+      type: "answer",
+      sdp: "answer",
+    });
+  });
+
+  it("arrête le micro, la connexion et la session distante", async () => {
+    const { pc, track } = installWebRtc();
+    await startRealtime("thread-1", "juniper", "conversation");
+
+    await stopRealtime();
+
+    expect(track.stop).toHaveBeenCalledOnce();
+    expect(pc.close).toHaveBeenCalledOnce();
+    expect(requestMock).toHaveBeenLastCalledWith("thread/realtime/stop", {
+      threadId: "thread-1",
+    });
+  });
+
+  it("échoue proprement sans API audio Chromium", async () => {
+    await expect(
+      startRealtime("thread-1", "juniper", "conversation"),
+    ).rejects.toThrow("Realtime audio is unavailable");
   });
 });

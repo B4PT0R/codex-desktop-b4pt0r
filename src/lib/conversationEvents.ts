@@ -12,6 +12,7 @@ import {
 } from "./toolPresentation";
 import type { AgentSignal, ChatMessage, ToolCall } from "../types";
 import { defaultTranslate, type Translate } from "../i18n/translate";
+import { closedStepRevealDelay } from "./toolActivityTiming";
 
 type EventParams = Record<string, unknown>;
 type AppServerItem = Record<string, unknown> & { id?: string; type?: string };
@@ -93,7 +94,11 @@ function appendAgentMessageDelta(
   delta: string,
 ): ChatMessage[] {
   const index = itemId
-    ? findLastIndex(messages, (message) => message.id === itemId)
+    ? findLastIndex(
+        messages,
+        (message) =>
+          message.id === itemId || message.sourceItemId === itemId,
+      )
     : -1;
   if (index < 0) {
     return [
@@ -107,6 +112,27 @@ function appendAgentMessageDelta(
     ];
   }
   const message = messages[index];
+  if (message.tools?.length) {
+    const closed = replaceAt(messages, index, {
+      ...message,
+      streaming: false,
+    });
+    return [
+      ...closed,
+      {
+        id: `${itemId ?? message.id}-continuation-${countMessageSegments(
+          messages,
+          itemId ?? message.id,
+        )}`,
+        sourceItemId: itemId ?? message.sourceItemId ?? message.id,
+        revealAfter:
+          Date.now() + closedStepRevealDelay(message.tools.length),
+        role: "assistant",
+        content: delta,
+        streaming: true,
+      },
+    ];
+  }
   return replaceAt(messages, index, {
     ...message,
     content: message.content + delta,
@@ -191,6 +217,7 @@ function completeItem(
     (message) =>
       Boolean(
         message.id === item.id ||
+          message.sourceItemId === item.id ||
           message.tools?.some((tool) => tool.id === item.id) ||
           message.signals?.some((signal) => signal.id === item.id),
       ),
@@ -202,7 +229,9 @@ function completeItem(
     const hasSignal = message.signals?.some((signal) => signal.id === item.id);
     next = replaceAt(messages, index, {
       ...message,
-      ...(message.id === item.id ? { streaming: false } : {}),
+      ...(message.id === item.id || message.sourceItemId === item.id
+        ? { streaming: false }
+        : {}),
       ...(hasTool
         ? {
             tools: message.tools?.map((tool) =>
@@ -246,6 +275,13 @@ function completeItem(
     ];
   }
   return next;
+}
+
+function countMessageSegments(messages: ChatMessage[], itemId: string) {
+  return messages.filter(
+    (message) =>
+      message.id === itemId || message.sourceItemId === itemId,
+  ).length;
 }
 
 function updateTool(

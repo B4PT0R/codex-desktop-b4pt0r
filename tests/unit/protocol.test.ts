@@ -9,10 +9,16 @@ import {
   hooksListParams,
   quotasFromRateLimits,
   consumeRateLimitResetCreditParams,
+  configReadParams,
   creditsNudgeParams,
+  externalAgentDetectParams,
+  externalAgentImportHistoriesReadParams,
+  externalAgentImportParams,
   cancelLoginParams,
   chatgptLoginParams,
   realtimeStartParams,
+  realtimeListVoicesParams,
+  realtimeThreadStartParams,
   threadBehaviorUpdateParams,
   threadSearchParams,
   threadGoalClearParams,
@@ -31,6 +37,31 @@ import {
   turnSteerParams,
 } from "../../src/lib/protocol";
 describe("constructeurs JSON-RPC", () => {
+  it("lit la configuration effective du workspace", () => {
+    expect(configReadParams("/tmp/project")).toEqual({
+      cwd: "/tmp/project",
+      includeLayers: false,
+    });
+  });
+  it("construit le workflow d’import externe sans paramètres superflus", () => {
+    const item = {
+      itemType: "CONFIG" as const,
+      description: "Configuration détectée",
+      cwd: null,
+    };
+    expect(externalAgentDetectParams("/project", "cursor")).toEqual({
+      includeHome: true,
+      cwds: ["/project"],
+      source: null,
+      migrationSource: "cursor",
+    });
+    expect(externalAgentImportParams([item], "cursor")).toEqual({
+      migrationItems: [item],
+      source: "codex-desktop-linux",
+      migrationSource: "cursor",
+    });
+    expect(externalAgentImportHistoriesReadParams()).toBeUndefined();
+  });
   it("construit le cycle de vie d’un objectif de thread", () => {
     expect(threadGoalGetParams("thread-1")).toEqual({ threadId: "thread-1" });
     expect(threadGoalClearParams("thread-1")).toEqual({ threadId: "thread-1" });
@@ -117,6 +148,10 @@ describe("constructeurs JSON-RPC", () => {
         threadStartParams("/tmp/project", "gpt-test", permission).permissions,
       ).toBe(permission),
   );
+  it("laisse App Server choisir le profil sans sélection explicite", () =>
+    expect(
+      threadStartParams("/tmp/project", "gpt-test", undefined),
+    ).not.toHaveProperty("permissions"));
   it("laisse App Server choisir le cwd par défaut", () =>
     expect(
       threadStartParams(undefined, "gpt-test", ":workspace"),
@@ -224,12 +259,51 @@ describe("constructeurs JSON-RPC", () => {
       itemsView: "full",
     }));
   it("construit les transports realtime", () => {
-    expect(realtimeStartParams("thr", { type: "websocket" }).transport).toEqual(
-      { type: "websocket" },
-    );
+    expect(realtimeListVoicesParams()).toEqual({});
     expect(
-      realtimeStartParams("thr", { type: "webrtc", sdp: "v=0" }).transport,
+      realtimeStartParams("thr", { type: "websocket" }, "juniper"),
+    ).toMatchObject({
+      transport: { type: "websocket" },
+      version: "v3",
+      model: "gpt-live-1-codex",
+      voice: "juniper",
+      includeStartupContext: false,
+      outputModality: "audio",
+      codexResponsesAsItems: false,
+      initialItems: [],
+    });
+    const dictation = realtimeStartParams(
+      "thr",
+      { type: "websocket" },
+      "juniper",
+      "dictation",
+    );
+    expect(dictation).toMatchObject({
+      version: "v2",
+      outputModality: "text",
+      includeStartupContext: false,
+      flushTranscriptTailOnSessionEnd: false,
+      clientManagedHandoffs: true,
+    });
+    expect(dictation).not.toHaveProperty("voice");
+    expect(
+      realtimeStartParams(
+        "thr",
+        { type: "webrtc", sdp: "v=0" },
+        "maple",
+      ).transport,
     ).toEqual({ type: "webrtc", sdp: "v=0" });
+  });
+  it("isole les conversations vocales dans un thread éphémère", () => {
+    expect(
+      realtimeThreadStartParams("/work", "gpt-5.4", ":workspace", "pragmatic"),
+    ).toMatchObject({
+      cwd: "/work",
+      model: "gpt-5.4",
+      permissions: ":workspace",
+      personality: "pragmatic",
+      ephemeral: true,
+    });
   });
 });
 describe("quotas", () => {

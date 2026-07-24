@@ -32,23 +32,40 @@ function searchController() {
   };
 }
 
-function renderSidebar(onNewChat = vi.fn(), onArchive = vi.fn()) {
+function renderSidebar(
+  onNewChat = vi.fn(),
+  onArchive = vi.fn(),
+  onDelete = vi.fn().mockResolvedValue(true),
+  onWidthChange = vi.fn(),
+  onWidthCommit = vi.fn(),
+) {
   const search = searchController();
   render(
     <Sidebar
       cwd=""
       open
+      width={260}
       threads={threads}
       search={search}
       onArchive={onArchive}
+      onDelete={onDelete}
       onClose={vi.fn()}
       onNewChat={onNewChat}
       onOpenSettings={vi.fn()}
       onResume={vi.fn()}
       onSelectDirectory={vi.fn()}
+      onWidthChange={onWidthChange}
+      onWidthCommit={onWidthCommit}
     />,
   );
-  return { onArchive, onNewChat, search };
+  return {
+    onArchive,
+    onDelete,
+    onNewChat,
+    onWidthChange,
+    onWidthCommit,
+    search,
+  };
 }
 
 describe("barre latérale", () => {
@@ -65,14 +82,18 @@ describe("barre latérale", () => {
         <Sidebar
           cwd=""
           open
+          width={260}
           search={search}
           threads={threads}
           onArchive={vi.fn()}
+          onDelete={vi.fn()}
           onClose={vi.fn()}
           onNewChat={vi.fn()}
           onOpenSettings={vi.fn()}
           onResume={vi.fn()}
           onSelectDirectory={vi.fn()}
+          onWidthChange={vi.fn()}
+          onWidthCommit={vi.fn()}
         />
       </I18nProvider>,
     );
@@ -92,6 +113,20 @@ describe("barre latérale", () => {
     expect(screen.getByRole("searchbox")).toHaveFocus();
   });
 
+  it("redimensionne la sidebar au clavier dans ses limites", () => {
+    const { onWidthChange, onWidthCommit } = renderSidebar();
+    const separator = screen.getByRole("separator", {
+      name: "Redimensionner la barre latérale",
+    });
+
+    fireEvent.keyDown(separator, { key: "ArrowRight" });
+    expect(onWidthChange).toHaveBeenCalledWith(276);
+    expect(onWidthCommit).toHaveBeenCalledWith(276);
+
+    fireEvent.keyDown(separator, { key: "End" });
+    expect(onWidthChange).toHaveBeenLastCalledWith(420);
+  });
+
   it("regroupe les conversations par projet et permet de les archiver", () => {
     const { onArchive } = renderSidebar();
 
@@ -104,6 +139,21 @@ describe("barre latérale", () => {
     expect(onArchive).toHaveBeenCalledWith(threads[0]);
   });
 
+  it("demande confirmation avant de supprimer une conversation", async () => {
+    const { onDelete } = renderSidebar();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Supprimer Corriger la navigation",
+      }),
+    );
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(screen.getByRole("alertdialog")).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Supprimer définitivement" }),
+    );
+    expect(onDelete).toHaveBeenCalledWith(threads[0]);
+  });
+
   it("traduit la navigation avec le pack anglais", () => {
     localStorage.setItem("codex-desktop.locale", "en");
     render(
@@ -111,14 +161,18 @@ describe("barre latérale", () => {
         <Sidebar
           cwd=""
           open
+          width={260}
           search={searchController()}
           threads={[]}
           onArchive={vi.fn()}
+          onDelete={vi.fn()}
           onClose={vi.fn()}
           onNewChat={vi.fn()}
           onOpenSettings={vi.fn()}
           onResume={vi.fn()}
           onSelectDirectory={vi.fn()}
+          onWidthChange={vi.fn()}
+          onWidthCommit={vi.fn()}
         />
       </I18nProvider>,
     );

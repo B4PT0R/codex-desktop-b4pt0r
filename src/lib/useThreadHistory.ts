@@ -11,13 +11,20 @@ import {
   messagesFromTurnsNewestFirst,
 } from "./threadPresentation";
 import { useI18n } from "../i18n/I18nProvider";
+import {
+  threadRuntimeSettings,
+  type ThreadRuntimeSettings,
+} from "./threadRuntimeSettings";
 
 type ThreadHistoryOptions = {
   activeThreadId?: string;
   onError: (title: string, error: unknown) => void;
   onMessagesPrepended: (messages: ChatMessage[]) => void;
   onMessagesReplaced: (messages: ChatMessage[]) => void;
-  onThreadResumed: (threadId: string, cwd?: string) => void;
+  onThreadResumed: (
+    threadId: string,
+    settings: ThreadRuntimeSettings,
+  ) => void;
 };
 
 /** Owns persisted conversation hydration and protects it from stale responses. */
@@ -60,7 +67,7 @@ export function useThreadHistory({
             : messagesFromThread(response.thread, t),
         );
         setCursor(page?.nextCursor ?? undefined);
-        onThreadResumed(threadId, response.thread.cwd);
+        onThreadResumed(threadId, threadRuntimeSettings(response));
       } catch (error) {
         if (resumeGeneration.current === generation)
           onError(t("thread.resumeError"), error);

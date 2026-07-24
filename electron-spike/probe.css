@@ -1,0 +1,180 @@
+:root {
+  color: #e8e9ed;
+  background: #18191c;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 10% 0%, rgb(79 110 84 / 16%), transparent 34rem),
+    #18191c;
+}
+
+main {
+  width: min(100% - 48px, 720px);
+  margin: 0 auto;
+  padding: 52px 0;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #8fba98;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: 32px;
+  letter-spacing: -0.04em;
+}
+
+.intro {
+  max-width: 590px;
+  margin: 14px 0 30px;
+  color: #aeb1b8;
+  line-height: 1.55;
+}
+
+section {
+  margin-top: 18px;
+  padding: 22px;
+  border: 1px solid #34363c;
+  border-radius: 14px;
+  background: rgb(35 36 40 / 92%);
+}
+
+.status-heading,
+.actions,
+dl div {
+  display: flex;
+  align-items: center;
+}
+
+.status-heading {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.status {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #303238;
+  color: #b9bbc1;
+  font-size: 12px;
+}
+
+.status.active {
+  background: #24462e;
+  color: #a9dfb6;
+}
+
+.status.error {
+  background: #512c2c;
+  color: #f2b4b4;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 96px;
+  margin-top: 20px;
+  border-radius: 9px;
+  background: #141518;
+}
+
+.details {
+  min-height: 22px;
+  margin: 14px 0;
+  color: #aeb1b8;
+  font-size: 13px;
+}
+
+.actions {
+  gap: 10px;
+}
+
+button {
+  min-height: 38px;
+  padding: 0 15px;
+  border: 1px solid #4b4e55;
+  border-radius: 8px;
+  color: #f3f4f5;
+  background: #36383e;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:first-child {
+  border-color: #4d7758;
+  background: #31543a;
+}
+
+button.secondary {
+  margin-left: auto;
+  border-color: #536381;
+  background: #303b50;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+button:focus-visible {
+  outline: 2px solid #93c69f;
+  outline-offset: 3px;
+}
+
+.diagnostics dl {
+  margin: 14px 0 0;
+}
+
+.transcript:empty {
+  display: none;
+}
+
+.transcript {
+  margin: 18px 0 0;
+  padding: 12px;
+  border-radius: 8px;
+  color: #d9dde7;
+  background: #1b1d22;
+  line-height: 1.5;
+}
+
+dl div {
+  justify-content: space-between;
+  gap: 20px;
+  padding: 9px 0;
+  border-top: 1px solid #34363c;
+}
+
+dt {
+  color: #92959d;
+}
+
+dd {
+  max-width: 70%;
+  margin: 0;
+  overflow: hidden;
+  color: #d7d8dc;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -192,7 +192,7 @@ les identifiants Bedrock externes restent administrés hors de l’application.
 | Warnings, diagnostics, feedback   | Conversation ou Avancé selon portée     | Actionnable, dédupliqué                 |
 
 Les workflows navigateur ne chargent pas une seconde WebView générale dans le
-shell Tauri. Une instance Chromium open source indépendante (pas Google Chrome ou
+shell Electron. Une instance Chromium open source indépendante (pas Google Chrome ou
 Microsoft Edge) porte l’automatisation et son
 isolation de processus ; le client n’affiche que son état, ses actions et ses
 résultats dans les cartes ou le panneau contextuel. Cette même instance sert de
@@ -219,7 +219,7 @@ une éventuelle évolution de l’automation officielle.
 - Le fil typé : messages, signaux, outils, historique paginé et streaming.
 - Les dialogues d’approbation et de question avec gestion du focus.
 - Le menu de thread et ses actions stables.
-- La séparation native Tauri / transport JSON-RPC / normalisation / présentation.
+- La séparation Electron/IPC / transport JSON-RPC / normalisation / présentation.
 
 ### Restructurer avant d’étendre
 

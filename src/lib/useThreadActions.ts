@@ -63,17 +63,15 @@ export function useThreadActions({
     }
   }
 
-  async function deleteThread() {
-    if (!activeThreadId || busy) return false;
+  async function deleteThread(threadId = activeThreadId) {
+    if (!threadId || busy) return false;
     try {
-      await request("thread/delete", threadDeleteParams(activeThreadId));
-      setThreads((items) =>
-        items.filter((thread) => thread.id !== activeThreadId),
-      );
+      await request("thread/delete", threadDeleteParams(threadId));
+      setThreads((items) => items.filter((thread) => thread.id !== threadId));
       setArchivedThreads((items) =>
-        items.filter((item) => item.thread.id !== activeThreadId),
+        items.filter((item) => item.thread.id !== threadId),
       );
-      onActiveThreadRemoved();
+      if (activeThreadId === threadId) onActiveThreadRemoved();
       return true;
     } catch (error) {
       onError(t("thread.deleteError"), error);

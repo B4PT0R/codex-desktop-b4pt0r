@@ -81,5 +81,5 @@ d’ensemble rapide.
   explicite « Prévu », sans faux interrupteur ni action inerte.
 - Le panneau latéral sera introduit seulement avec un premier contenu réel (diff,
   navigateur ou ressource MCP), pas comme une colonne vide.
-- Le vocabulaire et les comportements restent adaptés à Linux/Tauri et au périmètre
+- Le vocabulaire et les comportements restent adaptés à Linux/Electron et au périmètre
   App Server disponible.

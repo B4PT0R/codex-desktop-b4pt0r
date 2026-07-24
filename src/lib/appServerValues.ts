@@ -16,10 +16,18 @@ export function realtimeAudioFromValue(value: unknown): {
   numChannels: number;
 } {
   const audio = appServerRecord(value);
+  const data = appServerString(audio?.data);
+  const sampleRate = audio?.sampleRate;
+  const numChannels = audio?.numChannels;
   return {
-    data: appServerString(audio?.data) ?? "",
+    data: data && data.length <= 2_800_000 ? data : "",
     sampleRate:
-      typeof audio?.sampleRate === "number" ? audio.sampleRate : 24_000,
-    numChannels: typeof audio?.numChannels === "number" ? audio.numChannels : 1,
+      typeof sampleRate === "number" &&
+      Number.isInteger(sampleRate) &&
+      sampleRate >= 8_000 &&
+      sampleRate <= 96_000
+        ? sampleRate
+        : 24_000,
+    numChannels: numChannels === 2 ? 2 : 1,
   };
 }

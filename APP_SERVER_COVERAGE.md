@@ -1,16 +1,18 @@
 # App Server v2 coverage audit
 
-Authoritative snapshot: Codex checkout `0fb559f0f6`, 2026-07-19. The inventory was
-derived from `codex-rs/app-server-protocol/src/protocol/common.rs` and checked
-against `codex-rs/app-server/README.md` and the generated installed schema.
+Authoritative snapshot: installed Codex `0.145.0` schema and official checkout
+`0dfa778dae`, 2026-07-24. Stable product work is checked against the installed
+schema; post-0.145 additions on `main` remain prospective until their stable release.
+The inventory was derived from `codex-rs/app-server-protocol/src/protocol/common.rs`
+and checked against `codex-rs/app-server/README.md`.
 
-The current protocol declares 124 client requests, 9 server requests and 71
-notifications. Endpoint count is not a product target: filesystem, process and
+The installed experimental schema declares 126 client requests, 11 server requests
+and 70 notifications. Endpoint count is not a product target: filesystem, process and
 configuration primitives support user workflows without becoming generic buttons.
 
 ## Product coverage
 
-The client directly calls 46 request methods, covering the main workflows:
+The client directly calls 50 request methods, covering the main workflows:
 
 - **Threads:** start, resume, list/search, paginated history, rename, fork,
   archive/unarchive/delete, compact, interrupt/steer, shell commands and persisted
@@ -22,16 +24,18 @@ The client directly calls 46 request methods, covering the main workflows:
 - **Models and capabilities:** model catalog, reasoning effort, personality,
   collaboration presets and named permission profiles.
 - **Integrations:** skills inventory/toggle, effective hooks inventory, connected Apps,
-  MCP inventory and OAuth, plus fuzzy workspace file search.
+  MCP inventory and OAuth, fuzzy workspace file search, and guarded external-agent
+  detection/import/history for Cursor and Claude Code artifacts.
 - **Account:** managed login/logout, identity, usage, quota windows, earned reset
   credits, workspace messages and owner credit nudges.
-- **Realtime and long-running work:** microphone/audio Realtime and focused background
-  terminal inspection/termination.
+- **Realtime and long-running work:** explicit Realtime v3 microphone/audio sessions
+  over WebRTC with WebSocket fallback, App Server voice discovery and a persisted v3
+  voice choice, plus focused background terminal inspection/termination.
 
 The event stream also covers the canonical turn/item lifecycle, streamed messages,
 reasoning and plans, tool progress, token usage, compaction, reroutes, warnings,
-connection failures and Realtime transport events. Unknown additive notifications are
-ignored safely.
+connection failures, external-agent import progress/completion and Realtime transport
+events. Unknown additive notifications are ignored safely.
 
 ## Correctly indirect or deliberately absent
 
@@ -55,22 +59,15 @@ ignored safely.
 
 These are optional follow-ups, ordered by likely value rather than protocol order:
 
-1. **Safety/model notices:** present `model/verification` and
-   `model/safetyBuffering/updated` as calm, bounded conversation notices instead of
-   silently ignoring them.
-2. **Voice choice:** use experimental `thread/realtime/listVoices` to replace the
-   hard-coded Realtime voice, with a small persisted selector and graceful fallback.
-3. **MCP config reload:** pair an explicit `config/mcpServer/reload` action with the
+1. **MCP config reload:** pair an explicit `config/mcpServer/reload` action with the
    existing inventory refresh for users who edited `config.toml` externally.
-4. **Managed constraints:** summarize relevant `configRequirements/read` restrictions
+2. **Managed constraints:** summarize relevant `configRequirements/read` restrictions
    inside Permissions/Hooks when enterprise policy actually supplies them.
-5. **Feedback:** add a deliberately opt-in `feedback/upload` form with a clear log
+3. **Feedback:** add a deliberately opt-in `feedback/upload` form with a clear log
    preview and attachment consent.
-6. **External-agent import:** offer the stable detect/import/history workflow only in
-   Advanced, with per-item preview and progress. Low frequency, so it stays late.
-7. **Remote control:** wait for the experimental enable/pair/client APIs to stabilize;
+4. **Remote control:** wait for the experimental enable/pair/client APIs to stabilize;
    this requires a complete security-oriented device management flow.
-8. **Memory controls and feature flags:** experimental and destructive/global. Do not
+5. **Memory controls and feature flags:** experimental and destructive/global. Do not
    expose until their user model and recovery semantics are settled.
 
 Git/worktrees are not on this list because App Server v2 currently has no stable API

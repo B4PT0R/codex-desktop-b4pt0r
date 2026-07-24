@@ -6,7 +6,7 @@ import type {
   RateLimitResetCreditsSummary,
   SendCreditsNudgeResponse,
 } from "./appServerTypes";
-import { isTauri, request, subscribeAppServerMessages } from "./codex";
+import { isDesktopApp, request, subscribeAppServerMessages } from "./codex";
 import { quotasFromRateLimits } from "./protocol";
 import { consumeRateLimitResetCreditParams } from "./protocol";
 import { creditsNudgeParams } from "./protocol";
@@ -59,7 +59,7 @@ export function useRateLimits(enabled: boolean): RateLimitsController {
   }, []);
 
   const refresh = useCallback(async () => {
-    if (!isTauri()) return;
+    if (!isDesktopApp()) return;
     const version = ++refreshVersion.current;
     setLoading(true);
     try {

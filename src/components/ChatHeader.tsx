@@ -3,8 +3,11 @@ import {
   ChevronDown,
   GitFork,
   Menu,
+  Play,
   RefreshCw,
+  RotateCcw,
   Shrink,
+  Square,
   Trash2,
   X,
 } from "lucide-react";
@@ -22,6 +25,12 @@ type ChatHeaderProps = {
   sidebarOpen: boolean;
   threadId?: string;
   title: string;
+  demoPlayback?: {
+    hasPlayed: boolean;
+    running: boolean;
+    onPlay: () => void;
+    onStop: () => void;
+  };
   onCompact: () => Promise<boolean>;
   onDelete: () => Promise<boolean>;
   onFork: () => Promise<boolean>;
@@ -38,6 +47,7 @@ export function ChatHeader({
   sidebarOpen,
   threadId,
   title,
+  demoPlayback,
   onCompact,
   onDelete,
   onFork,
@@ -203,6 +213,28 @@ export function ChatHeader({
           <div className="thread-title">{title}</div>
         )}
         <div className="header-actions">
+          {demoPlayback && (
+            <button
+              className="demo-playback-button"
+              onClick={
+                demoPlayback.running ? demoPlayback.onStop : demoPlayback.onPlay
+              }
+            >
+              {demoPlayback.running ? (
+                <>
+                  <Square /> {t("demoPlayback.stop")}
+                </>
+              ) : demoPlayback.hasPlayed ? (
+                <>
+                  <RotateCcw /> {t("demoPlayback.replay")}
+                </>
+              ) : (
+                <>
+                  <Play /> {t("demoPlayback.play")}
+                </>
+              )}
+            </button>
+          )}
           <ThreadGoalButton connected={connected} threadId={threadId} />
           <BackgroundTerminalsLoader
             busy={busy}

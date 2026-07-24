@@ -1,4 +1,4 @@
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openUrl } from "../lib/nativeBridge";
 import { ExternalLink, ListChecks } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useI18n } from "../i18n/I18nProvider";

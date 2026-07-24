@@ -32,7 +32,7 @@ state or regression baseline.
 - `tool-activity-en-native-1240x820.png` — persisted native file-change activity
   rebuilt with English summaries, statuses, details and condensation controls.
 - `integrations-skills-native-1240x820.png` — live workspace skill inventory in
-  the native Tauri client, now preceded by the connected Apps inventory.
+  the native desktop client, now preceded by the connected Apps inventory.
 - `composer-apps-native-1240x820.png` — bounded native list of connected Apps in
   the composer, with long backend descriptions clamped for scanability.
 - `composer-app-mention-native-1240x820.png` — selected GitHub App represented by
@@ -50,7 +50,7 @@ state or regression baseline.
   host-local `pwd` command, including the explicit no-sandbox/full-Linux-account warning;
   native QA cancelled it without execution.
 - `integrations-mcp-native-1240x820.png` — live MCP server, tool, version, and
-  authentication inventory in the native Tauri client.
+  authentication inventory in the native desktop client.
 - `permissions-native-1240x820.png` — live named permission profiles returned by
   App Server.
 - `account-native-1240x820.png` — live account and usage surface with the account
@@ -92,6 +92,30 @@ state or regression baseline.
   this project currently demonstrates the genuine empty state rather than mock data.
 - `settings-appearance-light-large-native.png` — live light theme and large interface
   size together, confirming the complete settings shell remains usable at 1240×820.
+
+## 2026-07-24
+
+- `advanced-import-preview-1240x820.png` — stable external-agent import surface in
+  the browser preview at desktop size, including explicit Claude Code/Cursor source
+  selection plus its empty and history states.
+- `advanced-import-preview-840x620.png` — the same surface at the configured minimum
+  window size, with the settings navigation and actions remaining readable.
+- `advanced-import-native-1240x820.png` — live desktop/App Server detection of
+  migratable Claude Code hooks and instructions; no item was imported during QA.
+- `voice-realtime-v3-preview-1240x820.png` — Realtime v3 voice preferences in the
+  browser preview, with the built-in V3/V1-compatible voice catalog.
+- `voice-realtime-v3-preview-840x620.png` — responsive voice settings at the
+  configured minimum viewport.
+- `voice-realtime-v3-native-1240x820.png` — live desktop settings populated by
+  `thread/realtime/listVoices`; QA persisted Maple, verified the native settings file,
+  then restored Juniper without starting a microphone session.
+- `composer-audio-controls-preview-1240x820.png` — distinct waveform Realtime and
+  microphone dictation controls in the desktop composer.
+- `composer-audio-controls-preview-840x620.png` — the same two controls at the
+  configured minimum viewport, with the composer remaining balanced.
+- `composer-audio-controls-native-1240x820.png` — the installed desktop client
+  showing the separate waveform and microphone actions in a live conversation;
+  QA did not activate either audio session.
 
 Screenshots are taken only after waiting at least 0.5 seconds after the last
 view transition so asynchronously rendered content is visible.

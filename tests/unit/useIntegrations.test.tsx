@@ -7,14 +7,14 @@ const subscribeMock = vi.hoisted(() => vi.fn());
 const openChromiumMock = vi.hoisted(() => vi.fn());
 const openUrlMock = vi.hoisted(() => vi.fn());
 vi.mock("../../src/lib/codex", () => ({
-  isTauri: () => true,
+  isDesktopApp: () => true,
   request: requestMock,
   subscribeAppServerMessages: subscribeMock,
 }));
 vi.mock("../../src/lib/useChromium", () => ({
   openInChromium: openChromiumMock,
 }));
-vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: openUrlMock }));
+vi.mock("../../src/lib/nativeBridge", () => ({ openUrl: openUrlMock }));
 
 import { useIntegrations } from "../../src/lib/useIntegrations";
 

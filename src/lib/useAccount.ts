@@ -6,7 +6,7 @@ import type {
   LoginAccountResponse,
 } from "./appServerTypes";
 import { useI18n } from "../i18n/I18nProvider";
-import { isTauri, request, subscribeAppServerMessages } from "./codex";
+import { isDesktopApp, request, subscribeAppServerMessages } from "./codex";
 import {
   accountReadParams,
   cancelLoginParams,
@@ -56,7 +56,7 @@ export function useAccount(enabled: boolean): AccountController {
 
   const refresh = useCallback(async () => {
     const current = ++generation.current;
-    if (!isTauri()) {
+    if (!isDesktopApp()) {
       setError(t("account.nativeOnly"));
       return;
     }
@@ -88,7 +88,7 @@ export function useAccount(enabled: boolean): AccountController {
   }, [t]);
 
   const startLogin = useCallback(async () => {
-    if (!isTauri()) {
+    if (!isDesktopApp()) {
       setAuthError(t("account.login.nativeOnly"));
       return;
     }
@@ -156,7 +156,7 @@ export function useAccount(enabled: boolean): AccountController {
   }, [enabled, refresh]);
 
   useEffect(() => {
-    if (!enabled || !isTauri()) return;
+    if (!enabled || !isDesktopApp()) return;
     return subscribeAppServerMessages((message) => {
       if (message.method === "account/updated") void refresh();
       if (message.method === "account/login/completed") {

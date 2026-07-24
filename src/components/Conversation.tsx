@@ -1,5 +1,5 @@
 import { Folder, Sparkles } from "lucide-react";
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { AgentActivity } from "../lib/activity";
 import type { ChatMessage, ToolCall } from "../types";
@@ -8,6 +8,7 @@ import { AgentStatus } from "./AgentStatus";
 import { Markdown } from "./Markdown";
 import { SignalCards } from "./SignalCards";
 import { ToolGroup } from "./ToolGroup";
+import { PlanProgressWidget } from "./PlanProgressWidget";
 
 type ConversationProps = {
   activity: AgentActivity;
@@ -28,51 +29,87 @@ export function Conversation({
 }: ConversationProps) {
   const { t } = useI18n();
   const scroll = useConversationScroll(messages, activity);
+  const plan = latestPlan(messages);
 
   return (
-    <section
-      className="conversation"
-      onScroll={scroll.onScroll}
-      ref={scroll.container}
-    >
-      {canLoadOlder && (
-        <div className="history-loader">
-          <button disabled={loadingOlder} onClick={onLoadOlder} type="button">
-            {loadingOlder
-              ? t("conversation.history.loading")
-              : t("conversation.history.loadOlder")}
-          </button>
-        </div>
-      )}
-      {messages.length === 0 ? (
-        <div className="empty codex-mark" aria-label="Codex">
-          <span className="hero-logo">
-            <Sparkles />
-          </span>
-          <h1>{t("empty.title")}</h1>
-          <p>{t("empty.subtitle")}</p>
-        </div>
-      ) : (
-        messages.map((message) => (
-          <ConversationMessage
-            key={message.id}
-            message={message}
-            onReviewDiff={onReviewDiff}
-          />
-        ))
-      )}
-      <AgentStatus activity={activity} />
-    </section>
+    <div className="conversation-shell">
+      <div className="conversation-viewport">
+        <section
+          className="conversation"
+          onScroll={scroll.onScroll}
+          ref={scroll.container}
+        >
+          {canLoadOlder && (
+            <div className="history-loader">
+              <button disabled={loadingOlder} onClick={onLoadOlder} type="button">
+                {loadingOlder
+                  ? t("conversation.history.loading")
+                  : t("conversation.history.loadOlder")}
+              </button>
+            </div>
+          )}
+          {messages.length === 0 ? (
+            <div className="empty codex-mark" aria-label="Codex">
+              <span className="hero-logo">
+                <Sparkles />
+              </span>
+              <h1>{t("empty.title")}</h1>
+              <p>{t("empty.subtitle")}</p>
+            </div>
+          ) : (
+            messages.map((message, messageIndex) => (
+              <ConversationMessage
+                key={message.id}
+                message={message}
+                onReviewDiff={onReviewDiff}
+                stepClosed={messageIndex < messages.length - 1}
+              />
+            ))
+          )}
+          <AgentStatus activity={activity} />
+          <PlanProgressWidget plan={plan} />
+        </section>
+      </div>
+    </div>
   );
 }
 
 const ConversationMessage = memo(function ConversationMessage({
   message,
   onReviewDiff,
+  stepClosed,
 }: {
   message: ChatMessage;
   onReviewDiff?: (tool: ToolCall) => void;
+  stepClosed: boolean;
 }) {
+  const [revealed, setRevealed] = useState(
+    () => !message.revealAfter || message.revealAfter <= Date.now(),
+  );
+  const reasoningSignals = message.signals?.filter(
+    (signal) => signal.kind === "reasoning",
+  );
+  const trailingSignals = message.signals?.filter(
+    (signal) => signal.kind !== "plan" && signal.kind !== "reasoning",
+  );
+
+  useEffect(() => {
+    if (!message.revealAfter) {
+      setRevealed(true);
+      return;
+    }
+    const remaining = message.revealAfter - Date.now();
+    if (remaining <= 0) {
+      setRevealed(true);
+      return;
+    }
+    setRevealed(false);
+    const timer = window.setTimeout(() => setRevealed(true), remaining);
+    return () => window.clearTimeout(timer);
+  }, [message.revealAfter]);
+
+  if (!revealed) return null;
+
   return (
     <article className={`message ${message.role}`}>
       <div className="message-content">
@@ -82,15 +119,40 @@ const ConversationMessage = memo(function ConversationMessage({
             {attachment}
           </span>
         ))}
+        {reasoningSignals && reasoningSignals.length > 0 && (
+          <SignalCards signals={reasoningSignals} />
+        )}
         <Markdown streaming={message.streaming}>{message.content}</Markdown>
-        {message.streaming && <span className="cursor" />}
-        {message.signals && message.signals.length > 0 && (
-          <SignalCards signals={message.signals} />
+        {trailingSignals && trailingSignals.length > 0 && (
+          <SignalCards signals={trailingSignals} />
         )}{" "}
         {message.tools && message.tools.length > 0 && (
-          <ToolGroup tools={message.tools} onReviewDiff={onReviewDiff} />
+          <ToolGroup
+            tools={message.tools}
+            onReviewDiff={onReviewDiff}
+            stepClosed={stepClosed}
+          />
         )}
       </div>
     </article>
   );
 });
+
+function latestPlan(messages: ChatMessage[]) {
+  for (
+    let messageIndex = messages.length - 1;
+    messageIndex >= 0;
+    messageIndex -= 1
+  ) {
+    const signals = messages[messageIndex].signals;
+    if (!signals) continue;
+    for (
+      let signalIndex = signals.length - 1;
+      signalIndex >= 0;
+      signalIndex -= 1
+    ) {
+      if (signals[signalIndex].kind === "plan") return signals[signalIndex];
+    }
+  }
+  return undefined;
+}

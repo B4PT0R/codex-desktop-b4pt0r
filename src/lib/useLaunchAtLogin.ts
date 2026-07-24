@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke, isDesktopApp } from "./nativeBridge";
 import { useCallback, useEffect, useState } from "react";
 
 export type LaunchAtLoginController = {
@@ -56,5 +56,5 @@ export function useLaunchAtLogin(): LaunchAtLoginController {
 }
 
 function isNative() {
-  return "__TAURI_INTERNALS__" in window;
+  return isDesktopApp();
 }

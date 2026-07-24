@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const requestMock = vi.hoisted(() => vi.fn());
 const subscribeMock = vi.hoisted(() => vi.fn());
 vi.mock("../../src/lib/codex", () => ({
-  isTauri: () => true,
+  isDesktopApp: () => true,
   request: requestMock,
   subscribeAppServerMessages: subscribeMock,
 }));

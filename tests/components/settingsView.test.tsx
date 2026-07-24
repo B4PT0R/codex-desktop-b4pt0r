@@ -8,13 +8,17 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "../../src/lib/nativeBridge";
 import type { ComponentProps } from "react";
 import { SettingsView } from "../../src/components/SettingsView";
 import { SettingsLoader } from "../../src/components/SettingsLoader";
 import { I18nProvider } from "../../src/i18n/I18nProvider";
 
-vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
+const invokeMock = vi.hoisted(() => vi.fn());
+vi.mock("../../src/lib/nativeBridge", () => ({
+  invoke: invokeMock,
+  isDesktopApp: () => Boolean(window.electronDesktop),
+}));
 
 const integrations = {
   hooks: { data: [], loading: false, warnings: [] },
@@ -77,11 +81,32 @@ const rateLimits = {
   resetCredits: null,
   sendOwnerNudge: vi.fn(),
 };
+const externalAgentImport = {
+  items: [],
+  histories: [],
+  detecting: false,
+  historyLoading: false,
+  importing: false,
+  completed: false,
+  results: [],
+  detect: vi.fn(),
+  importItems: vi.fn(),
+  refreshHistory: vi.fn(),
+  clearResult: vi.fn(),
+};
+const realtime = {
+  voice: "juniper" as const,
+  voices: ["juniper", "maple"] as const,
+  loading: false,
+  saving: false,
+  refresh: vi.fn(),
+  setVoice: vi.fn(),
+};
 
 afterEach(() => {
   cleanup();
   localStorage.clear();
-  Reflect.deleteProperty(window, "__TAURI_INTERNALS__");
+  Reflect.deleteProperty(window, "electronDesktop");
   vi.mocked(invoke).mockReset();
 });
 
@@ -95,6 +120,7 @@ function renderSettings(
     capabilities,
     collaborationMode: "default",
     effort: "medium",
+    externalAgentImport,
     integrations,
     model: "gpt-a",
     models: [
@@ -104,6 +130,7 @@ function renderSettings(
     permission: ":workspace",
     personality: "pragmatic",
     rateLimits,
+    realtime,
     section: "general",
     onChangeCollaborationMode: vi.fn(),
     onChangeEffort: vi.fn(),
@@ -185,7 +212,7 @@ describe("centre de réglages", () => {
   });
 
   it("demande une confirmation avant d’installer Chromium", async () => {
-    Object.defineProperty(window, "__TAURI_INTERNALS__", {
+    Object.defineProperty(window, "electronDesktop", {
       configurable: true,
       value: {},
     });
@@ -213,10 +240,13 @@ describe("centre de réglages", () => {
     const install = await screen.findByRole("button", {
       name: "Installer Chromium",
     });
+    await waitFor(() => expect(install).toBeEnabled());
     fireEvent.click(install);
     expect(invoke).not.toHaveBeenCalledWith("install_chromium", expect.anything());
     expect(
-      screen.getByText(/Autoriser l’installation du paquet chromium-browser/),
+      await screen.findByText(
+        /Autoriser l’installation du paquet chromium-browser/,
+      ),
     ).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Confirmer" }));
     await waitFor(() =>

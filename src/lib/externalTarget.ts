@@ -1,4 +1,4 @@
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openUrl } from "./nativeBridge";
 import { openInChromium } from "./useChromium";
 
 export type ExternalOpenMode = "chromium" | "system";

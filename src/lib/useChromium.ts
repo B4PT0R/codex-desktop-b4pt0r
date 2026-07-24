@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke, isDesktopApp } from "./nativeBridge";
 import { useCallback, useEffect, useState } from "react";
 
 export type ChromiumStatus = {
@@ -21,7 +21,7 @@ export type ChromiumController = {
 };
 
 export function useChromium(): ChromiumController {
-  const native = "__TAURI_INTERNALS__" in window;
+  const native = isDesktopApp();
   const [status, setStatus] = useState<ChromiumStatus>();
   const [loading, setLoading] = useState(native);
   const [error, setError] = useState<string>();

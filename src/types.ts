@@ -43,6 +43,10 @@ export type AgentSignal = {
 };
 export type ChatMessage = {
   id: string;
+  /** App Server item shared by chronological UI segments of one agent message. */
+  sourceItemId?: string;
+  /** Keeps an accepted text delta hidden until the preceding activity folds. */
+  revealAfter?: number;
   role: "user" | "assistant";
   content: string;
   tools?: ToolCall[];

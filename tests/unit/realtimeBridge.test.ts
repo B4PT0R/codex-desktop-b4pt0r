@@ -21,8 +21,13 @@ describe("chargement différé du realtime", () => {
     expect(realtime.stopRealtime).not.toHaveBeenCalled();
 
     const onFailure = vi.fn();
-    await startRealtime("thread-1", onFailure);
-    expect(realtime.startRealtime).toHaveBeenCalledWith("thread-1", onFailure);
+    await startRealtime("thread-1", "juniper", "conversation", onFailure);
+    expect(realtime.startRealtime).toHaveBeenCalledWith(
+      "thread-1",
+      "juniper",
+      "conversation",
+      onFailure,
+    );
 
     await acceptRealtimeAnswer("thread-1", "answer");
     expect(realtime.acceptRealtimeAnswer).toHaveBeenCalledWith(

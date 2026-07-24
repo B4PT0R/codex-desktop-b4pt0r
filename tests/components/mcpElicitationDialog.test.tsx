@@ -6,8 +6,7 @@ import { McpElicitationDialog } from "../../src/components/McpElicitationDialog"
 import { I18nProvider } from "../../src/i18n/I18nProvider";
 import type { McpElicitationRequest } from "../../src/lib/mcpElicitation";
 
-vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
-vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
+vi.mock("../../src/lib/nativeBridge", () => ({ openUrl: vi.fn() }));
 
 const baseRequest: McpElicitationRequest = {
   requestId: "request-1",

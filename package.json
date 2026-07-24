@@ -1,1 +1,86 @@
-{"name":"codex-desktop-linux","private":true,"version":"0.1.0","type":"module","scripts":{"dev":"vite","build":"tsc && vite build","tauri":"tauri","check":"tsc --noEmit","test":"vitest run","test:watch":"vitest","test:contract":"vitest run tests/contract","test:native":"cargo test --manifest-path src-tauri/Cargo.toml"},"dependencies":{"@tauri-apps/api":"^2.8.0","@tauri-apps/plugin-dialog":"^2.7.1","@tauri-apps/plugin-opener":"^2.5.4","lucide-react":"^0.468.0","react":"^19.0.0","react-dom":"^19.0.0","react-markdown":"^10.0.0","remark-gfm":"^4.0.0"},"devDependencies":{"@tauri-apps/cli":"^2.8.0","@testing-library/jest-dom":"^6.9.1","@testing-library/react":"^16.3.2","@types/react":"^19.0.0","@types/react-dom":"^19.0.0","@vitejs/plugin-react":"^4.3.4","ajv":"^8.20.0","jsdom":"^26.1.0","typescript":"~5.7.2","vite":"^6.0.3","vitest":"^3.2.7"}}
+{
+  "name": "codex-desktop-linux",
+  "productName": "Codex Desktop",
+  "desktopName": "codex-desktop.desktop",
+  "version": "0.2.0",
+  "description": "Independent desktop client for Codex on Linux",
+  "author": {
+    "name": "Codex Desktop Linux contributors",
+    "email": "noreply@codex-desktop-linux.local"
+  },
+  "private": true,
+  "type": "module",
+  "main": "electron/main.mjs",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "electron:dev": "concurrently -k -s first \"vite\" \"wait-on http://localhost:1420 && electron electron/main.mjs\"",
+    "electron:probe": "electron electron-spike/main.mjs",
+    "electron:pack": "npm run build && electron-builder --dir",
+    "electron:deb": "npm run build && electron-builder --linux deb",
+    "check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:contract": "vitest run tests/contract",
+    "test:electron": "node --test electron-spike/*.test.mjs electron/*.test.mjs"
+  },
+  "build": {
+    "appId": "com.b4pt0r.codex-desktop-linux",
+    "productName": "Codex Desktop",
+    "artifactName": "codex-desktop-linux_${version}_${arch}.${ext}",
+    "files": [
+      "dist/index.html",
+      "dist/assets/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "linux": {
+      "syncDesktopName": true,
+      "target": [
+        "deb"
+      ],
+      "category": "Development",
+      "icon": "electron/assets/icon.png",
+      "executableName": "codex-desktop"
+    },
+    "deb": {
+      "depends": [
+        "libgtk-3-0",
+        "libnotify4",
+        "libnss3",
+        "libxss1",
+        "libxtst6",
+        "xdg-utils"
+      ]
+    }
+  },
+  "dependencies": {
+    "katex": "^0.18.1",
+    "lucide-react": "^0.468.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-markdown": "^10.0.0",
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.0",
+    "remark-math": "^6.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "ajv": "^8.20.0",
+    "concurrently": "^9.2.4",
+    "electron": "^43.2.0",
+    "electron-builder": "^26.0.12",
+    "jsdom": "^26.1.0",
+    "typescript": "~5.7.2",
+    "vite": "^6.0.3",
+    "vitest": "^3.2.7",
+    "wait-on": "^9.0.1"
+  }
+}

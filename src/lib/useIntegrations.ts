@@ -7,7 +7,7 @@ import type {
   McpServerStatus,
   SkillsListResponse,
 } from "./appServerTypes";
-import { isTauri, request, subscribeAppServerMessages } from "./codex";
+import { isDesktopApp, request, subscribeAppServerMessages } from "./codex";
 import {
   mcpServerOauthLoginParams,
   mcpServerStatusListParams,
@@ -73,7 +73,7 @@ export function useIntegrations({
 
   const refreshSkills = useCallback(async () => {
     const generation = ++skillsGeneration.current;
-    if (!isTauri()) {
+    if (!isDesktopApp()) {
       setSkills({
         data: [],
         error: t("integrations.nativeOnly"),
@@ -107,7 +107,7 @@ export function useIntegrations({
 
   const refreshHooks = useCallback(async () => {
     const generation = ++hooksGeneration.current;
-    if (!isTauri()) {
+    if (!isDesktopApp()) {
       setHooks({
         data: [],
         error: t("integrations.nativeOnly"),
@@ -143,7 +143,7 @@ export function useIntegrations({
 
   const refreshMcp = useCallback(async () => {
     const generation = ++mcpGeneration.current;
-    if (!isTauri()) {
+    if (!isDesktopApp()) {
       setMcpServers({
         data: [],
         error: t("integrations.nativeOnly"),
@@ -256,7 +256,7 @@ export function useIntegrations({
   }, [hooksEnabled, refreshHooks]);
 
   useEffect(() => {
-    if (!enabled || !isTauri()) return;
+    if (!enabled || !isDesktopApp()) return;
     return subscribeAppServerMessages((message) => {
       if (message.method === "skills/changed") void refreshSkills();
       if (message.method === "mcpServer/startupStatus/updated")
