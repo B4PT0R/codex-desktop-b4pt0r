@@ -1,0 +1,176 @@
+.background-terminals {
+  position: relative;
+}
+
+.background-terminals-trigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 7px;
+  border-radius: 6px;
+  color: #92928d;
+  font-size: 10px;
+}
+
+.background-terminals-trigger:hover,
+.background-terminals-trigger[aria-expanded="true"] {
+  color: #d0d0cc;
+  background: #292927;
+}
+
+.background-terminals-trigger svg {
+  width: 14px;
+}
+
+.background-terminals-popover {
+  position: absolute;
+  top: 34px;
+  right: 0;
+  z-index: 16;
+  width: min(440px, calc(100vw - 36px));
+  overflow: hidden;
+  border: 1px solid #41413d;
+  border-radius: 10px;
+  background: #242422;
+  box-shadow: 0 18px 45px #000a;
+}
+
+.background-terminals-popover > header {
+  justify-content: space-between;
+  min-height: 58px;
+  padding: 10px 13px;
+}
+
+.background-terminals-popover > header > span {
+  display: grid;
+  gap: 3px;
+}
+
+.background-terminals-popover > header strong {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.background-terminals-popover > header small {
+  color: #858580;
+  font-size: 10px;
+}
+
+.background-terminals-popover > header button,
+.background-terminal-stop {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 6px;
+  color: #858580;
+}
+
+.background-terminals-popover > header button:hover,
+.background-terminal-stop:hover {
+  color: #d0d0cc;
+  background: #343431;
+}
+
+.background-terminals-popover > header button svg,
+.background-terminal-stop svg {
+  width: 13px;
+}
+
+.background-terminal-list {
+  max-height: min(430px, calc(100vh - 150px));
+  overflow: auto;
+}
+
+.background-terminal-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 13px;
+  border-top: 1px solid #343431;
+}
+
+.background-terminal-row > div:first-child {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 3px;
+}
+
+.background-terminal-row code,
+.background-terminal-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.background-terminal-row code {
+  color: #d0d0cc;
+  font-size: 11px;
+}
+
+.background-terminal-row small,
+.background-terminal-row > div > span {
+  color: #777772;
+  font-size: 9px;
+}
+
+.background-terminal-confirm {
+  display: grid;
+  flex: 0 0 auto;
+  justify-items: end;
+  gap: 6px;
+}
+
+.background-terminal-confirm > span {
+  display: flex;
+  gap: 5px;
+}
+
+.background-terminal-confirm button {
+  padding: 5px 7px;
+  border: 1px solid #41413d;
+  border-radius: 5px;
+  font-size: 9px;
+}
+
+.background-terminal-confirm .danger {
+  color: #d99a91;
+  border-color: #70473f;
+}
+
+.background-terminals-error {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding: 9px 13px;
+  border-top: 1px solid #61453e;
+  color: #c98c80;
+  font-size: 10px;
+}
+
+.background-terminals-error small {
+  overflow-wrap: anywhere;
+  color: #9f7770;
+}
+
+:root[data-theme="light"] .background-terminals-trigger:hover,
+:root[data-theme="light"] .background-terminals-trigger[aria-expanded="true"] {
+  color: #292925;
+  background: #e2e2dc;
+}
+
+:root[data-theme="light"] .background-terminals-popover {
+  border-color: #d5d5cf;
+  background: #fff;
+  box-shadow: 0 18px 50px #3d3d3526;
+}
+
+:root[data-theme="light"] .background-terminal-row {
+  border-color: #e0e0da;
+}
+
+:root[data-theme="light"] .background-terminal-row code {
+  color: #292925;
+}

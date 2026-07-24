@@ -1,0 +1,99 @@
+.work-panel {
+  width: min(430px, 38vw);
+  min-width: 320px;
+  flex: 0 0 auto;
+  border-left: 1px solid #2d2d2a;
+  background: #171716;
+}
+
+.work-panel > header {
+  height: 56px;
+  justify-content: space-between;
+}
+
+.work-panel > header span,
+.work-panel > header button {
+  display: flex;
+  align-items: center;
+}
+
+.work-panel > header span {
+  gap: 8px;
+}
+
+.work-panel > header svg {
+  width: 16px;
+}
+
+.work-panel > header button {
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  color: #8c8c87;
+}
+
+.work-panel > header button:hover {
+  background: #292927;
+}
+
+.work-panel-body {
+  height: calc(100vh - 56px);
+  overflow: auto;
+  padding: 18px;
+}
+
+.work-panel-summary {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 22px;
+}
+
+.work-panel-summary strong {
+  font-size: 13px;
+}
+
+.work-panel-summary span {
+  color: #888883;
+  font:
+    11px/1.5 ui-monospace,
+    SFMono-Regular,
+    Consolas,
+    monospace;
+  overflow-wrap: anywhere;
+}
+
+.work-panel h2 {
+  margin: 0 0 8px;
+  color: #888883;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.work-panel pre {
+  min-height: 160px;
+  margin: 0;
+  overflow: auto;
+  border: 1px solid #30302d;
+  border-radius: 7px;
+  padding: 12px;
+  background: #10100f;
+  color: #b7b7b1;
+  font:
+    11px/1.55 ui-monospace,
+    SFMono-Regular,
+    Consolas,
+    monospace;
+  white-space: pre;
+}
+
+@media (max-width: 1100px) {
+  .work-panel {
+    position: absolute;
+    inset: 0 0 0 auto;
+    z-index: 18;
+    width: min(430px, calc(100vw - 48px));
+    box-shadow: -20px 0 55px #0009;
+  }
+}

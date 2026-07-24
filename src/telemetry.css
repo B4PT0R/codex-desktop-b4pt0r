@@ -1,0 +1,78 @@
+.session-telemetry {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+  margin-left: auto;
+  color: #6f6f6b;
+  font-size: 9px;
+}
+
+.model-reroute {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.model-reroute {
+  max-width: 190px;
+  overflow: hidden;
+  color: #99948a;
+  text-overflow: ellipsis;
+}
+
+.model-reroute svg {
+  width: 11px;
+  flex: 0 0 auto;
+}
+
+.context-gauge {
+  color: #75a37b !important;
+}
+.context-gauge.warning {
+  color: #d39a58 !important;
+}
+.context-gauge.critical {
+  color: #d36f67 !important;
+}
+.context-gauge:disabled {
+  cursor: default;
+  opacity: 0.48;
+}
+.context-gauge-ring {
+  --context-track: #41413d;
+  position: relative;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(
+    currentColor var(--context-used),
+    var(--context-track) var(--context-used)
+  );
+}
+.context-gauge-ring::after {
+  position: absolute;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #20201e;
+  content: "";
+}
+.context-gauge-ring b {
+  position: relative;
+  z-index: 1;
+  color: #aaa9a4;
+  font-size: 7px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+@media (max-width: 700px) {
+  .model-reroute {
+    max-width: 120px;
+  }
+}

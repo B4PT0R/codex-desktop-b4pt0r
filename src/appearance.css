@@ -1,0 +1,217 @@
+:root {
+  color-scheme: dark;
+}
+
+:root[data-font-size="small"] #root {
+  zoom: 0.92;
+}
+
+:root[data-font-size="large"] #root {
+  zoom: 1.1;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  color: #282824;
+  background: #f5f5f1;
+}
+
+:root[data-theme="light"] .app,
+:root[data-theme="light"] main,
+:root[data-theme="light"] .settings-view,
+:root[data-theme="light"] .settings-content,
+:root[data-theme="light"] .settings-loader {
+  color: #282824;
+  background: #f7f7f4;
+}
+
+:root[data-theme="light"] .sidebar,
+:root[data-theme="light"] .settings-navigation {
+  border-color: #dddcd6;
+  background: #efefeb;
+}
+
+:root[data-theme="light"] header,
+:root[data-theme="light"] .sidebar-bottom,
+:root[data-theme="light"] .work-panel {
+  border-color: #dddcd6;
+}
+
+:root[data-theme="light"] .new-chat,
+:root[data-theme="light"] .selected,
+:root[data-theme="light"] .thread-row > button:first-child:hover,
+:root[data-theme="light"] .settings-navigation nav button:hover,
+:root[data-theme="light"] .settings-navigation nav button[aria-current="page"] {
+  color: #282824;
+  background: #e2e2dc;
+}
+
+:root[data-theme="light"] .thread-row > button:first-child,
+:root[data-theme="light"] .search,
+:root[data-theme="light"] .sidebar-bottom button,
+:root[data-theme="light"] .settings-navigation nav button,
+:root[data-theme="light"] .settings-back,
+:root[data-theme="light"] .settings-page > header p,
+:root[data-theme="light"] .settings-field-description small,
+:root[data-theme="light"] .empty.codex-mark p {
+  color: #6d6d68;
+}
+
+:root[data-theme="light"] .settings-navigation nav button small,
+:root[data-theme="light"] .settings-navigation nav h2 {
+  color: #85857f;
+}
+
+:root[data-theme="light"] .thread-title,
+:root[data-theme="light"] .message.assistant,
+:root[data-theme="light"] .settings-content > h1,
+:root[data-theme="light"] .settings-field-description strong,
+:root[data-theme="light"] .empty.codex-mark h1 {
+  color: #252522;
+}
+
+:root[data-theme="light"] .composer-shell,
+:root[data-theme="light"] .thread-menu-popover,
+:root[data-theme="light"] .composer-menu,
+:root[data-theme="light"] .slash-menu,
+:root[data-theme="light"] .modal,
+:root[data-theme="light"] .settings-card,
+:root[data-theme="light"] .tool-list,
+:root[data-theme="light"] .signal-card,
+:root[data-theme="light"] .realtime-banner {
+  border-color: #d5d5cf;
+  background: #fff;
+  box-shadow: 0 18px 50px #3d3d351c;
+}
+
+:root[data-theme="light"] .composer-shell textarea,
+:root[data-theme="light"] .file-search-input,
+:root[data-theme="light"] .file-search-input input,
+:root[data-theme="light"] .thread-menu-popover input,
+:root[data-theme="light"] .settings-search,
+:root[data-theme="light"] .settings-search input,
+:root[data-theme="light"] .settings-fields select,
+:root[data-theme="light"] .user-input-freeform {
+  color: #292925;
+  border-color: #d5d5cf;
+  background: #f7f7f4;
+}
+
+:root[data-theme="light"] .composer-shell:focus-within {
+  border-color: #aaa9a2;
+}
+
+:root[data-theme="light"] .composer-actions button:hover,
+:root[data-theme="light"] .composer-actions button.active {
+  color: #292925;
+  background: #e8e8e2;
+}
+
+:root[data-theme="light"] .composer-actions .send {
+  color: #f7f7f4;
+  background: #292925;
+}
+
+:root[data-theme="light"] .composer-actions .send:disabled {
+  color: #999992;
+  background: #e0e0da;
+}
+
+:root[data-theme="light"] .context-gauge-ring {
+  --context-track: #d8d8d2;
+}
+
+:root[data-theme="light"] .context-gauge-ring::after {
+  background: #fff;
+}
+
+:root[data-theme="light"] .context-gauge-ring b {
+  color: #555550;
+}
+
+:root[data-theme="light"] .message.user .message-content,
+:root[data-theme="light"] .file-chip,
+:root[data-theme="light"] .tool-output,
+:root[data-theme="light"] .message pre,
+:root[data-theme="light"] .work-panel pre,
+:root[data-theme="light"] .approval-modal code {
+  color: #353530;
+  border-color: #d8d8d2;
+  background: #efefeb;
+}
+
+:root[data-theme="light"] .message :not(pre) > code {
+  background: #e7e7e1;
+}
+
+:root[data-theme="light"] .tool-list > .tool-row,
+:root[data-theme="light"] .signal-body,
+:root[data-theme="light"] .settings-fields > label,
+:root[data-theme="light"] .settings-browser-row,
+:root[data-theme="light"] .settings-explanation,
+:root[data-theme="light"] .planned-settings > div {
+  border-color: #e0e0da;
+}
+
+:root[data-theme="light"] .tool-row strong,
+:root[data-theme="light"] .signal-card summary,
+:root[data-theme="light"] .signal-body,
+:root[data-theme="light"] .work-panel,
+:root[data-theme="light"] .work-panel pre {
+  color: #55554f;
+}
+
+:root[data-theme="light"] .work-panel {
+  background: #f2f2ee;
+}
+
+:root[data-theme="light"] .overlay {
+  background: #34342e66;
+}
+
+:root[data-theme="light"] .primary {
+  color: #f7f7f4 !important;
+  background: #292925 !important;
+}
+
+:root[data-theme="light"] .mcp-auth-actions button {
+  color: #393934;
+  background: #e5e5df;
+}
+
+:root[data-theme="light"] .inventory-message.neutral {
+  border-color: #c9d5ca;
+  color: #526a56;
+  background: #edf3ed;
+}
+
+:root[data-theme="light"] .inventory-message.warning {
+  border-color: #decbbd;
+  color: #865b41;
+  background: #f7eee8;
+}
+
+:root[data-theme="light"] .hook-row {
+  border-color: #e0e0da;
+}
+
+:root[data-theme="light"] .hook-copy strong {
+  color: #33332e;
+}
+
+:root[data-theme="light"] .hero-logo,
+:root[data-theme="light"] .logo {
+  color: #f7f7f4;
+  background: #292925;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

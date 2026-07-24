@@ -1,0 +1,65 @@
+import { RotateCcw } from "lucide-react";
+import { useEffect, useState, type ComponentType } from "react";
+import { useI18n } from "../i18n/I18nProvider";
+import type { SettingsViewProps } from "./SettingsView";
+
+let settingsModule: Promise<ComponentType<SettingsViewProps>> | undefined;
+
+function loadSettings() {
+  settingsModule ??= import("./SettingsView")
+    .then(({ SettingsView }) => SettingsView)
+    .catch((error) => {
+      settingsModule = undefined;
+      throw error;
+    });
+  return settingsModule;
+}
+
+export function SettingsLoader(props: SettingsViewProps) {
+  const { t } = useI18n();
+  const [View, setView] = useState<ComponentType<SettingsViewProps>>();
+  const [error, setError] = useState<string>();
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    let disposed = false;
+    setError(undefined);
+    void loadSettings()
+      .then((component) => {
+        if (!disposed) setView(() => component);
+      })
+      .catch((cause) => {
+        if (!disposed)
+          setError(cause instanceof Error ? cause.message : String(cause));
+      });
+    return () => {
+      disposed = true;
+    };
+  }, [attempt]);
+
+  if (View) return <View {...props} />;
+
+  return (
+    <main className="settings-loader">
+      {error ? (
+        <div role="alert">
+          <strong>{t("settings.loadError")}</strong>
+          <small>{error}</small>
+          <span>
+            <button className="secondary-button" onClick={props.onClose}>
+              {t("settings.back")}
+            </button>
+            <button onClick={() => setAttempt((value) => value + 1)}>
+              <RotateCcw /> {t("settings.retry")}
+            </button>
+          </span>
+        </div>
+      ) : (
+        <div role="status" aria-live="polite">
+          <span className="settings-loader-spinner" />
+          <span>{t("settings.loading")}</span>
+        </div>
+      )}
+    </main>
+  );
+}

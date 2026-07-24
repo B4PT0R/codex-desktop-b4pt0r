@@ -1,0 +1,401 @@
+import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
+import { ArrowUp, AudioWaveform, Mic, Plus, Square } from "lucide-react";
+import { open } from "@tauri-apps/plugin-dialog";
+import { isTauri } from "../lib/codex";
+import { AddMenu, AppsMenu, CommandMenu } from "./ComposerMenus";
+import { FileSearchMenu } from "./FileSearchMenu";
+import type { AppInfo } from "../lib/appServerTypes";
+import type { TurnContextItem } from "../lib/protocol";
+import { useI18n } from "../i18n/I18nProvider";
+import { useFileSearch, type FileSearchResult } from "../lib/useFileSearch";
+import type { ContextUsage } from "../lib/sessionTelemetry";
+import { ContextGauge } from "./ContextGauge";
+
+type ComposerProps = {
+  busy: boolean;
+  apps: AppInfo[];
+  appsError?: string;
+  appsLoading: boolean;
+  canSteer: boolean;
+  contextUsage?: ContextUsage;
+  cwd: string;
+  hasThread: boolean;
+  recording: boolean;
+  onOpenMcp: () => void;
+  onOpenPlugins: () => void;
+  onNeedApps: () => void;
+  onCompact: () => void;
+  onSend: (text: string, context: TurnContextItem[]) => void;
+  onStop: () => void;
+  onToggleVoice: () => void;
+};
+
+export function Composer({
+  busy,
+  apps,
+  appsError,
+  appsLoading,
+  canSteer,
+  contextUsage,
+  cwd,
+  hasThread,
+  recording,
+  onOpenMcp,
+  onOpenPlugins,
+  onNeedApps,
+  onCompact,
+  onSend,
+  onStop,
+  onToggleVoice,
+}: ComposerProps) {
+  const { t } = useI18n();
+  const [text, setText] = useState("");
+  const [context, setContext] = useState<TurnContextItem[]>([]);
+  const [menu, setMenu] = useState<"add" | "apps" | "files" | null>(null);
+  const [fileQuery, setFileQuery] = useState("");
+  const [commandMenuDismissed, setCommandMenuDismissed] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+  const shell = useRef<HTMLDivElement>(null);
+  const textarea = useRef<HTMLTextAreaElement>(null);
+  const addButton = useRef<HTMLButtonElement>(null);
+  const menuSurface = useRef<HTMLDivElement>(null);
+  const hasInput = Boolean(text.trim() || context.length);
+  const canSubmit = hasInput && (!busy || canSteer);
+  const fileSearch = useFileSearch(menu === "files", cwd);
+
+  function submit() {
+    if (!canSubmit) return;
+    onSend(text.trim(), context);
+    setText("");
+    setContext([]);
+  }
+
+  useEffect(() => {
+    function close(event: PointerEvent) {
+      if (!shell.current?.contains(event.target as Node)) setMenu(null);
+    }
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, []);
+
+  useEffect(() => {
+    if (!menu) return;
+    const surface = menuSurface.current;
+    surface
+      ?.querySelector<HTMLElement>("[data-menu-autofocus]")
+      ?.focus();
+    if (!surface?.contains(document.activeElement))
+      surface?.querySelector<HTMLButtonElement>(menuItemSelector)?.focus();
+  }, [menu]);
+
+  function closeMenu() {
+    setMenu(null);
+    addButton.current?.focus();
+  }
+
+  function moveInMenu(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      if (menu) closeMenu();
+      else {
+        setCommandMenuDismissed(true);
+        textarea.current?.focus();
+      }
+      return;
+    }
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+    const items = [
+      ...(menuSurface.current?.querySelectorAll<HTMLButtonElement>(
+        menuItemSelector,
+      ) ?? []),
+    ];
+    if (items.length === 0) return;
+    event.preventDefault();
+    const current = items.indexOf(document.activeElement as HTMLButtonElement);
+    const next =
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? items.length - 1
+          : event.key === "ArrowUp"
+            ? (current - 1 + items.length) % items.length
+            : (current + 1) % items.length;
+    items[next].focus();
+  }
+
+  async function pick() {
+    if (isTauri()) {
+      const selected = await open({
+        multiple: true,
+        directory: false,
+        filters: [
+          {
+            name: t("composer.images"),
+            extensions: ["png", "jpg", "jpeg", "gif", "webp"],
+          },
+        ],
+      });
+      if (selected)
+        setContext((items) => [
+          ...items,
+          ...(Array.isArray(selected) ? selected : [selected]).map((path) => ({
+            type: "localImage" as const,
+            path,
+          })),
+        ]);
+    } else {
+      input.current?.click();
+    }
+  }
+
+  return (
+    <div className="composer-shell" ref={shell}>
+      {text.startsWith("/") && !commandMenuDismissed && (
+        <CommandMenu
+          busy={busy}
+          hasThread={hasThread}
+          menuRef={menuSurface}
+          onMenuKeyDown={moveInMenu}
+          query={text}
+          onSelect={(command) => {
+            setText(command);
+            setCommandMenuDismissed(true);
+            textarea.current?.focus();
+          }}
+        />
+      )}
+      {menu === "add" && (
+        <AddMenu
+          menuRef={menuSurface}
+          onMenuKeyDown={moveInMenu}
+          onPickImages={() => {
+            setMenu(null);
+            void pick();
+          }}
+          onOpenApps={() => {
+            onNeedApps();
+            setMenu("apps");
+          }}
+          onOpenFiles={() => {
+            setFileQuery("");
+            setMenu("files");
+          }}
+          onShellCommand={() => {
+            setMenu(null);
+            setText((value) => (value.trim() ? `${value} ! ` : "! "));
+            textarea.current?.focus();
+          }}
+          onOpenMcp={onOpenMcp}
+          onOpenPlugins={onOpenPlugins}
+        />
+      )}
+      {menu === "files" && (
+        <FileSearchMenu
+          complete={fileSearch.complete}
+          error={fileSearch.error}
+          loading={fileSearch.loading}
+          menuRef={menuSurface}
+          onMenuKeyDown={moveInMenu}
+          query={fileQuery}
+          results={fileSearch.results}
+          onBack={() => setMenu("add")}
+          onQueryChange={(query) => {
+            setFileQuery(query);
+            fileSearch.search(query);
+          }}
+          onSelect={addFileMention}
+        />
+      )}
+      {menu === "apps" && (
+        <AppsMenu
+          apps={apps}
+          error={appsError}
+          loading={appsLoading}
+          menuRef={menuSurface}
+          onMenuKeyDown={moveInMenu}
+          onBack={() => setMenu("add")}
+          onSelect={(app) => {
+            if (
+              !context.some(
+                (item) =>
+                  item.type === "mention" && item.path === `app://${app.id}`,
+              )
+            ) {
+              setContext((items) => [
+                ...items,
+                { type: "mention", name: app.name, path: `app://${app.id}` },
+              ]);
+              setText(
+                (value) =>
+                  `${value}${value && !value.endsWith(" ") ? " " : ""}$${appSlug(app.name)} `,
+              );
+            }
+            setMenu(null);
+            textarea.current?.focus();
+          }}
+        />
+      )}
+      {context.length > 0 && (
+        <div className="attachments">
+          {context.map((item, index) => (
+            <button
+              key={`${item.type}-${item.path}-${index}`}
+              onClick={() => removeContext(index, item)}
+            >
+              {item.type === "mention"
+                ? `@${item.name}`
+                : item.path.split("/").at(-1)}{" "}
+              <span>×</span>
+            </button>
+          ))}
+        </div>
+      )}
+      <textarea
+        ref={textarea}
+        autoFocus
+        value={text}
+        rows={1}
+        placeholder={
+          busy ? t("composer.placeholder.steer") : t("composer.placeholder")
+        }
+        onChange={(event) => {
+          setText(event.target.value);
+          setCommandMenuDismissed(false);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            setMenu(null);
+            if (text.startsWith("/")) setCommandMenuDismissed(true);
+          }
+          if (event.key === "ArrowDown" && text.startsWith("/")) {
+            const first = shell.current?.querySelector<HTMLButtonElement>(
+              ".command-menu [role='menuitem']:not(:disabled)",
+            );
+            if (first) {
+              event.preventDefault();
+              first.focus();
+            }
+          }
+          if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            submit();
+          }
+        }}
+      />
+      <div className="composer-actions">
+        <div>
+          <button
+            ref={addButton}
+            aria-label={t("composer.context.add")}
+            aria-haspopup="menu"
+            aria-expanded={menu !== null}
+            onClick={() => setMenu((current) => (current ? null : "add"))}
+          >
+            <Plus />
+          </button>
+          <input
+            ref={input}
+            type="file"
+            accept="image/*"
+            multiple
+            hidden
+            onChange={(event) =>
+              setContext((items) => [
+                ...items,
+                ...Array.from(event.target.files ?? []).map((file) => ({
+                  type: "localImage" as const,
+                  path: file.name,
+                })),
+              ])
+            }
+          />
+        </div>
+        <div>
+          {recording && (
+            <span className="listening">
+              <AudioWaveform /> {t("composer.voice.listening")}
+            </span>
+          )}
+          <ContextGauge
+            context={contextUsage}
+            disabled={busy || !hasThread}
+            onCompact={onCompact}
+          />
+          <button
+            className={recording ? "active" : ""}
+            aria-label={t("composer.voice")}
+            onClick={onToggleVoice}
+          >
+            <Mic />
+          </button>
+          {busy && (
+            <button
+              className="stop"
+              aria-label={t("composer.stop")}
+              onClick={onStop}
+            >
+              <Square />
+              <span>{t("composer.stop.short")}</span>
+            </button>
+          )}
+          <button
+            className="send"
+            aria-label={busy ? t("composer.steer") : t("composer.send")}
+            disabled={!canSubmit}
+            onClick={submit}
+          >
+            <ArrowUp />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  function removeContext(index: number, item: TurnContextItem) {
+    setContext((items) => items.filter((_, current) => current !== index));
+    if (item.type === "mention") {
+      const token = item.path.startsWith("app://")
+        ? `$${appSlug(item.name)}`
+        : `@${item.name}`;
+      setText((value) =>
+        value
+          .replace(token, "")
+          .replace(/\s{2,}/g, " ")
+          .trimStart(),
+      );
+    }
+  }
+
+  function addFileMention(file: FileSearchResult) {
+    if (
+      !context.some(
+        (item) => item.type === "mention" && item.path === file.path,
+      )
+    ) {
+      setContext((items) => [
+        ...items,
+        { type: "mention", name: file.fileName, path: file.path },
+      ]);
+      setText(
+        (value) =>
+          `${value}${value && !value.endsWith(" ") ? " " : ""}@${file.fileName} `,
+      );
+    }
+    setMenu(null);
+    textarea.current?.focus();
+  }
+}
+
+const menuItemSelector = '[role="menuitem"]:not(:disabled)';
+
+function appSlug(name: string) {
+  return name
+    .toLocaleLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}

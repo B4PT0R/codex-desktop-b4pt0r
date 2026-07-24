@@ -1,0 +1,147 @@
+.composer-menu {
+  position: absolute;
+  bottom: calc(100% - 54px);
+  left: 10px;
+  z-index: 8;
+  width: min(430px, calc(100% - 20px));
+  padding: 6px;
+  border: 1px solid #3b3b37;
+  border-radius: 10px;
+  background: #242422;
+  box-shadow: 0 15px 45px #0008;
+}
+
+.composer-menu button {
+  display: flex;
+  width: 100%;
+  min-height: 45px;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  text-align: left;
+}
+
+.composer-menu button:hover:not(:disabled) {
+  background: #30302d;
+}
+
+.composer-menu button:disabled {
+  cursor: default;
+  opacity: 0.42;
+}
+
+.composer-menu b,
+.composer-menu span,
+.composer-menu small {
+  display: block;
+}
+
+.composer-menu span,
+.composer-menu small,
+.composer-menu p {
+  color: #92928d;
+}
+
+.composer-menu small {
+  margin-top: 3px;
+  font-size: 10px;
+}
+
+.composer-menu p {
+  margin: 0;
+  padding: 12px 10px;
+  font-size: 12px;
+}
+
+.command-menu button b {
+  width: 92px;
+  flex: 0 0 auto;
+}
+
+.command-menu button span {
+  font-size: 12px;
+}
+.command-menu {
+  max-height: min(480px, calc(100vh - 210px));
+  overflow-y: auto;
+}
+
+.add-menu {
+  width: min(330px, calc(100% - 20px));
+}
+
+.add-menu svg {
+  width: 18px;
+  flex: 0 0 auto;
+  color: #aaa9a3;
+}
+
+.apps-menu,
+.file-search-menu {
+  max-height: min(430px, calc(100vh - 210px));
+  overflow-y: auto;
+}
+
+.apps-menu .composer-menu-back,
+.file-search-menu .composer-menu-back {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  min-height: 38px;
+  border-bottom: 1px solid #3b3b37;
+  border-radius: 7px 7px 0 0;
+  background: #242422;
+  color: #d7d7d2;
+  font-weight: 600;
+}
+
+.apps-menu svg {
+  width: 18px;
+  flex: 0 0 auto;
+}
+
+.file-search-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 7px 5px;
+  padding: 7px 9px;
+  border: 1px solid #454540;
+  border-radius: 7px;
+  background: #1d1d1b;
+}
+
+.file-search-input:focus-within {
+  border-color: #77766e;
+}
+
+.file-search-input svg,
+.file-search-results svg {
+  width: 16px;
+  flex: 0 0 auto;
+  color: #92928d;
+}
+
+.file-search-input input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.file-search-results button small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.apps-menu button:not(.composer-menu-back) small {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}

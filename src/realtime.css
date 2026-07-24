@@ -1,0 +1,42 @@
+.voice-transcript {
+  position: absolute;
+  bottom: 142px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 13px;
+  color: #d5d5d0;
+  background: #252523;
+  border: 1px solid #484842;
+  border-radius: 9px;
+  box-shadow: 0 12px 36px #0008;
+  font-size: 12px;
+}
+
+.voice-transcript svg {
+  width: 17px;
+  color: #c76d6d;
+  animation: realtime-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes realtime-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+:root {
+  color-scheme: dark;
+}
+
+.settings-fields select,
+.settings-fields select option {
+  color: #e5e5e1;
+  background-color: #181817;
+}
+
+.settings-fields select:focus {
+  border-color: #666660;
+  outline: 1px solid #666660;
+}

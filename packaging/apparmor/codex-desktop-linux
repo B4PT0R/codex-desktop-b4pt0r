@@ -1,0 +1,13 @@
+# This profile keeps the Ubuntu user-namespace restriction enabled globally,
+# while allowing the Codex Desktop process tree to create the user namespace
+# required by the Codex bubblewrap sandbox.
+
+abi <abi/4.0>,
+include <tunables/global>
+
+profile codex-desktop-linux /usr/bin/codex-desktop-linux flags=(unconfined) {
+  userns,
+
+  # Site-specific additions and overrides.
+  include if exists <local/codex-desktop-linux>
+}

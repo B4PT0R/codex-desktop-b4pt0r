@@ -1,0 +1,52 @@
+.shell-command-modal {
+  max-width: 560px;
+}
+
+.shell-command-modal > div:not(.modal-actions) {
+  min-width: 0;
+}
+
+.shell-command-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  border-radius: 9px;
+  color: #d0a687;
+  background: #35271f;
+}
+
+.shell-command-icon svg {
+  width: 19px;
+}
+
+.shell-command-warning {
+  color: #d0a687 !important;
+}
+
+.shell-command-modal code {
+  display: block;
+  overflow: auto;
+  max-height: min(180px, 30vh);
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid #403d38;
+  border-radius: 7px;
+  color: #d2d2cd;
+  background: #181817;
+  font: 11px/1.5 "DM Mono", monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+:root[data-theme="light"] .shell-command-icon {
+  color: #8a5639;
+  background: #f2e5dc;
+}
+
+:root[data-theme="light"] .shell-command-modal code {
+  color: #353530;
+  border-color: #d8d8d2;
+  background: #efefeb;
+}

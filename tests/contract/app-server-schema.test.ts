@@ -1,0 +1,260 @@
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import Ajv from "ajv";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import {
+  accountReadParams,
+  appsListParams,
+  backgroundTerminalsListParams,
+  backgroundTerminalTerminateParams,
+  collaborationModeListParams,
+  consumeRateLimitResetCreditParams,
+  creditsNudgeParams,
+  fuzzyFileSearchSessionStartParams,
+  fuzzyFileSearchSessionStopParams,
+  fuzzyFileSearchSessionUpdateParams,
+  cancelLoginParams,
+  chatgptLoginParams,
+  realtimeStartParams,
+  mcpServerStatusListParams,
+  mcpServerOauthLoginParams,
+  hooksListParams,
+  permissionProfileListParams,
+  skillsConfigWriteParams,
+  skillsListParams,
+  threadArchiveParams,
+  threadBehaviorUpdateParams,
+  threadCompactParams,
+  threadDeleteParams,
+  threadCwdUpdateParams,
+  threadForkParams,
+  threadResumeParams,
+  threadSearchParams,
+  threadGoalClearParams,
+  threadGoalGetParams,
+  threadGoalSaveParams,
+  threadGoalStatusParams,
+  threadShellCommandParams,
+  threadSetNameParams,
+  threadStartParams,
+  threadTurnsListParams,
+  threadUnarchiveParams,
+  turnStartParams,
+  turnSteerParams,
+} from "../../src/lib/protocol";
+import { userInputResponse } from "../../src/lib/userInput";
+import { mcpElicitationResponse } from "../../src/lib/mcpElicitation";
+let directory = "";
+const validators = new Map<string, ReturnType<Ajv["compile"]>>();
+beforeAll(() => {
+  directory = mkdtempSync(join(tmpdir(), "codex-desktop-schema-"));
+  execFileSync("codex", [
+    "app-server",
+    "generate-json-schema",
+    "--out",
+    directory,
+    "--experimental",
+  ]);
+});
+afterAll(() => rmSync(directory, { recursive: true, force: true }));
+function validates(name: string, value: unknown) {
+  let validate = validators.get(name);
+  if (!validate) {
+    const v2Path = join(directory, "v2", `${name}.json`);
+    const schemaPath = existsSync(v2Path)
+      ? v2Path
+      : join(directory, `${name}.json`);
+    validate = new Ajv({ strict: false }).compile(
+      JSON.parse(readFileSync(schemaPath, "utf8")),
+    );
+    validators.set(name, validate);
+  }
+  expect(validate(value), JSON.stringify(validate.errors, null, 2)).toBe(true);
+}
+describe("contrat Codex installé", () => {
+  it("accepte le démarrage et l’annulation du login ChatGPT", () => {
+    validates("LoginAccountParams", chatgptLoginParams());
+    validates("CancelLoginAccountParams", cancelLoginParams("login-1"));
+  });
+  it("accepte app/list", () =>
+    validates("AppsListParams", appsListParams("thr_1")));
+  it("accepte la consommation d’un ticket de reset", () =>
+    validates(
+      "ConsumeAccountRateLimitResetCreditParams",
+      consumeRateLimitResetCreditParams("attempt-1", "credit-1"),
+    ));
+  it("accepte l’alerte de crédits au propriétaire", () =>
+    validates("SendAddCreditsNudgeEmailParams", creditsNudgeParams("credits")));
+  it("accepte thread/start", () =>
+    validates(
+      "ThreadStartParams",
+      threadStartParams("/tmp/project", "gpt-5.4", ":workspace"),
+    ));
+  it("accepte thread/archive", () =>
+    validates("ThreadArchiveParams", threadArchiveParams("thr_1")));
+  it("accepte thread/unarchive", () =>
+    validates("ThreadUnarchiveParams", threadUnarchiveParams("thr_1")));
+  it("accepte la suppression définitive d’une conversation", () =>
+    validates("ThreadDeleteParams", threadDeleteParams("thr_1")));
+  it("accepte le renommage et la compaction", () => {
+    validates(
+      "ThreadSetNameParams",
+      threadSetNameParams("thr_1", "Nouveau nom"),
+    );
+    validates("ThreadCompactStartParams", threadCompactParams("thr_1"));
+  });
+  it("accepte la création d’une branche", () =>
+    validates("ThreadForkParams", threadForkParams("thr_1")));
+  it("accepte une reprise avec une page initiale récente", () =>
+    validates("ThreadResumeParams", threadResumeParams("thr_1")));
+  it("accepte la pagination des tours précédents", () =>
+    validates(
+      "ThreadTurnsListParams",
+      threadTurnsListParams("thr_1", "cursor-1"),
+    ));
+  it("accepte le cycle de vie d’un objectif persistant", () => {
+    validates("ThreadGoalGetParams", threadGoalGetParams("thr_1"));
+    validates("ThreadGoalClearParams", threadGoalClearParams("thr_1"));
+    validates(
+      "ThreadGoalSetParams",
+      threadGoalSaveParams("thr_1", "Livrer une interface stable", 50_000),
+    );
+    validates(
+      "ThreadGoalSetParams",
+      threadGoalStatusParams("thr_1", "paused"),
+    );
+  });
+  it("accepte la recherche globale de conversations", () =>
+    validates("ThreadSearchParams", threadSearchParams("navigation")));
+  it("accepte une commande shell locale de thread", () =>
+    validates(
+      "ThreadShellCommandParams",
+      threadShellCommandParams("thr_1", "git status"),
+    ));
+  it("accepte le cwd dans thread/settings/update", () =>
+    validates(
+      "ThreadSettingsUpdateParams",
+      threadCwdUpdateParams("thr_1", "/tmp/autre"),
+    ));
+  it("accepte le comportement dans thread/settings/update", () =>
+    validates(
+      "ThreadSettingsUpdateParams",
+      threadBehaviorUpdateParams(
+        "thr_1",
+        "gpt-5.4",
+        "medium",
+        "pragmatic",
+        "default",
+        ":workspace",
+      ),
+    ));
+  it("accepte turn/start", () =>
+    validates(
+      "TurnStartParams",
+      turnStartParams(
+        "thr_1",
+        "gpt-5.4",
+        "bonjour",
+        [{ type: "localImage", path: "/tmp/image.png" }],
+        {
+          effort: "high",
+          personality: "friendly",
+          mode: "plan",
+        },
+      ),
+    ));
+  it("accepte turn/steer", () =>
+    validates(
+      "TurnSteerParams",
+      turnSteerParams("thr_1", "turn_1", "Continue", [
+        { type: "localImage", path: "/tmp/image.png" },
+      ]),
+    ));
+  it("accepte Realtime WebSocket", () =>
+    validates(
+      "ThreadRealtimeStartParams",
+      realtimeStartParams("thr_1", { type: "websocket" }),
+    ));
+  it("accepte Realtime WebRTC", () =>
+    validates(
+      "ThreadRealtimeStartParams",
+      realtimeStartParams("thr_1", { type: "webrtc", sdp: "v=0" }),
+    ));
+  it("accepte une réponse à request_user_input", () =>
+    validates(
+      "ToolRequestUserInputResponse",
+      userInputResponse({ scope: "Ciblée" }),
+    ));
+  it("accepte les demandes et réponses d’elicitation MCP", () => {
+    validates("McpServerElicitationRequestParams", {
+      threadId: "thr_1",
+      turnId: "turn_1",
+      serverName: "calendar",
+      mode: "form",
+      _meta: null,
+      message: "Choisissez une couleur",
+      requestedSchema: {
+        type: "object",
+        properties: {
+          color: { type: "string", enum: ["blue", "green"] },
+        },
+        required: ["color"],
+      },
+    });
+    validates(
+      "McpServerElicitationRequestResponse",
+      mcpElicitationResponse("accept", { color: "blue" }),
+    );
+  });
+  it("accepte la gestion des terminaux en arrière-plan", () => {
+    validates(
+      "ThreadBackgroundTerminalsListParams",
+      backgroundTerminalsListParams("thr_1"),
+    );
+    validates(
+      "ThreadBackgroundTerminalsTerminateParams",
+      backgroundTerminalTerminateParams("thr_1", "42"),
+    );
+  });
+  it("accepte les sessions de recherche fuzzy de fichiers", () => {
+    validates(
+      "FuzzyFileSearchSessionStartParams",
+      fuzzyFileSearchSessionStartParams("search-1", "/tmp/project"),
+    );
+    validates(
+      "FuzzyFileSearchSessionUpdateParams",
+      fuzzyFileSearchSessionUpdateParams("search-1", "composer"),
+    );
+    validates(
+      "FuzzyFileSearchSessionStopParams",
+      fuzzyFileSearchSessionStopParams("search-1"),
+    );
+  });
+  it("accepte l’inventaire et la configuration des intégrations", () => {
+    validates("HooksListParams", hooksListParams("/tmp/project"));
+    validates("SkillsListParams", skillsListParams("/tmp/project", true));
+    validates(
+      "SkillsConfigWriteParams",
+      skillsConfigWriteParams("/tmp/skills/review/SKILL.md", false),
+    );
+    validates(
+      "ListMcpServerStatusParams",
+      mcpServerStatusListParams("thr_1", "cursor-1"),
+    );
+  });
+  it("accepte le démarrage OAuth d’un serveur MCP", () =>
+    validates(
+      "McpServerOauthLoginParams",
+      mcpServerOauthLoginParams("github", "thr_1"),
+    ));
+  it("accepte les catalogues de capacités et la lecture du compte", () => {
+    validates(
+      "PermissionProfileListParams",
+      permissionProfileListParams("/tmp/project", "cursor-1"),
+    );
+    validates("CollaborationModeListParams", collaborationModeListParams());
+    validates("GetAccountParams", accountReadParams());
+  });
+});
