@@ -3,7 +3,12 @@ import { mkdtemp, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { readSettings, settingsPath, updateSettings } from "./settings.mjs";
+import {
+  readSettings,
+  SETTINGS_VERSION,
+  settingsPath,
+  updateSettings,
+} from "./settings.mjs";
 
 test("uses the existing Codex desktop settings location", () => {
   assert.equal(
@@ -22,6 +27,24 @@ test("atomically updates known preferences and preserves unknown fields", async 
   assert.equal(updated.theme, "dark");
   assert.deepEqual(JSON.parse(await readFile(file, "utf8")), updated);
   assert.deepEqual(await readSettings(file), updated);
+});
+
+test("serializes concurrent patches without losing either preference", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "codex-settings-"));
+  const file = path.join(directory, "settings.json");
+
+  await Promise.all([
+    updateSettings(file, { locale: "fr" }),
+    updateSettings(file, { theme: "light" }),
+    updateSettings(file, { sidebarWidth: 300 }),
+  ]);
+
+  assert.deepEqual(await readSettings(file), {
+    locale: "fr",
+    sidebarWidth: 300,
+    theme: "light",
+    version: SETTINGS_VERSION,
+  });
 });
 
 test("validates the persisted sidebar width", async () => {

@@ -54,9 +54,9 @@ export function signalFromItem(
       return {
         id,
         kind: "compaction",
-        title: t("signal.compaction"),
-        detail: t("signal.compaction.detail"),
-        status: "done",
+        title: t("signal.compaction.running"),
+        detail: t("signal.compaction.runningDetail"),
+        status: "running",
       };
     case "hookPrompt":
       return {
@@ -122,6 +122,41 @@ export function signalFromNotification(
       steps,
     };
   }
+  if (
+    message.method === "hook/started" ||
+    message.method === "hook/completed"
+  ) {
+    const run = record(params.run);
+    const id = stringValue(run?.id);
+    if (!id) return undefined;
+    const completed = message.method === "hook/completed";
+    const failed =
+      run?.status === "failed" ||
+      run?.status === "blocked" ||
+      run?.status === "stopped";
+    const entries = Array.isArray(run?.entries)
+      ? run.entries
+          .flatMap((entry) => {
+            const value = record(entry);
+            const text = boundedString(value?.text, 2_000);
+            return text ? [text] : [];
+          })
+          .slice(0, 3)
+      : [];
+    return {
+      id: `hook-${id}`,
+      kind: failed ? "warning" : "agent",
+      title:
+        boundedString(run?.statusMessage, 256) ??
+        t(completed ? "signal.hook.completed" : "signal.hook.running"),
+      detail:
+        entries.join("\n") ||
+        t("signal.hook.event", {
+          event: boundedString(run?.eventName, 128) ?? t("signal.hook.unknown"),
+        }),
+      status: failed ? "error" : completed ? "done" : "running",
+    };
+  }
   if (message.method === "model/verification") {
     const verifications = boundedStrings(params.verifications, 8, 128);
     if (verifications.length === 0) return undefined;
@@ -172,9 +207,18 @@ export function signalFromNotification(
 export function completedSignal(
   signal: AgentSignal,
   item: unknown,
+  t: Translate = defaultTranslate,
 ): AgentSignal {
   const value = record(item);
   const type = stringValue(value?.type);
+  if (type === "contextCompaction") {
+    return {
+      ...signal,
+      title: t("signal.compaction"),
+      detail: t("signal.compaction.detail"),
+      status: "done",
+    };
+  }
   const completedDetail =
     type === "reasoning"
       ? stringArray(value?.summary)?.join("\n")

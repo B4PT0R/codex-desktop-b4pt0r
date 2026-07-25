@@ -30,6 +30,8 @@ export type IntegrationsController = {
   mcpServers: IntegrationInventory<McpServerStatus>;
   skills: IntegrationInventory<AppServerSkill>;
   refreshMcp: () => Promise<void>;
+  reloadMcp: () => Promise<void>;
+  reloadingMcp: boolean;
   refreshSkills: () => Promise<void>;
   refreshHooks: () => Promise<void>;
   authenticateMcp: (server: McpServerStatus) => Promise<void>;
@@ -66,6 +68,7 @@ export function useIntegrations({
   const [updatingSkills, setUpdatingSkills] = useState<string[]>([]);
   const [authenticatingMcp, setAuthenticatingMcp] = useState<string[]>([]);
   const [mcpAuthNotice, setMcpAuthNotice] = useState<string>();
+  const [reloadingMcp, setReloadingMcp] = useState(false);
   const skillsGeneration = useRef(0);
   const hooksGeneration = useRef(0);
   const mcpGeneration = useRef(0);
@@ -182,6 +185,27 @@ export function useIntegrations({
     }
   }, [t, threadId]);
 
+  const reloadMcp = useCallback(async () => {
+    if (reloadingMcp) return;
+    setReloadingMcp(true);
+    setMcpAuthNotice(undefined);
+    setMcpServers((state) => ({ ...state, error: undefined }));
+    try {
+      await request("config/mcpServer/reload");
+      await refreshMcp();
+      setMcpAuthNotice(t("integrations.mcp.reloaded"));
+    } catch (error) {
+      setMcpServers((state) => ({
+        ...state,
+        error: t("integrations.mcp.reloadError", {
+          detail: errorMessage(error),
+        }),
+      }));
+    } finally {
+      setReloadingMcp(false);
+    }
+  }, [refreshMcp, reloadingMcp, t]);
+
   const setSkillEnabled = useCallback(
     async (skill: AppServerSkill, nextEnabled: boolean) => {
       setUpdatingSkills((paths) => [...paths, skill.path]);
@@ -295,6 +319,8 @@ export function useIntegrations({
     mcpAuthNotice,
     mcpServers,
     refreshMcp,
+    reloadMcp,
+    reloadingMcp,
     refreshHooks,
     refreshSkills,
     setSkillEnabled,

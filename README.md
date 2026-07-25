@@ -65,7 +65,7 @@ npm run build
 npm run electron:deb
 ```
 
-Le paquet est produit sous `dist/codex-desktop-linux_0.1.0_amd64.deb`.
+Le paquet est produit sous `dist/codex-desktop-linux_0.2.1_amd64.deb`.
 
 ## Sandbox Ubuntu
 

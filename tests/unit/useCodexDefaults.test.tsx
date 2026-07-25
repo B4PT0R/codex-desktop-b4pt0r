@@ -12,7 +12,11 @@ beforeEach(() => requestMock.mockReset());
 describe("valeurs Codex d'un nouveau thread", () => {
   it("hydrate le modèle et l'effort depuis la configuration effective", async () => {
     requestMock.mockResolvedValue({
-      config: { model: "gpt-5.6", model_reasoning_effort: "high" },
+      config: {
+        model: "gpt-5.6",
+        model_reasoning_effort: "high",
+        approval_policy: "never",
+      },
     });
     const onDefaults = vi.fn();
     const { rerender } = renderHook(
@@ -35,6 +39,7 @@ describe("valeurs Codex d'un nouveau thread", () => {
     expect(onDefaults).toHaveBeenLastCalledWith({
       model: "gpt-5.6",
       effort: "high",
+      approvalPolicy: "never",
     });
 
     rerender({ cwd: "/other" });

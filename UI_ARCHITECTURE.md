@@ -90,7 +90,9 @@ Responsabilités :
 - commandes shell locales préfixées par `!`, toujours confirmées car exécutées sans
   sandbox sur l’hôte App Server ;
 - envoyer, diriger un tour actif et interrompre ;
-- accès rapide au modèle, mode de travail et profil de permissions ;
+- accès rapide au modèle, mode de travail, profil de permissions et politique
+  d’approbation ; ces deux derniers réglages restent distincts et reflètent
+  l’état effectif renvoyé par App Server ;
 - contexte restant et reroutage de modèle sans polluer le fil ;
 - palette de commandes issue des capacités réellement disponibles.
 
@@ -185,7 +187,7 @@ les identifiants Bedrock externes restent administrés hors de l’application.
 | Revue                             | Carte de changement, panneau contextuel | Flux guidé, pas un réglage              |
 | MCP, apps, plugins, skills, hooks | Réglages Intégrations, mentions         | Catalogue et état de connexion          |
 | Compte, quotas, usage, messages   | Réglages Compte, indicateurs discrets   | Global, jamais mélangé au contexte      |
-| Realtime                          | Compositeur                             | Action directe, état temporaire         |
+| Realtime                          | Compositeur et conversation             | Action directe, parole streamée dans le message vocal principal |
 | Configuration                     | Réglages par domaine                    | Pas d’éditeur TOML générique par défaut |
 | Expérimental et import            | Réglages Avancé                         | Isolé et clairement signalé             |
 | FS, process, exec, ressources MCP | Infrastructure/panneaux                 | Pas de console RPC générique            |
@@ -208,7 +210,16 @@ droits, ne modifie pas les sources de paquets et n’installe rien silencieuseme
 l’interface rend visibles progression, annulation, erreur et nouvelle détection.
 Google Chrome et Microsoft Edge ne satisfont pas la détection normale. Un override
 `CODEX_CHROMIUM_EXECUTABLE` reste réservé aux besoins avancés de compatibilité avec
-une éventuelle évolution de l’automation officielle.
+une éventuelle évolution de l'automation officielle.
+
+L’objectif autonome et `AGENTS.md` sont des actions de configuration contextuelle
+du thread ou du workspace. Elles sont regroupées dans le menu ouvert par le titre
+de la conversation afin de garder la barre supérieure calme, tout en restant
+accessibles au même endroit que les autres actions du thread. `AGENTS.md` ouvre
+un grand éditeur modal adapté aux instructions longues. La couche native ne
+fournit pas un accès générique aux fichiers : elle borne lecture et écriture au
+seul `<workspace>/AGENTS.md`, détecte les conflits externes, refuse les liens
+symboliques et remplace le fichier atomiquement.
 
 ## Audit de l’UI actuelle
 
@@ -217,6 +228,9 @@ une éventuelle évolution de l’automation officielle.
 - La structure sidebar / conversation / compositeur et son comportement à 840 px.
 - Le regroupement des threads par espace de travail, la recherche et l’archivage.
 - Le fil typé : messages, signaux, outils, historique paginé et streaming.
+- Les erreurs produites par l’application utilisent une carte d’alerte dédiée
+  avec titre et détail technique ; elles ne se font jamais passer pour une
+  réponse ordinaire de l’agent.
 - Les dialogues d’approbation et de question avec gestion du focus.
 - Le menu de thread et ses actions stables.
 - La séparation Electron/IPC / transport JSON-RPC / normalisation / présentation.
@@ -231,7 +245,18 @@ une éventuelle évolution de l’automation officielle.
   que leur persistance dépasse les cartes inline ; un terminal persistant reste une
   surface inférieure séparée.
 - Le menu de commandes `/` devient une palette pilotée par des commandes déclarées,
-  testables et activées selon les capacités.
+  testables et activées selon les capacités. Il s’ancre au-dessus du composer
+  avec un espace visible : la palette peut défiler, mais ne recouvre jamais la
+  saisie en cours.
+- Pendant une session Realtime, les deltas du transcript assistant alimentent
+  directement le message vocal principal dans la conversation. La finalisation
+  remplace l’assemblage provisoire en place ; le composer ne porte aucune
+  surface de transcript redondante.
+- Les réponses finalisées de l’agent vocal restent le flux principal du chat et
+  portent l’accent rose Realtime. Les messages produits en parallèle par
+  l’agent textuel utilisent une surface bleue secondaire : visible pendant le
+  streaming, elle se replie automatiquement tout en restant réouvrable. Les
+  actions techniques conservent leur présentation autonome.
 - `styles.css` (près de 1 000 lignes) doit être découpé par surface lors de la
   restructuration correspondante, sans extraction CSS purement mécanique.
 - `App.tsx` doit céder la connexion/session et les états de surfaces avant d’ajouter

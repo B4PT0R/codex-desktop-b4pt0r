@@ -117,5 +117,64 @@ state or regression baseline.
   showing the separate waveform and microphone actions in a live conversation;
   QA did not activate either audio session.
 
+## 2026-07-25
+
+- `approval-policy-picker-preview-1240x820.png` — the light approval-policy
+  popover beside the permission profile, making “full access” and “never ask”
+  explicit independent choices.
+- `approval-policy-picker-preview-840x620.png` — the same approval control at
+  the configured minimum viewport without horizontal overflow.
+- `composer-context-footer-preview-1240x820.png` — the context/compaction ring
+  moved from the composer action cluster into the footer metrics group beside
+  the quota gauges, leaving the audio and turn controls less crowded.
+- `composer-context-footer-preview-840x620.png` — the same footer arrangement at
+  the configured minimum viewport, with model, permission, context and quota
+  controls remaining on one readable line.
+- `work-panel-layout-preview-1240x820.png` — the lazy structured multi-file diff
+  viewer in the desktop work panel, with unified line numbers, addition/deletion
+  stats and an optional raw-patch disclosure.
+- `work-panel-layout-preview-840x620.png` — the same structured diff at the
+  configured minimum viewport; the responsive panel stays inside the
+  conversation band and scrolls without covering the composer.
+- `agent-personality-settings-preview-1240x820.png` — the Agent settings expose
+  the thread personality alongside model, reasoning effort and work mode even
+  when older model catalogs omit the optional capability flag.
+- `agent-personality-settings-preview-840x620.png` — the same complete Agent
+  settings card at the configured minimum viewport.
+- `config-editor-settings-preview-1240x820.png` — the global `config.toml`
+  editor in browser-preview mode, with its bounded file identity, restart
+  guidance and explicit reload/save controls.
+- `config-editor-settings-preview-840x620.png` — the responsive editor with the
+  complete action row remaining visible at the configured minimum viewport.
+- `workspace-agents-editor-preview-1240x820.png` — the workspace-scoped
+  `AGENTS.md` editor opened from the thread-title action menu, with its full
+  writing area and guarded save controls.
+- `workspace-agents-editor-preview-840x620.png` — the same modal editor at the
+  configured minimum viewport, where the complete editor remains usable.
+- `thread-title-menu-preview-1240x820.png` — the thread-title menu groups Goal,
+  `AGENTS.md`, compaction, fork and deletion while leaving the top bar quiet;
+  the rename field appears only after the explicit edit action.
+- `thread-title-menu-preview-840x620.png` — the same action menu remains fully
+  visible inside the configured minimum viewport.
+- `application-error-message-preview-1240x820.png` — a client-side operation
+  failure uses a compact alert card instead of appearing as ordinary assistant
+  Markdown in the conversation.
+- `application-error-message-preview-840x620.png` — the same error modality
+  stays readable and contained at the configured minimum viewport.
+- `mcp-reload-preview-1240x820.png` — MCP settings distinguish a lightweight
+  inventory refresh from an explicit App Server configuration reload.
+- `mcp-reload-preview-840x620.png` — the same dual-action header remains
+  readable without horizontal overflow at the configured minimum viewport.
+- `slash-command-menu-preview-1240x820.png` — the `/` command palette sits
+  entirely above the composer, preserving a visible gap and unobstructed input.
+- `slash-command-menu-preview-840x620.png` — the viewport-bounded palette at
+  minimum size, with keyboard focus and internal scrolling preserved.
+- `realtime-dual-agent-chat-preview-1240x820.png` — completed Realtime speech
+  and its streaming state share the primary pink-identified chat response while
+  the concurrent text agent is retained in a compact blue disclosure; the
+  composer stays free of duplicate transcript UI.
+- `realtime-dual-agent-chat-preview-840x620.png` — the same dual-agent hierarchy
+  at the configured minimum viewport without horizontal overflow.
+
 Screenshots are taken only after waiting at least 0.5 seconds after the last
 view transition so asynchronously rendered content is visible.

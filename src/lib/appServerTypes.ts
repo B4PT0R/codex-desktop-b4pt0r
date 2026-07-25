@@ -18,6 +18,7 @@ export type ConfigReadResponse = {
   config: {
     model?: string | null;
     model_reasoning_effort?: string | null;
+    approval_policy?: string | null;
   };
 };
 
@@ -130,12 +131,18 @@ export type ActivePermissionProfile = {
   extends?: string | null;
 };
 
+export type SandboxPolicy = {
+  type: "dangerFullAccess" | "externalSandbox" | "readOnly" | "workspaceWrite";
+};
+
 export type ThreadRuntimeResponse = {
   thread: AppServerThread;
   cwd: string;
   model: string;
   reasoningEffort?: string | null;
   activePermissionProfile?: ActivePermissionProfile | null;
+  sandbox?: SandboxPolicy;
+  approvalPolicy?: string;
 };
 
 export type ThreadStartResponse = ThreadRuntimeResponse;
@@ -146,6 +153,7 @@ export type ThreadResumeResponse = {
   model: string;
   reasoningEffort?: string | null;
   activePermissionProfile?: ActivePermissionProfile | null;
+  sandbox?: SandboxPolicy;
   initialTurnsPage?: TurnsPage | null;
 };
 

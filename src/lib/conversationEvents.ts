@@ -185,6 +185,28 @@ function startItem(
   let next = messages;
 
   if (tool) {
+    const existingIndex = findLastIndex(next, (message) =>
+      Boolean(message.tools?.some((existing) => existing.id === tool.id)),
+    );
+    if (existingIndex >= 0) {
+      const existingMessage = next[existingIndex];
+      next = replaceAt(next, existingIndex, {
+        ...existingMessage,
+        tools: existingMessage.tools?.map((existing) => {
+          if (existing.id !== tool.id || existing.status !== "running") {
+            return existing;
+          }
+          return {
+            ...existing,
+            ...tool,
+            ...(existing.output ? { output: existing.output } : {}),
+            ...(existing.diff ? { diff: existing.diff } : {}),
+            ...(existing.progress ? { progress: existing.progress } : {}),
+          };
+        }),
+      });
+      return signal ? appendSignal(next, signal) : next;
+    }
     const last = next.at(-1);
     next =
       last?.role === "assistant"
@@ -255,7 +277,7 @@ function completeItem(
       ...(hasSignal
         ? {
             signals: message.signals?.map((signal) =>
-              signal.id === item.id ? completedSignal(signal, item) : signal,
+              signal.id === item.id ? completedSignal(signal, item, t) : signal,
             ),
           }
         : {}),
@@ -326,6 +348,18 @@ function appendSignal(
   messages: ChatMessage[],
   signal: AgentSignal,
 ): ChatMessage[] {
+  const existingIndex = findLastIndex(messages, (message) =>
+    Boolean(message.signals?.some((existing) => existing.id === signal.id)),
+  );
+  if (existingIndex >= 0) {
+    const existingMessage = messages[existingIndex];
+    return replaceAt(messages, existingIndex, {
+      ...existingMessage,
+      signals: existingMessage.signals?.map((existing) =>
+        existing.id === signal.id ? signal : existing,
+      ),
+    });
+  }
   let index = -1;
   for (
     let currentIndex = messages.length - 1;

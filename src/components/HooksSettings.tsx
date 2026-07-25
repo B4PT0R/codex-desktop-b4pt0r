@@ -6,8 +6,10 @@ import type { IntegrationsController } from "../lib/useIntegrations";
 
 export function HooksSettings({
   integrations,
+  managedOnly = false,
 }: {
   integrations: IntegrationsController;
+  managedOnly?: boolean;
 }) {
   const { t } = useI18n();
   const { hooks } = integrations;
@@ -26,6 +28,11 @@ export function HooksSettings({
       {hooks.error && (
         <div className="inventory-message error" role="alert">
           {hooks.error}
+        </div>
+      )}
+      {managedOnly && (
+        <div className="inventory-message neutral" role="status">
+          {t("settings.requirements.hooks")}
         </div>
       )}
       {hooks.warnings.map((warning, index) => (

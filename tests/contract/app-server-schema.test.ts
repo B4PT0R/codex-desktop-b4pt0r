@@ -22,6 +22,7 @@ import {
   chatgptLoginParams,
   realtimeStartParams,
   realtimeListVoicesParams,
+  realtimeThreadForkParams,
   mcpServerStatusListParams,
   mcpServerOauthLoginParams,
   hooksListParams,
@@ -40,9 +41,11 @@ import {
   threadGoalGetParams,
   threadGoalSaveParams,
   threadGoalStatusParams,
+  threadInjectTranscriptParams,
   threadShellCommandParams,
   threadSetNameParams,
   threadStartParams,
+  threadUnsubscribeParams,
   threadTurnsListParams,
   threadUnarchiveParams,
   turnStartParams,
@@ -87,6 +90,12 @@ function schema(name: string): Record<string, unknown> {
 describe("contrat Codex installé", () => {
   it("accepte la lecture de la configuration Codex effective", () =>
     validates("ConfigReadParams", configReadParams("/tmp/project")));
+  it("expose les contraintes administrées et le rechargement MCP", () => {
+    expect(schema("ConfigRequirementsReadResponse")).toHaveProperty(
+      "properties.requirements",
+    );
+    expect(schema("McpServerRefreshResponse")).toBeDefined();
+  });
   it("accepte le démarrage et l’annulation du login ChatGPT", () => {
     validates("LoginAccountParams", chatgptLoginParams());
     validates("CancelLoginAccountParams", cancelLoginParams("login-1"));
@@ -112,8 +121,43 @@ describe("contrat Codex installé", () => {
     ));
   it("accepte thread/archive", () =>
     validates("ThreadArchiveParams", threadArchiveParams("thr_1")));
+  it("accepte le fork éphémère d’une conversation Realtime", () =>
+    validates(
+      "ThreadForkParams",
+      realtimeThreadForkParams(
+        "thr_1",
+        "/tmp/project",
+        "gpt-5.4",
+        ":workspace",
+      ),
+    ));
   it("accepte thread/unarchive", () =>
     validates("ThreadUnarchiveParams", threadUnarchiveParams("thr_1")));
+  it("accepte le désabonnement du fork Realtime", () =>
+    validates(
+      "ThreadUnsubscribeParams",
+      threadUnsubscribeParams("thr_realtime"),
+    ));
+  it("accepte l’injection du transcript Realtime", () => {
+    validates(
+      "ThreadInjectItemsParams",
+      threadInjectTranscriptParams(
+        "thr_1",
+        "user",
+        "Question vocale",
+        "realtime_voice_user_1",
+      ),
+    );
+    validates(
+      "ThreadInjectItemsParams",
+      threadInjectTranscriptParams(
+        "thr_1",
+        "assistant",
+        "Réponse vocale",
+        "realtime_voice_assistant_1",
+      ),
+    );
+  });
   it("accepte la suppression définitive d’une conversation", () =>
     validates("ThreadDeleteParams", threadDeleteParams("thr_1")));
   it("accepte le renommage et la compaction", () => {
@@ -135,6 +179,12 @@ describe("contrat Codex installé", () => {
       expect(properties).toHaveProperty("reasoningEffort");
       expect(properties).toHaveProperty("activePermissionProfile");
     }
+  });
+  it("notifie les réglages effectifs complets d’un thread", () => {
+    const properties = schema("ThreadSettingsUpdatedNotification")
+      .properties as Record<string, unknown>;
+    expect(properties).toHaveProperty("threadId");
+    expect(properties).toHaveProperty("threadSettings");
   });
   it("accepte la pagination des tours précédents", () =>
     validates(
@@ -175,6 +225,7 @@ describe("contrat Codex installé", () => {
         "pragmatic",
         "default",
         ":workspace",
+        "never",
       ),
     ));
   it("accepte turn/start", () =>

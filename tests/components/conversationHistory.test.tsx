@@ -63,6 +63,28 @@ describe("historique de conversation", () => {
     expect(onLoadOlder).toHaveBeenCalledOnce();
   });
 
+  it("distingue une erreur applicative d’une réponse de l’agent", () => {
+    renderConversation({
+      activity: null,
+      messages: [
+        {
+          id: "application-error",
+          role: "assistant",
+          modality: "applicationError",
+          title: "Impossible de renommer cette conversation",
+          content: "Error: Mode aperçu navigateur",
+        },
+      ],
+    });
+
+    const error = screen.getByRole("alert", {
+      name: "Impossible de renommer cette conversation",
+    });
+    expect(error).toBeVisible();
+    expect(error).toHaveClass("application-error-message");
+    expect(error).toHaveTextContent("Error: Mode aperçu navigateur");
+  });
+
   it("sort le dernier plan du fil pour n’afficher qu’un widget persistant", async () => {
     renderConversation({
       activity: "thinking",
@@ -122,6 +144,55 @@ describe("historique de conversation", () => {
       reasoning.compareDocumentPosition(streamedText) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+
+  it("hiérarchise les réponses vocale et textuelle pendant Realtime", () => {
+    vi.useFakeTimers();
+    const { rerender } = renderConversation({
+      activity: "talking",
+      messages: [
+        {
+          id: "text",
+          role: "assistant",
+          modality: "realtimeText",
+          content: "Détail complet de l’agent textuel.",
+          streaming: true,
+        },
+        {
+          id: "voice",
+          role: "assistant",
+          modality: "realtimeVoice",
+          content: "Synthèse vocale prioritaire.",
+        },
+      ],
+    });
+
+    expect(
+      screen.getByRole("region", { name: "Réponse de l’agent textuel" }),
+    ).toHaveTextContent("Détail complet");
+    expect(screen.getByText("Agent vocal Realtime")).toBeVisible();
+    expect(screen.getByText("Synthèse vocale prioritaire.")).toBeVisible();
+
+    rerender(
+      <I18nProvider>
+        <Conversation
+          activity={null}
+          messages={[
+            {
+              id: "text",
+              role: "assistant",
+              modality: "realtimeText",
+              content: "Détail complet de l’agent textuel.",
+              streaming: false,
+            },
+          ]}
+        />
+      </I18nProvider>,
+    );
+    act(() => vi.advanceTimersByTime(500));
+    expect(
+      screen.getByRole("button", { name: "Réponse de l’agent textuel" }),
+    ).toHaveAttribute("aria-expanded", "false");
   });
 
   it("attend la fin du repli technique avant de révéler le texte suivant", () => {

@@ -8,13 +8,24 @@ import "../thread-goal.css";
 export function ThreadGoalButton({
   connected,
   threadId,
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger = false,
 }: {
   connected: boolean;
   threadId?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }) {
   const { locale, t } = useI18n();
   const controller = useThreadGoal(connected, threadId);
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = (next: boolean) => {
+    if (controlledOpen === undefined) setInternalOpen(next);
+    onOpenChange?.(next);
+  };
   const [objective, setObjective] = useState("");
   const [budget, setBudget] = useState("");
   const [confirmingClear, setConfirmingClear] = useState(false);
@@ -71,18 +82,23 @@ export function ThreadGoalButton({
     : null;
 
   return (
-    <div className="thread-goal" ref={root}>
-      <button
-        ref={opener}
-        className={controller.goal ? "thread-goal-trigger active" : "thread-goal-trigger"}
-        aria-expanded={open}
-        aria-label={t(controller.goal ? "goal.open" : "goal.create")}
-        title={t(controller.goal ? "goal.open" : "goal.create")}
-        onClick={() => setOpen((value) => !value)}
-      >
-        <Target />
-        {controller.goal && <span>{t(statusKey(controller.goal.status))}</span>}
-      </button>
+    <div
+      className={`thread-goal${hideTrigger ? " menu-owned" : ""}`}
+      ref={root}
+    >
+      {!hideTrigger && (
+        <button
+          ref={opener}
+          className={controller.goal ? "thread-goal-trigger active" : "thread-goal-trigger"}
+          aria-expanded={open}
+          aria-label={t(controller.goal ? "goal.open" : "goal.create")}
+          title={t(controller.goal ? "goal.open" : "goal.create")}
+          onClick={() => setOpen(!open)}
+        >
+          <Target />
+          {controller.goal && <span>{t(statusKey(controller.goal.status))}</span>}
+        </button>
+      )}
       {open && (
         <div
           ref={panel}

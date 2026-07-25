@@ -18,13 +18,14 @@ import {
   chatgptLoginParams,
   realtimeStartParams,
   realtimeListVoicesParams,
-  realtimeThreadStartParams,
+  realtimeThreadForkParams,
   threadBehaviorUpdateParams,
   threadSearchParams,
   threadGoalClearParams,
   threadGoalGetParams,
   threadGoalSaveParams,
   threadGoalStatusParams,
+  threadInjectTranscriptParams,
   threadShellCommandParams,
   threadCompactParams,
   threadCwdUpdateParams,
@@ -32,6 +33,7 @@ import {
   threadResumeParams,
   threadSetNameParams,
   threadStartParams,
+  threadUnsubscribeParams,
   threadTurnsListParams,
   turnStartParams,
   turnSteerParams,
@@ -152,6 +154,19 @@ describe("constructeurs JSON-RPC", () => {
     expect(
       threadStartParams("/tmp/project", "gpt-test", undefined),
     ).not.toHaveProperty("permissions"));
+  it("transmet explicitement une politique d’approbation sélectionnée", () =>
+    expect(
+      threadStartParams(
+        "/tmp/project",
+        "gpt-test",
+        ":danger-full-access",
+        "pragmatic",
+        "never",
+      ),
+    ).toMatchObject({
+      permissions: ":danger-full-access",
+      approvalPolicy: "never",
+    }));
   it("laisse App Server choisir le cwd par défaut", () =>
     expect(
       threadStartParams(undefined, "gpt-test", ":workspace"),
@@ -219,6 +234,7 @@ describe("constructeurs JSON-RPC", () => {
         "pragmatic",
         "default",
         ":workspace",
+        "never",
       ),
     ).toMatchObject({
       threadId: "thr",
@@ -227,6 +243,7 @@ describe("constructeurs JSON-RPC", () => {
       personality: "pragmatic",
       collaborationMode: { mode: "default" },
       permissions: ":workspace",
+      approvalPolicy: "never",
     }));
   it("modifie le cwd du thread chargé", () =>
     expect(threadCwdUpdateParams("thr", "/tmp/autre")).toEqual({
@@ -240,6 +257,7 @@ describe("constructeurs JSON-RPC", () => {
     });
     expect(threadCompactParams("thr")).toEqual({ threadId: "thr" });
     expect(threadForkParams("thr")).toEqual({ threadId: "thr" });
+    expect(threadUnsubscribeParams("thr")).toEqual({ threadId: "thr" });
   });
   it("borne la reprise aux tours récents complets", () =>
     expect(threadResumeParams("thr")).toEqual({
@@ -267,7 +285,7 @@ describe("constructeurs JSON-RPC", () => {
       version: "v3",
       model: "gpt-live-1-codex",
       voice: "juniper",
-      includeStartupContext: false,
+      includeStartupContext: true,
       outputModality: "audio",
       codexResponsesAsItems: false,
       initialItems: [],
@@ -294,15 +312,59 @@ describe("constructeurs JSON-RPC", () => {
       ).transport,
     ).toEqual({ type: "webrtc", sdp: "v=0" });
   });
-  it("isole les conversations vocales dans un thread éphémère", () => {
+  it("isole les conversations vocales dans un fork éphémère du parent", () => {
     expect(
-      realtimeThreadStartParams("/work", "gpt-5.4", ":workspace", "pragmatic"),
+      realtimeThreadForkParams(
+        "parent",
+        "/work",
+        "gpt-5.4",
+        ":workspace",
+      ),
     ).toMatchObject({
+      threadId: "parent",
       cwd: "/work",
       model: "gpt-5.4",
       permissions: ":workspace",
-      personality: "pragmatic",
       ephemeral: true,
+      excludeTurns: true,
+    });
+  });
+  it("construit les items de transcript à injecter dans le thread principal", () => {
+    expect(
+      threadInjectTranscriptParams(
+        "thr",
+        "user",
+        "Question vocale",
+        "realtime_voice_user_1",
+      ),
+    ).toEqual({
+      threadId: "thr",
+      items: [
+        {
+          id: "realtime_voice_user_1",
+          type: "message",
+          role: "user",
+          content: [{ type: "input_text", text: "Question vocale" }],
+        },
+      ],
+    });
+    expect(
+      threadInjectTranscriptParams(
+        "thr",
+        "assistant",
+        "Réponse vocale",
+        "realtime_voice_assistant_1",
+      ),
+    ).toEqual({
+      threadId: "thr",
+      items: [
+        {
+          id: "realtime_voice_assistant_1",
+          type: "message",
+          role: "assistant",
+          content: [{ type: "output_text", text: "Réponse vocale" }],
+        },
+      ],
     });
   });
 });

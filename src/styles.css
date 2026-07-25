@@ -62,6 +62,20 @@ button {
 button:hover {
   color: #fff;
 }
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid #aaa9a35c;
+  outline-offset: 2px;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #aaa9a34a;
+  outline-offset: 1px;
+}
 .app {
   position: relative;
   display: flex;
@@ -309,7 +323,7 @@ button:hover {
   place-items: center;
   width: 28px;
   height: 28px;
-  border-radius: 5px;
+  border-radius: 50%;
   color: #777;
   opacity: 0;
   transition: opacity 120ms ease;
@@ -359,8 +373,12 @@ main {
   min-width: 0;
   flex: 1;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: 56px 1fr auto;
   background: #1b1b1a;
+}
+main > * {
+  min-width: 0;
 }
 header {
   border-bottom: 1px solid #292927;
@@ -411,6 +429,32 @@ header button svg {
   color: #92928f;
   font-size: 11px;
 }
+.thread-menu-name {
+  display: grid;
+  gap: 3px;
+  min-height: 38px;
+  padding: 2px 0;
+}
+.thread-menu-name > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.thread-menu-name small {
+  color: #92928f;
+  font-size: 11px;
+}
+.thread-menu-name strong {
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+  color: #deded9;
+  font-size: 13px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .thread-menu-popover > label > span {
   display: flex;
   gap: 6px;
@@ -424,7 +468,7 @@ header button svg {
   background: #181817;
 }
 .thread-menu-popover label button,
-.thread-menu-close {
+.thread-menu-name button {
   display: grid;
   place-items: center;
   width: 30px;
@@ -433,8 +477,20 @@ header button svg {
   color: #aaa;
 }
 .thread-menu-popover label button:hover:not(:disabled),
-.thread-menu-close:hover {
+.thread-menu-name button:hover {
   background: #33332f;
+}
+.thread-menu-name button {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid #3b3b38;
+  border-radius: 50%;
+}
+.thread-menu-name button svg {
+  width: 12px;
+  height: 12px;
 }
 .thread-menu-popover label button:disabled {
   opacity: 0.4;
@@ -476,16 +532,6 @@ header button svg {
 }
 .thread-menu-action.danger:hover:not(:disabled) {
   background: #3a2826;
-}
-.thread-menu-close {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 24px;
-  height: 24px;
-}
-.thread-menu-close svg {
-  width: 13px;
 }
 .header-actions {
   margin-left: auto;
@@ -611,6 +657,17 @@ header button svg {
 }
 .markdown-fallback {
   white-space: pre-wrap;
+}
+.streaming-latex {
+  white-space: pre-wrap;
+}
+.streaming-math-display {
+  display: block;
+  max-width: 100%;
+  margin: 1em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  text-align: center;
 }
 .message-content .katex {
   font-size: 1.04em;
@@ -775,13 +832,6 @@ footer {
 }
 .composer-actions .stop {
   color: #c98282;
-  display: flex;
-  width: auto;
-  border-radius: 7px;
-  padding: 0 9px;
-  gap: 5px;
-  font-size: 12px;
-  font-weight: 600;
 }
 .composer-actions .stop:hover {
   background: #432d2d;
@@ -831,6 +881,25 @@ footer {
 }
 .footer-settings svg {
   width: 13px;
+}
+.footer-metrics {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+.footer-settings .context-gauge {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+}
+.footer-settings .context-gauge:hover:not(:disabled) {
+  background: #2c2c29;
 }
 .model-quick-picker-shell {
   position: static;
@@ -886,7 +955,9 @@ footer {
   text-align: left;
 }
 .footer-settings .model-quick-picker-list button:hover,
+.footer-settings .model-quick-picker-list button:focus-visible,
 .footer-settings .model-quick-picker-list button.selected {
+  outline: 0;
   color: #e8e8e4;
   background: #30302d;
 }
@@ -935,10 +1006,12 @@ footer {
   border-color: #676760;
   background: #383834;
 }
-.permission-quick-picker-shell {
+.permission-quick-picker-shell,
+.approval-quick-picker-shell {
   position: static;
 }
-.permission-quick-picker {
+.permission-quick-picker,
+.approval-quick-picker {
   position: absolute;
   z-index: 30;
   bottom: 34px;
@@ -992,7 +1065,9 @@ footer {
   text-align: left;
 }
 .footer-settings .permission-quick-picker-list button:hover:not(:disabled),
+.footer-settings .permission-quick-picker-list button:focus-visible:not(:disabled),
 .footer-settings .permission-quick-picker-list button.selected {
+  outline: 0;
   color: #e8e8e4;
   background: #30302d;
 }
@@ -1033,7 +1108,7 @@ footer {
   color: #87a985;
 }
 .quota-quick-picker-shell {
-  margin-left: auto;
+  margin-left: 0;
   position: static;
 }
 .footer-settings .quota {

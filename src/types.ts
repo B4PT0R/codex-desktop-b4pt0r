@@ -48,6 +48,10 @@ export type ChatMessage = {
   /** Keeps an accepted text delta hidden until the preceding activity folds. */
   revealAfter?: number;
   role: "user" | "assistant";
+  /** Distinguishes assistant and client-owned presentation surfaces. */
+  modality?: "realtimeVoice" | "realtimeText" | "applicationError";
+  /** Client-owned heading for an application error card. */
+  title?: string;
   content: string;
   tools?: ToolCall[];
   signals?: AgentSignal[];

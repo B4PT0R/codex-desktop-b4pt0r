@@ -1,82 +1,170 @@
-# App Server v2 coverage audit
+# App Server v2 coverage
 
-Authoritative snapshot: installed Codex `0.145.0` schema and official checkout
-`0dfa778dae`, 2026-07-24. Stable product work is checked against the installed
-schema; post-0.145 additions on `main` remain prospective until their stable release.
-The inventory was derived from `codex-rs/app-server-protocol/src/protocol/common.rs`
-and checked against `codex-rs/app-server/README.md`.
+## Authoritative snapshot
 
-The installed experimental schema declares 126 client requests, 11 server requests
-and 70 notifications. Endpoint count is not a product target: filesystem, process and
-configuration primitives support user workflows without becoming generic buttons.
+This inventory was refreshed on 2026-07-25 against:
 
-## Product coverage
+- installed `codex-cli 0.145.0`;
+- its generated stable and experimental v2 JSON schemas;
+- official Codex checkout `0dfa778dae6a`;
+- `codex-rs/app-server-protocol/src/protocol/common.rs`;
+- `codex-rs/app-server/README.md`.
 
-The client directly calls 50 request methods, covering the main workflows:
+The installed schemas expose:
 
-- **Threads:** start, resume, list/search, paginated history, rename, fork,
-  archive/unarchive/delete, compact, interrupt/steer, shell commands and persisted
-  goals (read/create/update/pause/resume/clear).
-- **Turns:** text, images, structured file/App mentions, collaboration and permission
-  context, streaming, review, diffs and tool activity.
-- **Agent interaction:** command/file/permission approvals, user questions, MCP
-  elicitations, current-time responses and safe cleanup of resolved requests.
-- **Models and capabilities:** model catalog, reasoning effort, personality,
-  collaboration presets and named permission profiles.
-- **Integrations:** skills inventory/toggle, effective hooks inventory, connected Apps,
-  MCP inventory and OAuth, fuzzy workspace file search, and guarded external-agent
-  detection/import/history for Cursor and Claude Code artifacts.
-- **Account:** managed login/logout, identity, usage, quota windows, earned reset
-  credits, workspace messages and owner credit nudges.
-- **Realtime and long-running work:** explicit Realtime v3 microphone/audio sessions
-  over WebRTC with WebSocket fallback, App Server voice discovery and a persisted v3
-  voice choice, plus focused background terminal inspection/termination.
+| Surface | Stable | With experimental API |
+| --- | ---: | ---: |
+| Client requests | 89 | 126 |
+| Server requests | 10 | 11 |
+| Server notifications | 70 | 70 |
 
-The event stream also covers the canonical turn/item lifecycle, streamed messages,
-reasoning and plans, tool progress, token usage, compaction, reroutes, warnings,
-connection failures, external-agent import progress/completion and Realtime transport
-events. Unknown additive notifications are ignored safely.
+The desktop client opts into `capabilities.experimentalApi`. It emits 53 product
+request methods in addition to the one-shot `initialize` handshake:
 
-## Correctly indirect or deliberately absent
+- 41 are stable;
+- 12 are experimental;
+- every request shape added or changed by this client is checked against the
+  installed schema in the contract suite.
+
+It explicitly interprets 54 of the 70 notification method names and answers 6
+of the 11 server-request methods. Unknown additive notifications remain
+forward-compatible and do not crash the session. Counts are useful audit
+checkpoints, not product targets: App Server deliberately includes host,
+filesystem, process and compatibility primitives that should not become generic
+buttons.
+
+## Feature coverage
+
+| Product domain | App Server surface used | Coverage | Maturity and notes |
+| --- | --- | --- | --- |
+| Connection and lifecycle | `initialize`, process exit/reconnect, one-shot initialized state | Complete | Stable transport over stdio. Experimental WebSocket hosting is intentionally not used. |
+| Thread creation and hydration | `thread/start`, `thread/resume`, `thread/list`, `thread/turns/list` | Complete for the desktop workflow | Recent history and older-page loading are covered. `thread/turns/list` is experimental. Raw unloaded item APIs are not needed. |
+| Thread discovery | `thread/search`, local recent-thread grouping | Complete | Global content search is experimental. `thread/searchOccurrences` is not exposed because ordinary search already covers the product flow. |
+| Thread management | rename, fork, archive, unarchive, delete, compact | Complete | Success, confirmation and failure are covered. Archive, unarchive and close notifications reconcile the sidebar and active session when another client changes the thread. |
+| Turns and steering | `turn/start`, `turn/steer`, `turn/interrupt` | Complete | Text, images, file mentions, App mentions, collaboration, model, reasoning, personality and permission context are constructed through typed protocol helpers. |
+| Review | `review/start`, review-mode items, turn diffs | Complete | Inline review activity and the structured persistent diff panel are covered. |
+| Agent output | message streaming, reasoning summaries, plans, compaction, warnings and errors | Complete for user-facing output | Raw reasoning text and raw upstream response events are intentionally not rendered. Experimental raw plan deltas are not needed because `turn/plan/updated` drives the live plan widget. |
+| Tool activity | item lifecycle, command output, terminal interaction, file patches, MCP progress and completed artifacts | Complete for canonical Codex tools | Unknown item types are ignored safely. `item/fileChange/outputDelta` is not separately shown when patch updates/completion already provide the useful diff. |
+| Approvals and questions | command, file-change and permission approval requests; user input; MCP elicitation; resolved-request cleanup | Complete for v2 flows | Legacy `applyPatchApproval` and `execCommandApproval` callbacks are not used by this v2 client. |
+| Persistent goals | `thread/goal/get`, `thread/goal/set`, `thread/goal/clear`, goal notifications | Complete | Creation, update, pause/resume, progress and guarded deletion are covered. |
+| Thread behavior | `thread/settings/update`, `thread/settings/updated` | Complete for current controls | Model, effort, collaboration, personality, permission profile, approval policy and cwd changes are written. Start, resume and live notifications share one effective-state normalizer, so server state wins. |
+| Models and capability pickers | `model/list`, `collaborationMode/list`, `permissionProfile/list` | Complete for current controls | Collaboration-mode discovery is experimental. `modelProvider/capabilities/read` is not needed for the current single-provider UI. |
+| Global Codex defaults | `config/read` plus bounded native `config.toml` editing | Complete for current product scope | Structured reads hydrate defaults. Native editing preserves hand-authored TOML/comments through a narrowly scoped file boundary rather than pretending structured writes can round-trip them. |
+| Skills | `skills/list`, `skills/config/write`, `skills/changed` | Complete | Inventory, warnings, enable/disable and refresh are covered. Runtime extra-root administration remains configuration-owned. |
+| Hooks | `hooks/list`, hook-prompt items, `hook/started`, `hook/completed` | Complete for current scope | Effective inventory, configuration warnings and a quiet runtime lifecycle are visible. Managed-only policy is explained when active. |
+| MCP | `mcpServerStatus/list`, OAuth login, `config/mcpServer/reload` and status notifications | Complete for inventory/authentication | Users can explicitly reload `config.toml` MCP configuration before refreshing inventory. Manual generic resource/tool invocation is intentionally absent. |
+| Apps/connectors | `app/list`, list updates, `$app` mentions and typed `app://` context | Complete | `app/read` and `app/installed` do not add value to the current picker/invocation flow. |
+| External-agent import | detect, import, history recovery, progress and completion | Complete for Cursor and Claude Code artifacts | Guarded, experimental-adjacent workflow isolated under Advanced settings. |
+| File search | fuzzy-search session start/update/stop plus notifications | Complete | Experimental session API; cancellation, stale response protection and keyboard selection are covered. |
+| Account and login | account read, ChatGPT login/cancel/logout and login notifications | Complete for Codex-managed ChatGPT auth | Bedrock and externally hosted token/attestation flows are intentionally outside the ordinary Linux client. |
+| Usage and workspace billing | usage, rate limits, update notifications, reset credits, workspace messages and owner nudge | Complete | Quota windows, reset times, guarded credit consumption and relevant workspace messages are covered. |
+| Realtime voice v3 | start/stop, voice list, SDP, transcript, audio/session lifecycle notifications, `thread/inject_items` | Complete for model-context persistence | Experimental voice transport with stable raw-item injection. The client uses browser-owned WebRTC only; it does **not** claim a WebSocket fallback. Finalized utterances are injected into the persistent parent rollout in order. Current resume projection omits standalone injected response items, so visual replay remains a backend gap. |
+| Dictation | Codex OAuth transcription endpoint through the native Electron boundary | Complete, indirect | This is not an App Server realtime request. Capture uses WebM/Opus and the authenticated Codex backend transcription endpoint. |
+| Background terminals | list and terminate | Complete for focused inspection | Experimental. Bulk `clean` is not exposed because individual termination is safer and sufficient. |
+| Managed Chromium | no App Server request | Complete, native | Browser automation and media viewing are Electron-owned and intentionally separate from the App Server protocol. |
+| Workspace instructions | no App Server request | Complete, native | `<workspace>/AGENTS.md` is edited through a single-file bounded native boundary with conflict detection and atomic replacement. |
+
+## Emitted request inventory
+
+The 53 product methods currently emitted by the renderer are:
+
+- **Threads and turns (23):** `thread/start`, `thread/resume`,
+  `thread/list`, `thread/search`, `thread/turns/list`, `thread/name/set`,
+  `thread/fork`, `thread/archive`, `thread/unarchive`, `thread/delete`,
+  `thread/compact/start`, `thread/settings/update`, `thread/inject_items`,
+  `thread/shellCommand`,
+  `thread/goal/get`, `thread/goal/set`, `thread/goal/clear`,
+  `thread/backgroundTerminals/list`,
+  `thread/backgroundTerminals/terminate`, `turn/start`, `turn/steer`,
+  `turn/interrupt`, `review/start`.
+- **Models, defaults and managed policy (6):** `model/list`,
+  `collaborationMode/list`, `permissionProfile/list`, `config/read`,
+  `configRequirements/read`, `config/mcpServer/reload`.
+- **Integrations and discovery (12):** `app/list`, `skills/list`,
+  `skills/config/write`, `hooks/list`, `mcpServerStatus/list`,
+  `mcpServer/oauth/login`, `fuzzyFileSearch/sessionStart`,
+  `fuzzyFileSearch/sessionUpdate`, `fuzzyFileSearch/sessionStop`,
+  `externalAgentConfig/detect`, `externalAgentConfig/import`,
+  `externalAgentConfig/import/readHistories`.
+- **Account and usage (9):** `account/read`, `account/usage/read`,
+  `account/workspaceMessages/read`, `account/rateLimits/read`,
+  `account/rateLimitResetCredit/consume`,
+  `account/sendAddCreditsNudgeEmail`, `account/login/start`,
+  `account/login/cancel`, `account/logout`.
+- **Realtime (3):** `thread/realtime/start`, `thread/realtime/stop`,
+  `thread/realtime/listVoices`.
+
+The 12 experimental methods in that inventory are:
+
+`collaborationMode/list`, the three `fuzzyFileSearch/session*` methods,
+`thread/backgroundTerminals/list`, `thread/backgroundTerminals/terminate`,
+`thread/realtime/start`, `thread/realtime/stop`,
+`thread/realtime/listVoices`, `thread/search`, `thread/settings/update`, and
+`thread/turns/list`.
+
+## Server-initiated requests
+
+The client answers:
+
+- `item/commandExecution/requestApproval`;
+- `item/fileChange/requestApproval`;
+- `item/permissions/requestApproval`;
+- `item/tool/requestUserInput`;
+- `mcpServer/elicitation/request`;
+- experimental `currentTime/read`.
+
+It intentionally does not answer:
+
+- legacy `applyPatchApproval` and `execCommandApproval`, because current v2
+  flows use the typed item approval requests;
+- `item/tool/call`, because the client registers no client-owned dynamic tools;
+- `account/chatgptAuthTokens/refresh` and `attestation/generate`, which belong
+  to externally hosted/internal authentication rather than Codex-managed login.
+
+## Deliberately indirect or absent surfaces
 
 | Protocol surface | Decision |
 | --- | --- |
-| `fs/*`, `command/exec*`, `process/*` | Host/agent primitives. Exposed through Codex tools, artifact viewers and the guarded `thread/shellCommand`, not a generic remote shell/file manager. |
-| `mcpServer/resource/read`, `mcpServer/tool/call` | Used by agentic MCP workflows; a generic manual RPC console would duplicate the agent and weaken safety. |
-| `thread/read`, `thread/loaded/list`, `thread/items/list`, `thread/inject_items` | Resume and bounded turn pagination provide the user workflow. Raw item injection and loaded-process diagnostics are infrastructure. |
+| `fs/*`, `command/exec*`, `process/*` | Host/agent primitives. User outcomes are exposed through Codex tools, artifacts and guarded shell-command flows, not a generic remote shell or file manager. |
+| `mcpServer/resource/read`, `mcpServer/tool/call` | Agentic MCP workflows already own these operations. A manual RPC console would duplicate the agent and weaken safety. |
+| `thread/read`, `thread/loaded/list`, `thread/items/list` | Resume and bounded turn pagination provide the user workflow. Loaded-process diagnostics and generic item paging remain infrastructure. |
 | `thread/unsubscribe`, elicitation counters | App Server lifecycle bookkeeping, not user actions. |
-| `thread/metadata/update` | Only patches stored Git metadata; it is not Git/worktree management. No stable v2 worktree API exists. |
-| `thread/rollback` | Deprecated; intentionally excluded. |
-| `skills/extraRoots/set` | Runtime host configuration. Normal workspace skills and config-backed roots remain visible through `skills/list`. |
-| `app/read`, `app/installed` | `app/list` supplies the accessible connector inventory needed by settings and mentions. |
-| `item/tool/call` | Dynamic-tool callback is not advertised because this client registers no client-owned dynamic tools. |
-| token refresh, attestation | Internal/external-host authentication surfaces are not advertised; Codex-managed ChatGPT login is used. |
-| `windowsSandbox/*`, Windows warnings | Not applicable to this Linux client. |
-| plugin/marketplace/share/install APIs | Official README marks the production-facing plugin catalog/install workflow under development and says not to call it from production clients. Keep the navigation placeholder-free until that restriction is removed. |
-| environment APIs | Remote executor administration is experimental platform infrastructure; local workspace selection remains the default daily flow. |
+| `thread/metadata/update` | Patches stored Git metadata only; it is not a stable Git/worktree product API. |
+| `thread/rollback` | Deprecated and intentionally excluded. |
+| `config/value/write`, `config/batchWrite` | Cannot round-trip comments or arbitrary hand-authored TOML. The bounded native editor owns raw `config.toml`; typed App Server reads still hydrate defaults. |
+| `skills/extraRoots/set` | Runtime host configuration. Normal workspace/config-backed roots remain visible through `skills/list`. |
+| `app/read`, `app/installed` | `app/list` provides the connector data required by settings and mentions. |
+| Marketplace/plugin share/install/uninstall | Discovery may become useful later, but official docs still mark production install/uninstall under development and explicitly prohibit production clients from calling them. |
+| `experimentalFeature/*` | Global runtime feature mutation is not an ordinary desktop preference and can violate managed requirements. |
+| `thread/memoryMode/set`, `memory/reset` | Experimental and potentially destructive/global; defer until the memory user model and recovery semantics stabilize. |
+| `remoteControl/*` | Experimental security/device-management surface requiring a complete enrollment, status, revoke and recovery flow. |
+| `environment/*` and thread environment notifications | Experimental remote-executor administration. Local Linux workspaces remain the supported daily flow. |
+| `feedback/upload` | Valuable only with explicit consent, redacted diagnostic preview and attachment controls. |
+| `windowsSandbox/*` and Windows warnings | Not applicable to the Linux package. |
+| raw responses, moderation metadata and unstable realtime items | Backend/internal or unstable payloads. Ignore safely until a concrete user-facing contract exists. |
 
-## Remaining product opportunities
+## Prioritized compatibility work
 
-These are optional follow-ups, ordered by likely value rather than protocol order:
+1. **Diagnostic feedback:** design redacted export first, then optionally add
+   guarded `feedback/upload`.
 
-1. **MCP config reload:** pair an explicit `config/mcpServer/reload` action with the
-   existing inventory refresh for users who edited `config.toml` externally.
-2. **Managed constraints:** summarize relevant `configRequirements/read` restrictions
-   inside Permissions/Hooks when enterprise policy actually supplies them.
-3. **Feedback:** add a deliberately opt-in `feedback/upload` form with a clear log
-   preview and attachment consent.
-4. **Remote control:** wait for the experimental enable/pair/client APIs to stabilize;
-   this requires a complete security-oriented device management flow.
-5. **Memory controls and feature flags:** experimental and destructive/global. Do not
-   expose until their user model and recovery semantics are settled.
+Remote control, environments, memory reset and feature-flag mutation remain
+deliberately later than these compatibility improvements. No stable App Server
+Git/worktree workflow exists in this snapshot.
 
-Git/worktrees are not on this list because App Server v2 currently has no stable API
-for them. Plugin installation is not on the implementation list while the official
-production-client prohibition remains in force.
+## Audit procedure
 
-## Audit maintenance
+On every material Codex upgrade:
 
-Repeat this audit when the parent Codex checkout changes materially. Compare all three
-macro inventories in `common.rs`, then inspect README stability notes; a new wire method
-is not automatically a new UI requirement. Add contract coverage whenever this client
-constructs a new request payload.
+1. record the exact installed `codex --version` and official checkout commit;
+2. generate both stable and `--experimental` JSON schemas;
+3. compare client, server-request and notification method inventories;
+4. classify additions as stable, experimental, internal/host primitive or
+   product-relevant;
+5. update typed normalization before presentation;
+6. add contract coverage for every newly emitted request shape;
+7. update this document and the concise compatibility note in `TODO.md`.
+
+A new wire method is not automatically a new UI feature. Conversely, a server
+notification that changes effective state may matter even when no new button is
+required.

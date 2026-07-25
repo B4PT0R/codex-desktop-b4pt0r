@@ -3,10 +3,12 @@ import type { ConfigReadResponse } from "./appServerTypes";
 import { appServerRecord, appServerString } from "./appServerValues";
 import { request } from "./codex";
 import { configReadParams } from "./protocol";
+import type { ApprovalPolicy } from "./protocol";
 
 export type CodexThreadDefaults = {
   model?: string;
   effort?: string;
+  approvalPolicy?: ApprovalPolicy;
 };
 
 type Options = {
@@ -38,6 +40,7 @@ export function useCodexDefaults({
         callbacks.current.onDefaults({
           model: appServerString(config?.model),
           effort: appServerString(config?.model_reasoning_effort),
+          approvalPolicy: approvalPolicy(config?.approval_policy),
         });
       })
       .catch((error) => {
@@ -47,4 +50,10 @@ export function useCodexDefaults({
       disposed = true;
     };
   }, [connected, cwd, enabled]);
+}
+
+function approvalPolicy(value: unknown): ApprovalPolicy | undefined {
+  return value === "untrusted" || value === "on-request" || value === "never"
+    ? value
+    : undefined;
 }

@@ -1,7 +1,9 @@
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { writeFileAtomically } from "./atomic-write.mjs";
 
 export const SETTINGS_VERSION = 1;
+const updateQueues = new Map();
 
 export function settingsPath(home) {
   return path.join(home, ".codex", "codex-desktop-linux.json");
@@ -22,18 +24,26 @@ export async function readSettings(file) {
 
 export async function updateSettings(file, patch) {
   validatePatch(patch);
+  const previous = updateQueues.get(file) ?? Promise.resolve();
+  const update = previous
+    .catch(() => undefined)
+    .then(() => updateSettingsNow(file, patch));
+  updateQueues.set(file, update);
+  return update.finally(() => {
+    if (updateQueues.get(file) === update) updateQueues.delete(file);
+  });
+}
+
+async function updateSettingsNow(file, patch) {
   const document = {
     ...(await readSettings(file)),
     ...patch,
     version: SETTINGS_VERSION,
   };
-  await mkdir(path.dirname(file), { recursive: true });
-  const temporary = `${file}.${process.pid}.tmp`;
-  await writeFile(temporary, `${JSON.stringify(document, null, 2)}\n`, {
+  await writeFileAtomically(file, `${JSON.stringify(document, null, 2)}\n`, {
+    createDirectory: true,
     mode: 0o600,
-    flag: "wx",
   });
-  await rename(temporary, file);
   return document;
 }
 

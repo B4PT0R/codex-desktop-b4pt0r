@@ -1,5 +1,4 @@
-import { AudioWaveform } from "lucide-react";
-import type { Permission } from "../lib/protocol";
+import type { ApprovalPolicy, Permission } from "../lib/protocol";
 import type { Model, Quota } from "../types";
 import type { ThreadTelemetry } from "../lib/sessionTelemetry";
 import { Composer } from "./Composer";
@@ -12,6 +11,8 @@ import { PermissionQuickPicker } from "./PermissionQuickPicker";
 import type { PermissionProfileSummary } from "../lib/appServerTypes";
 import type { RateLimitResetCreditsSummary } from "../lib/appServerTypes";
 import { QuotaQuickPicker } from "./QuotaQuickPicker";
+import { ContextGauge } from "./ContextGauge";
+import { ApprovalQuickPicker } from "./ApprovalQuickPicker";
 
 type ChatFooterProps = {
   apps: AppsController;
@@ -22,6 +23,8 @@ type ChatFooterProps = {
   effort: string;
   models: Model[];
   permission: Permission;
+  approvalPolicy: ApprovalPolicy;
+  allowedApprovalPolicies?: ApprovalPolicy[];
   permissionProfiles: PermissionProfileSummary[];
   quotas: Quota[];
   quotaConsuming: boolean;
@@ -34,13 +37,13 @@ type ChatFooterProps = {
   dictationInsertion?: { id: number; text: string };
   hasThread: boolean;
   telemetry?: ThreadTelemetry;
-  voiceTranscript: string;
   onChangeEffort: (effort: string) => void;
   onChangeModel: (model: string) => void;
   onCompact: () => void;
   onNeedApps: () => void;
   onOpenMcpSettings: () => void;
   onChangePermission: (permission: Permission) => Promise<boolean>;
+  onChangeApprovalPolicy: (policy: ApprovalPolicy) => Promise<boolean>;
   onConsumeQuotaReset: (creditId?: string) => Promise<void>;
   onOpenPluginSettings: () => void;
   onSend: (text: string, context: TurnContextItem[]) => void;
@@ -58,6 +61,8 @@ export function ChatFooter({
   effort,
   models,
   permission,
+  approvalPolicy,
+  allowedApprovalPolicies,
   permissionProfiles,
   quotas,
   quotaConsuming,
@@ -70,13 +75,13 @@ export function ChatFooter({
   dictationInsertion,
   hasThread,
   telemetry,
-  voiceTranscript,
   onChangeEffort,
   onChangeModel,
   onCompact,
   onNeedApps,
   onOpenMcpSettings,
   onChangePermission,
+  onChangeApprovalPolicy,
   onConsumeQuotaReset,
   onOpenPluginSettings,
   onSend,
@@ -87,33 +92,28 @@ export function ChatFooter({
   const { t } = useI18n();
   return (
     <footer>
-      {voiceTranscript && (
-        <div className="voice-transcript">
-          <AudioWaveform /> {voiceTranscript}
-        </div>
-      )}
-      <Composer
-        apps={apps.apps}
-        appsError={apps.error}
-        appsLoading={apps.loading}
-        busy={busy}
-        canSteer={canSteer}
-        contextUsage={telemetry?.context}
-        cwd={cwd}
-        hasThread={hasThread}
-        recording={recording}
-        dictating={dictating}
-        dictationProcessing={dictationProcessing}
-        dictationInsertion={dictationInsertion}
-        onNeedApps={onNeedApps}
-        onCompact={onCompact}
-        onOpenMcp={onOpenMcpSettings}
-        onOpenPlugins={onOpenPluginSettings}
-        onSend={onSend}
-        onStop={onStop}
-        onToggleVoice={onToggleVoice}
-        onToggleDictation={onToggleDictation}
-      />
+      <div className="composer-stack">
+        <Composer
+          apps={apps.apps}
+          appsError={apps.error}
+          appsLoading={apps.loading}
+          busy={busy}
+          canSteer={canSteer}
+          cwd={cwd}
+          hasThread={hasThread}
+          recording={recording}
+          dictating={dictating}
+          dictationProcessing={dictationProcessing}
+          dictationInsertion={dictationInsertion}
+          onNeedApps={onNeedApps}
+          onOpenMcp={onOpenMcpSettings}
+          onOpenPlugins={onOpenPluginSettings}
+          onSend={onSend}
+          onStop={onStop}
+          onToggleVoice={onToggleVoice}
+          onToggleDictation={onToggleDictation}
+        />
+      </div>
       <div className="footer-settings">
         <ModelQuickPicker
           effort={effort}
@@ -127,15 +127,27 @@ export function ChatFooter({
           permission={permission}
           profiles={permissionProfiles}
         />
-        <SessionTelemetry reroute={telemetry?.reroute} />
-        <QuotaQuickPicker
-          consuming={quotaConsuming}
-          error={quotaError}
-          onConsumeReset={onConsumeQuotaReset}
-          quotas={quotas}
-          resetCredits={quotaResetCredits}
-          resetMessage={quotaResetMessage}
+        <ApprovalQuickPicker
+          allowed={allowedApprovalPolicies}
+          onChange={onChangeApprovalPolicy}
+          policy={approvalPolicy}
         />
+        <SessionTelemetry reroute={telemetry?.reroute} />
+        <div className="footer-metrics">
+          <ContextGauge
+            context={telemetry?.context}
+            disabled={busy || !hasThread}
+            onCompact={onCompact}
+          />
+          <QuotaQuickPicker
+            consuming={quotaConsuming}
+            error={quotaError}
+            onConsumeReset={onConsumeQuotaReset}
+            quotas={quotas}
+            resetCredits={quotaResetCredits}
+            resetMessage={quotaResetMessage}
+          />
+        </div>
       </div>
     </footer>
   );

@@ -53,6 +53,44 @@ describe("signaux agent", () => {
       status: "running",
     }));
 
+  it("met à jour discrètement le cycle d’exécution des hooks", () => {
+    const run = {
+      id: "hook-1",
+      eventName: "postToolUse",
+      statusMessage: "Vérification du projet",
+      entries: [],
+    };
+    expect(
+      signalFromNotification({
+        method: "hook/started",
+        params: { threadId: "thread-1", run: { ...run, status: "running" } },
+      }),
+    ).toMatchObject({
+      id: "hook-hook-1",
+      kind: "agent",
+      title: "Vérification du projet",
+      status: "running",
+    });
+    expect(
+      signalFromNotification({
+        method: "hook/completed",
+        params: {
+          threadId: "thread-1",
+          run: {
+            ...run,
+            status: "failed",
+            entries: [{ kind: "error", text: "Lint en échec" }],
+          },
+        },
+      }),
+    ).toMatchObject({
+      id: "hook-hook-1",
+      kind: "warning",
+      detail: "Lint en échec",
+      status: "error",
+    });
+  });
+
   it("présente les vérifications de compte et le buffering de sécurité", () => {
     expect(
       signalFromNotification({
@@ -154,6 +192,23 @@ describe("signaux agent", () => {
       ),
     ).toMatchObject({ detail: "Résumé", status: "done" }));
 
+  it("distingue la compaction en cours de la compaction terminée", () => {
+    const running = signalFromItem({ id: "compact-1", type: "contextCompaction" });
+    expect(running).toMatchObject({
+      title: "Compaction du contexte",
+      status: "running",
+    });
+    expect(
+      completedSignal(running!, {
+        id: "compact-1",
+        type: "contextCompaction",
+      }),
+    ).toMatchObject({
+      title: "Contexte compacté",
+      status: "done",
+    });
+  });
+
   it("ignore un item sans identifiant ou de forme invalide", () => {
     expect(signalFromItem({ type: "reasoning" })).toBeUndefined();
     expect(signalFromItem("reasoning")).toBeUndefined();
@@ -167,8 +222,9 @@ describe("signaux agent", () => {
     expect(
       signalFromItem({ id: "1", type: "contextCompaction" }, t),
     ).toMatchObject({
-      title: "Context compacted",
-      detail: "The conversation was summarized to free up context.",
+      title: "Compacting context",
+      detail: "The conversation is being summarized to free up context.",
+      status: "running",
     });
     expect(
       signalFromNotification({ method: "warning", params: {} }, t),

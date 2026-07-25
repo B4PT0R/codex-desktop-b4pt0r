@@ -1,5 +1,5 @@
 import { FilePenLine, X } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import type { ToolCall } from "../types";
 import { useI18n } from "../i18n/I18nProvider";
 
@@ -7,6 +7,8 @@ type WorkPanelProps = {
   tool: ToolCall;
   onClose: () => void;
 };
+
+const DiffViewer = lazy(() => import("./DiffViewer"));
 
 export function WorkPanel({ tool, onClose }: WorkPanelProps) {
   const { t } = useI18n();
@@ -52,7 +54,16 @@ export function WorkPanel({ tool, onClose }: WorkPanelProps) {
         </div>
         <section>
           <h2>{t("work.diff")}</h2>
-          <pre>{tool.diff}</pre>
+          <Suspense
+            fallback={
+              <div className="diff-viewer-loading">
+                <span className="settings-loader-spinner" />
+                {t("work.diff.loading")}
+              </div>
+            }
+          >
+            <DiffViewer diff={tool.diff ?? ""} />
+          </Suspense>
         </section>
       </div>
     </aside>

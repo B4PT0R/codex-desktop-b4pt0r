@@ -29,6 +29,25 @@ describe("rendu du chat", () => {
       await screen.findByRole("heading", { name: "Résultat final" }),
     ).toBeVisible();
   });
+  it("rend les formules fermées pendant le stream sans interpréter la fin incomplète", async () => {
+    const { container, rerender } = render(
+      <Markdown streaming>
+        {"Énergie $E=mc^2$, puis bloc incomplet $$\\frac{a"}
+      </Markdown>,
+    );
+
+    await screen.findByText("Énergie", { exact: false });
+    expect(container.querySelectorAll(".katex")).toHaveLength(1);
+    expect(container.textContent).toContain("$$\\frac{a");
+
+    rerender(
+      <Markdown streaming>
+        {"Énergie $E=mc^2$, puis bloc complet $$\\frac{a}{b}$$"}
+      </Markdown>,
+    );
+    expect(container.querySelectorAll(".katex")).toHaveLength(2);
+    expect(container.querySelector(".streaming-math-display")).toBeVisible();
+  });
   it("rend les syntaxes LaTeX inline et bloc avec KaTeX", async () => {
     const { container } = render(
       <Markdown>
@@ -149,6 +168,22 @@ describe("rendu du chat", () => {
       />,
     );
     expect(screen.getByLabelText("Erreur")).toBeVisible();
+    expect(screen.queryByLabelText("Terminé")).toBeNull();
+  });
+  it("affiche un spinner accessible pendant une compaction", () => {
+    render(
+      <SignalCards
+        signals={[
+          {
+            id: "compact",
+            kind: "compaction",
+            title: "Compaction du contexte",
+            status: "running",
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByLabelText("En cours")).toHaveClass("spin");
     expect(screen.queryByLabelText("Terminé")).toBeNull();
   });
 });

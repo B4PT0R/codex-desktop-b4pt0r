@@ -1,0 +1,59 @@
+.application-error-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: min(620px, 92%);
+  padding: 11px 13px;
+  border: 1px solid #593b39;
+  border-radius: 10px;
+  color: #d7b0ac;
+  background: #2b2221;
+}
+
+.application-error-message > svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: #d77d75;
+}
+
+.application-error-message > span {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.application-error-message strong {
+  color: #e1c1bd;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.application-error-message small {
+  overflow-wrap: anywhere;
+  color: #a98985;
+  font-family: "DM Mono", monospace;
+  font-size: 10px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+:root[data-theme="light"] .application-error-message {
+  color: #7f4d4a;
+  border-color: #e3c5c1;
+  background: #fbf1f0;
+}
+
+:root[data-theme="light"] .application-error-message > svg {
+  color: #b45f59;
+}
+
+:root[data-theme="light"] .application-error-message strong {
+  color: #784642;
+}
+
+:root[data-theme="light"] .application-error-message small {
+  color: #946762;
+}

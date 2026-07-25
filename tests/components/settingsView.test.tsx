@@ -119,6 +119,7 @@ function renderSettings(
     apps,
     capabilities,
     collaborationMode: "default",
+    approvalPolicy: "on-request",
     effort: "medium",
     externalAgentImport,
     integrations,
@@ -133,6 +134,7 @@ function renderSettings(
     realtime,
     section: "general",
     onChangeCollaborationMode: vi.fn(),
+    onChangeApprovalPolicy: vi.fn(),
     onChangeEffort: vi.fn(),
     onChangeModel: vi.fn(),
     onChangePermission: vi.fn(),
@@ -160,6 +162,14 @@ describe("centre de réglages", () => {
     expect(
       await screen.findByRole("heading", { name: "Permissions", level: 1 }),
     ).toBeVisible();
+  });
+
+  it("expose séparément permissions et politique d’approbation", () => {
+    const props = renderSettings({ section: "permissions" });
+    const approvals = screen.getByLabelText("Approbations");
+    expect(approvals).toHaveValue("on-request");
+    fireEvent.change(approvals, { target: { value: "never" } });
+    expect(props.onChangeApprovalPolicy).toHaveBeenCalledWith("never");
   });
 
   it("expose la navigation cible sans simuler les fonctions futures", async () => {
@@ -258,8 +268,18 @@ describe("centre de réglages", () => {
 
   it("conserve les réglages fonctionnels du thread", () => {
     const onChangeModel = vi.fn();
+    const onChangePersonality = vi.fn();
     const onSave = vi.fn();
-    renderSettings({ section: "agent", onChangeModel, onSave });
+    renderSettings({
+      section: "agent",
+      onChangeModel,
+      onChangePersonality,
+      onSave,
+    });
+    fireEvent.change(screen.getByLabelText("Personnalité"), {
+      target: { value: "friendly" },
+    });
+    expect(onChangePersonality).toHaveBeenCalledWith("friendly");
     fireEvent.change(screen.getByLabelText("Modèle"), {
       target: { value: "gpt-b" },
     });
@@ -268,5 +288,37 @@ describe("centre de réglages", () => {
       screen.getByRole("button", { name: "Appliquer et revenir" }),
     );
     expect(onSave).toHaveBeenCalledOnce();
+  });
+
+  it("désactive la personnalité uniquement si le modèle la refuse explicitement", () => {
+    renderSettings({
+      section: "agent",
+      models: [
+        {
+          id: "gpt-a",
+          label: "GPT A",
+          supportsPersonality: false,
+        },
+      ],
+    });
+    expect(screen.getByLabelText("Personnalité")).toBeDisabled();
+    expect(screen.getByLabelText("Personnalité")).toHaveAttribute(
+      "title",
+      "Le modèle sélectionné ne prend pas en charge les personnalités.",
+    );
+  });
+
+  it("édite la configuration globale dans l’aperçu sans quitter les réglages", async () => {
+    renderSettings({ section: "config" });
+    const editor = await screen.findByLabelText("Contenu de config.toml");
+    expect((editor as HTMLTextAreaElement).value).toContain(
+      'model = "gpt-5.4"',
+    );
+    expect(screen.getByText("Aperçu navigateur")).toBeVisible();
+    fireEvent.change(editor, {
+      target: { value: 'model = "gpt-5.6"\n' },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+    expect(await screen.findByText("Configuration enregistrée.")).toBeVisible();
   });
 });

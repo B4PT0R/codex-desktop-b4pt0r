@@ -14,6 +14,7 @@ import {
   TOOL_COLLAPSE_MS,
   TOOL_COMPLETION_DWELL_MS,
   TOOL_GROUP_COLLAPSE_MS,
+  TOOL_GROUP_DWELL_MS,
   ToolGroup,
 } from "../../src/components/ToolGroup";
 import { I18nProvider } from "../../src/i18n/I18nProvider";
@@ -204,9 +205,7 @@ describe("activité des outils", () => {
       />,
     );
     act(() => {
-      vi.advanceTimersByTime(
-        TOOL_COMPLETION_DWELL_MS + TOOL_COLLAPSE_MS - 1,
-      );
+      vi.advanceTimersByTime(TOOL_COMPLETION_DWELL_MS - 1);
     });
     expect(screen.queryByText("Commande suivante")).toBeNull();
 
@@ -214,6 +213,236 @@ describe("activité des outils", () => {
       vi.advanceTimersByTime(1);
     });
     expect(screen.getByText("Commande suivante")).toBeVisible();
+    expect(
+      screen.getByText("Première commande").closest(".tool-row"),
+    ).toHaveClass("collapsing");
+
+    act(() => {
+      vi.advanceTimersByTime(TOOL_COLLAPSE_MS);
+    });
+    expect(
+      screen.getByText("Première commande").closest(".tool-row"),
+    ).toHaveClass("compact");
+
+    act(() => {
+      vi.advanceTimersByTime(
+        TOOL_COMPLETION_DWELL_MS - TOOL_COLLAPSE_MS,
+      );
+    });
+    expect(
+      screen.getByText("Commande suivante").closest(".tool-row"),
+    ).toHaveClass("collapsing");
+    expect(
+      screen.getByText("Première commande").closest(".tool-row"),
+    ).toHaveClass("compact");
+  });
+
+  it("garde un groupe à action unique replié quand le step suivant commence", () => {
+    vi.useFakeTimers();
+    const runningTool = {
+      id: "command-1",
+      kind: "commandExecution" as const,
+      title: "Commande unique",
+      detail: "npm test",
+      status: "running" as const,
+    };
+    const { rerender } = render(<ToolGroup tools={[runningTool]} />);
+
+    rerender(
+      <ToolGroup tools={[{ ...runningTool, status: "done" as const }]} />,
+    );
+    act(() => {
+      vi.advanceTimersByTime(
+        TOOL_COMPLETION_DWELL_MS + TOOL_COLLAPSE_MS,
+      );
+    });
+    act(() => {
+      vi.advanceTimersByTime(
+        TOOL_GROUP_DWELL_MS + TOOL_GROUP_COLLAPSE_MS,
+      );
+    });
+    expect(screen.getByText("1 action effectuée")).toBeVisible();
+
+    rerender(
+      <ToolGroup
+        stepClosed
+        tools={[{ ...runningTool, status: "done" as const }]}
+      />,
+    );
+    act(() => {
+      vi.advanceTimersByTime(
+        CLOSED_STEP_GROUP_DWELL_MS + TOOL_GROUP_COLLAPSE_MS,
+      );
+    });
+    expect(screen.getByText("1 action effectuée")).toBeVisible();
+    expect(screen.getByText("Commande unique")).not.toBeVisible();
+  });
+
+  it("replie durablement une action isolée terminée en erreur", () => {
+    vi.useFakeTimers();
+    const runningTool = {
+      id: "command-error",
+      kind: "commandExecution" as const,
+      title: "Commande en erreur",
+      detail: "npm run missing",
+      status: "running" as const,
+      output: "script missing",
+    };
+    const { rerender } = render(<ToolGroup tools={[runningTool]} />);
+
+    rerender(
+      <ToolGroup
+        tools={[{ ...runningTool, status: "error" as const }]}
+      />,
+    );
+    expect(screen.getByText("script missing")).toBeVisible();
+    act(() => {
+      vi.advanceTimersByTime(
+        TOOL_COMPLETION_DWELL_MS + TOOL_COLLAPSE_MS,
+      );
+    });
+    act(() => {
+      vi.advanceTimersByTime(
+        TOOL_GROUP_DWELL_MS + TOOL_GROUP_COLLAPSE_MS,
+      );
+    });
+    expect(screen.getByText("1 action, dont une en erreur")).toBeVisible();
+    expect(screen.getByText("Commande en erreur")).not.toBeVisible();
+
+    rerender(
+      <ToolGroup
+        stepClosed
+        tools={[
+          {
+            ...runningTool,
+            status: "error" as const,
+            progress: "Diagnostic final",
+          },
+        ]}
+      />,
+    );
+    act(() => {
+      vi.advanceTimersByTime(
+        CLOSED_STEP_GROUP_DWELL_MS + TOOL_GROUP_COLLAPSE_MS,
+      );
+    });
+    expect(screen.getByText("1 action, dont une en erreur")).toBeVisible();
+    expect(screen.getByText("Commande en erreur")).not.toBeVisible();
+  });
+
+  it("rattrape un appel réussi ajouté après le repli du précédent", () => {
+    vi.useFakeTimers();
+    const first = {
+      id: "command-first",
+      kind: "commandExecution" as const,
+      title: "Première action",
+      detail: "npm test",
+      status: "running" as const,
+    };
+    const { rerender } = render(<ToolGroup tools={[first]} />);
+    rerender(
+      <ToolGroup tools={[{ ...first, status: "done" as const }]} />,
+    );
+    act(() => {
+      vi.advanceTimersByTime(
+        TOOL_COMPLETION_DWELL_MS + TOOL_COLLAPSE_MS,
+      );
+    });
+    expect(
+      screen.getByText("Première action").closest(".tool-row"),
+    ).toHaveClass("compact");
+
+    const late = {
+      id: "command-late",
+      kind: "commandExecution" as const,
+      title: "Action arrivée tardivement",
+      detail: "npm run check",
+      status: "done" as const,
+    };
+    rerender(
+      <ToolGroup
+        tools={[{ ...first, status: "done" as const }, late]}
+      />,
+    );
+    expect(screen.getByText("Action arrivée tardivement")).toBeVisible();
+
+    act(() => {
+      vi.advanceTimersByTime(
+        TOOL_COMPLETION_DWELL_MS + TOOL_COLLAPSE_MS,
+      );
+    });
+    act(() => {
+      vi.advanceTimersByTime(
+        TOOL_GROUP_DWELL_MS + TOOL_GROUP_COLLAPSE_MS,
+      );
+    });
+    expect(screen.getByText("2 actions effectuées")).toBeVisible();
+    expect(screen.getByText("Première action")).not.toBeVisible();
+    expect(screen.getByText("Action arrivée tardivement")).not.toBeVisible();
+  });
+
+  it("masque la vague précédente lorsqu’un step silencieux rouvre le groupe", () => {
+    vi.useFakeTimers();
+    const first = {
+      id: "command-first-wave",
+      kind: "commandExecution" as const,
+      title: "Action du step précédent",
+      detail: "npm test",
+      status: "running" as const,
+    };
+    const { rerender } = render(<ToolGroup tools={[first]} />);
+    rerender(
+      <ToolGroup tools={[{ ...first, status: "done" as const }]} />,
+    );
+    act(() => {
+      vi.advanceTimersByTime(
+        TOOL_COMPLETION_DWELL_MS + TOOL_COLLAPSE_MS,
+      );
+    });
+    act(() => {
+      vi.advanceTimersByTime(
+        TOOL_GROUP_DWELL_MS + TOOL_GROUP_COLLAPSE_MS,
+      );
+    });
+    expect(screen.getByText("1 action effectuée")).toBeVisible();
+
+    const next = {
+      id: "command-next-wave",
+      kind: "commandExecution" as const,
+      title: "Action du step silencieux",
+      detail: "npm run check",
+      status: "running" as const,
+    };
+    rerender(
+      <ToolGroup
+        tools={[{ ...first, status: "done" as const }, next]}
+      />,
+    );
+
+    expect(screen.getByText("Action du step silencieux")).toBeVisible();
+    expect(screen.queryByText("Action du step précédent")).toBeNull();
+
+    rerender(
+      <ToolGroup
+        tools={[
+          { ...first, status: "done" as const },
+          { ...next, status: "done" as const },
+        ]}
+      />,
+    );
+    act(() => {
+      vi.advanceTimersByTime(
+        TOOL_COMPLETION_DWELL_MS + TOOL_COLLAPSE_MS,
+      );
+    });
+    act(() => {
+      vi.advanceTimersByTime(
+        TOOL_GROUP_DWELL_MS + TOOL_GROUP_COLLAPSE_MS,
+      );
+    });
+    fireEvent.click(screen.getByText("2 actions effectuées"));
+    expect(screen.getByText("Action du step précédent")).toBeVisible();
+    expect(screen.getByText("Action du step silencieux")).toBeVisible();
   });
 
   it("affiche immédiatement une image générée et révèle les résultats web", async () => {

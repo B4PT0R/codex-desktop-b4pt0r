@@ -73,7 +73,7 @@ describe("en-tête de conversation", () => {
     expect(onStop).toHaveBeenCalledOnce();
   });
 
-  it("place le focus dans les actions et le restitue avec Échap", async () => {
+  it("laisse le champ de nom inactif et restitue le focus avec Échap", () => {
     render(
       <I18nProvider>
         <ChatHeader
@@ -94,9 +94,14 @@ describe("en-tête de conversation", () => {
       </I18nProvider>,
     );
     const opener = screen.getByRole("button", { name: "Titre clavier" });
+    opener.focus();
     fireEvent.click(opener);
-    const input = screen.getByLabelText("Nom de la conversation");
-    await waitFor(() => expect(input).toHaveFocus());
+    expect(
+      screen.queryByRole("textbox", { name: "Nom de la conversation" }),
+    ).not.toBeInTheDocument();
+    expect(opener).toHaveFocus();
+    fireEvent.click(screen.getByRole("button", { name: "Modifier le nom" }));
+    expect(screen.getByLabelText("Nom de la conversation")).toHaveFocus();
     fireEvent.keyDown(
       screen.getByRole("button", { name: /Créer une branche/ }),
       { key: "Escape" },
@@ -154,6 +159,10 @@ describe("en-tête de conversation", () => {
       </I18nProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Ancien titre" }));
+    expect(
+      screen.queryByRole("textbox", { name: "Nom de la conversation" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Modifier le nom" }));
     fireEvent.change(screen.getByLabelText("Nom de la conversation"), {
       target: { value: "Nouveau titre" },
     });
@@ -161,11 +170,10 @@ describe("en-tête de conversation", () => {
     expect(onRename).toHaveBeenCalledWith("Nouveau titre");
     await waitFor(() =>
       expect(
-        screen.queryByRole("dialog", { name: "Actions de la conversation" }),
+        screen.queryByRole("textbox", { name: "Nom de la conversation" }),
       ).not.toBeInTheDocument(),
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Ancien titre" }));
     fireEvent.click(
       screen.getByRole("button", { name: /Compacter le contexte/ }),
     );
@@ -202,5 +210,49 @@ describe("en-tête de conversation", () => {
     await waitFor(() =>
       expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument(),
     );
+  });
+
+  it("range l’objectif et AGENTS.md dans le menu du titre", async () => {
+    render(
+      <I18nProvider>
+        <ChatHeader
+          busy={false}
+          connected
+          cwd="/work/project"
+          nativeApp
+          reconnecting={false}
+          sidebarOpen
+          threadId="thread-1"
+          title="Travail courant"
+          onCompact={vi.fn()}
+          onDelete={vi.fn()}
+          onFork={vi.fn()}
+          onOpenSidebar={vi.fn()}
+          onReconnect={vi.fn()}
+          onRename={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Définir un objectif autonome" }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", {
+        name: "Modifier le AGENTS.md du projet",
+      }),
+    ).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Travail courant" }));
+    expect(
+      screen.queryByRole("textbox", { name: "Nom de la conversation" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Objectif autonome/ }));
+    expect(
+      await screen.findByRole("dialog", { name: "Objectif autonome" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("dialog", { name: "Actions de la conversation" }),
+    ).toBeNull();
   });
 });

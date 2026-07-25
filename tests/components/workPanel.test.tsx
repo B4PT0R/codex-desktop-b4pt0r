@@ -39,7 +39,7 @@ describe("panneau de travail", () => {
     opener.remove();
   });
 
-  it("présente un diff sélectionné et peut être fermé", () => {
+  it("présente un patch partiel sélectionné et peut être fermé", async () => {
     const onClose = vi.fn();
     render(
       <WorkPanel
@@ -54,11 +54,48 @@ describe("panneau de travail", () => {
         onClose={onClose}
       />,
     );
-    expect(screen.getByText("+import WorkPanel")).toBeVisible();
+    expect(
+      await screen.findByRole("table", { name: "Patch partiel" }),
+    ).toHaveTextContent("+import WorkPanel");
+    expect(screen.getByText("Patch partiel")).toBeVisible();
+    expect(screen.getByText("Afficher le patch brut")).toBeVisible();
     fireEvent.click(
       screen.getByRole("button", { name: "Fermer les détails du travail" }),
     );
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("structure un unified diff par fichier avec ses statistiques", async () => {
+    const { container } = render(
+      <WorkPanel
+        tool={{
+          id: "diff-structured",
+          kind: "fileChange",
+          title: "Modification de fichiers",
+          detail: "src/App.tsx",
+          status: "done",
+          diff: [
+            "diff --git a/src/App.tsx b/src/App.tsx",
+            "--- a/src/App.tsx",
+            "+++ b/src/App.tsx",
+            "@@ -1,2 +1,2 @@",
+            "-const oldValue = true;",
+            "+const newValue = true;",
+            " export default App;",
+          ].join("\n"),
+        }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(container.querySelector(".diff-table")).toBeInTheDocument(),
+    );
+    expect(screen.getByText("Modifié")).toBeVisible();
+    expect(
+      screen.getByLabelText("Ajouts : 1, suppressions : 1"),
+    ).toBeVisible();
+    expect(screen.queryByText("Patch partiel")).toBeNull();
   });
 
   it("se ferme avec Échap", () => {

@@ -8,6 +8,7 @@ import type {
 import type { ExternalAgentMigrationItem } from "./appServerTypes";
 
 export type Permission = string;
+export type ApprovalPolicy = "untrusted" | "on-request" | "never";
 export type TurnContextItem =
   | { type: "localImage"; path: string }
   | { type: "mention"; name: string; path: string };
@@ -17,23 +18,31 @@ export function threadStartParams(
   model: string,
   permission?: Permission,
   personality: Personality = "pragmatic",
+  approvalPolicy?: ApprovalPolicy,
 ) {
   return {
     ...(cwd ? { cwd } : {}),
     model,
     ...(permission ? { permissions: permission } : {}),
+    ...(approvalPolicy ? { approvalPolicy } : {}),
     personality,
   };
 }
-export function realtimeThreadStartParams(
+export function realtimeThreadForkParams(
+  threadId: string,
   cwd: string | undefined,
   model: string,
   permission?: Permission,
-  personality: Personality = "pragmatic",
+  approvalPolicy?: ApprovalPolicy,
 ) {
   return {
-    ...threadStartParams(cwd, model, permission, personality),
+    threadId,
+    ...(cwd ? { cwd } : {}),
+    model,
+    ...(permission ? { permissions: permission } : {}),
+    ...(approvalPolicy ? { approvalPolicy } : {}),
     ephemeral: true,
+    excludeTurns: true,
   };
 }
 export function configReadParams(cwd?: string) {
@@ -94,7 +103,7 @@ export function realtimeStartParams(
     outputModality: mode === "dictation" ? "text" : "audio",
     transport,
     version: mode === "dictation" ? "v2" : "v3",
-    includeStartupContext: false,
+    includeStartupContext: mode === "conversation",
     flushTranscriptTailOnSessionEnd: mode !== "dictation",
     ...(mode === "conversation"
       ? {
@@ -113,6 +122,29 @@ export function realtimeStartParams(
 export function realtimeListVoicesParams() {
   return {};
 }
+export function threadInjectTranscriptParams(
+  threadId: string,
+  role: "user" | "assistant",
+  text: string,
+  itemId: string,
+) {
+  return {
+    threadId,
+    items: [
+      {
+        id: itemId,
+        type: "message",
+        role,
+        content: [
+          {
+            type: role === "user" ? "input_text" : "output_text",
+            text,
+          },
+        ],
+      },
+    ],
+  };
+}
 export function threadCwdUpdateParams(threadId: string, cwd: string) {
   return { threadId, cwd };
 }
@@ -120,6 +152,9 @@ export function threadArchiveParams(threadId: string) {
   return { threadId };
 }
 export function threadDeleteParams(threadId: string) {
+  return { threadId };
+}
+export function threadUnsubscribeParams(threadId: string) {
   return { threadId };
 }
 export function threadUnarchiveParams(threadId: string) {
@@ -261,6 +296,7 @@ export function threadBehaviorUpdateParams(
   personality: Personality,
   mode: CollaborationMode,
   permission: Permission,
+  approvalPolicy: ApprovalPolicy,
 ) {
   return {
     threadId,
@@ -268,6 +304,7 @@ export function threadBehaviorUpdateParams(
     effort,
     personality,
     permissions: permission,
+    approvalPolicy,
     collaborationMode: {
       mode,
       settings: {

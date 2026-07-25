@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { openDialog as open } from "./lib/nativeBridge";
 import { ApprovalDialog } from "./components/ApprovalDialog";
 import { ArchiveNotice } from "./components/ArchiveNotice";
@@ -17,7 +17,10 @@ import {
   request,
   type AppServerMessage,
 } from "./lib/codex";
-import type { ThreadStartResponse } from "./lib/appServerTypes";
+import type {
+  ThreadListResponse,
+  ThreadStartResponse,
+} from "./lib/appServerTypes";
 import {
   acceptRealtimeAnswer,
   playRealtimeAudio,
@@ -28,10 +31,13 @@ import { finishDictationCapture, startDictationCapture } from "./lib/dictation";
 import {
   threadBehaviorUpdateParams,
   threadCwdUpdateParams,
-  realtimeThreadStartParams,
+  threadInjectTranscriptParams,
+  realtimeThreadForkParams,
   threadStartParams,
+  threadUnsubscribeParams,
   turnStartParams,
   turnSteerParams,
+  type ApprovalPolicy,
   type Permission,
   type TurnContextItem,
 } from "./lib/protocol";
@@ -83,13 +89,32 @@ import { useRealtimeSettings } from "./lib/useRealtimeSettings";
 import { useCodexDefaults } from "./lib/useCodexDefaults";
 import {
   threadRuntimeSettings,
+  threadRuntimeSettingsFromNotification,
   type ThreadRuntimeSettings,
 } from "./lib/threadRuntimeSettings";
+import { threadSummary } from "./lib/threadSummary";
+import { useConfigRequirements } from "./lib/useConfigRequirements";
+import {
+  markThreadClosed,
+  removeThread,
+  restoreThread,
+} from "./lib/threadReconciliation";
 import {
   appServerRecord,
   appServerString,
   realtimeAudioFromValue,
 } from "./lib/appServerValues";
+import {
+  appendRealtimeUserDelta,
+  appendRealtimeVoiceDelta,
+  finalizeInterruptedRealtimeMessages,
+  finalizeRealtimeUserMessage,
+  finalizeRealtimeVoiceMessage,
+  isVisibleRealtimeTranscript,
+  markRealtimeTextUpdates,
+  realtimeVoiceItemId,
+  reserveRealtimeUserMessage,
+} from "./lib/realtimeTranscript";
 import "./styles.css";
 import "./realtime.css";
 import "./activity.css";
@@ -138,8 +163,17 @@ export default function App() {
   translateRef.current = t;
   const activeThreadRef = useRef<string | undefined>(undefined);
   const activeRealtimeThreadRef = useRef<string | undefined>(undefined);
+  const releasingRealtimeThreadsRef = useRef<Set<string>>(new Set());
+  const activeRealtimeParentThreadRef = useRef<string | undefined>(undefined);
+  const realtimeTranscriptWriteQueueRef = useRef<Promise<void>>(
+    Promise.resolve(),
+  );
+  const preRealtimeMessageIdsRef = useRef<ReadonlySet<string>>(new Set());
+  const realtimeVoiceMessageRef = useRef<string | undefined>(undefined);
+  const realtimeUserMessageRef = useRef<string | undefined>(undefined);
   const workspaceChanged = useRef(false);
   const permissionSource = useRef<"fallback" | "user" | "server">("fallback");
+  const approvalSource = useRef<"fallback" | "user" | "server">("fallback");
   const [messages, setMessages] = useState<ChatMessage[]>(
       initialPreviewMessages,
     ),
@@ -158,7 +192,6 @@ export default function App() {
       id: number;
       text: string;
     }>(),
-    [voiceTranscript, setVoiceTranscript] = useState(""),
     [threadId, setThreadId] = useState<string>(),
     [turnId, setTurnId] = useState<string>(),
     [threads, setThreads] = useState<ThreadSummary[]>(() =>
@@ -173,6 +206,8 @@ export default function App() {
     [appsEnabled, setAppsEnabled] = useState(false),
     [workPanel, setWorkPanel] = useState<ToolCall>(),
     [permission, setPermission] = useState<Permission>(":workspace");
+  const [approvalPolicy, setApprovalPolicy] =
+    useState<ApprovalPolicy>("on-request");
   const audioModeRef = useRef<"conversation" | "dictation" | undefined>(
     undefined,
   );
@@ -180,6 +215,18 @@ export default function App() {
   const [cwd, setCwd] = useState(
     () => localStorage.getItem("codex-desktop.cwd") ?? "",
   );
+  const showError = useCallback((title: string, error: unknown) => {
+    setMessages((items) => [
+      ...items,
+      {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        modality: "applicationError",
+        title,
+        content: String(error),
+      },
+    ]);
+  }, []);
   const demoPlayback = useDemoPlayback({
     enabled: isDemoPreview(),
     setActivity,
@@ -239,6 +286,7 @@ export default function App() {
     onMessage: handle,
     onNewChat: newChat,
   });
+  const configRequirements = useConfigRequirements(connection.connected);
   useCodexDefaults({
     connected: connection.connected,
     cwd,
@@ -246,6 +294,10 @@ export default function App() {
     onDefaults: (defaults) => {
       if (defaults.model) setModel(defaults.model);
       if (defaults.effort) setEffort(defaults.effort);
+      if (defaults.approvalPolicy) {
+        setApprovalPolicy(defaults.approvalPolicy);
+        approvalSource.current = "server";
+      }
     },
     onError: (error) => showError(t("app.initializationIncomplete"), error),
   });
@@ -256,16 +308,6 @@ export default function App() {
     threadId,
   });
   useEffect(() => setWorkPanel(undefined), [threadId]);
-  function showError(title: string, error: unknown) {
-    setMessages((items) => [
-      ...items,
-      {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: `**${title}**\n\n${String(error)}`,
-      },
-    ]);
-  }
   const threadHistory = useThreadHistory({
     activeThreadId: threadId,
     onError: showError,
@@ -305,12 +347,11 @@ export default function App() {
     },
   });
   function newChat() {
-    stopRealtime();
-    audioModeRef.current = undefined;
-    setRecording(false);
+    const realtimeThreadId = activeRealtimeThreadRef.current;
+    activeRealtimeThreadRef.current = undefined;
+    void stopRealtime().finally(() => releaseRealtimeFork(realtimeThreadId));
+    finishRealtimeConversation();
     setDictating(false);
-    setVoiceTranscript("");
-    setActivity(null);
     setMessages([]);
     setThreadId(undefined);
     setTurnId(undefined);
@@ -318,6 +359,8 @@ export default function App() {
     setBusy(false);
     permissionSource.current = "fallback";
     setPermission(":workspace");
+    approvalSource.current = "fallback";
+    setApprovalPolicy("on-request");
   }
   activeThreadRef.current = threadId;
   async function selectDirectory() {
@@ -364,7 +407,12 @@ export default function App() {
     if (nextActivity !== undefined) setActivity(nextActivity);
     if (interactiveRequests.handleMessage(msg)) return;
     setMessages((messages) =>
-      applyConversationEvent(messages, msg, translateRef.current),
+      markRealtimeTextUpdates(
+        messages,
+        applyConversationEvent(messages, msg, translateRef.current),
+        audioModeRef.current === "conversation",
+        preRealtimeMessageIdsRef.current,
+      ),
     );
     if (msg.method === "turn/started") {
       const turn = appServerRecord(params?.turn);
@@ -396,6 +444,31 @@ export default function App() {
             thread.id === changedThreadId ? { ...thread, status } : thread,
           ),
         );
+    }
+    if (msg.method === "thread/settings/updated") {
+      const updatedThreadId = appServerString(params?.threadId);
+      const runtimeSettings = threadRuntimeSettingsFromNotification(params);
+      if (updatedThreadId === activeThreadRef.current && runtimeSettings)
+        applyThreadRuntimeSettings(runtimeSettings);
+    }
+    if (msg.method === "thread/archived") {
+      const archivedThreadId = appServerString(params?.threadId);
+      if (archivedThreadId) {
+        setThreads((items) =>
+          removeThread(items, archivedThreadId),
+        );
+        threadSearch.remove(archivedThreadId);
+        if (activeThreadRef.current === archivedThreadId) newChat();
+      }
+    }
+    if (msg.method === "thread/unarchived") {
+      const unarchivedThreadId = appServerString(params?.threadId);
+      if (unarchivedThreadId) void reconcileUnarchivedThread(unarchivedThreadId);
+    }
+    if (msg.method === "thread/closed") {
+      const closedThreadId = appServerString(params?.threadId);
+      if (closedThreadId)
+        setThreads((items) => markThreadClosed(items, closedThreadId));
     }
     if (msg.method === "thread/deleted") {
       const deletedThreadId = appServerString(params?.threadId);
@@ -456,10 +529,47 @@ export default function App() {
         realtimeAudioFromValue(params?.audio),
       );
     if (
-      msg.method === "thread/realtime/transcript/delta" &&
-      (audioModeRef.current !== "dictation" || params?.role === "user")
-    )
-      setVoiceTranscript((x) => x + (appServerString(params?.delta) ?? ""));
+      msg.method === "thread/realtime/itemAdded" &&
+      audioModeRef.current === "conversation"
+    ) {
+      const item = appServerRecord(params?.item);
+      if (appServerString(item?.type) === "input_audio_buffer.speech_started") {
+        realtimeUserMessageRef.current ??= crypto.randomUUID();
+        const messageId = realtimeUserMessageRef.current;
+        setMessages((messages) =>
+          reserveRealtimeUserMessage(messages, messageId),
+        );
+      }
+    }
+    if (msg.method === "thread/realtime/transcript/delta") {
+      const role = params?.role === "user" ? "user" : "assistant";
+      if (
+        isVisibleRealtimeTranscript(role) &&
+        (role === "assistant" || audioModeRef.current === "conversation")
+      ) {
+        if (role === "user") {
+          realtimeUserMessageRef.current ??= crypto.randomUUID();
+          const messageId = realtimeUserMessageRef.current;
+          setMessages((messages) =>
+            appendRealtimeUserDelta(
+              messages,
+              messageId,
+              appServerString(params?.delta) ?? "",
+            ),
+          );
+          return;
+        }
+        realtimeVoiceMessageRef.current ??= crypto.randomUUID();
+        const messageId = realtimeVoiceMessageRef.current;
+        setMessages((messages) =>
+          appendRealtimeVoiceDelta(
+            messages,
+            messageId,
+            appServerString(params?.delta) ?? "",
+          ),
+        );
+      }
+    }
     if (msg.method === "thread/realtime/transcript/done") {
       const role = params?.role === "user" ? "user" : "assistant";
       const transcript = appServerString(params?.text)?.trim() ?? "";
@@ -469,28 +579,34 @@ export default function App() {
             id: ++dictationSequence.current,
             text: transcript,
           });
-      } else if (transcript)
-        setMessages((x) => [
-          ...x,
-          {
-            id: crypto.randomUUID(),
-            role,
-            content: transcript,
-          },
-        ]);
-      setVoiceTranscript("");
+      } else if (role === "assistant") {
+        realtimeVoiceMessageRef.current ??= crypto.randomUUID();
+        const messageId = realtimeVoiceMessageRef.current;
+        setMessages((messages) =>
+          finalizeRealtimeVoiceMessage(messages, messageId, transcript),
+        );
+        persistRealtimeTranscript(role, messageId, transcript);
+        realtimeVoiceMessageRef.current = undefined;
+      } else {
+        realtimeUserMessageRef.current ??= crypto.randomUUID();
+        const messageId = realtimeUserMessageRef.current;
+        setMessages((messages) =>
+          finalizeRealtimeUserMessage(messages, messageId, transcript),
+        );
+        persistRealtimeTranscript(role, messageId, transcript);
+        realtimeUserMessageRef.current = undefined;
+      }
     }
     if (
       msg.method === "thread/realtime/closed" ||
       msg.method === "thread/realtime/error"
     ) {
       const interruptedMode = audioModeRef.current;
-      setRecording(false);
+      const realtimeThreadId = activeRealtimeThreadRef.current;
+      finishRealtimeConversation();
       setDictating(false);
-      activeRealtimeThreadRef.current = undefined;
-      audioModeRef.current = undefined;
-      setVoiceTranscript("");
       stopRealtime(false);
+      void releaseRealtimeFork(realtimeThreadId);
       if (msg.method === "thread/realtime/error")
         showError(
           translateRef.current(
@@ -503,6 +619,73 @@ export default function App() {
         );
     }
   }
+  function persistRealtimeTranscript(
+    role: "user" | "assistant",
+    messageId: string,
+    transcript: string,
+  ) {
+    const parentThreadId = activeRealtimeParentThreadRef.current;
+    if (!parentThreadId || !transcript) return;
+    const write = () =>
+      request(
+        "thread/inject_items",
+        threadInjectTranscriptParams(
+          parentThreadId,
+          role,
+          transcript,
+          realtimeVoiceItemId(role, messageId),
+        ),
+      ).then(() => undefined);
+    realtimeTranscriptWriteQueueRef.current =
+      realtimeTranscriptWriteQueueRef.current
+        .then(write, write)
+        .catch((error) =>
+          showError(
+            translateRef.current("app.realtimeTranscriptSaveError"),
+            error,
+          ),
+        );
+  }
+  function finishRealtimeConversation() {
+    const voiceMessageId = realtimeVoiceMessageRef.current;
+    const userMessageId = realtimeUserMessageRef.current;
+    if (voiceMessageId || userMessageId)
+      setMessages((messages) =>
+        finalizeInterruptedRealtimeMessages(
+          messages,
+          voiceMessageId,
+          userMessageId,
+        ),
+      );
+    setActivity(null);
+    setRecording(false);
+    activeRealtimeThreadRef.current = undefined;
+    activeRealtimeParentThreadRef.current = undefined;
+    audioModeRef.current = undefined;
+    realtimeVoiceMessageRef.current = undefined;
+    realtimeUserMessageRef.current = undefined;
+    preRealtimeMessageIdsRef.current = new Set();
+  }
+  async function releaseRealtimeFork(realtimeThreadId?: string) {
+    if (
+      !realtimeThreadId ||
+      releasingRealtimeThreadsRef.current.has(realtimeThreadId)
+    )
+      return;
+    releasingRealtimeThreadsRef.current.add(realtimeThreadId);
+    if (activeRealtimeThreadRef.current === realtimeThreadId)
+      activeRealtimeThreadRef.current = undefined;
+    try {
+      await request(
+        "thread/unsubscribe",
+        threadUnsubscribeParams(realtimeThreadId),
+      );
+    } catch (error) {
+      showError(translateRef.current("app.audioInterrupted"), error);
+    } finally {
+      releasingRealtimeThreadsRef.current.delete(realtimeThreadId);
+    }
+  }
   async function createThread() {
     const r = await request<ThreadStartResponse>(
       "thread/start",
@@ -511,6 +694,7 @@ export default function App() {
         model,
         permissionSource.current === "fallback" ? undefined : permission,
         personality,
+        approvalSource.current === "fallback" ? undefined : approvalPolicy,
       ),
     );
     const id = r.thread.id as string;
@@ -706,38 +890,45 @@ export default function App() {
   }
   async function toggleVoice() {
     if (recording) {
+      const realtimeThreadId = activeRealtimeThreadRef.current;
       await stopRealtime();
-      setRecording(false);
-      activeRealtimeThreadRef.current = undefined;
-      audioModeRef.current = undefined;
-      setVoiceTranscript("");
+      await releaseRealtimeFork(realtimeThreadId);
+      finishRealtimeConversation();
       return;
     }
     if (dictating) return;
     try {
+      const parentThreadId = threadId ?? (await createThread());
       const started = await request<ThreadStartResponse>(
-        "thread/start",
-        realtimeThreadStartParams(
+        "thread/fork",
+        realtimeThreadForkParams(
+          parentThreadId,
           cwd || undefined,
           model,
           permissionSource.current === "fallback" ? undefined : permission,
-          personality,
+          approvalSource.current === "fallback" ? undefined : approvalPolicy,
         ),
       );
       const id = started.thread.id as string;
       activeRealtimeThreadRef.current = id;
+      activeRealtimeParentThreadRef.current = parentThreadId;
+      setMessages((currentMessages) => {
+        preRealtimeMessageIdsRef.current = new Set(
+          currentMessages.map((message) => message.id),
+        );
+        return currentMessages;
+      });
       audioModeRef.current = "conversation";
       await startRealtime(id, realtime.voice, "conversation", (error) => {
-        setRecording(false);
-        activeRealtimeThreadRef.current = undefined;
-        audioModeRef.current = undefined;
-        setVoiceTranscript("");
+        const realtimeThreadId = activeRealtimeThreadRef.current;
+        finishRealtimeConversation();
         showError(translateRef.current("app.audioInterrupted"), error);
+        void releaseRealtimeFork(realtimeThreadId);
       });
       setRecording(true);
     } catch (e) {
-      activeRealtimeThreadRef.current = undefined;
-      audioModeRef.current = undefined;
+      const realtimeThreadId = activeRealtimeThreadRef.current;
+      finishRealtimeConversation();
       setMessages((x) => [
         ...x,
         {
@@ -746,7 +937,7 @@ export default function App() {
           content: `**${t("app.realtimeUnavailable")}**\n\n${String(e)}`,
         },
       ]);
-      setRecording(false);
+      void releaseRealtimeFork(realtimeThreadId);
     }
   }
   async function toggleDictation() {
@@ -794,7 +985,7 @@ export default function App() {
         selected?.supportedReasoningEfforts?.[0]?.reasoningEffort ??
         "medium",
     );
-    if (!selected?.supportsPersonality) setPersonality("none");
+    if (selected?.supportsPersonality === false) setPersonality("none");
   }
   function applyThreadRuntimeSettings(settings: ThreadRuntimeSettings) {
     if (settings.cwd) {
@@ -805,6 +996,28 @@ export default function App() {
     if (settings.effort) setEffort(settings.effort);
     if (settings.permission) setPermission(settings.permission);
     if (settings.permission) permissionSource.current = "server";
+    if (settings.personality) setPersonality(settings.personality);
+    if (settings.collaborationMode)
+      setCollaborationMode(settings.collaborationMode);
+    if (settings.approvalPolicy) {
+      setApprovalPolicy(settings.approvalPolicy);
+      approvalSource.current = "server";
+    }
+  }
+  async function reconcileUnarchivedThread(unarchivedThreadId: string) {
+    try {
+      const response = await request<ThreadListResponse>("thread/list", {
+        limit: 30,
+        sortKey: "updated_at",
+      });
+      const restored = response.data?.find(
+        (thread) => thread.id === unarchivedThreadId,
+      );
+      if (!restored) return;
+      setThreads((items) => restoreThread(items, threadSummary(restored)));
+    } catch (error) {
+      showError(t("app.threadSyncError"), error);
+    }
   }
   async function saveSettings() {
     if (threadId)
@@ -818,6 +1031,7 @@ export default function App() {
             personality,
             collaborationMode,
             permission,
+            approvalPolicy,
           ),
         );
       } catch (error) {
@@ -841,11 +1055,37 @@ export default function App() {
           personality,
           collaborationMode,
           nextPermission,
+          approvalPolicy,
         ),
       );
       return true;
     } catch (error) {
       setPermission(previousPermission);
+      showError(t("app.saveSettingsError"), error);
+      return false;
+    }
+  }
+  async function changeApprovalPolicy(nextPolicy: ApprovalPolicy) {
+    const previousPolicy = approvalPolicy;
+    setApprovalPolicy(nextPolicy);
+    approvalSource.current = "user";
+    if (!threadId) return true;
+    try {
+      await request(
+        "thread/settings/update",
+        threadBehaviorUpdateParams(
+          threadId,
+          model,
+          effort,
+          personality,
+          collaborationMode,
+          permission,
+          nextPolicy,
+        ),
+      );
+      return true;
+    } catch (error) {
+      setApprovalPolicy(previousPolicy);
       showError(t("app.saveSettingsError"), error);
       return false;
     }
@@ -866,6 +1106,8 @@ export default function App() {
         apps={apps}
         capabilities={capabilities}
         collaborationMode={collaborationMode}
+        approvalPolicy={approvalPolicy}
+        configRequirements={configRequirements}
         effort={effort}
         externalAgentImport={externalAgentImport}
         integrations={integrations}
@@ -877,6 +1119,10 @@ export default function App() {
         realtime={realtime}
         section={settings}
         onChangeCollaborationMode={setCollaborationMode}
+        onChangeApprovalPolicy={(nextPolicy) => {
+          approvalSource.current = "user";
+          setApprovalPolicy(nextPolicy);
+        }}
         onChangeEffort={setEffort}
         onChangeModel={changeModel}
         onChangePermission={(nextPermission) => {
@@ -935,6 +1181,7 @@ export default function App() {
         <ChatHeader
           busy={busy}
           connected={connection.connected}
+          cwd={cwd}
           nativeApp={isDesktopApp()}
           reconnecting={connection.reconnecting}
           sidebarOpen={sidebar}
@@ -976,6 +1223,8 @@ export default function App() {
           effort={effort}
           models={models}
           permission={permission}
+          approvalPolicy={approvalPolicy}
+          allowedApprovalPolicies={configRequirements.allowedApprovalPolicies}
           permissionProfiles={capabilities.permissionProfiles.data}
           quotas={isDemoPreview() ? demoQuotas : rateLimits.quotas}
           quotaConsuming={rateLimits.consuming}
@@ -996,11 +1245,11 @@ export default function App() {
                 ? demoTelemetry
                 : undefined
           }
-          voiceTranscript={voiceTranscript}
           onCompact={() => void threadActions.compact()}
           onChangeEffort={setEffort}
           onChangeModel={changeModel}
           onChangePermission={changePermission}
+          onChangeApprovalPolicy={changeApprovalPolicy}
           onConsumeQuotaReset={
             isDemoPreview() ? async () => undefined : rateLimits.consumeReset
           }

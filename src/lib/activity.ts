@@ -20,7 +20,8 @@ export function activityFromEvent(
   )
     return "thinking";
   if (method === "item/agentMessage/delta") return "talking";
-  if (method === "thread/compacted") return "compacting";
+  if (method === "item/started" && itemType === "contextCompaction")
+    return "compacting";
   if (
     method.endsWith("/requestApproval") ||
     method === "item/tool/requestUserInput"
@@ -39,6 +40,8 @@ export function activityFromEvent(
     return "working";
   if (
     method === "turn/completed" ||
+    method === "thread/compacted" ||
+    (method === "item/completed" && itemType === "contextCompaction") ||
     method === "thread/realtime/closed" ||
     method === "thread/realtime/error"
   )

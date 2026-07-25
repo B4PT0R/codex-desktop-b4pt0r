@@ -13,8 +13,6 @@ import type { AppInfo } from "../lib/appServerTypes";
 import type { TurnContextItem } from "../lib/protocol";
 import { useI18n } from "../i18n/I18nProvider";
 import { useFileSearch, type FileSearchResult } from "../lib/useFileSearch";
-import type { ContextUsage } from "../lib/sessionTelemetry";
-import { ContextGauge } from "./ContextGauge";
 
 type ComposerProps = {
   busy: boolean;
@@ -22,7 +20,6 @@ type ComposerProps = {
   appsError?: string;
   appsLoading: boolean;
   canSteer: boolean;
-  contextUsage?: ContextUsage;
   cwd: string;
   hasThread: boolean;
   recording: boolean;
@@ -32,7 +29,6 @@ type ComposerProps = {
   onOpenMcp: () => void;
   onOpenPlugins: () => void;
   onNeedApps: () => void;
-  onCompact: () => void;
   onSend: (text: string, context: TurnContextItem[]) => void;
   onStop: () => void;
   onToggleVoice: () => void;
@@ -45,7 +41,6 @@ export function Composer({
   appsError,
   appsLoading,
   canSteer,
-  contextUsage,
   cwd,
   hasThread,
   recording,
@@ -55,7 +50,6 @@ export function Composer({
   onOpenMcp,
   onOpenPlugins,
   onNeedApps,
-  onCompact,
   onSend,
   onStop,
   onToggleVoice,
@@ -355,11 +349,6 @@ export function Composer({
               )}
             </span>
           )}
-          <ContextGauge
-            context={contextUsage}
-            disabled={busy || !hasThread}
-            onCompact={onCompact}
-          />
           <button
             className={recording ? "active" : ""}
             aria-label={t("composer.voice")}
@@ -383,7 +372,6 @@ export function Composer({
               onClick={onStop}
             >
               <Square />
-              <span>{t("composer.stop.short")}</span>
             </button>
           )}
           <button

@@ -120,11 +120,30 @@ export function McpSettings({
     <section className="settings-page integrations-page">
       <header>
         <p>{t("integrations.mcp.description")}</p>
-        <InventoryActions
-          count={mcpServers.data.length}
-          loading={mcpServers.loading}
-          onRefresh={integrations.refreshMcp}
-        />
+        <div className="inventory-actions">
+          <span>
+            {t(
+              mcpServers.data.length === 1
+                ? "integrations.countOne"
+                : "integrations.countMany",
+              { count: mcpServers.data.length },
+            )}
+          </span>
+          <button
+            disabled={mcpServers.loading}
+            onClick={() => void integrations.refreshMcp()}
+          >
+            <RefreshCw className={mcpServers.loading ? "spin" : undefined} />
+            {t("integrations.refresh")}
+          </button>
+          <button
+            disabled={integrations.reloadingMcp}
+            onClick={() => void integrations.reloadMcp()}
+          >
+            <RefreshCw className={integrations.reloadingMcp ? "spin" : undefined} />
+            {t("integrations.mcp.reloadConfig")}
+          </button>
+        </div>
       </header>
       {mcpServers.error && <InventoryError message={mcpServers.error} />}
       {integrations.mcpAuthNotice && (

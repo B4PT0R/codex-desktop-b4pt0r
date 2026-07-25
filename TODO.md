@@ -1,446 +1,290 @@
-# Codex Desktop Linux — Remaining work
+# Codex Desktop Linux — Project handoff
 
-Last updated: 2026-07-24
+Last updated: 2026-07-25
 
-## Product state
+This file is the short operational memory for the next contributor or Codex
+agent. Read `AGENTS.md` first. Durable architecture belongs in
+`UI_ARCHITECTURE.md`; protocol inventory belongs in `APP_SERVER_COVERAGE.md`;
+completed implementation detail belongs in Git history.
 
-The client now covers the normal Codex desktop loop end to end: App Server lifecycle,
-thread creation/resume/search/organization, paginated chat, streaming and steering,
-models and collaboration, permissions and approvals, agent questions, tool/reasoning/
-plan activity, diffs and rich artifacts, files and connected Apps, MCP and skills,
-hooks, account/login/usage/quotas/reset credits, Realtime audio, background processes,
-guarded local shell commands, persistent goals, Chromium handoff and Linux desktop
-preferences.
-The current product lot is packaged as
-`dist/codex-desktop-linux_0.1.0_amd64.deb` (101,568,868 bytes; SHA-256
-`a9898abb275eb4e29bb485a911675be9c01feb93b0c6922e240f1d9c983a0953`).
+## Current state
 
-Architecture and product decisions live in `AGENTS.md` and `UI_ARCHITECTURE.md`.
-`APP_SERVER_COVERAGE.md` is the authoritative endpoint audit. The official Codex
-checkout remains the protocol source of truth.
+Codex Desktop Linux is a functional, independent Electron client for the
+official `codex app-server`. It covers the ordinary desktop workflow end to end:
 
-Current validation baseline: 326 frontend/unit tests across 73 files, plus 34
-App Server contract cases and 18 Electron/Node tests. Strict TypeScript and the
-production build pass. The main app is 426.96 kB JavaScript (126.08 kB gzip);
-Markdown and offline KaTeX stay in a separate lazy 435.00 kB chunk (130.23 kB
-gzip). The Debian amd64 package was rebuilt and installed locally as
-`codex-desktop-linux 0.1.0` on 2026-07-24.
+- App Server startup, reconnect, thread creation/resume/search and pagination;
+- streaming messages, steering, reasoning, plans, tools, approvals and errors;
+- model, reasoning, personality, collaboration and permission settings;
+- bounded global `config.toml` editing with validation and conflict detection;
+- Markdown/GFM, streaming and completed LaTeX, structured multi-file diffs;
+- files, Apps, MCP, skills, hooks, account, quotas and reset credits;
+- dictation through the Codex OAuth transcription endpoint and Realtime voice;
+- background terminals, guarded shell commands and persistent goals;
+- managed Chromium, tray, autostart and versioned Linux preferences.
 
-## Active finish pass
+The product direction is a polished Linux experience that remains familiar to
+users of the Codex product family without implying that this is an official
+OpenAI release.
 
-- [x] Polish the Electron shell after the first installed validation: remove the
-      Chromium-style File/Edit/View/Window menu entirely while retaining the tray
-      menu, and replace the conversation's persistent native scrollbar with a thin,
-      transparent-track pill that appears only while the transcript is hovered or
-      keyboard-focused. The scrollbar remains native and accessible to wheel,
-      touchpad, drag and keyboard input without visually competing with the composer.
-      The Playwright MCP investigation also found that its enabled `npx` command
-      inherited Ubuntu's Node 18, below Playwright's Node 20 minimum. Its global
-      configuration now pins Node 24 and the matching PATH; the server starts
-      successfully and will be exposed to Codex after the next session restart.
-- [x] Refine the live composer review: make the textarea interior transparent,
-      render its icon actions as lightly bordered circles, correct the context
-      gauge's native-button padding so both circles share an exact center, and
-      replace the footer model shortcut with an upward-opening model/reasoning
-      picker. The picker applies changes without leaving the conversation, closes
-      on outside click or Escape, restores trigger focus, and remains within the
-      viewport at both 1240x820 and the 840x620 minimum size.
-      The permission shortcut now follows the same pattern using the capability
-      catalog returned by App Server. It explains each allowed profile neutrally,
-      disables unavailable profiles, persists a selection immediately on an active
-      thread with rollback on failure, and shares the composer's exact bottom-left
-      anchor at both reference sizes.
-      The footer quota gauges are now thicker rounded pills and form one accessible
-      quick control. Its bottom-right popover exposes remaining usage and localized
-      reset timestamps for every window, plus the persisted reset-credit count,
-      expiry, outcome/error feedback and a guarded two-step consumption action.
-      The conversation's floating, trackless scrollbar is now the application-wide
-      scrollbar language for settings, menus, work panels, tool output and terminals:
-      thin rounded thumbs appear only on hover or keyboard focus, native end buttons
-      and tracks remain hidden, and horizontal overflow receives the same treatment.
-      Sidebar thread rows now expose separate archive and permanent-delete actions on
-      hover/focus. Delete reuses the accessible guarded confirmation dialog and the
-      existing App Server `thread/delete` flow for any selected row, while keeping
-      archive as the recoverable default.
-      The sidebar is resizable from 220 to 420 px through a subtle drag separator,
-      keyboard arrows/Home/End, or double-click reset to 260 px. Its width is validated
-      and atomically persisted in the native desktop settings file (with browser-preview
-      fallback), restored on launch, and ignored while the sidebar is collapsed.
-      Completed chat messages now render model-authored LaTeX through lazy-loaded,
-      offline KaTeX with accessible MathML. Inline and display forms accept `$…$`,
-      `$$…$$`, `\(…\)` and `\[…\]`, including single-line display delimiters;
-      code examples remain literal, long equations scroll with the shared scrollbar
-      style, malformed input stays visible, and streaming text remains on the cheap
-      unparsed path until completion.
-      Plans are now a single live progress widget anchored after the latest transcript
-      content, so they update in place at the end of the conversation and scroll away
-      naturally with it without covering chat content. Initial completed history stays
-      hidden, and a newly completed plan contracts to a compact success state before
-      fading and returning its space to the conversation flow.
-      Completed reasoning now reads as a quiet expandable annotation instead of a
-      full card: no surface, shadow, border, or redundant success check; compact muted
-      typography and an indented detail preserve access without competing with answers.
-      The localhost-only conversation preview now has a replayable live scenario instead
-      of relying solely on a static fixture. Its header control safely plays, stops, and
-      replays tokenized assistant text, reasoning updates, plan checkpoints, tool start/
-      completion, final Markdown/LaTeX rendering, and plan dismissal without contacting
-      App Server; interruption clears pending timers and all transient running states.
-      Technical phases are deliberately paced over more than 15 seconds, with visible
-      pauses around reasoning, plan checkpoints, tool starts and results, so animation
-      and hierarchy can be reviewed rather than flashing past.
-      Tool activity now follows chronological agent steps instead of the lifetime of
-      a whole backend message. Parallel calls started during one step share a group;
-      each completed row keeps its expanded result visible briefly, contracts with a
-      transition, then the group contracts after its last action. The very first
-      subsequent agent text delta immediately closes that group and creates a new
-      transcript segment below, even when App Server reuses the same agent-message
-      item id. The replay scenario exercises three spoken steps and two independent
-      series of tool calls so this cadence is reviewable end to end. Tool notifications
-      are still ingested immediately, but their rows are presented serially: each next
-      action stays queued until the preceding row has finalized and fully contracted.
-      Reasoning annotations are rendered before their assistant text segment, matching
-      the actual event chronology instead of appearing after the streamed announcement.
-      The blinking stream cursor has been removed entirely; tokenized text provides
-      sufficient activity feedback without adding a persistent visual marker.
-      Incoming events continue to be ingested without protocol backpressure, but a
-      text segment following tools now has a bounded presentation delay derived from
-      the number of queued actions. This guarantees that every completed row and its
-      enclosing group finish contracting before the next streamed review appears.
-- [x] Complete the production-shell migration from Tauri/WebKitGTK to
-      Electron/Chromium. The user approved a full migration after the stable
-      Realtime validation. The first incremental lot now provides a sandboxed,
-      context-isolated Electron 43 production window with blocked navigation and
-      popups, audio-only permission policy, single-instance behavior, tray/close
-      semantics, App Server transport, the existing atomic
-      `~/.codex/codex-desktop-linux.json` preference store, launch-at-login,
-      filesystem dialogs and bounded system openers behind a narrow preload API.
-      The production Realtime request now explicitly selects
-      `gpt-live-1-codex`, and Electron uses Chromium `getUserMedia` instead of the
-      Tauri PCM bridge. Strict TypeScript, the production frontend build, all 350
-      Vitest/contract tests and all 15 Node Electron tests pass; the production
-      dependency audit reports zero vulnerabilities. Electron Builder produced
-      `dist/codex-desktop-linux_0.1.0_amd64.deb`, and the sandboxed unpacked app
-      launches after configuring only its local `chrome-sandbox` helper as
-      root:root mode 4755. The initial packaged launch exposed absolute Vite asset
-      URLs under `file://`; setting the production base to `./` fixed the blank
-      window. The user then validated that the complete packaged interface loads,
-      connects to App Server and successfully completes a real Codex interaction.
-      Native dictation/transcription and managed-Chromium commands are ported.
-      Tauri dependencies, scripts and `src-tauri/` have been removed; Electron is
-      the sole production shell and the contributor/operational documentation now
-      reflects it. IPC trusts only the current main renderer. The package manifest
-      is bounded to frontend assets, preventing recursive inclusion of previous
-      `dist/linux-unpacked` output (the corrected Debian package is 97 MiB rather
-      than 383 MiB). The old `codex-desktop` Tauri package was removed after the
-      replacement `codex-desktop-linux` package was installed.
-      Dictation is now captured directly by Chromium `MediaRecorder` as mono
-      WebM/Opus at 32 kbit/s and sent through Electron's Chromium network stack
-      to the existing ChatGPT OAuth transcription endpoint; using Node `fetch`
-      was rejected by the perimeter with an HTML 403, while `net.fetch` succeeds.
-      Managed Chromium discovery, isolated profile, bounded targets/artifacts,
-      explicit privileged installation and cancellation are also ported.
-      Realtime quota testing isolated a backend invariant: identical v3 sessions
-      remain stable on `ephemeral: true` threads but receive the erroneous
-      `You have reached your usage limit` closure on persistent threads. This was
-      reproduced in both directions with the isolated probe. Production now owns
-      a separate ephemeral voice-thread id without replacing the persistent text
-      conversation. The user validated an uninterrupted full-app session and
-      confirmed the intended v3 delegation behavior: the textual Codex agent
-      answers in the chat while the voice agent orally synthesizes the delegated
-      information. Strict TypeScript, 351 frontend/contract tests and 17 Electron
-      Node tests pass.
-- [ ] Validate an Electron shell spike before committing to a native WebRTC fallback:
-      Electron 43.2.0 (Chromium 150) is installed as a development dependency using
-      the existing user-local Node 24.15 runtime. Its 313 MB runtime is present,
-      dynamically linked Linux libraries resolve, the Chromium SUID sandbox helper
-      is configured as `root:root` mode `4755`, and `electron --version` succeeds
-      without `--no-sandbox`. An isolated `app://probe` window now runs with Chromium
-      sandboxing, context isolation, no renderer Node integration, a restrictive CSP,
-      blocked navigation/popups and an audio-only main-frame permission policy. Its
-      direct getUserMedia level meter was validated by the user as fully stable with
-      the real microphone; 3 policy tests, strict TypeScript and the production
-      frontend build pass. This confirms the device, Linux audio service and Chromium
-      path are healthy and localizes the crash to the WebKitGTK/GStreamer path used by
-      Tauri. The App Server-authenticated WebRTC v3 flow then completed successfully:
-      bidirectional voice and transcription both work through the existing ChatGPT
-      login without API-key exchange or separately billed Platform usage. Fix the
-      probe transcript so streaming deltas are replaced by each role's finalized text
-      instead of being concatenated twice. A longer user test then exposed occasional
-      silent freezes. Fix an SDP notification/start-response race that could discard
-      an early answer before the thread id was recorded, avoid overwriting an already
-      connected status, and expose WebRTC connecting/disconnected/failed/closed states,
-      data-channel closure, an eight-second disconnect threshold and a 15-second SDP
-      timeout. Eleven Electron policy/protocol/session/transcript tests pass. The
-      instrumented retest identified the apparent random freeze conclusively: App
-      Server emits `thread/realtime/error` with `You have reached your usage limit`,
-      then closes with reason `error`; Chromium's peer-reported SCTP abort is only the
-      consequence of that backend closure. A fresh read-only
-      `account/rateLimits/read` confirms the normal `codex` weekly bucket is only 15%
-      used with no reached limit, and the multi-bucket response contains no Voice or
-      Realtime bucket. Official product documentation treats ChatGPT Voice limits
-      separately and only describes unlimited Voice on the $200 Pro tier; the account
-      reports the lower `prolite` plan. The Realtime v3 experimental backend therefore
-      enforces a separate Voice allowance. Current official Voice documentation now
-      quantifies the $100 Pro tier over rolling 24-hour windows: up to 12 hours of
-      GPT-Live-1 Instant, another 12 hours at Medium/High intelligence, and 24 hours
-      of GPT-Live-1 mini; a single conversation may last two hours. The observed
-      limit after only a short probe is therefore not explained by the documented
-      tier allowance unless prior Voice use consumed it. The official Codex plan FAQ
-      also says Voice caps are separate from and do not apply to Codex usage, matching
-      the unaffected 15%-used weekly Codex bucket but leaving this experimental
-      Codex-Voice endpoint's premature rejection inconsistent with public guidance.
-      The unofficial official-app Linux port checkout at
-      `~/dev/codex-desktop-linux` was fast-forwarded to upstream `1394737` and the
-      current official macOS bundle (`ChatGPT-26.721.31836-arm64`) was inspected
-      read-only. The official client first acquires a mono microphone stream with
-      noise suppression, routes it through an `AudioWorklet` into a fresh
-      `MediaStream`, creates the WebRTC offer/data channel, and only then sends
-      `thread/realtime/start`. Its payload includes `includeStartupContext: false`,
-      `flushTranscriptTailOnSessionEnd: true`, response-handoff controls,
-      `initialItems`, `outputModality`, `realtimeSessionId`, the WebRTC SDP, the
-      selected voice, and remotely configured session overrides. Those overrides
-      explicitly supply both `model` and `version`; the current bundle resolves them
-      from remote config key `3566525122` (schema fallback
-      `gpt-live-1-boulder-alpha`/`v1`). A diagnostic branch in the Linux port also
-      detects `gpt-live-1-codex` in an official bundle. Our Electron probe currently
-      forces v3 but omits the model, which is now the leading explanation for landing
-      in the wrong entitlement/quota path. Confirm the effective current remote-config
-      value or test the Codex-specific model before treating the quota rejection as a
-      plan-wide Voice limit.
-      The official activation gate also waits for RPC acceptance,
-      `thread/realtime/started`, WebRTC `connected`, and the data-channel
-      `session.started`/`session.updated` event; adopt this state model rather than
-      equating a successful start request with a usable session.
-      The Electron probe now sends `gpt-live-1-codex` explicitly on v3 with the
-      official startup-context, transcript-tail, initial-items, session-id and
-      Codex-response handoff fields. It also implements that four-signal activation
-      gate, parses session initialization from the WebRTC data channel, and no longer
-      reports an SDP answer alone as an active conversation. All 12 Electron tests,
-      strict TypeScript checking and the production frontend build pass. A live
-      authenticated retest confirmed that the conversation remains stable and
-      uninterrupted with the Codex-specific model. This isolates the former
-      `You have reached your usage limit` closure to the omitted model selecting the
-      wrong entitlement/quota path, rather than the account's actual Codex allowance
-      or Electron/WebRTC stability. Carry the explicit model and official activation
-      gate into the production implementation.
-      Do not consume a Codex rate-limit reset credit for this condition. Realtime v3 is
-      technically stable on the Electron path, but further endurance testing is
-      Voice-quota-blocked.
-      Next, surface this quota failure clearly in the production flow and decide with the
-      user whether to migrate the production shell or retain Electron as an audio
-      companion, then scope packaging and the Rust-native feature bridge accordingly.
-- [ ] Fix native microphone authorization under WebKitGTK: handle only
-      `UserMediaPermissionRequest` and `DeviceInfoPermissionRequest` for the trusted
-      local main WebView, preserve default handling for unrelated web permissions,
-      add native regression coverage, validate dictation with explicit user consent,
-      then rebuild and reinstall the Debian package.
-      The native fix, strict TypeScript check, production build, and 10 Rust tests
-      pass. The 4,831,276-byte package
-      (`37c6b04584d0a56bd08bd91b98699a69bee273487af1d97520b0da28131f0441`)
-      was force-installed. First user validation reached the microphone, then the
-      WebKitWebProcess crashed with SIGSEGV in GStreamer's `libgstinterleave.so`.
-      The machine uses a mono Razer input and an 8-channel Focusrite output; dictation
-      incorrectly negotiated bidirectional audio. Make dictation mono/send-only with
-      no output element, cover the negotiation, rebuild, and retest explicitly.
-      The regression test, strict check, and production package pass; the replacement
-      4,831,284-byte package
-      (`8609b129c7f67324f2f30a0486b809de197a3fe89998bf17718b527d89df8ceb`)
-      was force-installed, but the same WebKit capture crash remained. Replace native
-      dictation capture with a device-agnostic `parec @DEFAULT_SOURCE@` PCM stream
-      bridged into a mono Web Audio MediaStream, declare `pulseaudio-utils` in the
-      Ubuntu package, and keep browser `getUserMedia` only for non-native previews.
-      Both native audio intents use this capture path because the crash is below the
-      feature layer in WebKitGTK/GStreamer; only Realtime attaches remote audio output.
-      A user retest showed no new native crash report and confirmed `parec` itself
-      captures the default source (94,080 PCM bytes in a bounded two-second probe),
-      but the dictation UI stalled before a Linux capture session remained active.
-      Remove the remaining WebKit audio graph from native dictation entirely: stream
-      the Tauri channel's PCM frames directly through Realtime WebSocket `appendAudio`.
-      The revised 348-test suite, strict TypeScript, 11 native tests and Debian build
-      pass; the replacement package is force-installed pending a clean restart/retest.
-      The retest then reached App Server and exposed the next protocol precondition:
-      official Codex marks `RealtimeConversation` under development and disabled by
-      default, so threads from the desktop-owned backend lacked the capability. Launch
-      only the client's private `codex app-server` with the narrow
-      `features.realtime_conversation=true` override; do not mutate global config.toml.
-      The installed Codex binary accepts the override, 12 native tests pass, and the
-      rebuilt package is force-installed pending a complete app/backend restart.
-      The next retest reached Realtime session validation and exposed an official
-      version invariant: text output is supported only by Realtime v2. Keep the
-      conversational waveform on v3, but construct transcription-only dictation with
-      v2 plus text output; cover the split in unit and installed-schema contract tests.
-      The focused protocol/audio suite, all 34 installed-schema contracts, strict
-      TypeScript, 12 native tests and Debian build pass; the package is force-installed.
-      The next native validation exposed that the selected v3 voice (`juniper`) is not
-      in the v2 voice inventory. Dictation has text-only output, so omit its irrelevant
-      voice field and let Codex choose a version-compatible v2 default; retain the
-      persisted voice preference exclusively for v3 conversation audio.
-      The negative payload assertion, installed-schema contracts, strict TypeScript
-      and Debian build pass; the corrected package is force-installed.
-      Realtime v2 then required separately billed API-key auth, so retire Realtime
-      from the microphone button. Batch native PCM until the user's second click,
-      encode it as compact mono WebM/Opus inside Rust (no Python, FFmpeg, libopus or
-      new Linux runtime dependency), and POST multipart to the ChatGPT-authenticated
-      `https://chatgpt.com/backend-api/transcribe` endpoint with the current Codex
-      OAuth token and account ID read only inside the native boundary. Return only
-      transcription text to React, cap capture near nine minutes and network wait at
-      60 seconds, prevent duplicate completion, and expose a Transcribing state.
-      The generated WebM is independently accepted by ffprobe as Opus. All 350
-      frontend/contract tests and 13 native tests pass; package metadata and `ldd`
-      confirm no FFmpeg, libopus, avcodec, avformat or Python runtime dependency.
-      The resulting package is force-installed pending an explicit native retest.
-      End-to-end Realtime v3 testing while an agent turn was active crashed again.
-      Kernel evidence at 13:07:12 confirms the same `libgstinterleave.so` SIGSEGV;
-      an active turn may cause a protocol refusal but cannot explain a WebProcess
-      segfault. Native capture alone is insufficient because feeding it through a
-      Web Audio `MediaStreamDestination` still enters WebKitGTK/GStreamer. The Codex
-      auth store has no temporary Platform/Realtime key, and exchanging the ID token
-      would change this to separately billed API WebSocket usage. Next implementation
-      direction was initially to move the peer connection and audio graph into Rust.
-      A deeper Tauri/WebKitGTK documentation audit narrows the diagnosis: Tauri/Wry
-      has no Linux audio backend and delegates Web APIs to the system WebKitGTK;
-      Wry 0.55.1 explicitly enables Web Audio, while the embedder must handle WebKit's
-      permission-request signal (which this client does). WebKit also exposes explicit
-      media-stream/WebRTC settings that should be enabled defensively, but their
-      absence cannot explain this crash because capture and negotiation already begin.
-      WebKitGTK itself describes WebAudio/WebRTC support as unfinished, and a current
-      upstream getUserMedia crash report reproduces in WebKitGTK/GStreamer outside
-      Tauri. Keep the native-WebRTC fallback as a last resort: first build a minimal
-      isolated native probe using direct getUserMedia plus explicit WebKit settings,
-      no Web Audio graph and no remote playback, to determine whether the system
-      WebKit/GStreamer update fixes the upstream failure without growing our pipeline.
-      The native bridge follows Tauri's documented split: a narrow Rust command owns
-      the child process and streams binary PCM through an IPC `Channel` (the documented
-      mechanism for streaming data), without exposing the shell plugin or a generic
-      executable/argument surface to the WebView. All 347 frontend/contract tests,
-      11 native tests, strict TypeScript, formatting and the Debian build pass. The
-      resulting package declares `pulseaudio-utils` and was force-installed. A full
-      application restart followed by explicit user-consented dictation remains the
-      final native verification.
-- [x] Make App Server thread state authoritative when hydrating session widgets:
-      synchronize cwd, model, reasoning effort, and active permission profile from
-      `thread/start` / `thread/resume` responses; do not overwrite restored values
-      with React fallbacks; load the effective workspace `config/read` model and
-      reasoning effort before a new thread, and omit an unselected permission profile
-      so Codex applies its own default. Personality and collaboration mode remain
-      explicit client choices because Codex 0.145 does not expose them in these
-      hydration responses. Regression and installed-schema contract coverage pass.
-      The rebuilt 4,833,236-byte Debian package
-      (`211d2479b606f166e4a66950dbee1aa584f56bd745bdc5da50a74643dadd8b53`)
-      is force-installed. Native close/reopen/resume verification on the replacement
-      process confirmed that the client shows Full access and that Codex receives an
-      unrestricted execution environment for the resumed thread.
-- [x] Separate composer audio intents: keep the waveform button for full Realtime v3,
-      reserve the microphone for transcription-only dictation, prevent both sessions
-      from overlapping, inject only finalized user transcript into the draft without
-      sending it, localize distinct listening/stopping/error states, cover the mode-
-      specific protocol and composer behavior, and validate the two controls in browser
-      preview and native WebKitGTK without silently starting a billed session during QA.
-      Implementation, installed-schema contract, responsive Chromium captures, package
-      build and forced local reinstall are complete. Native WebKitGTK inspection after
-      restart confirmed both controls at 1240×820; QA deliberately did not activate the
-      microphone or start a billed Realtime session.
-- [x] Close the Realtime v3 audio lot against the installed experimental schema:
-      start sessions explicitly on v3, replace the hard-coded voice with a bounded
-      `thread/realtime/listVoices` inventory and persisted preference, turn the Voice
-      settings placeholder into a complete loading/empty/error/ready surface, preserve
-      WebRTC/WebSocket fallback behavior, harden thread-scoped lifecycle errors, add
-      protocol/controller/component/native tests, and refresh browser/WebKitGTK captures.
-      Native QA loaded the real catalog and verified atomic Maple→Juniper persistence;
-      it deliberately did not open the microphone or start a billed Realtime session.
-- [x] Cover the remaining stable Codex 0.145 migration workflow in Advanced:
-      validate the installed schema, add bounded detection for home/current workspace,
-      explicit Claude Code/Cursor source selection, per-item selection and confirmation,
-      import progress/completion, recent history, localized failure reporting, protocol
-      contracts, component and controller tests, browser/native validation, and
-      refreshed screenshots. Native QA performed detection only; it imported nothing.
-- [x] Refresh `APP_SERVER_COVERAGE.md` against the current official checkout after the
-      migration lot, keeping post-0.145 alpha-only surfaces clearly separated.
-- [x] Fix native chat bottom-follow under WebKitGTK: decide before paint and scroll
-      the transcript container directly instead of relying on `scrollIntoView`.
-- [x] Expand the composer palette from 3 to 18 genuinely wired desktop commands,
-      with thread/turn gating and a bounded scrollable menu.
-- [x] Hide empty reasoning cards, preserve merged summaries at completion and honor
-      `item/reasoning/summaryPartAdded` boundaries for readable expanded content.
-- [x] Remove the redundant running header above active tool calls; individual rows and
-      the transcript activity indicator already expose progress, while completion and
-      failure summaries remain visible.
-- [x] Keep the active tool detailed, condense each completed call to one expandable
-      line, then collapse the completed sequence into an airy summary by action kind.
-- [x] Replace the passive footer context slider with an actionable green/orange/red
-      circular gauge beside the microphone; clicking it starts thread compaction.
-- [x] Batch the current usage-feedback fixes, produce the Debian package on explicit
-      request and force-reinstall it over the running `0.1.0` installation.
-- [x] Audit all 124 client requests, 9 server requests and 71 notifications in the
-      current App Server protocol. Separate product features from host primitives,
-      deprecated methods, platform-only methods and forbidden/experimental surfaces.
-- [x] Replace the Hooks preview with the stable bounded `hooks/list` inventory.
-- [x] Add stable persisted thread goals: create/edit, optional token budget, progress,
-      pause/resume, status notifications and guarded removal.
-- [x] Answer experimental external-clock `currentTime/read` requests automatically;
-      the client opts into the experimental API and must not leave such a turn hanging.
-- [x] Present `model/verification` and `model/safetyBuffering/updated` as bounded,
-      localized conversation notices.
-- [x] Run the complete frontend/contract suite and production build, validate the new
-      goal surface in native WebKitGTK, refresh curated screenshots, then record the
-      final baseline here.
-- [x] Make long chats cheaper and steadier: preserve unchanged message references,
-      memoize transcript rows and activity groups, avoid Markdown parsing during
-      streaming, virtualize off-screen message layout, coalesce bottom-follow scrolls,
-      respect manual scroll-up, condense completed tool history, and merge consecutive
-      reasoning items into one Thinking card.
-- [x] Complete a repository-wide quality pass: make Stop explicit beside the composer,
-      move App Server value normalization out of `App.tsx`, reject duplicate pagination,
-      quota reset, terminal stop, goal mutation and interactive-response requests before
-      React rerenders, and prevent stale quota reads from replacing newer notifications.
-- [x] Resolve the development dependency advisory by updating `fast-uri` from 3.1.3
-      to 3.1.4; verify a clean npm audit, all 315 tests, strict TypeScript and the
-      production frontend build.
+## Verified baseline
 
-## Nice-to-have backlog
+- Package: `dist/codex-desktop-linux_0.2.1_amd64.deb`
+- Size: 105,954,396 bytes
+- SHA-256:
+  `b6bed168037142f04fef6155d2c35c5f4f45903a5747c8a66a272a4f760f47bb`
+- Installed locally as `codex-desktop-linux 0.2.1` on Ubuntu amd64.
+- The current Config editor, tool-group fixes, App Server PATH fix, workspace
+  `AGENTS.md` editor and dual-agent Realtime chat hierarchy are included in the
+  installed package, including the centralized Realtime shutdown cleanup.
+- The atomic-persistence, stale-request sanitation, App Server compatibility,
+  command-menu and Realtime-transcript lots described below are included.
+- Installed ASAR matches the packaged ASAR.
+- `/opt/Codex Desktop/chrome-sandbox` is `root:root` mode `0755` because the
+  package post-install verified working user namespaces; it falls back to
+  `4755` only on systems where user namespaces are unavailable.
+- Installed Codex used for the latest schema checks: `codex-cli 0.145.0`.
+- App Server coverage was refreshed on 2026-07-25 against stable and
+  experimental schemas plus official checkout `0dfa778dae6a`: the schemas
+  expose 89/126 client requests, 10/11 server requests and 70 notifications.
+  This client emits 53 product methods (41 stable, 12 experimental), explicitly
+  handles 54 notifications and answers 6 server requests. See
+  `APP_SERVER_COVERAGE.md` for the classified inventory.
+- 431 Vitest/contract tests across 84 files pass:
+  392 frontend/unit/component cases and 39 App Server contract cases.
+- 29 Electron/Node tests pass.
+- Strict TypeScript and the production build pass.
+- Production dependency audit reports zero vulnerabilities.
+- Main JS: 465.95 kB (136.76 kB gzip).
+- Lazy diff viewer: 89.50 kB (32.89 kB gzip).
+- Lazy Markdown/KaTeX: 698.43 kB (208.65 kB gzip).
 
-Ordered by expected real-world value. None blocks a clean broadly capable release.
+The worktree may contain the current reviewed UI lot. Inspect `git status`
+before starting and do not discard unrelated changes.
 
-1. Add an explicit MCP configuration reload action (`config/mcpServer/reload`) next to
-   inventory refresh for external `config.toml` edits.
-2. Surface relevant enterprise constraints from `configRequirements/read` only when
-   present, especially permission and managed-hook restrictions.
-3. Add opt-in feedback upload with classification, log preview and explicit attachment
-   consent.
-4. Revisit remote control, memory controls and runtime feature flags only after their
-   experimental APIs and recovery/security UX stabilize.
+## Current focus
 
-Not planned now:
+Prepare the repository for an initial community release where a Linux user can
+clone it, ask their Codex agent to continue development, and obtain a safe,
+reviewable result without private project context.
 
-- Git/worktree management: no stable App Server v2 workflow exists.
-- Plugin marketplace/install/share: the official README still says production clients
-  must not call the under-development plugin surface.
-- Generic filesystem, process, command or MCP RPC consoles: these are host/agent
-  primitives already represented through safer product workflows.
-- Deprecated `thread/rollback`, internal token/attestation hosting, and Windows-only
-  sandbox setup.
+The application itself is already sufficiently complete. Prefer reliability,
+portability, contributor guidance and maintenance workflows over adding broad
+new surfaces.
 
-## Quality gates
+## Next work
 
-- Keep protocol construction and normalization in `src/lib/`, with installed-schema
-  contracts for every request shape the client sends.
-- Keep `src/App.tsx` below the monolith threshold; use focused components/hooks and
-  narrow domain props. Split any source file before ownership becomes ambiguous.
-- New copy belongs in both typed FR/EN packs. Async failures remain visible and
-  recoverable; destructive or unsandboxed actions remain neutral-first and explicit.
-- Run `npm run check`, `npm test -- --run`, `npm run test:electron`, and `npm run build`.
-- Validate meaningful UI changes in packaged Electron. Wait at least 0.5 seconds
-  before updating curated captures under `screenshots/`.
+Pick one bounded lot, preserve the order unless a verified bug changes priority,
+and update this section when priorities move.
 
-## Environment notes
+### P0 — release confidence
 
-- Native development uses `npm run electron:dev`; package checks use
-  `npm run electron:deb`.
-- Browser automation uses a separately managed open-source Chromium process, never an
-  embedded general-purpose WebView. The system browser is the explicit fallback.
-- The official Microsoft Playwright MCP server is configured globally in headless,
-  isolated mode; Codex sessions opened after 2026-07-24 can use it directly.
-- `~/dev/codex-desktop-linux-official` and `references/official-ui/2026-07-19/` are UX
-  references only; do not copy bundled implementation code.
-- The integrated Browser inventory may be empty; native X11 validation remains valid.
-- No active blocker.
+- [ ] Run long packaged-Electron sessions that exercise many messages, tool
+      groups, compaction, interruption, reconnect, suspend/resume and thread
+      reopening. Record only reproducible defects.
+- [ ] Validate the `.deb` on a clean second Ubuntu machine or VM. Check install,
+      first launch, App Server discovery, login, tray, microphone, Realtime,
+      managed Chromium, desktop icon, upgrade and uninstall.
+- [ ] Add at least one Debian-family environment to the tested-platform matrix.
+      Investigate Fedora packaging only after the Debian path is documented and
+      reproducible.
+
+### P1 — community onboarding
+
+- [ ] Rewrite `README.md` as a concise public entry point: independent-project
+      disclaimer, prerequisites, install/build instructions, first run,
+      screenshots, known platform scope and links to contributor documents.
+- [ ] Add `CONTRIBUTING.md` with a small first-contribution workflow that mirrors
+      `AGENTS.md` without duplicating its full rules.
+- [ ] Add focused issue and pull-request templates for bugs, App Server
+      compatibility changes and bounded UI improvements.
+- [ ] Document the supported Codex/App Server compatibility policy and the
+      schema-upgrade workflow in a human-facing guide.
+- [ ] Curate a handful of small, independent starter issues that an agent can
+      complete with a regression test and clear verification.
+
+### P1 — operability
+
+- [ ] Add a user-controlled diagnostic export with secret redaction, bounded
+      logs, version/platform information and an explicit preview before saving.
+- [ ] Define an update strategy. Do not enable silent updates; make provenance,
+      signature expectations, release notes, download progress and rollback
+      behavior explicit.
+
+### P2 — later, only with a stable backend contract
+
+- [ ] Add opt-in feedback upload with classification, log preview and explicit
+      attachment consent.
+- [ ] Revisit remote control, memory controls and runtime feature flags after
+      their APIs and recovery/security UX stabilize.
+
+## Recent decisions that constrain the next change
+
+- Electron is the only production shell. Do not restore the retired Tauri path.
+- The installed App Server is the source of truth. Capability fields and
+  generated v2 schemas take precedence over model-name or version guesses.
+- When `activePermissionProfile` is absent, permission hydration falls back to
+  the effective legacy `sandbox` response. A renderer fallback must never
+  overwrite server state.
+- Personality is always discoverable in Agent settings when support is unknown;
+  it is disabled only when the selected model explicitly reports no support.
+- Tool calls are presented serially within an agent step, while ingestion stays
+  immediate. Completed rows and groups finish their collapse animation before
+  later streamed text is revealed.
+- If a fully folded action group is reopened by a later silent tool step, only
+  that step's cards are shown while it runs. The final folded summary still
+  retains every action and expands to the complete history on demand.
+- Terminal tool rows, including failures, remain readable for their dwell period
+      and then fold durably. If another call is attached after its predecessor has
+      already compacted, presentation catches up immediately instead of waiting for
+      a collapse callback that already occurred.
+- Replayed `item/started` notifications are idempotent by tool identifier: they
+  enrich a running action without duplicating it and cannot resurrect a completed
+  single-action group.
+- The plan is one live widget in conversation flow, not an overlay.
+- Diffs use a lazy structured renderer with a readable partial-patch fallback
+  and an optional raw disclosure.
+- Global Config editing never exposes a generic filesystem primitive. Electron
+  resolves only `$CODEX_HOME/config.toml`, limits it to 1 MB, validates TOML,
+  rejects stale versions and replaces the file atomically with mode `0600`.
+- Completed and streaming LaTeX remain separate rendering paths so incomplete
+  formulas cannot destabilize streaming.
+- Realtime uses a separate ephemeral voice thread because persistent voice
+  threads reproduced erroneous quota interruptions.
+- Dictation uses Chromium `MediaRecorder` with WebM/Opus and Electron
+  `net.fetch`; it does not depend on Python or distribution-specific audio
+  libraries.
+- Client-owned settings live atomically in
+  `~/.codex/codex-desktop-linux.json`. Official Codex configuration remains in
+  `~/.codex/config.toml`.
+- Browser automation owns a separate open-source Chromium process; never embed a
+  general-purpose browser WebView inside the app.
+- When Electron discovers Codex by absolute path (including an NVM install), its
+  containing directory is prepended to the App Server child environment so
+  agent tools inherit access to both `codex` and its neighboring Node runtime.
+- The thread-title menu groups the less frequent Goal and workspace-scoped
+  `AGENTS.md` controls instead of keeping permanent buttons in the top bar.
+  Native `AGENTS.md` access remains limited to that exact file, with a 1 MB
+  bound, atomic writes, external-change detection and symlink rejection.
+- Native text/preferences persistence shares one unique-temporary atomic-write
+  primitive. Desktop preference patches are serialized per file so concurrent
+  locale, appearance, workspace or layout updates cannot overwrite each other.
+- Workspace document requests are generation-guarded across close and workspace
+  changes; late reads or saves cannot hydrate the editor with stale content.
+- Effective thread settings from start, resume and
+  `thread/settings/updated` share one normalizer; live server state updates
+  model, effort, personality, collaboration, permissions and cwd.
+- Managed permission-profile and hook constraints are read only on the relevant
+  settings pages. MCP configuration reload is explicit and distinct from an
+  inventory refresh.
+- Hook runs update one quiet conversation signal from start through completion.
+  Archive, unarchive and close notifications reconcile thread state across
+  clients without duplicating restored entries.
+- The `/` command palette is anchored eight pixels above the composer rather
+  than overlapping the active input. Its viewport-bounded scrolling and
+  keyboard focus behavior remain unchanged.
+- Realtime transcript deltas stream directly into stable conversation messages
+  for both speakers. `thread/realtime/itemAdded` speech-start events reserve the
+  user's provisional message before the assistant reply, even when user text is
+  only delivered at transcript finalization; the message is finalized in place
+  and the assistant keeps its pink voice identity. Classic microphone dictation
+  remains a separate capture-and-transcription flow.
+- Completed Realtime voice replies are primary chat messages with the pink
+  voice identity. Concurrent text-agent messages carry an explicit modality,
+  stream inside a restrained blue disclosure, then fold automatically after
+  completion; tool groups are not mislabeled as text replies. The message IDs
+  already present at Realtime startup form a boundary and must not be
+  retroactively classified as concurrent text-agent replies.
+- Finalized Realtime utterances are injected in order into the persistent parent
+  thread through `thread/inject_items`, using client-assigned
+  `realtime_voice_*` response-item IDs. Each later voice session runs on an
+  ephemeral `thread/fork` of that parent with App Server startup context enabled,
+  so native rollout history — including earlier injected voice items — reaches
+  Realtime without client-side rollout parsing or duplicated transcript storage.
+  After Realtime stops or fails, the client unsubscribes from the ephemeral fork;
+  App Server then unloads it through its native idle-thread lifecycle.
+  All exit paths share one conversation-state reset and one atomic provisional
+  message finalizer; changing thread invalidates the fork before asynchronous
+  shutdown so late audio notifications cannot enter the next conversation.
+  Current App Server resume projection still ignores standalone injected raw
+  response items, so restoring their voice containers visually after reopening
+  needs a supported projection/read path; context continuity does not imply
+  visual replay.
+- The App Server inventory is classified by product value rather than endpoint
+  count. Experimental generic host, remote-control, memory and feature-flag
+  primitives stay unexposed until they have a stable, recoverable user flow.
+
+## Known limitations
+
+- Linux is the primary and only validated packaged platform.
+- The current `.deb` has been exercised on the development Ubuntu installation,
+  not yet through a published multi-machine test matrix.
+- Personality is accepted by start/update requests, but the current
+  `thread/start` and `thread/resume` responses do not expose an effective
+  personality field. Do not pretend the server returned state it did not return.
+- Raw Config editing is intentionally native and limited to
+  `$CODEX_HOME/config.toml` (or `~/.codex/config.toml`). App Server's structured
+  config writes cannot preserve comments or arbitrary hand-authored TOML.
+- The package post-install selects user-namespace sandboxing with mode `0755`
+  when its probe succeeds, and SUID sandboxing with mode `4755` otherwise.
+  Both branches still require clean-machine packaging validation.
+- `App.tsx` still coordinates substantial application state. Extract cohesive
+  ownership when adding non-trivial flows; do not perform a speculative rewrite.
+- The large Markdown/KaTeX chunk is intentionally lazy and is not a release
+  blocker.
+
+## Verification commands
+
+Use Node 24 in the current development environment:
+
+```bash
+export PATH=/home/baptiste/.nvm/versions/node/v24.15.0/bin:$PATH
+npm run check
+npm test -- --run
+npm run build
+npm run test:electron
+```
+
+For protocol changes:
+
+```bash
+npm run test:contract
+codex app-server generate-json-schema --out /tmp/codex-schema --experimental
+```
+
+For native UI, audio, permissions, tray, process-lifecycle or packaging changes:
+
+```bash
+npm run electron:dev
+npm run electron:deb
+```
+
+For meaningful UI changes, use the configured Playwright MCP browser preview at
+1240×820 and 840×620, inspect accessibility and console output, wait at least
+0.5 seconds after the final transition, then replace the affected curated
+screenshots under `screenshots/`.
+
+## Handoff checklist
+
+Before ending a contribution:
+
+- [ ] The active objective and outcome are reflected in this file.
+- [ ] Stale priorities or claims have been removed rather than appended around.
+- [ ] Protocol behavior was checked against the installed schema when relevant.
+- [ ] A regression test covers each practical bug fix.
+- [ ] Relevant automated checks and native/browser checks are recorded above.
+- [ ] New user-facing text exists in both French and English locale packs.
+- [ ] Curated screenshots and their inventory match meaningful UI changes.
+- [ ] No secret, token, private workspace content or machine-specific workaround
+      was added.
+
+## Intentionally not planned
+
+- Generic filesystem, process, command or MCP RPC consoles: safer product flows
+  already expose the useful outcomes.
+- Deprecated `thread/rollback`, internal token/attestation hosting and
+  Windows-only sandbox setup.
+- Production use of the under-development plugin marketplace surface until the
+  official contract permits third-party clients.
+- Git/worktree management until App Server exposes a stable product workflow.
+
+No active blocker is known.

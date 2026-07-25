@@ -40,6 +40,18 @@ export function useThreadHistory({
   const [loadingOlder, setLoadingOlder] = useState(false);
   const loadingOlderRef = useRef(false);
   const resumeGeneration = useRef(0);
+  const callbacks = useRef({
+    onError,
+    onMessagesPrepended,
+    onMessagesReplaced,
+    onThreadResumed,
+  });
+  callbacks.current = {
+    onError,
+    onMessagesPrepended,
+    onMessagesReplaced,
+    onThreadResumed,
+  };
 
   const reset = useCallback(() => {
     resumeGeneration.current += 1;
@@ -61,19 +73,22 @@ export function useThreadHistory({
         );
         if (resumeGeneration.current !== generation) return;
         const page = response.initialTurnsPage;
-        onMessagesReplaced(
+        callbacks.current.onMessagesReplaced(
           page
             ? messagesFromTurnsNewestFirst(page.data, t)
             : messagesFromThread(response.thread, t),
         );
         setCursor(page?.nextCursor ?? undefined);
-        onThreadResumed(threadId, threadRuntimeSettings(response));
+        callbacks.current.onThreadResumed(
+          threadId,
+          threadRuntimeSettings(response),
+        );
       } catch (error) {
         if (resumeGeneration.current === generation)
-          onError(t("thread.resumeError"), error);
+          callbacks.current.onError(t("thread.resumeError"), error);
       }
     },
-    [onError, onMessagesReplaced, onThreadResumed, t],
+    [t],
   );
 
   const loadOlder = useCallback(async () => {
@@ -88,18 +103,20 @@ export function useThreadHistory({
         threadTurnsListParams(threadId, cursor),
       );
       if (resumeGeneration.current !== generation) return;
-      onMessagesPrepended(messagesFromTurnsNewestFirst(page.data, t));
+      callbacks.current.onMessagesPrepended(
+        messagesFromTurnsNewestFirst(page.data, t),
+      );
       setCursor(page.nextCursor ?? undefined);
     } catch (error) {
       if (resumeGeneration.current === generation)
-        onError(t("thread.historyError"), error);
+        callbacks.current.onError(t("thread.historyError"), error);
     } finally {
       if (resumeGeneration.current === generation) {
         loadingOlderRef.current = false;
         setLoadingOlder(false);
       }
     }
-  }, [activeThreadId, cursor, onError, onMessagesPrepended, t]);
+  }, [activeThreadId, cursor, t]);
 
   return {
     canLoadOlder: Boolean(cursor),

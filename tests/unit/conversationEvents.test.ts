@@ -91,6 +91,111 @@ describe("événements de conversation", () => {
     ]);
   });
 
+  it("ne ressuscite pas une action isolée sur un démarrage dupliqué", () => {
+    const started = applyConversationEvent([assistantMessage], {
+      method: "item/started",
+      params: {
+        item: {
+          id: "command-1",
+          type: "commandExecution",
+          command: "npm test",
+          status: "inProgress",
+        },
+      },
+    });
+    const completed = applyConversationEvent(started, {
+      method: "item/completed",
+      params: {
+        item: {
+          id: "command-1",
+          type: "commandExecution",
+          command: "npm test",
+          status: "completed",
+        },
+      },
+    });
+    const replayedStart = applyConversationEvent(completed, {
+      method: "item/started",
+      params: {
+        item: {
+          id: "command-1",
+          type: "commandExecution",
+          command: "npm test",
+          status: "inProgress",
+        },
+      },
+    });
+
+    expect(replayedStart[0].tools).toEqual([
+      expect.objectContaining({
+        id: "command-1",
+        status: "done",
+      }),
+    ]);
+  });
+
+  it("fusionne un démarrage dupliqué sans dupliquer l’action en cours", () => {
+    const started = applyConversationEvent([assistantMessage], {
+      method: "item/started",
+      params: {
+        item: {
+          id: "command-1",
+          type: "commandExecution",
+          command: "npm test",
+          status: "inProgress",
+        },
+      },
+    });
+    const withOutput = applyConversationEvent(started, {
+      method: "item/commandExecution/outputDelta",
+      params: { itemId: "command-1", delta: "Tests en cours" },
+    });
+    const replayedStart = applyConversationEvent(withOutput, {
+      method: "item/started",
+      params: {
+        item: {
+          id: "command-1",
+          type: "commandExecution",
+          command: "npm test -- --run",
+          status: "inProgress",
+        },
+      },
+    });
+
+    expect(replayedStart[0].tools).toEqual([
+      expect.objectContaining({
+        id: "command-1",
+        detail: "npm test -- --run",
+        output: "Tests en cours",
+        status: "running",
+      }),
+    ]);
+  });
+
+  it("fait évoluer la compaction de l’état actif à l’état terminé", () => {
+    const started = applyConversationEvent([], {
+      method: "item/started",
+      params: {
+        item: { id: "compact-1", type: "contextCompaction" },
+      },
+    });
+    expect(started[0].signals?.[0]).toMatchObject({
+      title: "Compaction du contexte",
+      status: "running",
+    });
+
+    const completed = applyConversationEvent(started, {
+      method: "item/completed",
+      params: {
+        item: { id: "compact-1", type: "contextCompaction" },
+      },
+    });
+    expect(completed[0].signals?.[0]).toMatchObject({
+      title: "Contexte compacté",
+      status: "done",
+    });
+  });
+
   it("clôt le groupe d’outils dès que le texte agent reprend", () => {
     const announced = applyConversationEvent([], {
       method: "item/agentMessage/delta",
@@ -336,6 +441,41 @@ describe("événements de conversation", () => {
         },
       }),
     ).toEqual([{ id: "answer", role: "assistant", content: "Terminé" }]);
+  });
+
+  it("termine un hook dans sa carte initiale même après un nouveau message", () => {
+    const started = applyConversationEvent([], {
+      method: "hook/started",
+      params: {
+        run: {
+          id: "lint",
+          eventName: "postToolUse",
+          status: "running",
+          entries: [],
+        },
+      },
+    });
+    const withText = [
+      ...started,
+      { id: "answer", role: "assistant" as const, content: "Suite" },
+    ];
+    const completed = applyConversationEvent(withText, {
+      method: "hook/completed",
+      params: {
+        run: {
+          id: "lint",
+          eventName: "postToolUse",
+          status: "completed",
+          entries: [],
+        },
+      },
+    });
+
+    expect(completed[0].signals?.[0]).toMatchObject({
+      id: "hook-lint",
+      status: "done",
+    });
+    expect(completed[1].signals).toBeUndefined();
   });
 
   it("conserve la même collection pour un événement sans effet visuel", () => {

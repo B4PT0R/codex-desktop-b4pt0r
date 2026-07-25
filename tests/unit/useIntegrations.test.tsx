@@ -182,6 +182,37 @@ describe("inventaire des intégrations", () => {
     );
   });
 
+  it("recharge explicitement la configuration MCP avant l’inventaire", async () => {
+    requestMock.mockImplementation((method: string) =>
+      Promise.resolve(
+        method === "skills/list"
+          ? { data: [] }
+          : method === "config/mcpServer/reload"
+            ? {}
+            : { data: [], nextCursor: null },
+      ),
+    );
+    const { result } = renderHook(() =>
+      useIntegrations({ cwd: "/project", enabled: false }),
+    );
+    await act(() => result.current.reloadMcp());
+    expect(requestMock.mock.calls.slice(0, 2)).toEqual([
+      ["config/mcpServer/reload"],
+      [
+        "mcpServerStatus/list",
+        {
+          cursor: null,
+          detail: "toolsAndAuthOnly",
+          limit: 100,
+          threadId: null,
+        },
+      ],
+    ]);
+    expect(result.current.mcpAuthNotice).toBe(
+      "Configuration MCP rechargée.",
+    );
+  });
+
   it("ouvre OAuth dans Chromium puis traite la notification de réussite", async () => {
     requestMock.mockImplementation((method: string) => {
       if (method === "skills/list") return Promise.resolve({ data: [] });

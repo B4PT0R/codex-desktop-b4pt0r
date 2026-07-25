@@ -87,6 +87,32 @@ describe("reprise de conversation", () => {
     expect(messagesFromThread({ id: "thread-1" })).toEqual([]);
   });
 
+  it("restaure l’identité vocale depuis l’identifiant persistant", () => {
+    expect(
+      messagesFromThread({
+        id: "thread-1",
+        turns: [
+          {
+            items: [
+              {
+                id: "realtime_voice_assistant_message-1",
+                type: "agentMessage",
+                text: "Réponse vocale",
+              },
+            ],
+          },
+        ],
+      }),
+    ).toEqual([
+      {
+        id: "realtime_voice_assistant_message-1",
+        role: "assistant",
+        content: "Réponse vocale",
+        modality: "realtimeVoice",
+      },
+    ]);
+  });
+
   it("restaure les images générées et résultats web structurés", () => {
     const messages = messagesFromThread({
       id: "thread-1",

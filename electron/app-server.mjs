@@ -33,6 +33,24 @@ export async function findCodexExecutable(environment = process.env) {
   return "codex";
 }
 
+export function environmentForCodex(
+  executable,
+  environment = process.env,
+) {
+  if (!path.isAbsolute(executable)) return { ...environment };
+  const executableDirectory = path.dirname(executable);
+  const pathEntries = (environment.PATH ?? "")
+    .split(path.delimiter)
+    .filter(Boolean);
+  return {
+    ...environment,
+    PATH: [
+      executableDirectory,
+      ...pathEntries.filter((entry) => entry !== executableDirectory),
+    ].join(path.delimiter),
+  };
+}
+
 export class AppServerTransport {
   #child;
   #initialized = false;
@@ -48,7 +66,10 @@ export class AppServerTransport {
     const child = spawn(
       executable,
       ["app-server", "-c", "features.realtime_conversation=true", "--stdio"],
-      { stdio: ["pipe", "pipe", "pipe"] },
+      {
+        env: environmentForCodex(executable),
+        stdio: ["pipe", "pipe", "pipe"],
+      },
     );
     this.#child = child;
     createInterface({ input: child.stdout }).on("line", (line) =>

@@ -24,6 +24,15 @@ import {
   stopManagedChromium,
 } from "./chromium.mjs";
 import { createMainWindow } from "./window.mjs";
+import {
+  codexConfigPath,
+  readCodexConfig,
+  writeCodexConfig,
+} from "./codex-config.mjs";
+import {
+  readWorkspaceAgents,
+  writeWorkspaceAgents,
+} from "./workspace-agents.mjs";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const isDevelopment = !app.isPackaged;
@@ -69,6 +78,30 @@ function registerIpc() {
     return updateSettings(
       settingsPath(app.getPath("home")),
       args?.patch ?? {},
+    );
+  });
+  ipcMain.handle("desktop:read_codex_config", (event) => {
+    trusted(event);
+    return readCodexConfig(codexConfigPath(app.getPath("home"), process.env));
+  });
+  ipcMain.handle("desktop:write_codex_config", (event, args) => {
+    trusted(event);
+    return writeCodexConfig(
+      codexConfigPath(app.getPath("home"), process.env),
+      args?.content,
+      args?.expectedVersion,
+    );
+  });
+  ipcMain.handle("desktop:read_workspace_agents", (event, args) => {
+    trusted(event);
+    return readWorkspaceAgents(args?.workspace);
+  });
+  ipcMain.handle("desktop:write_workspace_agents", (event, args) => {
+    trusted(event);
+    return writeWorkspaceAgents(
+      args?.workspace,
+      args?.content,
+      args?.expectedVersion,
     );
   });
   ipcMain.handle("desktop:read_launch_at_login", (event) => {
@@ -185,7 +218,9 @@ function createWindow() {
 }
 
 function createTray() {
-  const icon = nativeImage.createFromPath(path.join(root, "electron/assets/icon.png"));
+  const icon = nativeImage.createFromPath(
+    path.join(root, "electron/assets/tray-icon.png"),
+  );
   tray = new Tray(icon.resize({ width: 22, height: 22 }));
   tray.setToolTip("Codex Desktop");
   tray.setContextMenu(

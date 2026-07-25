@@ -14,7 +14,10 @@ describe("conversation de démonstration", () => {
       "assistant",
       "user",
       "assistant",
+      "assistant",
     ]);
+    expect(messages.at(-2)?.modality).toBe("realtimeText");
+    expect(messages.at(-1)?.modality).toBe("realtimeVoice");
     expect(messages.flatMap((message) => message.signals ?? [])).toHaveLength(
       2,
     );

@@ -9,6 +9,7 @@ export type SettingsSectionId =
   | "plugins"
   | "mcp"
   | "permissions"
+  | "config"
   | "git"
   | "hooks"
   | "advanced";
@@ -94,6 +95,13 @@ const settingsGroupDefinitions: SettingsGroupDefinition[] = [
         id: "permissions",
         labelKey: "settings.section.permissions",
         keywords: "sandbox approvals approbations profile profil access accès",
+        available: true,
+      },
+      {
+        id: "config",
+        labelKey: "settings.section.config",
+        keywords:
+          "config configuration toml global codex options features modèles",
         available: true,
       },
       {

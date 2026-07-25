@@ -46,7 +46,10 @@ export const SignalCards = memo(function SignalCards({
               <Icon />
               <span>{signal.title}</span>
               {running ? (
-                <LoaderCircle className="spin signal-state" />
+                <LoaderCircle
+                  aria-label={t("signal.running")}
+                  className="spin signal-state"
+                />
               ) : signal.status === "error" ? (
                 <CircleAlert
                   aria-label={t("signal.error")}

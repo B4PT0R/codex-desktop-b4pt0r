@@ -1,0 +1,239 @@
+.workspace-agents-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid #3d3d39;
+  border-radius: 999px;
+  color: #aaa9a4;
+  font-size: 11px;
+}
+
+.workspace-agents-trigger:hover,
+.workspace-agents-trigger[aria-expanded="true"] {
+  border-color: #55544f;
+  background: #2b2b28;
+  color: #dddcd7;
+}
+
+.workspace-agents-trigger svg {
+  width: 13px;
+  height: 13px;
+}
+
+.workspace-agents-backdrop {
+  position: fixed;
+  z-index: 120;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background: rgb(12 12 11 / 48%);
+  backdrop-filter: blur(3px);
+}
+
+.workspace-agents-dialog {
+  width: min(780px, 100%);
+  height: min(680px, calc(100vh - 64px));
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid #44433f;
+  border-radius: 16px;
+  background: #20201e;
+  box-shadow: 0 22px 70px rgb(0 0 0 / 38%);
+}
+
+.workspace-agents-dialog > header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 32px;
+}
+
+.workspace-agents-dialog > header > span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.workspace-agents-dialog > header strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.workspace-agents-dialog > header small {
+  overflow: hidden;
+  color: #858582;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-agents-dialog > header em {
+  margin-left: auto;
+  color: #98968d;
+  font-size: 10px;
+  font-style: normal;
+}
+
+.workspace-agents-dialog > header button {
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  border-radius: 50%;
+}
+
+.workspace-agents-dialog > header button svg {
+  width: 14px;
+}
+
+.workspace-agents-dialog > p {
+  margin: 0;
+  color: #aaa9a4;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.workspace-agents-editor {
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid #3a3935;
+  border-radius: 11px;
+  background: #181816;
+}
+
+.workspace-agents-editor > div {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #93928d;
+  font-size: 11px;
+}
+
+.workspace-agents-editor textarea {
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  resize: none;
+  padding: 14px 15px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #d9d8d3;
+  font: 11.5px/1.55 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  tab-size: 2;
+}
+
+.workspace-agents-editor:focus-within {
+  border-color: #68665f;
+  box-shadow: 0 0 0 2px rgb(126 123 113 / 10%);
+}
+
+.workspace-agents-message {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+
+.workspace-agents-message small {
+  font-size: 10px;
+}
+
+.workspace-agents-message.error {
+  color: #e9a39d;
+  background: #392523;
+}
+
+.workspace-agents-message.success {
+  color: #9dccaa;
+  background: #213329;
+}
+
+.workspace-agents-dialog > footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.workspace-agents-dialog > footer button {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 11px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+
+.workspace-agents-dialog > footer button svg {
+  width: 13px;
+}
+
+.workspace-agents-discard {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.workspace-agents-discard small {
+  color: #aaa9a4;
+  font-size: 10px;
+}
+
+.workspace-agents-discard .danger {
+  color: #e5a29c;
+  background: #3a2826;
+}
+
+:root[data-theme="light"] .workspace-agents-trigger:hover,
+:root[data-theme="light"] .workspace-agents-trigger[aria-expanded="true"] {
+  border-color: #c9c7c0;
+  background: #f1f0ec;
+  color: #353430;
+}
+
+:root[data-theme="light"] .workspace-agents-backdrop {
+  background: rgb(80 78 72 / 24%);
+}
+
+:root[data-theme="light"] .workspace-agents-dialog {
+  border-color: #d7d5ce;
+  background: #fbfaf7;
+  box-shadow: 0 22px 70px rgb(42 40 34 / 18%);
+}
+
+:root[data-theme="light"] .workspace-agents-editor {
+  border-color: #d8d6cf;
+  background: #fff;
+}
+
+:root[data-theme="light"] .workspace-agents-editor textarea {
+  color: #2f2e2a;
+}
+
+@media (max-width: 840px) {
+  .workspace-agents-trigger span {
+    display: none;
+  }
+
+  .workspace-agents-trigger {
+    width: 28px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .workspace-agents-backdrop {
+    padding: 16px;
+  }
+
+  .workspace-agents-dialog {
+    height: calc(100vh - 32px);
+  }
+}

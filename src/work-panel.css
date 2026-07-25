@@ -1,7 +1,10 @@
 .work-panel {
+  display: grid;
+  height: 100vh;
   width: min(430px, 38vw);
   min-width: 320px;
   flex: 0 0 auto;
+  grid-template-rows: 56px minmax(0, 1fr);
   border-left: 1px solid #2d2d2a;
   background: #171716;
 }
@@ -38,7 +41,7 @@
 }
 
 .work-panel-body {
-  height: calc(100vh - 56px);
+  min-height: 0;
   overflow: auto;
   padding: 18px;
 }
@@ -88,11 +91,226 @@
   white-space: pre;
 }
 
+.diff-viewer {
+  --diff-background-color: #141413;
+  --diff-text-color: #b8b8b2;
+  --diff-font-family: "DM Mono", ui-monospace, monospace;
+  --diff-gutter-insert-background-color: #213327;
+  --diff-gutter-insert-text-color: #82a889;
+  --diff-gutter-delete-background-color: #382523;
+  --diff-gutter-delete-text-color: #bd847c;
+  --diff-code-insert-background-color: #1b2b20;
+  --diff-code-insert-text-color: #b8cbb9;
+  --diff-code-delete-background-color: #30201e;
+  --diff-code-delete-text-color: #d0b0aa;
+  --diff-code-insert-edit-background-color: #35533c;
+  --diff-code-delete-edit-background-color: #5a302d;
+  display: grid;
+  min-width: 0;
+  gap: 10px;
+}
+
+.diff-files {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+}
+
+.diff-file {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #30302d;
+  border-radius: 8px;
+  background: #141413;
+}
+
+.diff-file-header {
+  display: flex;
+  min-width: 0;
+  height: auto;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #30302d;
+  background: #1d1d1b;
+}
+
+.diff-file-header > span:first-child {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.diff-file-header strong,
+.diff-file-header small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.diff-file-header strong {
+  color: #c9c9c4;
+  font:
+    10px/1.4 "DM Mono",
+    ui-monospace,
+    monospace;
+}
+
+.diff-file-header small {
+  color: #74746f;
+  font-size: 9px;
+}
+
+.diff-file-stats {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+  font:
+    9px/1.4 "DM Mono",
+    ui-monospace,
+    monospace;
+}
+
+.diff-file-stats b {
+  color: #79a581;
+  font-weight: 500;
+}
+
+.diff-file-stats i {
+  color: #bd7d74;
+  font-style: normal;
+}
+
+.diff-table {
+  font-size: 10px;
+}
+
+.diff-table .diff-line {
+  line-height: 1.55;
+}
+
+.diff-table .diff-gutter {
+  width: 4.5ch;
+  padding: 0 0.65ch;
+  color: #62625e;
+}
+
+.diff-table .diff-code {
+  padding: 0 8px;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.diff-binary {
+  margin: 0;
+  padding: 14px;
+  color: #858580;
+  font-size: 11px;
+}
+
+.partial-diff-scroll {
+  max-width: 100%;
+  overflow: auto;
+}
+
+.partial-diff {
+  width: 100%;
+  border-collapse: collapse;
+  color: #b8b8b2;
+  table-layout: fixed;
+  font:
+    10px/1.55 "DM Mono",
+    ui-monospace,
+    monospace;
+}
+
+.partial-diff td {
+  padding: 0;
+  vertical-align: top;
+}
+
+.partial-diff .line-number {
+  width: 4.5ch;
+  padding: 0 0.65ch;
+  color: #62625e;
+  text-align: right;
+  user-select: none;
+}
+
+.partial-diff td:last-child {
+  padding: 0 8px;
+}
+
+.partial-diff code {
+  display: block;
+  min-width: max-content;
+  white-space: pre;
+}
+
+.partial-diff tr.insert {
+  color: #b8cbb9;
+  background: #1b2b20;
+}
+
+.partial-diff tr.insert .line-number {
+  color: #82a889;
+  background: #213327;
+}
+
+.partial-diff tr.delete {
+  color: #d0b0aa;
+  background: #30201e;
+}
+
+.partial-diff tr.delete .line-number {
+  color: #bd847c;
+  background: #382523;
+}
+
+.partial-diff tr.hunk,
+.partial-diff tr.meta {
+  color: #8888a0;
+  background: #202025;
+}
+
+.diff-raw {
+  min-width: 0;
+  color: #777772;
+  font-size: 10px;
+}
+
+.diff-raw > summary {
+  width: fit-content;
+  cursor: pointer;
+}
+
+.work-panel .diff-raw pre {
+  min-height: 0;
+  max-height: 260px;
+  margin-top: 8px;
+}
+
+.diff-viewer-loading {
+  display: flex;
+  min-height: 120px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #30302d;
+  border-radius: 8px;
+  color: #858580;
+  background: #141413;
+  font-size: 11px;
+}
+
 @media (max-width: 1100px) {
   .work-panel {
     position: absolute;
-    inset: 0 0 0 auto;
+    top: 56px;
+    right: 0;
+    bottom: 144px;
     z-index: 18;
+    height: auto;
     width: min(430px, calc(100vw - 48px));
     box-shadow: -20px 0 55px #0009;
   }

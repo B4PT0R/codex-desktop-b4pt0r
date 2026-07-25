@@ -30,7 +30,7 @@ describe("indicateurs de session", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("compacte depuis une jauge orange dans le composer", () => {
+  it("compacte depuis une jauge orange dans les métriques du footer", () => {
     const onCompact = vi.fn();
     render(
       <ContextGauge

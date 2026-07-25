@@ -2,6 +2,7 @@ import type { AppServerThread, AppServerTurn } from "./appServerTypes";
 import { applyConversationEvent } from "./conversationEvents";
 import type { ChatMessage } from "../types";
 import { defaultTranslate, type Translate } from "../i18n/translate";
+import { isRealtimeVoiceItemId } from "./realtimeTranscript";
 
 /** Rebuilds the visible conversation from persisted App Server thread items. */
 export function messagesFromThread(
@@ -43,7 +44,14 @@ function messagesFromTurns(
       if (item.type === "agentMessage") {
         messages = [
           ...messages,
-          { id: item.id, role: "assistant", content: item.text ?? "" },
+          {
+            id: item.id,
+            role: "assistant",
+            content: item.text ?? "",
+            ...(isRealtimeVoiceItemId(item.id)
+              ? { modality: "realtimeVoice" as const }
+              : {}),
+          },
         ];
         continue;
       }

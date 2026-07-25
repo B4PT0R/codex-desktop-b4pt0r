@@ -2,13 +2,16 @@ import {
   Check,
   ChevronDown,
   GitFork,
+  FileText,
   Menu,
+  Pencil,
   Play,
   RefreshCw,
   RotateCcw,
   Shrink,
   Square,
   Trash2,
+  Target,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -16,10 +19,12 @@ import { useI18n } from "../i18n/I18nProvider";
 import { ThreadDeleteDialog } from "./ThreadDeleteDialog";
 import { BackgroundTerminalsLoader } from "./BackgroundTerminalsLoader";
 import { ThreadGoalButton } from "./ThreadGoalButton";
+import { WorkspaceAgentsButton } from "./WorkspaceAgentsButton";
 
 type ChatHeaderProps = {
   busy: boolean;
   connected: boolean;
+  cwd?: string;
   nativeApp: boolean;
   reconnecting: boolean;
   sidebarOpen: boolean;
@@ -42,6 +47,7 @@ type ChatHeaderProps = {
 export function ChatHeader({
   busy,
   connected,
+  cwd = "",
   nativeApp,
   reconnecting,
   sidebarOpen,
@@ -59,13 +65,19 @@ export function ChatHeader({
   const [menuOpen, setMenuOpen] = useState(false);
   const [name, setName] = useState(title);
   const [saving, setSaving] = useState(false);
+  const [editingName, setEditingName] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [goalOpen, setGoalOpen] = useState(false);
+  const [agentsOpen, setAgentsOpen] = useState(false);
   const menu = useRef<HTMLDivElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
   const popover = useRef<HTMLDivElement>(null);
 
-  useEffect(() => setName(title), [title]);
+  useEffect(() => {
+    setName(title);
+    setEditingName(false);
+  }, [title]);
   useEffect(() => {
     if (!menuOpen) return;
     const close = (event: MouseEvent) => {
@@ -76,7 +88,6 @@ export function ChatHeader({
   }, [menuOpen]);
   useEffect(() => {
     if (!menuOpen) return;
-    popover.current?.querySelector<HTMLInputElement>("input")?.focus();
     return () => menuButton.current?.focus();
   }, [menuOpen]);
 
@@ -84,7 +95,7 @@ export function ChatHeader({
     const nextName = name.trim();
     if (!nextName || nextName === title || saving) return;
     setSaving(true);
-    if (await onRename(nextName)) setMenuOpen(false);
+    if (await onRename(nextName)) setEditingName(false);
     setSaving(false);
   }
 
@@ -142,27 +153,84 @@ export function ChatHeader({
                   }
                 }}
               >
-                <label>
-                  {t("chat.actions.name")}
+                {editingName ? (
+                  <label>
+                    {t("chat.actions.name")}
+                    <span>
+                      <input
+                        autoFocus
+                        value={name}
+                        maxLength={120}
+                        onChange={(event) => setName(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") void rename();
+                          if (event.key === "Escape") {
+                            event.stopPropagation();
+                            setName(title);
+                            setEditingName(false);
+                          }
+                        }}
+                      />
+                      <button
+                        aria-label={t("common.cancel")}
+                        onClick={() => {
+                          setName(title);
+                          setEditingName(false);
+                        }}
+                      >
+                        <X />
+                      </button>
+                      <button
+                        aria-label={t("chat.actions.saveName")}
+                        disabled={!name.trim() || name.trim() === title || saving}
+                        onClick={rename}
+                      >
+                        <Check />
+                      </button>
+                    </span>
+                  </label>
+                ) : (
+                  <div className="thread-menu-name">
+                    <small>{t("chat.actions.name")}</small>
+                    <span>
+                      <strong title={title}>{title}</strong>
+                      <button
+                        aria-label={t("chat.actions.editName")}
+                        onClick={() => setEditingName(true)}
+                      >
+                        <Pencil />
+                      </button>
+                    </span>
+                  </div>
+                )}
+                <button
+                  className="thread-menu-action"
+                  disabled={!connected}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setGoalOpen(true);
+                  }}
+                >
+                  <Target />
                   <span>
-                    <input
-                      value={name}
-                      maxLength={120}
-                      onChange={(event) => setName(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") void rename();
-                        if (event.key === "Escape") setMenuOpen(false);
-                      }}
-                    />
-                    <button
-                      aria-label={t("chat.actions.saveName")}
-                      disabled={!name.trim() || name.trim() === title || saving}
-                      onClick={rename}
-                    >
-                      <Check />
-                    </button>
+                    <strong>{t("goal.title")}</strong>
+                    <small>{t("goal.description")}</small>
                   </span>
-                </label>
+                </button>
+                <button
+                  className="thread-menu-action"
+                  disabled={!cwd}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setAgentsOpen(true);
+                  }}
+                >
+                  <FileText />
+                  <span>
+                    <strong>AGENTS.md</strong>
+                    <small>{t("agents.description")}</small>
+                  </span>
+                </button>
                 <button
                   className="thread-menu-action"
                   disabled={busy || saving}
@@ -199,15 +267,22 @@ export function ChatHeader({
                     <small>{t("chat.actions.deleteDetail")}</small>
                   </span>
                 </button>
-                <button
-                  className="thread-menu-close"
-                  aria-label={t("chat.actions.close")}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <X />
-                </button>
               </div>
             )}
+            <ThreadGoalButton
+              connected={connected}
+              threadId={threadId}
+              hideTrigger
+              open={goalOpen}
+              onOpenChange={setGoalOpen}
+            />
+            <WorkspaceAgentsButton
+              cwd={cwd}
+              nativeApp={nativeApp}
+              hideTrigger
+              open={agentsOpen}
+              onOpenChange={setAgentsOpen}
+            />
           </div>
         ) : (
           <div className="thread-title">{title}</div>
@@ -235,7 +310,6 @@ export function ChatHeader({
               )}
             </button>
           )}
-          <ThreadGoalButton connected={connected} threadId={threadId} />
           <BackgroundTerminalsLoader
             busy={busy}
             connected={connected}

@@ -3,6 +3,7 @@ import {
   Bot,
   Boxes,
   FlaskConical,
+  FileCog,
   GitBranch,
   Mic,
   Palette,
@@ -20,7 +21,7 @@ import {
   type ComponentType,
   type ReactNode,
 } from "react";
-import type { Permission } from "../lib/protocol";
+import type { ApprovalPolicy, Permission } from "../lib/protocol";
 import {
   filteredSettingsGroups,
   settingsSectionLabel,
@@ -45,18 +46,25 @@ import { ExternalAgentImportSettings } from "./ExternalAgentImportSettings";
 import type { ExternalAgentImportController } from "../lib/useExternalAgentImport";
 import type { RealtimeSettingsController } from "../lib/useRealtimeSettings";
 import { VoiceSettings } from "./VoiceSettings";
+import { CodexConfigSettings } from "./CodexConfigSettings";
+import type { ConfigRequirements } from "../lib/useConfigRequirements";
 
 export type SettingsViewProps = {
   account: AccountController;
   apps: AppsController;
   capabilities: CapabilityCatalog;
   collaborationMode: CollaborationMode;
+  configRequirements?: ConfigRequirements & {
+    error?: string;
+    loading?: boolean;
+  };
   effort: string;
   externalAgentImport: ExternalAgentImportController;
   integrations: IntegrationsController;
   model: string;
   models: Model[];
   permission: Permission;
+  approvalPolicy: ApprovalPolicy;
   personality: Personality;
   rateLimits: RateLimitsController;
   realtime: RealtimeSettingsController;
@@ -65,6 +73,7 @@ export type SettingsViewProps = {
   onChangeEffort: (effort: string) => void;
   onChangeModel: (model: string) => void;
   onChangePermission: (permission: Permission) => void;
+  onChangeApprovalPolicy: (policy: ApprovalPolicy) => void;
   onChangePersonality: (personality: Personality) => void;
   onClose: () => void;
   onSave: () => void;
@@ -80,6 +89,7 @@ const icons: Record<SettingsSectionId, ComponentType> = {
   plugins: Boxes,
   mcp: Plug,
   permissions: ShieldCheck,
+  config: FileCog,
   git: GitBranch,
   hooks: Webhook,
   advanced: FlaskConical,
@@ -158,6 +168,7 @@ function SettingsSection(props: SettingsViewProps) {
   if (props.section === "voice")
     return <VoiceSettings controller={props.realtime} />;
   if (props.section === "permissions") return <PermissionSettings {...props} />;
+  if (props.section === "config") return <CodexConfigSettings />;
   if (props.section === "plugins")
     return (
       <SkillsSettings apps={props.apps} integrations={props.integrations} />
@@ -165,7 +176,12 @@ function SettingsSection(props: SettingsViewProps) {
   if (props.section === "mcp")
     return <McpSettings integrations={props.integrations} />;
   if (props.section === "hooks")
-    return <HooksSettings integrations={props.integrations} />;
+    return (
+      <HooksSettings
+        integrations={props.integrations}
+        managedOnly={props.configRequirements?.managedHooksOnly}
+      />
+    );
   if (props.section === "account")
     return (
       <AccountSettings
@@ -408,19 +424,19 @@ function AgentSettings(props: SettingsViewProps) {
             </option>
           ))}
         </SettingSelect>
-        {selectedModel?.supportsPersonality && (
-          <SettingSelect
-            label={t("settings.agent.personality")}
-            value={props.personality}
-            onChange={(value) =>
-              props.onChangePersonality(value as Personality)
-            }
-          >
-            <option value="pragmatic">{t("settings.agent.pragmatic")}</option>
-            <option value="friendly">{t("settings.agent.friendly")}</option>
-            <option value="none">{t("settings.agent.neutral")}</option>
-          </SettingSelect>
-        )}
+        <SettingSelect
+          label={t("settings.agent.personality")}
+          value={props.personality}
+          disabled={selectedModel?.supportsPersonality === false}
+          disabledReason={t("settings.agent.personalityUnavailable")}
+          onChange={(value) =>
+            props.onChangePersonality(value as Personality)
+          }
+        >
+          <option value="pragmatic">{t("settings.agent.pragmatic")}</option>
+          <option value="friendly">{t("settings.agent.friendly")}</option>
+          <option value="none">{t("settings.agent.neutral")}</option>
+        </SettingSelect>
         <SettingSelect
           label={t("settings.agent.workMode")}
           value={props.collaborationMode}
@@ -466,6 +482,24 @@ function PermissionSettings(props: SettingsViewProps) {
           {t("settings.permissions.catalogUnavailable")}
         </div>
       )}
+      {props.configRequirements?.managed && (
+        <div className="inventory-message neutral" role="status">
+          {t("settings.requirements.permissions")}
+          {props.configRequirements.defaultPermission
+            ? ` ${t("settings.requirements.default", {
+                profile: permissionLabel(
+                  props.configRequirements.defaultPermission,
+                  t,
+                ),
+              })}`
+            : ""}
+        </div>
+      )}
+      {props.configRequirements?.error && (
+        <div className="inventory-message error" role="alert">
+          {t("settings.requirements.error")}
+        </div>
+      )}
       <div className="settings-card settings-fields">
         <SettingSelect
           label={t("settings.permissions.profile")}
@@ -476,12 +510,43 @@ function PermissionSettings(props: SettingsViewProps) {
             <option
               value={profile.id}
               key={profile.id}
-              disabled={!profile.allowed}
+              disabled={
+                !profile.allowed ||
+                props.configRequirements?.allowedPermissionProfiles?.[
+                  profile.id
+                ] === false
+              }
             >
               {permissionLabel(profile.id, t)}
-              {!profile.allowed
+              {!profile.allowed ||
+              props.configRequirements?.allowedPermissionProfiles?.[
+                profile.id
+              ] === false
                 ? ` — ${t("settings.permissions.notAllowed")}`
                 : ""}
+            </option>
+          ))}
+        </SettingSelect>
+        <SettingSelect
+          label={t("approvalPolicy.title")}
+          value={props.approvalPolicy}
+          onChange={(value) =>
+            props.onChangeApprovalPolicy(value as ApprovalPolicy)
+          }
+        >
+          {(["untrusted", "on-request", "never"] as const).map((policy) => (
+            <option
+              disabled={
+                props.configRequirements?.allowedApprovalPolicies !==
+                  undefined &&
+                !props.configRequirements.allowedApprovalPolicies.includes(
+                  policy,
+                )
+              }
+              key={policy}
+              value={policy}
+            >
+              {t(`approvalPolicy.${policy}`)}
             </option>
           ))}
         </SettingSelect>
@@ -503,18 +568,27 @@ function PermissionSettings(props: SettingsViewProps) {
 function SettingSelect({
   label,
   value,
+  disabled = false,
+  disabledReason,
   onChange,
   children,
 }: {
   label: string;
   value: string;
+  disabled?: boolean;
+  disabledReason?: string;
   onChange: (value: string) => void;
   children: ReactNode;
 }) {
   return (
     <label>
       <span>{label}</span>
-      <select value={value} onChange={(event) => onChange(event.target.value)}>
+      <select
+        value={value}
+        disabled={disabled}
+        title={disabled ? disabledReason : undefined}
+        onChange={(event) => onChange(event.target.value)}
+      >
         {children}
       </select>
     </label>
@@ -529,6 +603,7 @@ const plannedSections: Record<
     | "appearance"
     | "voice"
     | "permissions"
+    | "config"
     | "plugins"
     | "mcp"
     | "hooks"

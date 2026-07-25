@@ -10,7 +10,14 @@ import {
   Terminal,
   Wrench,
 } from "lucide-react";
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import type { ToolCall } from "../types";
 import { useI18n } from "../i18n/I18nProvider";
 import {
@@ -49,8 +56,13 @@ export const ToolGroup = memo(function ToolGroup({
   const [presentedCount, setPresentedCount] = useState(
     running ? Math.min(1, count) : count,
   );
+  const [compactedCount, setCompactedCount] = useState(running ? 0 : count);
+  const [activeWaveStart, setActiveWaveStart] = useState(0);
+  const observedCount = useRef(count);
   const presentationPending = liveSequence.current && presentedCount < count;
-  const active = running || presentationPending;
+  const presentationSettling =
+    liveSequence.current && compactedCount < presentedCount;
+  const active = running || presentationPending || presentationSettling;
   const canCondense = count > 4;
   const [phase, setPhase] = useState<"active" | "settling" | "complete">(
     active ? "active" : "complete",
@@ -58,13 +70,18 @@ export const ToolGroup = memo(function ToolGroup({
   const [showAll, setShowAll] = useState(!canCondense || active || failed);
   const manuallyExpanded = useRef(false);
   const hasRun = useRef(running);
+  const hasCompleted = useRef(!active);
   const hiddenCount = showAll ? 0 : count - 3;
   const presentedTools = liveSequence.current
     ? tools.slice(0, presentedCount)
     : tools;
+  const currentWaveTools =
+    phase !== "complete" && activeWaveStart > 0
+      ? presentedTools.slice(activeWaveStart)
+      : presentedTools;
   const visibleTools = showAll
-    ? presentedTools
-    : presentedTools.slice(-3);
+    ? currentWaveTools
+    : currentWaveTools.slice(-3);
   const summary = failed
     ? t(count === 1 ? "tool.group.failedOne" : "tool.group.failedMany", {
         count,
@@ -74,7 +91,7 @@ export const ToolGroup = memo(function ToolGroup({
       });
 
   useEffect(() => {
-    if (active || failed) {
+    if (active) {
       manuallyExpanded.current = false;
       setShowAll(true);
     } else if (canCondense && !manuallyExpanded.current) {
@@ -85,10 +102,16 @@ export const ToolGroup = memo(function ToolGroup({
   useEffect(() => {
     if (active) {
       hasRun.current = true;
+      hasCompleted.current = false;
       setPhase("active");
       return;
     }
-    if (failed || !hasRun.current) {
+    if (!hasRun.current) {
+      hasCompleted.current = true;
+      setPhase("complete");
+      return;
+    }
+    if (hasCompleted.current) {
       setPhase("complete");
       return;
     }
@@ -100,18 +123,48 @@ export const ToolGroup = memo(function ToolGroup({
       dwell,
     );
     const completeTimer = window.setTimeout(
-      () => setPhase("complete"),
+      () => {
+        hasCompleted.current = true;
+        setPhase("complete");
+      },
       dwell + TOOL_GROUP_COLLAPSE_MS,
     );
     return () => {
       window.clearTimeout(settlingTimer);
       window.clearTimeout(completeTimer);
     };
-  }, [active, failed, stepClosed]);
+  }, [active, stepClosed]);
+
+  useLayoutEffect(() => {
+    const previousCount = observedCount.current;
+    observedCount.current = count;
+    if (count <= previousCount || !hasCompleted.current) return;
+
+    // A call arriving after the whole group folded belongs to a new silent
+    // agent step. Keep the shared group, but do not reopen completed cards from
+    // the previous step while presenting the new wave.
+    liveSequence.current = true;
+    hasCompleted.current = false;
+    setActiveWaveStart(previousCount);
+    setPresentedCount(Math.min(previousCount + 1, count));
+    setCompactedCount(previousCount);
+    setPhase("active");
+    setShowAll(true);
+  }, [count]);
 
   const presentNextTool = useCallback(() => {
     setPresentedCount((current) => Math.min(current + 1, count));
   }, [count]);
+
+  useEffect(() => {
+    if (
+      liveSequence.current &&
+      presentedCount < count &&
+      compactedCount >= presentedCount
+    ) {
+      presentNextTool();
+    }
+  }, [compactedCount, count, presentNextTool, presentedCount]);
 
   const toolList = (
     <div className="tool-list">
@@ -137,9 +190,17 @@ export const ToolGroup = memo(function ToolGroup({
           tool={tool}
           onReviewDiff={onReviewDiff}
           forceReplay={liveSequence.current && presentedCount > 1}
-          onSettled={
+          onCollapseStarted={
             index === visibleTools.length - 1 && presentationPending
               ? presentNextTool
+              : undefined
+          }
+          onCompacted={
+            liveSequence.current
+              ? () =>
+                  setCompactedCount((current) =>
+                    Math.min(current + 1, count),
+                  )
               : undefined
           }
           stepClosed={stepClosed}
@@ -168,7 +229,7 @@ export const ToolGroup = memo(function ToolGroup({
   }
 
   return (
-    <details className={`tool-group complete${failed ? " failed" : ""}`} open={failed}>
+    <details className={`tool-group complete${failed ? " failed" : ""}`}>
       <summary className="tool-group-summary">
         <span className="tool-icon">
           {failed ? <CircleAlert /> : <Check />}
@@ -241,11 +302,13 @@ function ToolRow({
   tool,
   onReviewDiff,
   forceReplay = false,
-  onSettled,
+  onCollapseStarted,
+  onCompacted,
   stepClosed = false,
 }: Omit<ToolGroupProps, "tools"> & {
   forceReplay?: boolean;
-  onSettled?: () => void;
+  onCollapseStarted?: () => void;
+  onCompacted?: () => void;
   tool: ToolCall;
 }) {
   const hasDetails = Boolean(
@@ -258,44 +321,51 @@ function ToolRow({
     Boolean(showArtifactByDefault),
   );
   const [phase, setPhase] = useState<"full" | "collapsing" | "compact">(
-    tool.status === "done" && !forceReplay ? "compact" : "full",
+    tool.status !== "running" && !forceReplay ? "compact" : "full",
   );
   const hasRun = useRef(tool.status === "running" || forceReplay);
-  const onSettledRef = useRef(onSettled);
+  const hasCompacted = useRef(
+    tool.status !== "running" && !forceReplay,
+  );
+  const onCollapseStartedRef = useRef(onCollapseStarted);
+  const onCompactedRef = useRef(onCompacted);
   const detailsRef = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
-    onSettledRef.current = onSettled;
-  }, [onSettled]);
+    onCollapseStartedRef.current = onCollapseStarted;
+    onCompactedRef.current = onCompacted;
+  }, [onCollapseStarted, onCompacted]);
   useEffect(() => {
-    if (showArtifactByDefault) setDetailsOpen(true);
+    if (showArtifactByDefault && !hasCompacted.current) setDetailsOpen(true);
   }, [showArtifactByDefault]);
   useEffect(() => {
     if (tool.status === "running") {
       hasRun.current = true;
-      setPhase("full");
-      if (hasDetails) setDetailsOpen(true);
-      return;
-    }
-    if (tool.status === "error") {
+      hasCompacted.current = false;
       setPhase("full");
       if (hasDetails) setDetailsOpen(true);
       return;
     }
     if (!hasRun.current) {
+      hasCompacted.current = true;
+      setPhase("compact");
+      return;
+    }
+    if (hasCompacted.current) {
       setPhase("compact");
       return;
     }
     const dwell = stepClosed
       ? CLOSED_STEP_TOOL_DWELL_MS
       : TOOL_COMPLETION_DWELL_MS;
-    const collapsingTimer = window.setTimeout(
-      () => setPhase("collapsing"),
-      dwell,
-    );
+    const collapsingTimer = window.setTimeout(() => {
+      setPhase("collapsing");
+      onCollapseStartedRef.current?.();
+    }, dwell);
     const compactTimer = window.setTimeout(() => {
+      hasCompacted.current = true;
       setDetailsOpen(false);
       setPhase("compact");
-      onSettledRef.current?.();
+      onCompactedRef.current?.();
     }, dwell + TOOL_COLLAPSE_MS);
     return () => {
       window.clearTimeout(collapsingTimer);

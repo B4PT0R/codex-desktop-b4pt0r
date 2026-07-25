@@ -6,7 +6,13 @@ const MarkdownRenderer = lazy(() =>
   })),
 );
 
-/** Keeps streaming text cheap, then enables full GFM once the item is complete. */
+const StreamingLatexRenderer = lazy(() =>
+  import("./MarkdownRenderer").then((module) => ({
+    default: module.StreamingLatexRenderer,
+  })),
+);
+
+/** Keeps streaming Markdown cheap while progressively rendering stable math. */
 export function Markdown({
   children,
   streaming = false,
@@ -14,8 +20,13 @@ export function Markdown({
   children: string;
   streaming?: boolean;
 }) {
-  if (streaming)
-    return <span className="markdown-fallback">{children}</span>;
+  if (streaming) {
+    return (
+      <Suspense fallback={<span className="markdown-fallback">{children}</span>}>
+        <StreamingLatexRenderer>{children}</StreamingLatexRenderer>
+      </Suspense>
+    );
+  }
   return (
     <Suspense fallback={<span className="markdown-fallback">{children}</span>}>
       <MarkdownRenderer>{children}</MarkdownRenderer>

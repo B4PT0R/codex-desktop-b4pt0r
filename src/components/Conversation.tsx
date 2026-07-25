@@ -9,6 +9,11 @@ import { Markdown } from "./Markdown";
 import { SignalCards } from "./SignalCards";
 import { ToolGroup } from "./ToolGroup";
 import { PlanProgressWidget } from "./PlanProgressWidget";
+import {
+  RealtimeTextMessage,
+  RealtimeVoiceMessage,
+} from "./RealtimeAssistantMessage";
+import { ApplicationErrorMessage } from "./ApplicationErrorMessage";
 
 type ConversationProps = {
   activity: AgentActivity;
@@ -122,7 +127,15 @@ const ConversationMessage = memo(function ConversationMessage({
         {reasoningSignals && reasoningSignals.length > 0 && (
           <SignalCards signals={reasoningSignals} />
         )}
-        <Markdown streaming={message.streaming}>{message.content}</Markdown>
+        {message.modality === "applicationError" ? (
+          <ApplicationErrorMessage message={message} />
+        ) : message.modality === "realtimeVoice" ? (
+          <RealtimeVoiceMessage message={message} />
+        ) : message.modality === "realtimeText" ? (
+          <RealtimeTextMessage message={message} />
+        ) : (
+          <Markdown streaming={message.streaming}>{message.content}</Markdown>
+        )}
         {trailingSignals && trailingSignals.length > 0 && (
           <SignalCards signals={trailingSignals} />
         )}{" "}

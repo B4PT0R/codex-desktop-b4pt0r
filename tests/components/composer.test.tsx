@@ -29,7 +29,6 @@ function renderlessComposerProps(): ComponentProps<typeof Composer> {
     onOpenMcp: vi.fn(),
     onOpenPlugins: vi.fn(),
     onNeedApps: vi.fn(),
-    onCompact: vi.fn(),
     onSend: vi.fn(),
     onStop: vi.fn(),
     onToggleVoice: vi.fn(),
@@ -259,7 +258,7 @@ describe("composer", () => {
     expect(props.onSend).toHaveBeenCalledWith("Vérifie aussi les tests", []);
     expect(props.onStop).not.toHaveBeenCalled();
     const stop = screen.getByRole("button", { name: "Arrêter le tour" });
-    expect(stop).toHaveTextContent("Arrêter");
+    expect(stop.querySelector("span")).toBeNull();
     fireEvent.click(stop);
     expect(props.onStop).toHaveBeenCalledOnce();
   });

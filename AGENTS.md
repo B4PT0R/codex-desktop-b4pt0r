@@ -16,6 +16,52 @@ extending it incrementally over rewriting working foundations. The long-term
 goal is broad, ergonomic coverage of App Server capabilities, not a one-to-one
 dump of every protocol field into the UI.
 
+## Community and agent-assisted development
+
+This project is intentionally friendly to contributors working with Codex. A
+typical contributor already has a runnable `codex` binary, so the agent can
+inspect the checkout, query the installed App Server schema, implement a bounded
+change, run the relevant tests, and leave a verified handoff. Repository
+documentation must make that workflow repeatable rather than depend on private
+project history.
+
+Treat these files as the shared memory of the project:
+
+- `AGENTS.md` is the durable contributor contract: product principles,
+  architecture, safety rules, and definition of done. Change it only when a
+  lasting convention or invariant changes.
+- `TODO.md` is the short operational handoff: current baseline, active objective,
+  prioritized next work, known blockers, and latest verification. Rewrite stale
+  content instead of accumulating a development diary.
+- `APP_SERVER_COVERAGE.md` records protocol coverage and intentional exclusions.
+- `UI_ARCHITECTURE.md` records durable interface structure and interaction
+  decisions.
+- `README.md` is the human entry point for installation and ordinary
+  contribution. Keep it concise and accurate.
+- Git history and releases preserve completed-lot detail; do not duplicate that
+  history indefinitely in `TODO.md`.
+
+### Starting a contribution
+
+Before making a substantial change, the agent should:
+
+1. Read this file and `TODO.md` completely.
+2. Inspect `git status` and preserve unrelated user changes.
+3. Locate the relevant owner module and its nearest tests before editing.
+4. For App Server work, record the installed `codex --version`, inspect the
+   generated v2 schema, and consult the official Codex source when available.
+5. State the bounded objective and update `TODO.md` if it changes current
+   priorities or discovers a material compatibility issue.
+6. Implement the smallest coherent lot, including failure and unavailable
+   states rather than only the successful path.
+7. Run proportionate automated and visual checks, then leave `TODO.md` in a
+   state another contributor or agent can resume without reconstructing the
+   conversation.
+
+Do not begin by broadly rewriting the application, regenerating large files, or
+updating every dependency. First establish what the current backend and existing
+tests actually require.
+
 ## Product principles
 
 - Make common coding tasks obvious and fast. Reveal advanced controls only when
@@ -119,6 +165,27 @@ App Server is the source of truth for Codex capabilities and wire formats.
 
 Keep compatibility work localized so a backend upgrade can be implemented and
 reviewed without rewriting the interface.
+
+### App Server upgrade playbook
+
+When a newer Codex release changes App Server, use this sequence:
+
+1. Update or inspect the official Codex checkout without discarding local work.
+2. Generate the experimental v2 JSON schema from the exact installed binary.
+3. Compare requests, responses, notifications, capability fields, and
+   deprecations against `APP_SERVER_COVERAGE.md`.
+4. Classify changes as additive-compatible, normalization changes, breaking
+   changes, or experimental surfaces that should remain isolated.
+5. Adapt types and normalization at the protocol boundary before changing UI
+   components.
+6. Add or update contract tests for every request shape the client emits.
+7. Expose new capability-driven UI only after loading, unavailable, error,
+   cancellation, and persistence behavior is understood.
+8. Run the full verification matrix and update the coverage document and the
+   concise compatibility note in `TODO.md`.
+
+Prefer compatibility shims that can be removed locally later. Never scatter
+version comparisons or guessed payload variants through presentation code.
 
 ## Code quality
 
@@ -284,6 +351,10 @@ skipped and why.
 - Keep `TODO.md` actionable and current: record the active objective, verified
   findings, prioritized next work, completed items, validation performed, and
   any decisions or blockers that a future agent needs to continue safely.
+- Keep `TODO.md` short enough to read completely at the beginning of every
+  contribution. Summarize only recent completed work that constrains the next
+  change; move durable decisions to the appropriate architecture document and
+  rely on Git history for the rest.
 - Update `TODO.md` whenever priorities change, a material discovery invalidates
   an assumption, a work item is completed, or a new follow-up is identified.
   Remove or rewrite stale entries instead of letting the file become an
