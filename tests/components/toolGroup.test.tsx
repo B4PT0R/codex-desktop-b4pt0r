@@ -445,26 +445,11 @@ describe("activité des outils", () => {
     expect(screen.getByText("Action du step silencieux")).toBeVisible();
   });
 
-  it("affiche immédiatement une image générée et révèle les résultats web", async () => {
+  it("révèle les résultats web dans le détail de leur action", async () => {
     vi.mocked(invoke).mockResolvedValue(undefined);
     render(
       <ToolGroup
         tools={[
-          {
-            id: "image-1",
-            kind: "imageGeneration",
-            title: "Génération d’image",
-            detail: "Un carré bleu",
-            status: "done",
-            artifacts: [
-              {
-                type: "generatedImage",
-                dataUrl: "data:image/png;base64,iVBORw0KGgo=",
-                prompt: "Un carré bleu",
-                path: "/tmp/square.png",
-              },
-            ],
-          },
           {
             id: "web-1",
             kind: "webSearch",
@@ -484,17 +469,7 @@ describe("activité des outils", () => {
       />,
     );
 
-    fireEvent.click(screen.getByText("2 actions effectuées"));
-    expect(screen.getByRole("img", { name: "Un carré bleu" })).toBeVisible();
-    expect(screen.getByText("/tmp/square.png")).toBeVisible();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Ouvrir l’image dans Chromium" }),
-    );
-    await waitFor(() =>
-      expect(invoke).toHaveBeenCalledWith("open_chromium_target", {
-        target: "/tmp/square.png",
-      }),
-    );
+    fireEvent.click(screen.getByText("1 action effectuée"));
     expect(screen.getByText("Documentation Codex")).not.toBeVisible();
     fireEvent.click(screen.getByText("Codex docs"));
     fireEvent.click(
@@ -506,38 +481,6 @@ describe("activité des outils", () => {
       }),
     );
     expect(openUrl).not.toHaveBeenCalled();
-  });
-
-  it("matérialise une image en mémoire pour Chromium", async () => {
-    vi.mocked(invoke).mockResolvedValue(undefined);
-    render(
-      <ToolGroup
-        tools={[
-          {
-            id: "image-1",
-            kind: "imageGeneration",
-            title: "Génération d’image",
-            status: "done",
-            artifacts: [
-              {
-                type: "generatedImage",
-                dataUrl: "data:image/png;base64,iVBORw0KGgo=",
-              },
-            ],
-          },
-        ]}
-      />,
-    );
-
-    fireEvent.click(screen.getByText("1 action effectuée"));
-    fireEvent.click(
-      screen.getByRole("button", { name: "Ouvrir l’image dans Chromium" }),
-    );
-    await waitFor(() =>
-      expect(invoke).toHaveBeenCalledWith("open_chromium_image", {
-        dataUrl: "data:image/png;base64,iVBORw0KGgo=",
-      }),
-    );
   });
 
   it("rend l’échec d’ouverture d’un résultat récupérable", async () => {

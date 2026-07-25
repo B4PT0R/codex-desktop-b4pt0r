@@ -2,6 +2,11 @@ import type { RateLimitResetCreditsSummary } from "./appServerTypes";
 import type { ChatMessage, Quota, ThreadSummary } from "../types";
 import type { ThreadTelemetry } from "./sessionTelemetry";
 
+const demoGeneratedImageUrl = new URL(
+  "../../screenshots/generated-image-widget-source.jpg",
+  import.meta.url,
+).href;
+
 export function demoConversation(): ChatMessage[] {
   return [
     {
@@ -120,6 +125,20 @@ index 08a1e34..66d19a2 100644
           status: "done",
           exitCode: 0,
           durationMs: 4_982,
+        },
+        {
+          id: "demo-generated-image",
+          kind: "imageGeneration",
+          title: "Génération d’image",
+          detail: "Un chat astronaute",
+          status: "done",
+          artifacts: [
+            {
+              type: "generatedImage",
+              dataUrl: demoGeneratedImageUrl,
+              prompt: "Un chat astronaute flottant dans l’espace",
+            },
+          ],
         },
       ],
     },

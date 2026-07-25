@@ -161,6 +161,15 @@ state or regression baseline.
   Markdown in the conversation.
 - `application-error-message-preview-840x620.png` — the same error modality
   stays readable and contained at the configured minimum viewport.
+- `generated-image-widget-preview-1240x820.png` — a generated image remains in
+  a dedicated persistent media widget below the compact technical action.
+- `generated-image-widget-preview-840x620.png` — the same widget remains
+  contained without horizontal overflow at the configured minimum viewport.
+- `generated-image-lightbox-preview-840x620.png` — the generated-image overlay
+  fills the complete application viewport with minimal padding and keeps save
+  and close actions available above the image.
+- `generated-image-widget-source.jpg` — the compact generated cat-astronaut
+  fixture used by the browser-only visual preview.
 - `mcp-reload-preview-1240x820.png` — MCP settings distinguish a lightweight
   inventory refresh from an explicit App Server configuration reload.
 - `mcp-reload-preview-840x620.png` — the same dual-action header remains

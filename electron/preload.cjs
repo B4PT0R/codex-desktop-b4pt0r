@@ -15,6 +15,7 @@ const allowedCommands = new Set([
   "read_chromium_status",
   "open_chromium_target",
   "open_chromium_image",
+  "save_generated_image",
   "install_chromium",
   "cancel_chromium_install",
 ]);

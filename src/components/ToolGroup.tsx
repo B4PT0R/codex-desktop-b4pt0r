@@ -312,14 +312,12 @@ function ToolRow({
   tool: ToolCall;
 }) {
   const hasDetails = Boolean(
-    tool.output || tool.diff || tool.progress || tool.artifacts?.length,
+    tool.output ||
+      tool.diff ||
+      tool.progress ||
+      tool.artifacts?.some((artifact) => artifact.type !== "generatedImage"),
   );
-  const showArtifactByDefault = tool.artifacts?.some(
-    (artifact) => artifact.type === "generatedImage",
-  );
-  const [detailsOpen, setDetailsOpen] = useState(
-    Boolean(showArtifactByDefault),
-  );
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [phase, setPhase] = useState<"full" | "collapsing" | "compact">(
     tool.status !== "running" && !forceReplay ? "compact" : "full",
   );
@@ -334,9 +332,6 @@ function ToolRow({
     onCollapseStartedRef.current = onCollapseStarted;
     onCompactedRef.current = onCompacted;
   }, [onCollapseStarted, onCompacted]);
-  useEffect(() => {
-    if (showArtifactByDefault && !hasCompacted.current) setDetailsOpen(true);
-  }, [showArtifactByDefault]);
   useEffect(() => {
     if (tool.status === "running") {
       hasRun.current = true;
@@ -492,7 +487,15 @@ function ToolDetails({
           <pre className="tool-diff">{tool.diff}</pre>
         </section>
       )}
-      {tool.artifacts && <ToolArtifacts artifacts={tool.artifacts} />}
+      {tool.artifacts?.some(
+        (artifact) => artifact.type !== "generatedImage",
+      ) && (
+        <ToolArtifacts
+          artifacts={tool.artifacts.filter(
+            (artifact) => artifact.type !== "generatedImage",
+          )}
+        />
+      )}
     </div>
   );
 }

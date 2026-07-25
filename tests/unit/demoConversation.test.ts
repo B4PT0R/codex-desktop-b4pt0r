@@ -27,7 +27,14 @@ describe("conversation de démonstration", () => {
           .flatMap((message) => message.tools ?? [])
           .map((tool) => tool.kind),
       ),
-    ).toEqual(new Set(["webSearch", "commandExecution", "fileChange"]));
+    ).toEqual(
+      new Set([
+        "webSearch",
+        "commandExecution",
+        "fileChange",
+        "imageGeneration",
+      ]),
+    );
   });
 
   it("fournit une jauge de contexte réaliste", () => {

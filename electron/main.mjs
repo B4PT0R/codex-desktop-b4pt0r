@@ -33,6 +33,10 @@ import {
   readWorkspaceAgents,
   writeWorkspaceAgents,
 } from "./workspace-agents.mjs";
+import {
+  generatedImageSaveOptions,
+  saveGeneratedImage,
+} from "./generated-image.mjs";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const isDevelopment = !app.isPackaged;
@@ -131,6 +135,17 @@ function registerIpc() {
   ipcMain.handle("desktop:open_chromium_image", (event, args) => {
     trusted(event);
     return openChromiumImage(args?.dataUrl, app.getPath("home"));
+  });
+  ipcMain.handle("desktop:save_generated_image", async (event, args) => {
+    trusted(event);
+    const options = await generatedImageSaveOptions(
+      args,
+      app.getPath("pictures"),
+    );
+    const result = await dialog.showSaveDialog(mainWindow, options);
+    if (result.canceled || !result.filePath) return false;
+    await saveGeneratedImage(args, result.filePath);
+    return true;
   });
   ipcMain.handle("desktop:install_chromium", (event, args) => {
     trusted(event);

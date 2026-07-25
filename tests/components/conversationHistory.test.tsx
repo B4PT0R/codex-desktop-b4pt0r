@@ -85,6 +85,45 @@ describe("historique de conversation", () => {
     expect(error).toHaveTextContent("Error: Mode aperçu navigateur");
   });
 
+  it("présente une image générée hors de l’accordéon d’actions", () => {
+    renderConversation({
+      activity: null,
+      messages: [
+        {
+          id: "generated-image",
+          role: "assistant",
+          content: "",
+          tools: [
+            {
+              id: "image-tool",
+              kind: "imageGeneration",
+              title: "Génération d’image",
+              detail: "Un chat astronaute",
+              status: "done",
+              artifacts: [
+                {
+                  type: "generatedImage",
+                  dataUrl: "data:image/png;base64,iVBORw0KGgo=",
+                  prompt: "Un chat astronaute",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const action = screen.getByText("1 action effectuée").closest(".tool-group");
+    const widget = screen.getByText("Image générée").closest(
+      ".generated-image-widget",
+    );
+    expect(action).toBeInTheDocument();
+    expect(widget).toBeVisible();
+    expect(action).not.toContainElement(
+      screen.getByRole("img", { name: "Un chat astronaute" }),
+    );
+  });
+
   it("sort le dernier plan du fil pour n’afficher qu’un widget persistant", async () => {
     renderConversation({
       activity: "thinking",

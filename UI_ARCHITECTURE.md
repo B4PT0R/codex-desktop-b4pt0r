@@ -110,6 +110,9 @@ reprenons cette organisation plutôt que d’inventer un inspecteur permanent à
 onglets.
 
 - changements, plan et commandes restent résumés dans le fil ;
+- une image générée quitte l’accordéon technique dès qu’elle est disponible :
+  son widget média reste ouvert dans le fil jusqu’à un repli explicite et
+  propose un overlay plein écran ainsi qu’un enregistrement local borné ;
 - « Revoir » ouvre le diff dans le panneau contextuel ;
 - navigateur, ressource MCP ou aperçu peuvent réutiliser le même panneau ;
 - un futur terminal persistant utilise un panneau inférieur distinct, comme la

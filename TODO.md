@@ -28,11 +28,11 @@ OpenAI release.
 
 ## Verified baseline
 
-- Package: `dist/codex-desktop-linux_0.2.1_amd64.deb`
-- Size: 105,954,396 bytes
+- Package: `dist/codex-desktop-linux_0.2.2_amd64.deb`
+- Size: 105,980,588 bytes
 - SHA-256:
-  `b6bed168037142f04fef6155d2c35c5f4f45903a5747c8a66a272a4f760f47bb`
-- Installed locally as `codex-desktop-linux 0.2.1` on Ubuntu amd64.
+  `9947a9164f0ffa85f00315394e6bfe9532fff2616d7ceb511c1f8000c54d7866`
+- Installed locally as `codex-desktop-linux 0.2.2` on Ubuntu amd64.
 - The current Config editor, tool-group fixes, App Server PATH fix, workspace
   `AGENTS.md` editor and dual-agent Realtime chat hierarchy are included in the
   installed package, including the centralized Realtime shutdown cleanup.
@@ -49,12 +49,12 @@ OpenAI release.
   This client emits 53 product methods (41 stable, 12 experimental), explicitly
   handles 54 notifications and answers 6 server requests. See
   `APP_SERVER_COVERAGE.md` for the classified inventory.
-- 431 Vitest/contract tests across 84 files pass:
-  392 frontend/unit/component cases and 39 App Server contract cases.
-- 29 Electron/Node tests pass.
+- 433 Vitest/contract tests across 85 files pass:
+  394 frontend/unit/component cases and 39 App Server contract cases.
+- 31 Electron/Node tests pass.
 - Strict TypeScript and the production build pass.
 - Production dependency audit reports zero vulnerabilities.
-- Main JS: 465.95 kB (136.76 kB gzip).
+- Main JS: 469.72 kB (137.64 kB gzip).
 - Lazy diff viewer: 89.50 kB (32.89 kB gzip).
 - Lazy Markdown/KaTeX: 698.43 kB (208.65 kB gzip).
 
@@ -143,6 +143,9 @@ and update this section when priorities move.
 - The plan is one live widget in conversation flow, not an overlay.
 - Diffs use a lazy structured renderer with a readable partial-patch fallback
   and an optional raw disclosure.
+- Generated images render in a persistent conversation widget outside the tool
+  accordion. They remain expanded until the user folds them, provide a
+  viewport-filling overlay and use a bounded native save-image boundary.
 - Global Config editing never exposes a generic filesystem primitive. Electron
   resolves only `$CODEX_HOME/config.toml`, limits it to 1 MB, validates TOML,
   rejects stale versions and replaces the file atomically with mode `0600`.

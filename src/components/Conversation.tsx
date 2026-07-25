@@ -14,6 +14,7 @@ import {
   RealtimeVoiceMessage,
 } from "./RealtimeAssistantMessage";
 import { ApplicationErrorMessage } from "./ApplicationErrorMessage";
+import { GeneratedImageWidget } from "./GeneratedImageWidget";
 
 type ConversationProps = {
   activity: AgentActivity;
@@ -97,6 +98,11 @@ const ConversationMessage = memo(function ConversationMessage({
   const trailingSignals = message.signals?.filter(
     (signal) => signal.kind !== "plan" && signal.kind !== "reasoning",
   );
+  const generatedImages = message.tools?.flatMap((tool) =>
+    (tool.artifacts ?? []).filter(
+      (artifact) => artifact.type === "generatedImage",
+    ),
+  );
 
   useEffect(() => {
     if (!message.revealAfter) {
@@ -145,6 +151,9 @@ const ConversationMessage = memo(function ConversationMessage({
             onReviewDiff={onReviewDiff}
             stepClosed={stepClosed}
           />
+        )}
+        {generatedImages && generatedImages.length > 0 && (
+          <GeneratedImageWidget artifacts={generatedImages} />
         )}
       </div>
     </article>
