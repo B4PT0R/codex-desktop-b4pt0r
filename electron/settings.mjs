@@ -67,6 +67,14 @@ function validatePatch(patch) {
     throw new Error("Unsupported desktop font size");
   }
   if (
+    patch.interfaceScale !== undefined &&
+    (!Number.isFinite(patch.interfaceScale) ||
+      patch.interfaceScale < 0.8 ||
+      patch.interfaceScale > 1.5)
+  ) {
+    throw new Error("Unsupported interface scale");
+  }
+  if (
     patch.sidebarWidth !== undefined &&
     (!Number.isInteger(patch.sidebarWidth) ||
       patch.sidebarWidth < 220 ||

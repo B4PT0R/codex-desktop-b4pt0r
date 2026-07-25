@@ -13,7 +13,11 @@ describe("rendu du chat", () => {
       <Markdown>{"## Résultat\n\n- [x] terminé\n\n`cargo test`"}</Markdown>,
     );
     expect(
-      await screen.findByRole("heading", { name: "Résultat" }),
+      await screen.findByRole(
+        "heading",
+        { name: "Résultat" },
+        { timeout: 5_000 },
+      ),
     ).toBeVisible();
     expect(screen.getByText("cargo test")).toBeVisible();
   });

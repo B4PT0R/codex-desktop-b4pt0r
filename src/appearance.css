@@ -2,12 +2,15 @@
   color-scheme: dark;
 }
 
-:root[data-font-size="small"] #root {
-  zoom: 0.92;
+#root {
+  zoom: var(--interface-scale, 1.12);
 }
 
-:root[data-font-size="large"] #root {
-  zoom: 1.1;
+.app,
+.settings-view,
+.settings-loader {
+  width: var(--interface-viewport-width, 89.285714vw);
+  height: var(--interface-viewport-height, 89.285714vh);
 }
 
 :root[data-theme="light"] {

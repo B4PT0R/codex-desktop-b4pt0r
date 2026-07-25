@@ -255,6 +255,14 @@ symboliques et remplace le fichier atomiquement.
   directement le message vocal principal dans la conversation. La finalisation
   remplace l’assemblage provisoire en place ; le composer ne porte aucune
   surface de transcript redondante.
+- Le hook de conversation Realtime possède le fork éphémère, filtre les
+  notifications tardives, sérialise l’injection des transcriptions dans le
+  parent et centralise tous les chemins d’arrêt. `App.tsx` ne coordonne que le
+  déclenchement depuis le compositeur.
+- Les rafales de notifications qui modifient le fil sont réduites dans l’ordre
+  à une mise à jour React non urgente par fenêtre de 16 ms. Les interactions
+  du compositeur, la dictée et les demandes bloquantes gardent ainsi la
+  priorité, et un changement de thread invalide la file en attente.
 - Les réponses finalisées de l’agent vocal restent le flux principal du chat et
   portent l’accent rose Realtime. Les messages produits en parallèle par
   l’agent textuel utilisent une surface bleue secondaire : visible pendant le

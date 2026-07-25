@@ -45,6 +45,24 @@ export function realtimeThreadForkParams(
     excludeTurns: true,
   };
 }
+export function realtimeEphemeralThreadStartParams(
+  cwd: string | undefined,
+  model: string,
+  permission?: Permission,
+  personality: Personality = "pragmatic",
+  approvalPolicy?: ApprovalPolicy,
+) {
+  return {
+    ...threadStartParams(
+      cwd,
+      model,
+      permission,
+      personality,
+      approvalPolicy,
+    ),
+    ephemeral: true,
+  };
+}
 export function configReadParams(cwd?: string) {
   return { cwd: cwd ?? null, includeLayers: false };
 }
@@ -314,6 +332,20 @@ export function threadBehaviorUpdateParams(
       },
     },
   };
+}
+
+export function threadPermissionUpdateParams(
+  threadId: string,
+  permission: Permission,
+) {
+  return { threadId, permissions: permission };
+}
+
+export function threadApprovalPolicyUpdateParams(
+  threadId: string,
+  approvalPolicy: ApprovalPolicy,
+) {
+  return { threadId, approvalPolicy };
 }
 
 export function backgroundTerminalsListParams(

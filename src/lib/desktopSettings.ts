@@ -7,6 +7,7 @@ export type DesktopSettings = {
   lastWorkspace?: string;
   theme?: "system" | "dark" | "light";
   fontSize?: "small" | "default" | "large";
+  interfaceScale?: number;
   realtimeVoice?: string;
   sidebarWidth?: number;
 };
@@ -18,6 +19,7 @@ export type DesktopSettingsPatch = Partial<
     | "lastWorkspace"
     | "theme"
     | "fontSize"
+    | "interfaceScale"
     | "realtimeVoice"
     | "sidebarWidth"
   >
@@ -95,7 +97,11 @@ function writeBrowserSettings(settings: DesktopSettings) {
   }
   localStorage.setItem(
     browserAppearanceKey,
-    JSON.stringify({ theme: settings.theme, fontSize: settings.fontSize }),
+    JSON.stringify({
+      theme: settings.theme,
+      fontSize: settings.fontSize,
+      interfaceScale: settings.interfaceScale,
+    }),
   );
   if (settings.realtimeVoice) {
     localStorage.setItem(browserVoiceKey, settings.realtimeVoice);
@@ -131,6 +137,14 @@ function validatePatch(patch: DesktopSettingsPatch) {
   ) {
     throw new Error("Unsupported desktop font size");
   }
+  if (
+    patch.interfaceScale !== undefined &&
+    (!Number.isFinite(patch.interfaceScale) ||
+      patch.interfaceScale < 0.8 ||
+      patch.interfaceScale > 1.5)
+  ) {
+    throw new Error("Unsupported interface scale");
+  }
   if (patch.realtimeVoice && !isRealtimeVoice(patch.realtimeVoice)) {
     throw new Error("Unsupported realtime voice");
   }
@@ -158,12 +172,13 @@ function parseBrowserSidebarWidth(
 
 function parseBrowserAppearance(
   value: string | null,
-): Pick<DesktopSettings, "theme" | "fontSize"> {
+): Pick<DesktopSettings, "theme" | "fontSize" | "interfaceScale"> {
   if (!value) return {};
   try {
     const candidate = JSON.parse(value) as Record<string, unknown>;
     const theme = candidate.theme;
     const fontSize = candidate.fontSize;
+    const interfaceScale = candidate.interfaceScale;
     return {
       ...(theme === "system" || theme === "dark" || theme === "light"
         ? { theme }
@@ -172,6 +187,12 @@ function parseBrowserAppearance(
       fontSize === "default" ||
       fontSize === "large"
         ? { fontSize }
+        : {}),
+      ...(typeof interfaceScale === "number" &&
+      Number.isFinite(interfaceScale) &&
+      interfaceScale >= 0.8 &&
+      interfaceScale <= 1.5
+        ? { interfaceScale }
         : {}),
     };
   } catch {

@@ -20,6 +20,7 @@ import {
   fuzzyFileSearchSessionUpdateParams,
   cancelLoginParams,
   chatgptLoginParams,
+  realtimeEphemeralThreadStartParams,
   realtimeStartParams,
   realtimeListVoicesParams,
   realtimeThreadForkParams,
@@ -31,6 +32,7 @@ import {
   skillsListParams,
   threadArchiveParams,
   threadBehaviorUpdateParams,
+  threadApprovalPolicyUpdateParams,
   threadCompactParams,
   threadDeleteParams,
   threadCwdUpdateParams,
@@ -42,6 +44,7 @@ import {
   threadGoalSaveParams,
   threadGoalStatusParams,
   threadInjectTranscriptParams,
+  threadPermissionUpdateParams,
   threadShellCommandParams,
   threadSetNameParams,
   threadStartParams,
@@ -126,6 +129,15 @@ describe("contrat Codex installé", () => {
       "ThreadForkParams",
       realtimeThreadForkParams(
         "thr_1",
+        "/tmp/project",
+        "gpt-5.4",
+        ":workspace",
+      ),
+    ));
+  it("accepte un thread Realtime éphémère sans parent persistant", () =>
+    validates(
+      "ThreadStartParams",
+      realtimeEphemeralThreadStartParams(
         "/tmp/project",
         "gpt-5.4",
         ":workspace",
@@ -228,6 +240,16 @@ describe("contrat Codex installé", () => {
         "never",
       ),
     ));
+  it("accepte des mises à jour indépendantes de permission et d’approbation", () => {
+    validates(
+      "ThreadSettingsUpdateParams",
+      threadPermissionUpdateParams("thr_1", ":danger-full-access"),
+    );
+    validates(
+      "ThreadSettingsUpdateParams",
+      threadApprovalPolicyUpdateParams("thr_1", "never"),
+    );
+  });
   it("accepte turn/start", () =>
     validates(
       "TurnStartParams",

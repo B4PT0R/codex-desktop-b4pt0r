@@ -1,6 +1,6 @@
 # Codex Desktop Linux — Project handoff
 
-Last updated: 2026-07-25
+Last updated: 2026-07-26
 
 This file is the short operational memory for the next contributor or Codex
 agent. Read `AGENTS.md` first. Durable architecture belongs in
@@ -28,17 +28,21 @@ OpenAI release.
 
 ## Verified baseline
 
-- Package: `dist/codex-desktop-linux_0.2.2_amd64.deb`
-- Size: 105,980,588 bytes
+- Package: `dist/codex-desktop-linux_0.2.3_amd64.deb`
+- Size: 105,863,504 bytes
 - SHA-256:
-  `9947a9164f0ffa85f00315394e6bfe9532fff2616d7ceb511c1f8000c54d7866`
-- Installed locally as `codex-desktop-linux 0.2.2` on Ubuntu amd64.
+  `2d5c8464d712e76b8c6b3d098e864c2fb31555ba524748c7f0cb2ef1fab1dafe`
+- Package metadata verified as `codex-desktop-linux 0.2.3` for Ubuntu amd64.
 - The current Config editor, tool-group fixes, App Server PATH fix, workspace
   `AGENTS.md` editor and dual-agent Realtime chat hierarchy are included in the
-  installed package, including the centralized Realtime shutdown cleanup.
+  release package, including the centralized Realtime shutdown cleanup.
 - The atomic-persistence, stale-request sanitation, App Server compatibility,
   command-menu and Realtime-transcript lots described below are included.
-- Installed ASAR matches the packaged ASAR.
+- The release package includes the extracted Realtime lifecycle and the
+  ordered 16 ms conversation-event render queue that keeps dictation and
+  composer interactions responsive during dense agent output.
+- The release package includes the five-line auto-growing composer validated
+  at 1280×720 and 840×620 before packaging.
 - `/opt/Codex Desktop/chrome-sandbox` is `root:root` mode `0755` because the
   package post-install verified working user namespaces; it falls back to
   `4755` only on systems where user namespaces are unavailable.
@@ -49,12 +53,16 @@ OpenAI release.
   This client emits 53 product methods (41 stable, 12 experimental), explicitly
   handles 54 notifications and answers 6 server requests. See
   `APP_SERVER_COVERAGE.md` for the classified inventory.
-- 433 Vitest/contract tests across 85 files pass:
-  394 frontend/unit/component cases and 39 App Server contract cases.
-- 31 Electron/Node tests pass.
+- 448 Vitest/contract tests across 88 files pass, including 41 App Server
+  contract cases.
+- 32 Electron/Node tests pass.
 - Strict TypeScript and the production build pass.
-- Production dependency audit reports zero vulnerabilities.
-- Main JS: 469.72 kB (137.64 kB gzip).
+- Production dependency audit reports zero vulnerabilities. The full
+  development-tree audit reports 16 high-severity advisories inherited through
+  `electron-builder`; npm's forced remediation would downgrade its major
+  version, so it was not applied. The compatible audit fix updated PostCSS and
+  related build dependencies.
+- Main JS: 472.77 kB (138.68 kB gzip).
 - Lazy diff viewer: 89.50 kB (32.89 kB gzip).
 - Lazy Markdown/KaTeX: 698.43 kB (208.65 kB gzip).
 
@@ -63,18 +71,37 @@ before starting and do not discard unrelated changes.
 
 ## Current focus
 
-Prepare the repository for an initial community release where a Linux user can
-clone it, ask their Codex agent to continue development, and obtain a safe,
-reviewable result without private project context.
+Consolidate the existing product before adding new surfaces. Preserve behavior,
+reduce orchestration concentrated in `App.tsx`, make ownership boundaries
+testable, and keep the release/contributor documentation aligned with the real
+baseline.
 
-The application itself is already sufficiently complete. Prefer reliability,
-portability, contributor guidance and maintenance workflows over adding broad
-new surfaces.
+The first consolidation lot moved the complete Realtime conversation lifecycle
+into `useRealtimeConversation`: ephemeral-fork ownership, stale-event filtering,
+ordered parent transcript injection, interruption finalization and teardown are
+now tested together. The native dictation path remains separate. Conversation
+notifications are coalesced into ordered 16 ms render batches and committed as
+non-urgent React work so dense agent output cannot monopolize input/audio
+interactions; pending batches are discarded when the active thread changes.
 
 ## Next work
 
 Pick one bounded lot, preserve the order unless a verified bug changes priority,
 and update this section when priorities move.
+
+### P0 — consolidation
+
+- [x] Extract and test Realtime conversation ownership from `App.tsx` without
+      changing its App Server contract.
+- [ ] Extract App Server notification routing from `App.tsx` into cohesive
+      thread/session event owners; preserve unknown-notification compatibility.
+- [ ] Separate thread runtime settings/source tracking from page orchestration,
+      especially permissions and approvals where server state must remain
+      authoritative.
+- [ ] Review asynchronous teardown and stale-response guards across thread
+      switching, settings loaders, integrations and native bridges.
+- [ ] Split CSS only alongside the corresponding feature ownership changes;
+      avoid a mechanical stylesheet shuffle.
 
 ### P0 — release confidence
 
@@ -90,7 +117,7 @@ and update this section when priorities move.
 
 ### P1 — community onboarding
 
-- [ ] Rewrite `README.md` as a concise public entry point: independent-project
+- [x] Rewrite `README.md` as a concise public entry point: independent-project
       disclaimer, prerequisites, install/build instructions, first run,
       screenshots, known platform scope and links to contributor documents.
 - [ ] Add `CONTRIBUTING.md` with a small first-contribution workflow that mirrors
@@ -153,6 +180,21 @@ and update this section when priorities move.
   formulas cannot destabilize streaming.
 - Realtime uses a separate ephemeral voice thread because persistent voice
   threads reproduced erroneous quota interruptions.
+- Realtime lifecycle state is owned by `useRealtimeConversation`, not the page
+  coordinator. Its finalized transcripts are serialized into the persistent
+  parent, and late notifications from released forks are ignored.
+- Starting Realtime on an empty parent first attempts the normal ephemeral fork,
+  then falls back only on App Server's exact missing-rollout failure to a fresh
+  ephemeral `thread/start`. Other fork failures remain visible, while parent
+  transcript injection and history-bearing fork startup stay unchanged.
+- Interface-size presets are calibrated at 100%, 112% and 125%. `Ctrl +` and
+  `Ctrl -` adjust the persisted scale in 4% steps between 80% and 150%, while
+  `Ctrl 0` restores the selected preset. Full-viewport surfaces are inversely
+  sized instead of shrinking `#root`, preserving the composer, sidebar footer
+  and settings navigation without clipping or outer bands.
+- The composer textarea uses Chromium content sizing: it starts at the existing
+  compact two-line height, grows with wrapped or explicit lines up to five
+  typographic lines at every interface scale, then scrolls internally.
 - Dictation uses Chromium `MediaRecorder` with WebM/Opus and Electron
   `net.fetch`; it does not depend on Python or distribution-specific audio
   libraries.
@@ -179,6 +221,10 @@ and update this section when priorities move.
 - Managed permission-profile and hook constraints are read only on the relevant
   settings pages. MCP configuration reload is explicit and distinct from an
   inventory refresh.
+- Composer permission and approval quick pickers emit independent partial
+  `thread/settings/update` patches. Concurrent Full access and Never ask
+  selections therefore cannot restore each other's stale field; the full
+  settings form still submits one coherent complete behavior update.
 - Hook runs update one quiet conversation signal from start through completion.
   Archive, unarchive and close notifications reconcile thread state across
   clients without duplicating restored entries.

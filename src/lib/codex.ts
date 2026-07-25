@@ -124,7 +124,7 @@ async function initializeConnection() {
         clientInfo: {
           name: "codex-desktop-linux",
           title: "Codex Desktop Linux",
-          version: "0.2.1",
+          version: "0.2.3",
         },
         capabilities: { experimentalApi: true },
       });

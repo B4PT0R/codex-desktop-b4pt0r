@@ -18,14 +18,17 @@ import {
   chatgptLoginParams,
   realtimeStartParams,
   realtimeListVoicesParams,
+  realtimeEphemeralThreadStartParams,
   realtimeThreadForkParams,
   threadBehaviorUpdateParams,
+  threadApprovalPolicyUpdateParams,
   threadSearchParams,
   threadGoalClearParams,
   threadGoalGetParams,
   threadGoalSaveParams,
   threadGoalStatusParams,
   threadInjectTranscriptParams,
+  threadPermissionUpdateParams,
   threadShellCommandParams,
   threadCompactParams,
   threadCwdUpdateParams,
@@ -167,6 +170,22 @@ describe("constructeurs JSON-RPC", () => {
       permissions: ":danger-full-access",
       approvalPolicy: "never",
     }));
+  it("isole les changements rapides de permission et d’approbation", () => {
+    expect(
+      threadPermissionUpdateParams("thr", ":danger-full-access"),
+    ).toEqual({
+      threadId: "thr",
+      permissions: ":danger-full-access",
+    });
+    expect(threadPermissionUpdateParams("thr", ":danger-full-access")).not
+      .toHaveProperty("approvalPolicy");
+    expect(threadApprovalPolicyUpdateParams("thr", "never")).toEqual({
+      threadId: "thr",
+      approvalPolicy: "never",
+    });
+    expect(threadApprovalPolicyUpdateParams("thr", "never")).not
+      .toHaveProperty("permissions");
+  });
   it("laisse App Server choisir le cwd par défaut", () =>
     expect(
       threadStartParams(undefined, "gpt-test", ":workspace"),
@@ -327,6 +346,24 @@ describe("constructeurs JSON-RPC", () => {
       permissions: ":workspace",
       ephemeral: true,
       excludeTurns: true,
+    });
+  });
+  it("démarre un thread vocal éphémère quand le parent n’a pas encore de rollout", () => {
+    expect(
+      realtimeEphemeralThreadStartParams(
+        "/work",
+        "gpt-5.4",
+        ":workspace",
+        "friendly",
+        "on-request",
+      ),
+    ).toEqual({
+      cwd: "/work",
+      model: "gpt-5.4",
+      permissions: ":workspace",
+      personality: "friendly",
+      approvalPolicy: "on-request",
+      ephemeral: true,
     });
   });
   it("construit les items de transcript à injecter dans le thread principal", () => {

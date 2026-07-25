@@ -1,7 +1,7 @@
 .settings-loader {
   display: grid;
   width: 100vw;
-  height: 100vh;
+  height: 100%;
   place-items: center;
   padding: 24px;
   color: #aaa9a4;
@@ -57,7 +57,7 @@
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
   width: 100vw;
-  height: 100vh;
+  height: 100%;
   overflow: hidden;
   background: #181817;
 }

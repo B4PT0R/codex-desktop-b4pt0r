@@ -127,6 +127,21 @@ describe("composer", () => {
     expect(add).toHaveFocus();
   });
 
+  it("ferme le menu de contexte en cliquant à côté", () => {
+    renderComposer();
+    const add = screen.getByRole("button", { name: "Ajouter du contexte" });
+    const textarea = screen.getByRole("textbox");
+
+    fireEvent.click(add);
+    expect(screen.getByRole("menu")).toBeVisible();
+    fireEvent.pointerDown(textarea);
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+
+    fireEvent.click(add);
+    fireEvent.pointerDown(screen.getByRole("menuitem", { name: /Images/ }));
+    expect(screen.getByRole("menu")).toBeVisible();
+  });
+
   it("entre dans les commandes avec Flèche bas et revient au composer", async () => {
     renderComposer({ hasThread: true });
     const textarea = screen.getByRole("textbox");

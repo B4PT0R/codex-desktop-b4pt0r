@@ -57,3 +57,14 @@ test("validates the persisted sidebar width", async () => {
     /Unsupported sidebar width/,
   );
 });
+
+test("validates the persisted interface scale", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "codex-settings-"));
+  const file = path.join(directory, "settings.json");
+  const updated = await updateSettings(file, { interfaceScale: 1.24 });
+  assert.equal(updated.interfaceScale, 1.24);
+  await assert.rejects(
+    updateSettings(file, { interfaceScale: 2 }),
+    /Unsupported interface scale/,
+  );
+});

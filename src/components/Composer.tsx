@@ -95,7 +95,13 @@ export function Composer({
 
   useEffect(() => {
     function close(event: PointerEvent) {
-      if (!shell.current?.contains(event.target as Node)) setMenu(null);
+      const target = event.target as Node;
+      if (
+        !menuSurface.current?.contains(target) &&
+        !addButton.current?.contains(target)
+      ) {
+        setMenu(null);
+      }
     }
     document.addEventListener("pointerdown", close);
     return () => document.removeEventListener("pointerdown", close);
