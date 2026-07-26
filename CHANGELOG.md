@@ -3,6 +3,24 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.3.0] - 2026-07-26
+
+### Added
+
+- Opt-in shared Chromium browser powered by app-pinned Playwright and
+  Playwright MCP versions.
+- One guided activation downloads the matching private browser, creates a
+  persistent profile, configures Codex MCP and verifies the local connection.
+- Application links and Codex browser tools operate in the same visible
+  Playwright context.
+- Repair, cancellation, startup recovery and system-browser fallback states.
+
+### Changed
+
+- Codex Desktop no longer assumes or installs a system Chromium package.
+- Playwright browser data is isolated under
+  `~/.local/share/codex-desktop/`.
+
 ## [0.2.4] - 2026-07-26
 
 ### Added
@@ -85,6 +103,7 @@ follows semantic versioning while the public interface is taking shape.
 - Native Electron packaging for Debian/Ubuntu.
 - Stable Chromium microphone capture for dictation and Realtime voice.
 
+[0.3.0]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.2.4...v0.3.0
 [0.2.4]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.2.1...v0.2.2

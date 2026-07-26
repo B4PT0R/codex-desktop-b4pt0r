@@ -68,3 +68,14 @@ test("validates the persisted interface scale", async () => {
     /Unsupported interface scale/,
   );
 });
+
+test("validates the persisted shared browser state", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "codex-settings-"));
+  const file = path.join(directory, "settings.json");
+  const updated = await updateSettings(file, { sharedBrowserEnabled: true });
+  assert.equal(updated.sharedBrowserEnabled, true);
+  await assert.rejects(
+    updateSettings(file, { sharedBrowserEnabled: "yes" }),
+    /Unsupported shared browser setting/,
+  );
+});

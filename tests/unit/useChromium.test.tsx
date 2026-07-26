@@ -12,22 +12,26 @@ import { useChromium } from "../../src/lib/useChromium";
 
 const missing = {
   available: false,
+  enabled: false,
+  running: false,
   installing: false,
   installSupported: true,
-  installPackage: "chromium-browser",
+  installPackage: "Playwright Chromium",
 };
 
 beforeEach(() => {
   invokeMock.mockReset();
 });
 
-describe("navigateur Chromium géré", () => {
-  it("détecte Chromium puis ne lance l’installation qu’après l’action dédiée", async () => {
+describe("navigateur Chromium partagé", () => {
+  it("détecte le runtime puis ne lance l’activation qu’après l’action dédiée", async () => {
     const installed = {
       ...missing,
       available: true,
-      executable: "/usr/bin/chromium",
-      version: "Chromium 148",
+      enabled: true,
+      running: true,
+      version: "Chrome for Testing 151",
+      mcpVersion: "0.0.78",
     };
     invokeMock.mockResolvedValueOnce(missing).mockResolvedValueOnce(installed);
     const { result } = renderHook(useChromium);

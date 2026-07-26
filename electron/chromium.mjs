@@ -1,145 +1,280 @@
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import {
   access,
   chmod,
   mkdir,
-  readFile,
-  readdir,
-  stat,
-  writeFile,
 } from "node:fs/promises";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { BrowserArtifactServer } from "./browser-artifacts.mjs";
+import { ensurePlaywrightCodexConfig } from "./playwright-codex-config.mjs";
+import {
+  PlaywrightMcpClient,
+  playwrightToolError,
+} from "./playwright-mcp-client.mjs";
 
-const SUPPORTED_MEDIA = new Set([
-  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".pdf", ".html",
-  ".htm", ".txt", ".mp3", ".wav", ".ogg", ".mp4", ".webm",
-]);
-let browser;
-let installer;
-let artifactSequence = 0;
+const MCP_HOST = "127.0.0.1";
+const MCP_PORT = 8931;
+const MCP_URL = `http://localhost:${MCP_PORT}/mcp`;
+const MAX_INSTALL_LOG = 8_000;
 
-async function executable(candidate) {
-  try {
-    await access(candidate, 1);
-    return (await stat(candidate)).isFile();
-  } catch {
-    return false;
-  }
-}
+export const sharedBrowserEndpoint = MCP_URL;
 
-export async function discoverChromium(environment = process.env) {
-  const candidates = [
-    environment.CODEX_CHROMIUM_EXECUTABLE,
-    ...["chromium", "chromium-browser"].flatMap((name) =>
-      (environment.PATH ?? "")
-        .split(path.delimiter)
-        .filter(Boolean)
-        .map((directory) => path.join(directory, name)),
-    ),
-    "/usr/bin/chromium",
-    "/usr/bin/chromium-browser",
-    "/snap/bin/chromium",
-  ].filter(Boolean);
-  for (const candidate of candidates) {
-    if (await executable(candidate)) return candidate;
-  }
-}
+export class SharedBrowserManager {
+  #artifacts;
+  #client;
+  #environment;
+  #home;
+  #installLog = "";
+  #installer;
+  #processExecutable;
+  #root;
+  #server;
+  #spawn;
 
-export async function chromiumStatus(environment = process.env) {
-  const executablePath = await discoverChromium(environment);
-  const plan = await installPlan();
-  const version = executablePath
-    ? spawnSync(executablePath, ["--version"], { encoding: "utf8" })
-        .stdout?.trim()
-        .slice(0, 200)
-    : undefined;
-  return {
-    available: Boolean(executablePath),
-    ...(executablePath ? { executable: executablePath, version } : {}),
-    installing: Boolean(installer),
-    installSupported: Boolean(plan),
-    ...(plan ? { installPackage: plan.package } : {}),
-  };
-}
-
-export async function openChromiumTarget(target, home) {
-  const executablePath = await discoverChromium();
-  if (!executablePath) throw new Error("Chromium is not installed");
-  const validated = await validateTarget(target);
-  const profile = path.join(home, ".codex", "chromium-profile");
-  await privateDirectory(profile);
-  const mode = browser && browser.exitCode == null ? "--new-tab" : "--new-window";
-  browser = spawn(
-    executablePath,
-    [
-      `--user-data-dir=${profile}`,
-      "--no-first-run",
-      "--no-default-browser-check",
-      mode,
-      validated,
-    ],
-    { detached: false, stdio: "ignore" },
-  );
-  browser.once("error", () => {
-    browser = undefined;
-  });
-}
-
-export async function openChromiumImage(dataUrl, home) {
-  if (
-    typeof dataUrl !== "string" ||
-    dataUrl.length > 20_000_000 ||
-    !/^data:image\/(?:png|jpeg|gif|webp|svg\+xml);base64,[A-Za-z0-9+/=]+$/.test(
-      dataUrl,
-    )
-  ) {
-    throw new Error("Generated image data is invalid");
-  }
-  const directory = path.join(home, ".codex", "chromium-artifacts");
-  await privateDirectory(directory);
-  const file = path.join(
-    directory,
-    `generated-${process.pid}-${artifactSequence++}.html`,
-  );
-  const escaped = dataUrl.replaceAll("'", "&#39;");
-  await writeFile(
-    file,
-    `<!doctype html><meta charset=utf-8><meta http-equiv=Content-Security-Policy content="default-src 'none'; img-src data:; style-src 'unsafe-inline'"><style>html,body{height:100%;margin:0;background:#181817}body{display:grid;place-items:center}img{max-width:100%;max-height:100%;object-fit:contain}</style><img alt="Codex generated image" src="${escaped}">`,
-    { mode: 0o600, flag: "wx" },
-  );
-  await pruneArtifacts(directory);
-  return openChromiumTarget(file, home);
-}
-
-export async function installChromium() {
-  if (await discoverChromium()) return chromiumStatus();
-  if (installer) throw new Error("Chromium installation is already running");
-  const plan = await installPlan();
-  if (!plan) {
-    throw new Error(
-      "Automatic Chromium installation is not supported on this distribution",
+  constructor({
+    home,
+    root,
+    environment = process.env,
+    processExecutable = process.execPath,
+    spawnProcess = spawn,
+  }) {
+    this.#home = home;
+    this.#root = root;
+    this.#environment = environment;
+    this.#processExecutable = processExecutable;
+    this.#spawn = spawnProcess;
+    this.#artifacts = new BrowserArtifactServer(
+      sharedBrowserPaths(home).artifacts,
     );
   }
-  await new Promise((resolve, reject) => {
-    installer = spawn("pkexec", [plan.program, ...plan.args], {
-      stdio: "ignore",
+
+  async status(enabled = false) {
+    const executable = await this.#installedExecutable();
+    return {
+      available: Boolean(executable),
+      enabled,
+      running: Boolean(this.#server && this.#server.exitCode == null),
+      installing: Boolean(this.#installer),
+      installSupported: true,
+      installPackage: "Playwright Chromium",
+      version: executable ? await browserVersion(executable) : undefined,
+      mcpVersion: await packageVersion(
+        path.join(this.#root, "node_modules/@playwright/mcp/package.json"),
+      ),
+      ...(this.#installLog ? { detail: this.#installLog } : {}),
+    };
+  }
+
+  async activate() {
+    const executable =
+      (await this.#installedExecutable()) ?? (await this.#installBrowser());
+    try {
+      await this.#startServer(executable);
+      const client = await this.#connectClient();
+      const verification = await client.callTool({
+        name: "browser_tabs",
+        arguments: { action: "list" },
+      });
+      if (verification.isError)
+        throw new Error(playwrightToolError(verification));
+      await this.#ensureCodexConfig();
+      return this.status(true);
+    } catch (error) {
+      await this.#stopServer();
+      throw error;
+    }
+  }
+
+  cancelInstall() {
+    if (!this.#installer) return false;
+    this.#installer.kill();
+    this.#installer = undefined;
+    return true;
+  }
+
+  async openTarget(target, enabled) {
+    if (!enabled) throw new Error("Shared browser is disabled");
+    const validated = await validateTarget(target);
+    const executable = await this.#installedExecutable();
+    if (!executable) throw new Error("Shared Playwright browser is not installed");
+    await this.#startServer(executable);
+    const client = await this.#connectClient();
+    const result = await client.callTool({
+      name: "browser_navigate",
+      arguments: { url: validated },
     });
-    installer.once("error", reject);
-    installer.once("exit", (code) =>
-      code === 0 ? resolve() : reject(new Error(`Chromium installer exited ${code}`)),
+    if (result.isError) throw new Error(playwrightToolError(result));
+  }
+
+  async openImage(dataUrl, enabled) {
+    const url = await this.#artifacts.pageForImage(dataUrl);
+    return this.openTarget(url, enabled);
+  }
+
+  async startIfEnabled(enabled) {
+    if (!enabled) return;
+    const executable = await this.#installedExecutable();
+    if (!executable) return;
+    await this.#startServer(executable);
+    await this.#ensureCodexConfig();
+  }
+
+  async stop() {
+    await this.#stopServer();
+    this.#installer?.kill();
+    this.#installer = undefined;
+    await this.#artifacts.stop();
+  }
+
+  async #stopServer() {
+    await this.#client?.close().catch(() => undefined);
+    this.#client = undefined;
+    this.#server?.kill();
+    this.#server = undefined;
+  }
+
+  async #installBrowser() {
+    if (this.#installer) throw new Error("Browser installation is already running");
+    const paths = sharedBrowserPaths(this.#home);
+    await privateDirectory(paths.browsers);
+    const cli = path.join(
+      this.#root,
+      "node_modules/playwright-core",
+      "cli.js",
     );
-  }).finally(() => {
-    installer = undefined;
-  });
-  return chromiumStatus();
+    this.#installLog = "";
+    const child = this.#spawn(
+      this.#processExecutable,
+      [cli, "install", "chromium", "--no-shell"],
+      {
+        env: this.#nodeEnvironment(paths.browsers),
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
+    this.#installer = child;
+    child.stdout?.on("data", (chunk) => this.#appendInstallLog(chunk));
+    child.stderr?.on("data", (chunk) => this.#appendInstallLog(chunk));
+    try {
+      await childExit(child, "Playwright browser installer");
+    } finally {
+      if (this.#installer === child) this.#installer = undefined;
+    }
+    const executable = await this.#installedExecutable();
+    if (!executable)
+      throw new Error("Playwright completed without installing Chromium");
+    return executable;
+  }
+
+  async #installedExecutable() {
+    const paths = sharedBrowserPaths(this.#home);
+    process.env.PLAYWRIGHT_BROWSERS_PATH = paths.browsers;
+    const { chromium } = await import("playwright-core");
+    const executable = chromium.executablePath();
+    try {
+      await access(executable, 1);
+      return executable;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async #startServer(executable) {
+    if (this.#server && this.#server.exitCode == null) return;
+    const paths = sharedBrowserPaths(this.#home);
+    await Promise.all([
+      privateDirectory(paths.profile),
+      privateDirectory(paths.output),
+    ]);
+    const cli = path.join(
+      this.#root,
+      "node_modules/@playwright/mcp/cli.js",
+    );
+    let stderr = "";
+    const child = this.#spawn(
+      this.#processExecutable,
+      [
+        cli,
+        "--host",
+        MCP_HOST,
+        "--port",
+        String(MCP_PORT),
+        "--shared-browser-context",
+        "--user-data-dir",
+        paths.profile,
+        "--output-dir",
+        paths.output,
+        "--console-level",
+        "warning",
+        "--executable-path",
+        executable,
+      ],
+      {
+        env: this.#nodeEnvironment(paths.browsers),
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
+    this.#server = child;
+    child.stderr?.on("data", (chunk) => {
+      stderr = `${stderr}${chunk}`.slice(-MAX_INSTALL_LOG);
+    });
+    child.once("exit", () => {
+      if (this.#server === child) this.#server = undefined;
+      void this.#client?.close().catch(() => undefined);
+      this.#client = undefined;
+    });
+    child.once("error", () => {
+      if (this.#server === child) this.#server = undefined;
+    });
+    try {
+      await waitForServer(child);
+    } catch (error) {
+      child.kill();
+      if (this.#server === child) this.#server = undefined;
+      throw new Error(stderr || error.message);
+    }
+  }
+
+  async #connectClient() {
+    if (this.#client) return this.#client;
+    const client = new PlaywrightMcpClient(MCP_URL, "0.3.0");
+    await client.connect();
+    this.#client = client;
+    return client;
+  }
+
+  async #ensureCodexConfig() {
+    await ensurePlaywrightCodexConfig({
+      endpoint: MCP_URL,
+      environment: this.#environment,
+      spawnProcess: this.#spawn,
+    });
+  }
+
+  #nodeEnvironment(browserPath) {
+    return {
+      ...this.#environment,
+      ELECTRON_RUN_AS_NODE: "1",
+      PLAYWRIGHT_BROWSERS_PATH: browserPath,
+    };
+  }
+
+  #appendInstallLog(chunk) {
+    this.#installLog = `${this.#installLog}${String(chunk)}`.slice(
+      -MAX_INSTALL_LOG,
+    );
+  }
+
 }
 
-export function cancelChromiumInstall() {
-  if (!installer) return false;
-  installer.kill();
-  installer = undefined;
-  return true;
+export function sharedBrowserPaths(home) {
+  const root = path.join(home, ".local", "share", "codex-desktop");
+  return {
+    root,
+    browsers: path.join(root, "browsers"),
+    profile: path.join(root, "browser-profile"),
+    output: path.join(root, "browser-output"),
+    artifacts: path.join(root, "browser-artifacts"),
+  };
 }
 
 async function validateTarget(target) {
@@ -147,15 +282,12 @@ async function validateTarget(target) {
     typeof target !== "string" ||
     target.length > 32_768 ||
     /[\0\r\n]/.test(target)
-  ) {
-    throw new Error("Invalid Chromium target");
-  }
-  if (/^https?:\/\//.test(target)) return target;
-  if (!path.isAbsolute(target) || !SUPPORTED_MEDIA.has(path.extname(target).toLowerCase())) {
-    throw new Error("Chromium target must be an HTTP(S) URL or supported absolute path");
-  }
-  if (!(await stat(target)).isFile()) throw new Error("Media target is not a file");
-  return pathToFileURL(target).toString();
+  )
+    throw new Error("Invalid browser target");
+  const url = new URL(target);
+  if (url.protocol !== "http:" && url.protocol !== "https:")
+    throw new Error("Shared browser target must be an HTTP(S) URL");
+  return url.toString();
 }
 
 async function privateDirectory(directory) {
@@ -163,42 +295,75 @@ async function privateDirectory(directory) {
   await chmod(directory, 0o700);
 }
 
-async function pruneArtifacts(directory) {
-  const entries = await readdir(directory, { withFileTypes: true });
-  const files = await Promise.all(
-    entries
-      .filter((entry) => entry.isFile() && entry.name.endsWith(".html"))
-      .map(async (entry) => ({
-        path: path.join(directory, entry.name),
-        modified: (await stat(path.join(directory, entry.name))).mtimeMs,
-      })),
-  );
-  files.sort((a, b) => b.modified - a.modified);
-  const { unlink } = await import("node:fs/promises");
-  await Promise.all(files.slice(20).map((file) => unlink(file.path).catch(() => {})));
+async function browserVersion(executable) {
+  return new Promise((resolve) => {
+    const child = spawn(executable, ["--version"], {
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    let output = "";
+    child.stdout.on("data", (chunk) => {
+      output = `${output}${chunk}`.slice(0, 200);
+    });
+    child.once("error", () => resolve(undefined));
+    child.once("exit", () => resolve(output.trim() || undefined));
+  });
 }
 
-async function installPlan() {
-  let release;
+async function packageVersion(file) {
   try {
-    release = await readFile("/etc/os-release", "utf8");
+    const { readFile } = await import("node:fs/promises");
+    return JSON.parse(await readFile(file, "utf8")).version;
   } catch {
     return undefined;
   }
-  const id = release.match(/^ID=["']?([^"'\n]+)["']?$/m)?.[1];
-  const plans = {
-    ubuntu: { program: "apt-get", args: ["install", "-y", "chromium-browser"], package: "chromium-browser" },
-    debian: { program: "apt-get", args: ["install", "-y", "chromium"], package: "chromium" },
-    fedora: { program: "dnf", args: ["install", "-y", "chromium"], package: "chromium" },
-    arch: { program: "pacman", args: ["-S", "--noconfirm", "chromium"], package: "chromium" },
-    manjaro: { program: "pacman", args: ["-S", "--noconfirm", "chromium"], package: "chromium" },
-  };
-  return plans[id];
 }
 
-export function stopManagedChromium() {
-  browser?.kill();
-  browser = undefined;
-  installer?.kill();
-  installer = undefined;
+function childExit(child, label) {
+  return new Promise((resolve, reject) => {
+    child.once("error", reject);
+    child.once("exit", (code, signal) => {
+      if (code === 0) resolve();
+      else reject(new Error(`${label} exited with ${code ?? signal}`));
+    });
+  });
+}
+
+function waitForServer(child) {
+  return new Promise((resolve, reject) => {
+    let output = "";
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error("Timed out while starting Playwright MCP"));
+    }, 8_000);
+    const onData = (chunk) => {
+      output = `${output}${chunk}`.slice(-2_000);
+      if (output.includes("Listening on ")) {
+        cleanup();
+        resolve();
+      }
+    };
+    const onError = (error) => {
+      cleanup();
+      reject(error);
+    };
+    const onExit = (code) => {
+      cleanup();
+      reject(new Error(`Playwright MCP exited with ${code}`));
+    };
+    const cleanup = () => {
+      clearTimeout(timer);
+      child.stdout?.off("data", onData);
+      child.stderr?.off("data", onData);
+      child.off("error", onError);
+      child.off("exit", onExit);
+    };
+    child.stdout?.on("data", onData);
+    child.stderr?.on("data", onData);
+    child.once("error", onError);
+    child.once("exit", onExit);
+  });
+}
+
+export function stopManagedChromium(manager) {
+  return manager?.stop();
 }

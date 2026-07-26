@@ -610,18 +610,22 @@ export const fr = {
   "settings.startup.disabled": "Désactivé",
   "settings.startup.nativeOnly": "Disponible dans l’application native",
   "settings.startup.error": "Impossible de modifier le démarrage automatique :",
-  "settings.chromium.title": "Navigateur Chromium géré",
+  "settings.chromium.title": "Navigateur Chromium partagé",
   "settings.chromium.detail":
-    "Utilisé pour l’automation et l’affichage plein format des médias.",
+    "Une session Playwright privée, visible et commune à l’application et à l’agent Codex.",
   "settings.chromium.nativeOnly": "Disponible dans l’application native",
-  "settings.chromium.available": "Disponible",
-  "settings.chromium.install": "Installer Chromium",
+  "settings.chromium.available": "Installé",
+  "settings.chromium.ready": "Prêt · partagé avec Codex",
+  "settings.chromium.needsRepair": "Connexion interrompue",
+  "settings.chromium.install": "Activer le navigateur partagé",
+  "settings.chromium.activate": "Terminer l’activation",
+  "settings.chromium.repair": "Réparer",
   "settings.chromium.cancel": "Annuler l’installation",
   "settings.chromium.confirm":
-    "Autoriser l’installation du paquet {package} avec les droits administrateur ?",
+    "Télécharger le Chromium Playwright privé et configurer automatiquement son outil MCP dans Codex ? Une entrée MCP « playwright » existante sera remplacée.",
   "settings.chromium.unsupported":
-    "Installez Chromium avec le gestionnaire de paquets de votre distribution, puis relancez la détection.",
-  "settings.chromium.error": "Impossible de gérer Chromium :",
+    "Le navigateur système restera utilisé tant que la fonctionnalité est inactive.",
+  "settings.chromium.error": "Impossible de préparer le navigateur partagé :",
   "desktopSettings.loadError":
     "Impossible de lire les préférences de l’application",
   "desktopSettings.saveError":

@@ -2,7 +2,7 @@
   "name": "codex-desktop-linux",
   "productName": "Codex Desktop",
   "desktopName": "codex-desktop.desktop",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "description": "Independent desktop client for Codex on Linux",
   "author": {
     "name": "Codex Desktop Linux contributors",
@@ -58,8 +58,10 @@
     }
   },
   "dependencies": {
+    "@playwright/mcp": "0.0.78",
     "katex": "^0.18.1",
     "lucide-react": "^0.468.0",
+    "playwright-core": "1.62.0-alpha-1783623505000",
     "react": "^19.0.0",
     "react-diff-view": "^3.3.3",
     "react-dom": "^19.0.0",

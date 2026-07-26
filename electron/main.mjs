@@ -16,11 +16,7 @@ import { AppServerTransport } from "./app-server.mjs";
 import { readSettings, settingsPath, updateSettings } from "./settings.mjs";
 import { transcribeDictation } from "./transcription.mjs";
 import {
-  cancelChromiumInstall,
-  chromiumStatus,
-  installChromium,
-  openChromiumImage,
-  openChromiumTarget,
+  SharedBrowserManager,
   stopManagedChromium,
 } from "./chromium.mjs";
 import { openFileReference } from "./file-reference.mjs";
@@ -51,6 +47,7 @@ function send(event, payload) {
 }
 
 const appServer = new AppServerTransport(send);
+let sharedBrowser;
 
 function trusted(event) {
   if (
@@ -131,15 +128,25 @@ function registerIpc() {
   });
   ipcMain.handle("desktop:read_chromium_status", (event) => {
     trusted(event);
-    return chromiumStatus();
+    return readSettings(settingsPath(app.getPath("home"))).then((settings) =>
+      sharedBrowser.status(settings.sharedBrowserEnabled === true),
+    );
   });
-  ipcMain.handle("desktop:open_chromium_target", (event, args) => {
+  ipcMain.handle("desktop:open_chromium_target", async (event, args) => {
     trusted(event);
-    return openChromiumTarget(args?.target, app.getPath("home"));
+    const settings = await readSettings(settingsPath(app.getPath("home")));
+    return sharedBrowser.openTarget(
+      args?.target,
+      settings.sharedBrowserEnabled === true,
+    );
   });
-  ipcMain.handle("desktop:open_chromium_image", (event, args) => {
+  ipcMain.handle("desktop:open_chromium_image", async (event, args) => {
     trusted(event);
-    return openChromiumImage(args?.dataUrl, app.getPath("home"));
+    const settings = await readSettings(settingsPath(app.getPath("home")));
+    return sharedBrowser.openImage(
+      args?.dataUrl,
+      settings.sharedBrowserEnabled === true,
+    );
   });
   ipcMain.handle("desktop:open_file_reference", (event, args) => {
     trusted(event);
@@ -156,16 +163,20 @@ function registerIpc() {
     await saveGeneratedImage(args, result.filePath);
     return true;
   });
-  ipcMain.handle("desktop:install_chromium", (event, args) => {
+  ipcMain.handle("desktop:install_chromium", async (event, args) => {
     trusted(event);
     if (args?.confirmed !== true) {
       throw new Error("Chromium installation requires explicit confirmation");
     }
-    return installChromium();
+    const status = await sharedBrowser.activate();
+    await updateSettings(settingsPath(app.getPath("home")), {
+      sharedBrowserEnabled: true,
+    });
+    return status;
   });
   ipcMain.handle("desktop:cancel_chromium_install", (event) => {
     trusted(event);
-    return cancelChromiumInstall();
+    return sharedBrowser.cancelInstall();
   });
   ipcMain.handle("desktop:open-dialog", async (event, options) => {
     trusted(event);
@@ -277,15 +288,24 @@ else {
     mainWindow?.focus();
   });
   app.whenReady().then(() => {
+    sharedBrowser = new SharedBrowserManager({
+      home: app.getPath("home"),
+      root,
+    });
     installPermissionPolicy();
     registerIpc();
     createWindow();
     createTray();
+    void readSettings(settingsPath(app.getPath("home")))
+      .then((settings) =>
+        sharedBrowser.startIfEnabled(settings.sharedBrowserEnabled === true),
+      )
+      .catch(() => undefined);
   });
 }
 
 app.on("before-quit", () => {
   app.isQuitting = true;
   appServer.stop();
-  stopManagedChromium();
+  void stopManagedChromium(sharedBrowser);
 });

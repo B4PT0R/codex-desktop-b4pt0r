@@ -82,4 +82,10 @@ function validatePatch(patch) {
   ) {
     throw new Error("Unsupported sidebar width");
   }
+  if (
+    patch.sharedBrowserEnabled !== undefined &&
+    typeof patch.sharedBrowserEnabled !== "boolean"
+  ) {
+    throw new Error("Unsupported shared browser setting");
+  }
 }

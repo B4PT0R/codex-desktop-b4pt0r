@@ -219,6 +219,7 @@ function SettingsSection(props: SettingsViewProps) {
     return (
       <GeneralSettings
         appServerRestart={props.appServerRestart}
+        integrations={props.integrations}
         webSearch={props.webSearch}
       />
     );
@@ -286,9 +287,11 @@ function AdvancedSettings({
 
 function GeneralSettings({
   appServerRestart,
+  integrations,
   webSearch,
 }: {
   appServerRestart: SettingsViewProps["appServerRestart"];
+  integrations: IntegrationsController;
   webSearch: CodexGlobalSettingsController;
 }) {
   const { locale, persistenceError, setLocale, t } = useI18n();
@@ -369,10 +372,36 @@ function GeneralSettings({
           <div className="settings-browser-status">
             {!chromium.native ? (
               <small>{t("settings.chromium.nativeOnly")}</small>
-            ) : chromium.status?.available ? (
+            ) : chromium.status?.enabled &&
+              chromium.status.available &&
+              chromium.status.running ? (
               <>
-                <strong>{t("settings.chromium.available")}</strong>
-                <small>{chromium.status.version}</small>
+                <strong>{t("settings.chromium.ready")}</strong>
+                <small>
+                  {[chromium.status.version, chromium.status.mcpVersion
+                    ? `MCP ${chromium.status.mcpVersion}`
+                    : undefined]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </small>
+                <button
+                  className="secondary-button"
+                  disabled={chromium.loading}
+                  onClick={() => void chromium.install(integrations.reloadMcp)}
+                >
+                  {t("settings.chromium.repair")}
+                </button>
+              </>
+            ) : chromium.status?.enabled && chromium.status.available ? (
+              <>
+                <strong>{t("settings.chromium.needsRepair")}</strong>
+                <button
+                  className="secondary-button"
+                  disabled={chromium.loading}
+                  onClick={() => void chromium.install(integrations.reloadMcp)}
+                >
+                  {t("settings.chromium.repair")}
+                </button>
               </>
             ) : chromium.status?.installing ? (
               <button onClick={() => void chromium.cancelInstall()}>
@@ -381,9 +410,7 @@ function GeneralSettings({
             ) : confirmChromiumInstall ? (
               <div className="settings-browser-confirm" role="group">
                 <small>
-                  {t("settings.chromium.confirm", {
-                    package: chromium.status?.installPackage ?? "Chromium",
-                  })}
+                  {t("settings.chromium.confirm")}
                 </small>
                 <span>
                   <button
@@ -396,7 +423,7 @@ function GeneralSettings({
                     disabled={!chromium.status?.installSupported}
                     onClick={() => {
                       setConfirmChromiumInstall(false);
-                      void chromium.install();
+                      void chromium.install(integrations.reloadMcp);
                     }}
                   >
                     {t("common.confirm")}
@@ -405,10 +432,16 @@ function GeneralSettings({
               </div>
             ) : (
               <button
-                disabled={chromium.loading || !chromium.status?.installSupported}
+                disabled={
+                  chromium.loading || !chromium.status?.installSupported
+                }
                 onClick={() => setConfirmChromiumInstall(true)}
               >
-                {t("settings.chromium.install")}
+                {t(
+                  chromium.status?.available
+                    ? "settings.chromium.activate"
+                    : "settings.chromium.install",
+                )}
               </button>
             )}
           </div>

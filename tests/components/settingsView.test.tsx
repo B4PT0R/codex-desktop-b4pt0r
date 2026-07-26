@@ -25,6 +25,8 @@ const integrations = {
   mcpServers: { data: [], loading: false },
   skills: { data: [], loading: false },
   refreshMcp: vi.fn(),
+  reloadMcp: vi.fn(),
+  reloadingMcp: false,
   refreshHooks: vi.fn(),
   refreshSkills: vi.fn(),
   setSkillEnabled: vi.fn(),
@@ -363,7 +365,7 @@ describe("centre de réglages", () => {
     expect(document.documentElement.lang).toBe("en");
   });
 
-  it("demande une confirmation avant d’installer Chromium", async () => {
+  it("demande une confirmation avant d’activer le navigateur partagé", async () => {
     Object.defineProperty(window, "electronDesktop", {
       configurable: true,
       value: {},
@@ -373,31 +375,35 @@ describe("centre de réglages", () => {
       if (command === "read_chromium_status")
         return {
           available: false,
+          enabled: false,
+          running: false,
           installing: false,
           installSupported: true,
-          installPackage: "chromium-browser",
+          installPackage: "Playwright Chromium",
         };
       if (command === "install_chromium")
         return {
           available: true,
+          enabled: true,
+          running: true,
           installing: false,
           installSupported: true,
-          executable: "/usr/bin/chromium",
-          version: "Chromium 148",
+          version: "Chrome for Testing 151",
+          mcpVersion: "0.0.78",
         };
       return undefined;
     });
     renderSettings();
 
     const install = await screen.findByRole("button", {
-      name: "Installer Chromium",
+      name: "Activer le navigateur partagé",
     });
     await waitFor(() => expect(install).toBeEnabled());
     fireEvent.click(install);
     expect(invoke).not.toHaveBeenCalledWith("install_chromium", expect.anything());
     expect(
       await screen.findByText(
-        /Autoriser l’installation du paquet chromium-browser/,
+        /Télécharger le Chromium Playwright privé/,
       ),
     ).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Confirmer" }));
@@ -406,6 +412,10 @@ describe("centre de réglages", () => {
         confirmed: true,
       }),
     );
+    await waitFor(() => expect(integrations.reloadMcp).toHaveBeenCalled());
+    expect(
+      await screen.findByText("Prêt · partagé avec Codex"),
+    ).toBeVisible();
   });
 
   it("conserve les réglages fonctionnels du thread", () => {

@@ -86,11 +86,13 @@ tests actually require.
   UI. Reuse that managed Chromium as the default full-size viewer for supported
   media (images, PDF, HTML, and similar artifacts), while keeping lightweight
   previews in the conversation. The system opener is an explicit fallback.
-- Discover an existing open-source Chromium installation before launching browser
-  workflows. If none exists, present the dependency and request explicit user
-  confirmation before invoking any distribution package manager or privileged
-  installation. Never install, elevate, or modify package sources silently; expose
-  progress, failure, cancellation, and a new discovery pass after installation.
+- Browser workflows use the app-owned Playwright and Playwright MCP versions
+  shipped with the desktop package. After explicit activation, download their
+  matching Chromium into the user's application-data directory and connect the
+  UI and App Server MCP client to one visible persistent context. Never assume a
+  system Chromium exists or invoke a distribution package manager for it; use
+  the system's default browser when the shared browser is inactive or fails.
+  Expose download progress, cancellation, repair and connection failures.
 - Keep curated screenshots of this client under `screenshots/` and refresh the
   affected baselines after meaningful visual changes so they continue to reflect
   the current UI. Wait at least 0.5 seconds after changing views before capture;

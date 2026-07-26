@@ -62,7 +62,7 @@ buttons.
 | Realtime voice v3 | start/stop, voice list, SDP, transcript, audio/session lifecycle notifications, `thread/inject_items` | Complete for model-context persistence | Experimental voice transport with stable raw-item injection. The client uses browser-owned WebRTC only; it does **not** claim a WebSocket fallback. Finalized utterances are injected into the persistent parent rollout in order. Current resume projection omits standalone injected response items, so visual replay remains a backend gap. |
 | Dictation | Codex OAuth transcription endpoint through the native Electron boundary | Complete, indirect | This is not an App Server realtime request. Capture uses WebM/Opus and the authenticated Codex backend transcription endpoint. |
 | Background terminals | list and terminate | Complete for focused inspection | Experimental. Bulk `clean` is not exposed because individual termination is safer and sufficient. |
-| Managed Chromium | no App Server request | Complete, native | Browser automation and media viewing are Electron-owned and intentionally separate from the App Server protocol. |
+| Shared Playwright browser | `config/mcpServer/reload` after native setup | Complete, native + MCP | Electron owns a pinned Playwright/MCP runtime and an opt-in private Chromium download. The UI and App Server connect to the same loopback MCP server and persistent visible context; the system browser is the fallback. |
 | Workspace instructions | no App Server request | Complete, native | `<workspace>/AGENTS.md` is edited through a single-file bounded native boundary with conflict detection and atomic replacement. |
 
 ## Emitted request inventory

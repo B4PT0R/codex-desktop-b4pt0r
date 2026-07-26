@@ -197,26 +197,23 @@ les identifiants Bedrock externes restent administrés hors de l’application.
 | Warnings, diagnostics, feedback   | Conversation ou Avancé selon portée     | Actionnable, dédupliqué                 |
 
 Les workflows navigateur ne chargent pas une seconde WebView générale dans le
-shell Electron. Une instance Chromium open source indépendante (pas Google Chrome ou
-Microsoft Edge) porte l’automatisation et son
-isolation de processus ; le client n’affiche que son état, ses actions et ses
-résultats dans les cartes ou le panneau contextuel. Cette même instance sert de
-visualiseur plein format par défaut pour les images, PDF, HTML et autres médias
-compatibles, à partir des aperçus légers du fil. Son profil, son cycle de vie et sa
-récupération après crash appartiennent à la couche native. Le navigateur système
-reste un repli explicite lorsqu’aucun Chromium géré n’est disponible.
+shell Electron. L’application embarque des versions épinglées de
+`playwright-core` et de Playwright MCP, mais télécharge leur Chromium compatible
+uniquement après activation explicite. Le navigateur, son profil persistant,
+les sorties MCP et les artefacts servis localement appartiennent aux données
+utilisateur de Codex Desktop sous `~/.local/share/codex-desktop/`.
 
-La couche native recherche d’abord un Chromium open source compatible déjà installé. En son
-absence, le client présente la dépendance et demande une confirmation explicite
-avant de lancer une installation adaptée à la distribution. Il n’élève jamais les
-droits, ne modifie pas les sources de paquets et n’installe rien silencieusement ;
-l’interface rend visibles progression, annulation, erreur et nouvelle détection.
-Google Chrome et Microsoft Edge ne satisfont pas la détection normale. Un override
-`CODEX_CHROMIUM_EXECUTABLE` reste réservé aux besoins avancés de compatibilité avec
-une éventuelle évolution de l'automation officielle.
+La couche native possède le serveur Playwright MCP HTTP lié au loopback. L’UI
+est un client minimal de ce serveur pour ouvrir les liens ; App Server reçoit
+automatiquement la même URL via la commande officielle `codex mcp`, puis recharge
+sa configuration. `--shared-browser-context` garantit que l’utilisateur et
+l’agent manipulent les mêmes onglets visibles. Aucune installation Chromium
+système, détection Snap/Flatpak ou élévation de privilèges n’appartient au chemin
+normal. Lorsque la fonction est inactive, incomplète ou indisponible, les URL
+HTTP(S) sont confiées au navigateur par défaut du système.
 
 Les liens du transcript passent par un routeur explicite plutôt que par la
-navigation de la WebView Electron. Les URL HTTP(S) ouvrent le Chromium géré,
+navigation de la WebView Electron. Les URL HTTP(S) ouvrent la session Playwright partagée,
 avec le navigateur système comme repli. Les références de fichiers sont
 résolues et canonicalisées par Electron : un chemin relatif part du workspace,
 alors qu’un chemin absolu peut viser un checkout voisin, la configuration Codex

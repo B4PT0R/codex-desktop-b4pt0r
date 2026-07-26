@@ -94,8 +94,10 @@ so voice replay after reopening a thread remains limited by the backend.
 - Responsive layouts down to the configured compact window size.
 - Keyboard-friendly composer menus, focus handling, and accessible dialogs.
 - System tray, single-instance behavior, and optional launch at login.
-- Managed open-source Chromium discovery for browser automation and full-size
-  artifact viewing, with explicit confirmation before any package installation.
+- Optional shared Playwright Chromium session for browser automation and
+  full-size viewing. One activation downloads the matching private browser and
+  configures Playwright MCP so the app and Codex agent use the same visible
+  tabs; the system browser remains the no-setup fallback.
 
 ![Realtime voice and concurrent text activity](screenshots/realtime-dual-agent-chat-preview-1240x820.png)
 
@@ -126,7 +128,7 @@ package:
 ```bash
 npm ci
 npm run electron:deb
-sudo apt install ./dist/codex-desktop-linux_0.2.4_amd64.deb
+sudo apt install ./dist/codex-desktop-linux_0.3.0_amd64.deb
 ```
 
 Launch it from the desktop menu or with:

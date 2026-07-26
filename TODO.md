@@ -20,7 +20,8 @@ official `codex app-server`. It covers the ordinary desktop workflow end to end:
 - files, Apps, MCP, skills, hooks, account, quotas and reset credits;
 - dictation through the Codex OAuth transcription endpoint and Realtime voice;
 - background terminals, guarded shell commands and persistent goals;
-- managed Chromium, tray, autostart and versioned Linux preferences.
+- opt-in shared Playwright Chromium, tray, autostart and versioned Linux
+  preferences.
 
 The product direction is a polished Linux experience that remains familiar to
 users of the Codex product family without implying that this is an official
@@ -28,11 +29,11 @@ OpenAI release.
 
 ## Verified baseline
 
-- Package: `dist/codex-desktop-linux_0.2.4_amd64.deb`
-- Size: 105,987,316 bytes
+- Package: `dist/codex-desktop-linux_0.3.0_amd64.deb`
+- Size: 108,438,384 bytes
 - SHA-256:
-  `7df1e625dda59fa2781588ccaf3a8d1fabb1711d7617956bc49cc818debabfe4`
-- Package metadata verified as `codex-desktop-linux 0.2.4` for Ubuntu amd64.
+  `aa92c98d83d5787d18d5a41700e33c14dae5091da5c6595839097ae361cae934`
+- Package metadata verified as `codex-desktop-linux 0.3.0` for Ubuntu amd64.
 - The current Config editor, tool-group fixes, App Server PATH fix, workspace
   `AGENTS.md` editor and dual-agent Realtime chat hierarchy are included in the
   release package, including the centralized Realtime shutdown cleanup.
@@ -55,14 +56,18 @@ OpenAI release.
   `APP_SERVER_COVERAGE.md` for the classified inventory.
 - 469 Vitest/contract tests across 91 files pass, including 44 App Server
   contract cases.
-- 36 Electron/Node tests pass.
+- 40 Electron/Node tests pass.
 - Strict TypeScript and the production build pass.
+- The packaged ASAR contains the pinned Playwright Core and Playwright MCP
+  command-line runtimes. The managed Chromium download, visible launch,
+  application navigation and an independent Codex MCP client observing the
+  exact same tab/context were verified end to end.
 - Production dependency audit reports zero vulnerabilities. The full
   development-tree audit reports 16 high-severity advisories inherited through
   `electron-builder`; npm's forced remediation would downgrade its major
   version, so it was not applied. The compatible audit fix updated PostCSS and
   related build dependencies.
-- Main JS: 490.48 kB (143.60 kB gzip).
+- Main JS: 491.13 kB (143.77 kB gzip).
 - Lazy diff viewer: 89.50 kB (32.89 kB gzip).
 - Lazy Markdown/KaTeX: 698.59 kB (208.74 kB gzip).
 
@@ -75,6 +80,14 @@ Consolidate the existing product before adding new surfaces. Preserve behavior,
 reduce orchestration concentrated in `App.tsx`, make ownership boundaries
 testable, and keep the release/contributor documentation aligned with the real
 baseline.
+
+The shared-browser lot embeds pinned Playwright Core and Playwright MCP
+versions, downloads their matching headed Chromium only after explicit
+activation, runs one loopback HTTP MCP server with a persistent shared context,
+and configures Codex through its official `codex mcp` command. Application URL
+opens use a minimal MCP client; the system browser is the only fallback. No
+system Chromium discovery, package-manager installation or Snap-specific path
+belongs to the normal product flow.
 
 The first consolidation lot moved the complete Realtime conversation lifecycle
 into `useRealtimeConversation`: ephemeral-fork ownership, stale-event filtering,
@@ -201,10 +214,11 @@ and update this section when priorities move.
 - Client-owned settings live atomically in
   `~/.codex/codex-desktop-linux.json`. Official Codex configuration remains in
   `~/.codex/config.toml`.
-- Browser automation owns a separate open-source Chromium process; never embed a
-  general-purpose browser WebView inside the app.
+- Browser automation owns the private Chromium matching the Playwright Core and
+  MCP versions pinned in the application package; never embed a general-purpose
+  browser WebView inside the app and never assume a system Chromium exists.
 - Markdown links never navigate the Electron WebView. HTTP(S) targets use the
-  managed Chromium with system fallback; local references are canonicalized at
+  shared Playwright context with system-browser fallback; local references are canonicalized at
   the native boundary and must exist. Relative paths use the current workspace;
   absolute paths may reference sibling checkouts, global Codex files or
   temporary artifacts. Files use the persisted `file_opener`, directories use

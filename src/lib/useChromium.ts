@@ -3,8 +3,12 @@ import { useCallback, useEffect, useState } from "react";
 
 export type ChromiumStatus = {
   available: boolean;
+  enabled: boolean;
+  running: boolean;
   executable?: string;
   version?: string;
+  mcpVersion?: string;
+  detail?: string;
   installing: boolean;
   installSupported: boolean;
   installPackage?: string;
@@ -16,7 +20,7 @@ export type ChromiumController = {
   loading: boolean;
   error?: string;
   refresh: () => Promise<void>;
-  install: () => Promise<void>;
+  install: (afterConfigure?: () => Promise<void>) => Promise<void>;
   cancelInstall: () => Promise<void>;
 };
 
@@ -39,7 +43,7 @@ export function useChromium(): ChromiumController {
     }
   }, [native]);
 
-  const install = useCallback(async () => {
+  const install = useCallback(async (afterConfigure?: () => Promise<void>) => {
     if (!native || loading) return;
     setLoading(true);
     setError(undefined);
@@ -52,6 +56,7 @@ export function useChromium(): ChromiumController {
           confirmed: true,
         }),
       );
+      await afterConfigure?.();
     } catch (cause) {
       setError(errorMessage(cause));
       await refresh();
