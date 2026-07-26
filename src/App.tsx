@@ -79,6 +79,8 @@ import { useShellCommand } from "./lib/useShellCommand";
 import { useExternalAgentImport } from "./lib/useExternalAgentImport";
 import { useRealtimeSettings } from "./lib/useRealtimeSettings";
 import { useCodexDefaults } from "./lib/useCodexDefaults";
+import { useCodexGlobalSettings } from "./lib/useCodexGlobalSettings";
+import { useMemorySettings } from "./lib/useMemorySettings";
 import {
   threadRuntimeSettings,
   threadRuntimeSettingsFromNotification,
@@ -266,6 +268,11 @@ export default function App() {
     onNewChat: newChat,
   });
   const configRequirements = useConfigRequirements(connection.connected);
+  const webSearch = useCodexGlobalSettings(
+    connection.connected,
+    configRequirements.allowedWebSearchModes,
+  );
+  const memory = useMemorySettings(connection.connected);
   useCodexDefaults({
     connected: connection.connected,
     cwd,
@@ -851,6 +858,12 @@ export default function App() {
       )
       .catch((error) => showError(t("desktopSettings.saveError"), error));
   }
+  async function restartCodexAppServer() {
+    if (busy || recording || dictating || dictationProcessing) return false;
+    const restarted = await connection.restart();
+    if (!restarted || !threadId) return restarted;
+    return threadHistory.resume(threadId);
+  }
   const currentThread = threads.find((thread) => thread.id === threadId);
   if (settings) {
     return (
@@ -870,6 +883,20 @@ export default function App() {
         personality={personality}
         rateLimits={rateLimits}
         realtime={realtime}
+        memory={memory}
+        webSearch={webSearch}
+        appServerRestart={{
+          available:
+            isDesktopApp() &&
+            connection.connected &&
+            !busy &&
+            !recording &&
+            !dictating &&
+            !dictationProcessing,
+          error: connection.restartError,
+          restart: restartCodexAppServer,
+          restarting: connection.restarting,
+        }}
         section={settings}
         onChangeCollaborationMode={setCollaborationMode}
         onChangeApprovalPolicy={(nextPolicy) => {
@@ -957,13 +984,17 @@ export default function App() {
           onFork={threadActions.fork}
           onOpenSidebar={() => setSidebar(true)}
           onReconnect={() => void connection.reconnect()}
+          onReload={() => threadHistory.resume(threadId!)}
           onRename={threadActions.rename}
         />
         <Conversation
           activity={activity}
           canLoadOlder={threadHistory.canLoadOlder}
+          cwd={cwd}
+          fileOpener={webSearch.fileOpener}
           loadingOlder={threadHistory.loadingOlder}
           messages={messages}
+          onLinkError={(error) => showError(t("link.openError"), error)}
           onLoadOlder={threadHistory.loadOlder}
           onReviewDiff={setWorkPanel}
         />

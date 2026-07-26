@@ -102,6 +102,41 @@ const realtime = {
   refresh: vi.fn(),
   setVoice: vi.fn(),
 };
+const webSearch = {
+  fileOpener: "vscode" as const,
+  mode: "cached" as const,
+  modelVerbosity: "medium" as const,
+  planReasoningEffort: "high" as const,
+  reasoningSummary: "auto" as const,
+  loading: false,
+  refresh: vi.fn(),
+  setFileOpener: vi.fn().mockResolvedValue(true),
+  setMode: vi.fn().mockResolvedValue(true),
+  setModelVerbosity: vi.fn().mockResolvedValue(true),
+  setPlanReasoningEffort: vi.fn().mockResolvedValue(true),
+  setReasoningSummary: vi.fn().mockResolvedValue(true),
+};
+const appServerRestart = {
+  available: true,
+  restart: vi.fn().mockResolvedValue(true),
+  restarting: false,
+};
+const memory = {
+  enabled: false,
+  generateMemories: true,
+  useMemories: true,
+  disableOnExternalContext: false,
+  minRateLimitRemainingPercent: 25,
+  loading: false,
+  saving: false,
+  resetting: false,
+  setEnabled: vi.fn().mockResolvedValue(true),
+  setGenerateMemories: vi.fn().mockResolvedValue(true),
+  setUseMemories: vi.fn().mockResolvedValue(true),
+  setDisableOnExternalContext: vi.fn().mockResolvedValue(true),
+  setMinRateLimitRemainingPercent: vi.fn().mockResolvedValue(true),
+  reset: vi.fn().mockResolvedValue(true),
+};
 
 afterEach(() => {
   cleanup();
@@ -116,6 +151,7 @@ function renderSettings(
 ) {
   const props: ComponentProps<typeof SettingsView> = {
     account,
+    appServerRestart,
     apps,
     capabilities,
     collaborationMode: "default",
@@ -124,6 +160,7 @@ function renderSettings(
     externalAgentImport,
     integrations,
     model: "gpt-a",
+    memory,
     models: [
       { id: "gpt-a", label: "GPT A" },
       { id: "gpt-b", label: "GPT B" },
@@ -132,6 +169,7 @@ function renderSettings(
     personality: "pragmatic",
     rateLimits,
     realtime,
+    webSearch,
     section: "general",
     onChangeCollaborationMode: vi.fn(),
     onChangeApprovalPolicy: vi.fn(),
@@ -154,6 +192,110 @@ function renderSettings(
 }
 
 describe("centre de réglages", () => {
+  it("propose le redémarrage global d’App Server dans Général", () => {
+    const restart = vi.fn().mockResolvedValue(true);
+    renderSettings({ appServerRestart: { ...appServerRestart, restart } });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Redémarrer" }),
+    );
+    expect(restart).toHaveBeenCalledOnce();
+  });
+
+  it("modifie le mode global de recherche web depuis Options", () => {
+    const setMode = vi.fn().mockResolvedValue(true);
+    renderSettings({
+      section: "options",
+      webSearch: { ...webSearch, setMode },
+    });
+
+    expect(
+      screen.getByRole("heading", { name: "Options", level: 1 }),
+    ).toBeVisible();
+    const select = screen.getByRole("combobox", { name: "Recherche web" });
+    expect(select).toHaveValue("cached");
+    fireEvent.change(select, { target: { value: "live" } });
+    expect(setMode).toHaveBeenCalledWith("live");
+  });
+
+  it("désactive les modes de recherche interdits par la politique", () => {
+    renderSettings({
+      section: "options",
+      webSearch: {
+        ...webSearch,
+        allowed: ["cached", "disabled"],
+      },
+    });
+
+    expect(screen.getByRole("option", { name: "En direct" })).toBeDisabled();
+    expect(screen.getByRole("option", { name: "Cache" })).toBeEnabled();
+  });
+
+  it("enregistre l’application d’ouverture dans Général et les résumés dans Options", () => {
+    const setFileOpener = vi.fn().mockResolvedValue(true);
+    const setReasoningSummary = vi.fn().mockResolvedValue(true);
+    const controller = {
+      ...webSearch,
+      setFileOpener,
+      setReasoningSummary,
+    };
+    renderSettings({ webSearch: controller });
+
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "Ouvrir les fichiers avec" }),
+      { target: { value: "cursor" } },
+    );
+    expect(setFileOpener).toHaveBeenCalledWith("cursor");
+
+    cleanup();
+    renderSettings({ section: "options", webSearch: controller });
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "Résumés de raisonnement" }),
+      { target: { value: "concise" } },
+    );
+    expect(setReasoningSummary).toHaveBeenCalledWith("concise");
+  });
+
+  it("enregistre la verbosité et l’effort du mode Plan dans Agent et modèles", () => {
+    const setModelVerbosity = vi.fn().mockResolvedValue(true);
+    const setPlanReasoningEffort = vi.fn().mockResolvedValue(true);
+    renderSettings({
+      section: "agent",
+      webSearch: {
+        ...webSearch,
+        setModelVerbosity,
+        setPlanReasoningEffort,
+      },
+    });
+
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "Verbosité des réponses" }),
+      { target: { value: "high" } },
+    );
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "Raisonnement en mode Plan" }),
+      { target: { value: "xhigh" } },
+    );
+    expect(setModelVerbosity).toHaveBeenCalledWith("high");
+    expect(setPlanReasoningEffort).toHaveBeenCalledWith("xhigh");
+  });
+
+  it("contrôle la mémoire locale et garde sa suppression sous confirmation", () => {
+    const setEnabled = vi.fn().mockResolvedValue(true);
+    const reset = vi.fn().mockResolvedValue(true);
+    renderSettings({
+      section: "memory",
+      memory: { ...memory, setEnabled, reset },
+    });
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Activer la mémoire" }));
+    expect(setEnabled).toHaveBeenCalledWith(true);
+    fireEvent.click(screen.getByRole("button", { name: "Réinitialiser" }));
+    expect(reset).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Tout effacer" }));
+    expect(reset).toHaveBeenCalledOnce();
+  });
+
   it("charge la vue secondaire avant de restituer la section demandée", async () => {
     renderSettings({ section: "permissions" }, SettingsLoader);
     expect(screen.getByRole("status")).toHaveTextContent(

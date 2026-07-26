@@ -94,8 +94,8 @@ describe("historique paginé", () => {
       .mockReturnValueOnce(second.promise);
     const { result } = renderHook(() => useThreadHistory(callbacks));
 
-    let firstResume!: Promise<void>;
-    let secondResume!: Promise<void>;
+    let firstResume!: Promise<boolean>;
+    let secondResume!: Promise<boolean>;
     act(() => {
       firstResume = result.current.resume("thread-1");
       secondResume = result.current.resume("thread-2");

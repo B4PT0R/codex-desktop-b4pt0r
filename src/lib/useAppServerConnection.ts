@@ -8,6 +8,7 @@ import {
   isDesktopApp,
   reconnect,
   request,
+  restartAppServer,
   type AppServerMessage,
 } from "./codex";
 import { threadSummary } from "./threadSummary";
@@ -28,6 +29,23 @@ export function useAppServerConnection(options: Options) {
   translate.current = t;
   const [connected, setConnected] = useState(false);
   const [reconnecting, setReconnecting] = useState(false);
+  const [restartError, setRestartError] = useState<string>();
+  const [restarting, setRestarting] = useState(false);
+
+  async function hydrateCatalogs(shouldApply: () => boolean = () => true) {
+    const [models, history] = await Promise.all([
+      request<ModelListResponse>("model/list", { limit: 50 }),
+      request<ThreadListResponse>("thread/list", {
+        limit: 30,
+        sortKey: "updated_at",
+      }),
+    ]);
+    if (shouldApply())
+      callbacks.current.onInitialized(
+        normalizeModels(models),
+        (history.data ?? []).map(threadSummary),
+      );
+  }
 
   useEffect(() => {
     let disposed = false;
@@ -63,18 +81,7 @@ export function useAppServerConnection(options: Options) {
             unlistenNewChat = undefined;
             return;
           }
-          const [models, history] = await Promise.all([
-            request<ModelListResponse>("model/list", { limit: 50 }),
-            request<ThreadListResponse>("thread/list", {
-              limit: 30,
-              sortKey: "updated_at",
-            }),
-          ]);
-          if (!disposed)
-            callbacks.current.onInitialized(
-              normalizeModels(models),
-              (history.data ?? []).map(threadSummary),
-            );
+          if (!disposed) await hydrateCatalogs(() => !disposed);
         } catch (error) {
           if (!disposed)
             callbacks.current.onError(
@@ -103,7 +110,30 @@ export function useAppServerConnection(options: Options) {
     }
   }
 
-  return { connected, reconnecting, reconnect: reconnectAppServer };
+  async function restartCodexAppServer() {
+    if (restarting) return false;
+    setRestarting(true);
+    setRestartError(undefined);
+    try {
+      await restartAppServer();
+      await hydrateCatalogs();
+      return true;
+    } catch (error) {
+      setRestartError(error instanceof Error ? error.message : String(error));
+      return false;
+    } finally {
+      setRestarting(false);
+    }
+  }
+
+  return {
+    connected,
+    reconnecting,
+    reconnect: reconnectAppServer,
+    restart: restartCodexAppServer,
+    restartError,
+    restarting,
+  };
 }
 
 export function normalizeModels(response: ModelListResponse): Model[] {

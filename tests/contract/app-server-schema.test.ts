@@ -11,6 +11,7 @@ import {
   backgroundTerminalTerminateParams,
   collaborationModeListParams,
   configReadParams,
+  configValueWriteParams,
   consumeRateLimitResetCreditParams,
   creditsNudgeParams,
   externalAgentDetectParams,
@@ -53,6 +54,11 @@ import {
   threadUnarchiveParams,
   turnStartParams,
   turnSteerParams,
+  fileOpenerConfigWriteParams,
+  modelVerbosityConfigWriteParams,
+  planReasoningEffortConfigWriteParams,
+  reasoningSummaryConfigWriteParams,
+  webSearchConfigWriteParams,
 } from "../../src/lib/protocol";
 import { userInputResponse } from "../../src/lib/userInput";
 import { mcpElicitationResponse } from "../../src/lib/mcpElicitation";
@@ -93,6 +99,37 @@ function schema(name: string): Record<string, unknown> {
 describe("contrat Codex installé", () => {
   it("accepte la lecture de la configuration Codex effective", () =>
     validates("ConfigReadParams", configReadParams("/tmp/project")));
+  it("accepte l'écriture du mode global de recherche web", () =>
+    validates(
+      "ConfigValueWriteParams",
+      webSearchConfigWriteParams("cached"),
+    ));
+  it("accepte l’écriture ciblée des options Codex globales", () => {
+    validates("ConfigValueWriteParams", fileOpenerConfigWriteParams("cursor"));
+    validates(
+      "ConfigValueWriteParams",
+      reasoningSummaryConfigWriteParams("concise"),
+    );
+    validates(
+      "ConfigValueWriteParams",
+      modelVerbosityConfigWriteParams("medium"),
+    );
+    validates(
+      "ConfigValueWriteParams",
+      planReasoningEffortConfigWriteParams("high"),
+    );
+  });
+  it("accepte les contrôles globaux et la réinitialisation de la mémoire", () => {
+    validates(
+      "ConfigValueWriteParams",
+      configValueWriteParams("features.memories", true),
+    );
+    validates(
+      "ConfigValueWriteParams",
+      configValueWriteParams("memories.use_memories", false),
+    );
+    expect(schema("MemoryResetResponse")).toBeDefined();
+  });
   it("expose les contraintes administrées et le rechargement MCP", () => {
     expect(schema("ConfigRequirementsReadResponse")).toHaveProperty(
       "properties.requirements",

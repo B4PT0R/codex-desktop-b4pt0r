@@ -39,6 +39,34 @@ beforeEach(() => {
 });
 
 describe("historique de conversation", () => {
+  it("affiche les citations mémoire structurées hors du Markdown", () => {
+    renderConversation({
+      activity: null,
+      messages: [
+        {
+          id: "memory-answer",
+          role: "assistant",
+          content: "Je m’en souviens.",
+          memoryCitations: [
+            {
+              path: "/home/user/.codex/memories/preferences.md",
+              lineStart: 4,
+              lineEnd: 6,
+              note: "Préférence utilisateur",
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(
+      screen.getByRole("complementary", { name: "Sources de la mémoire" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: /Préférence utilisateur/ }),
+    ).toHaveTextContent("lignes 4–6");
+  });
+
   it("présente un accueil centré dans un nouveau chat", () => {
     renderConversation({ activity: null, messages: [] });
     expect(

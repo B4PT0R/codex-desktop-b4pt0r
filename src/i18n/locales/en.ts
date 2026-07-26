@@ -3,6 +3,23 @@ import type { MessageKey } from "./fr";
 export const en: Record<MessageKey, string> = {
   "common.cancel": "Cancel",
   "common.confirm": "Confirm",
+  "webSearch.title": "Web search",
+  "webSearch.globalDetail":
+    "Default mode used by new Codex conversations.",
+  "webSearch.cached": "Cached",
+  "webSearch.cached.detail":
+    "Pre-indexed results with less exposure to the live web.",
+  "webSearch.indexed": "Indexed",
+  "webSearch.indexed.detail":
+    "External access gated through the search index.",
+  "webSearch.live": "Live",
+  "webSearch.live.detail": "Fetch the most recent information.",
+  "webSearch.disabled": "Disabled",
+  "webSearch.disabled.detail": "Remove the web search tool.",
+  "webSearch.error": "Unable to save the web search mode.",
+  "link.openError": "Unable to open this link",
+  "citation.memory.title": "Memory sources",
+  "citation.memory.lines": "lines {start}–{end}",
   "approval.decline": "Deny",
   "approval.session": "For this session",
   "approval.once": "Allow once",
@@ -375,6 +392,9 @@ export const en: Record<MessageKey, string> = {
   "chat.actions.saveName": "Save name",
   "chat.actions.compact": "Compact context",
   "chat.actions.compactDetail": "Free up space to continue this chat",
+  "chat.actions.reload": "Reload session",
+  "chat.actions.reloadDetail":
+    "Reload this thread’s history and effective settings",
   "chat.actions.fork": "Create a branch",
   "chat.actions.forkDetail": "Continue from here in a new conversation",
   "chat.actions.delete": "Delete conversation",
@@ -500,6 +520,8 @@ export const en: Record<MessageKey, string> = {
   "settings.group.integrations": "Integrations",
   "settings.group.code": "Code",
   "settings.section.general": "General",
+  "settings.section.options": "Options",
+  "settings.section.memory": "Memory",
   "settings.section.agent": "Agent and models",
   "settings.section.appearance": "Appearance",
   "settings.section.voice": "Voice",
@@ -512,10 +534,57 @@ export const en: Record<MessageKey, string> = {
   "settings.section.hooks": "Hooks",
   "settings.section.advanced": "Advanced",
   "settings.general.description": "General preferences for the Linux app.",
+  "settings.options.description":
+    "Secondary settings applied globally to new conversations.",
+  "settings.memory.description":
+    "Controls the local memory Codex uses across conversations.",
+  "settings.memory.experimental": "Experimental",
+  "settings.memory.localTitle": "Local Codex memory",
+  "settings.memory.localDetail":
+    "Stored under CODEX_HOME, separately from ChatGPT memory.",
+  "settings.memory.enabled": "Enable memory",
+  "settings.memory.enabledDetail":
+    "Enables the local memory pipeline. An App Server restart may be required.",
+  "settings.memory.use": "Use existing memories",
+  "settings.memory.useDetail":
+    "Injects relevant local memories into new conversations.",
+  "settings.memory.generate": "Learn from new conversations",
+  "settings.memory.generateDetail":
+    "Makes new threads eligible for memory generation.",
+  "settings.memory.external": "Exclude chats with external context",
+  "settings.memory.externalDetail":
+    "Excludes threads using web, MCP, or tool search from memory generation.",
+  "settings.memory.threshold": "Minimum remaining quota",
+  "settings.memory.thresholdDetail":
+    "Generation waits when remaining Codex quota falls below this threshold.",
+  "settings.memory.guidanceTitle": "Durable rules still belong in AGENTS.md",
+  "settings.memory.guidanceDetail":
+    "Memory is a recall aid and does not replace versioned project instructions.",
+  "settings.memory.reset": "Clear local memory",
+  "settings.memory.resetDetail":
+    "Deletes generated memories and pending consolidation work.",
+  "settings.memory.resetAction": "Reset",
+  "settings.memory.resetConfirm": "Delete all",
+  "settings.memory.error": "Unable to update memory:",
   "settings.language.title": "Interface language",
   "settings.language.detail": "App text uses the selected language pack.",
   "settings.language.french": "Français",
   "settings.language.english": "English",
+  "settings.fileOpener.title": "Open files with",
+  "settings.fileOpener.detail":
+    "Application used for links to files and source code.",
+  "settings.fileOpener.vscode": "Visual Studio Code",
+  "settings.fileOpener.vscode-insiders": "Visual Studio Code Insiders",
+  "settings.fileOpener.cursor": "Cursor",
+  "settings.fileOpener.windsurf": "Windsurf",
+  "settings.fileOpener.none": "No application",
+  "settings.reasoningSummary.title": "Reasoning summaries",
+  "settings.reasoningSummary.detail":
+    "Level of detail in the visible summaries produced by the agent.",
+  "settings.reasoningSummary.auto": "Automatic",
+  "settings.reasoningSummary.concise": "Concise",
+  "settings.reasoningSummary.detailed": "Detailed",
+  "settings.reasoningSummary.none": "Hidden",
   "settings.persistence.error": "Unable to save app preferences:",
   "settings.startup.title": "Launch Codex at login",
   "settings.startup.detail":
@@ -555,7 +624,16 @@ export const en: Record<MessageKey, string> = {
   "settings.agent.friendly": "Friendly",
   "settings.agent.neutral": "Neutral",
   "settings.agent.workMode": "Work mode",
+  "settings.agent.globalDefaults": "Global defaults",
+  "settings.agent.globalDefaultsDetail":
+    "Preferences used by default in new conversations.",
+  "settings.agent.verbosity": "Response verbosity",
+  "settings.agent.verbosity.low": "Low",
+  "settings.agent.verbosity.medium": "Medium",
+  "settings.agent.verbosity.high": "High",
+  "settings.agent.planEffort": "Plan mode reasoning",
   "settings.agent.defaultMode": "Agent",
+  "settings.effort.none": "None",
   "settings.effort.minimal": "Minimal",
   "settings.effort.low": "Low",
   "settings.effort.medium": "Medium",
@@ -616,10 +694,16 @@ export const en: Record<MessageKey, string> = {
   "settings.config.error": "Unable to save configuration",
   "settings.config.saved": "Configuration saved.",
   "settings.config.restart":
-    "Already loaded threads may retain their current settings. Restart the app to ensure every change is applied.",
+    "Already loaded threads may retain their current settings. Reload the session from its menu or restart App Server in General.",
   "settings.config.reload": "Reload file",
   "settings.config.save": "Save",
   "settings.config.saving": "Saving…",
+  "settings.appServerRestart.title": "App Server",
+  "settings.appServerRestart.detail":
+    "Restart the Codex backend, then restore the current conversation.",
+  "settings.appServerRestart.action": "Restart",
+  "settings.appServerRestart.running": "Restarting…",
+  "settings.appServerRestart.error": "App Server could not be restarted.",
   "settings.appearance.description":
     "A calm, readable interface suited to the Linux desktop.",
   "settings.appearance.theme": "Theme",
@@ -798,6 +882,8 @@ export const en: Record<MessageKey, string> = {
   "transport.appServerError": "App Server error",
   "transport.connectError": "Unable to connect to App Server",
   "transport.reconnectError": "Unable to reconnect to App Server",
+  "transport.restarting": "Restarting App Server",
+  "transport.restartError": "Unable to restart App Server",
   "transport.browserPreview": "Browser preview mode",
   "transport.exit": "App Server stopped {detail}.",
   "transport.exitNoCode": "without an exit code",

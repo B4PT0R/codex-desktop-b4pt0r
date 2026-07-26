@@ -38,6 +38,7 @@ describe("en-tête de conversation", () => {
           onFork={vi.fn()}
           onOpenSidebar={vi.fn()}
           onReconnect={vi.fn()}
+          onReload={vi.fn()}
           onRename={vi.fn()}
         />
       </I18nProvider>,
@@ -65,6 +66,7 @@ describe("en-tête de conversation", () => {
           onFork={vi.fn()}
           onOpenSidebar={vi.fn()}
           onReconnect={vi.fn()}
+          onReload={vi.fn()}
           onRename={vi.fn()}
         />
       </I18nProvider>,
@@ -89,6 +91,7 @@ describe("en-tête de conversation", () => {
           onFork={vi.fn()}
           onOpenSidebar={vi.fn()}
           onReconnect={vi.fn()}
+          onReload={vi.fn()}
           onRename={vi.fn()}
         />
       </I18nProvider>,
@@ -125,6 +128,7 @@ describe("en-tête de conversation", () => {
           onFork={vi.fn()}
           onOpenSidebar={vi.fn()}
           onReconnect={vi.fn()}
+          onReload={vi.fn()}
           onRename={vi.fn()}
         />
       </I18nProvider>,
@@ -139,6 +143,7 @@ describe("en-tête de conversation", () => {
     const onCompact = vi.fn().mockResolvedValue(true);
     const onFork = vi.fn().mockResolvedValue(true);
     const onDelete = vi.fn().mockResolvedValue(true);
+    const onReload = vi.fn().mockResolvedValue(true);
     render(
       <I18nProvider>
         <ChatHeader
@@ -154,6 +159,7 @@ describe("en-tête de conversation", () => {
           onFork={onFork}
           onOpenSidebar={vi.fn()}
           onReconnect={vi.fn()}
+          onReload={onReload}
           onRename={onRename}
         />
       </I18nProvider>,
@@ -178,6 +184,17 @@ describe("en-tête de conversation", () => {
       screen.getByRole("button", { name: /Compacter le contexte/ }),
     );
     expect(onCompact).toHaveBeenCalledOnce();
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: "Actions de la conversation" }),
+      ).not.toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Ancien titre" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Recharger la session/ }),
+    );
+    expect(onReload).toHaveBeenCalledOnce();
 
     await waitFor(() =>
       expect(
@@ -229,6 +246,7 @@ describe("en-tête de conversation", () => {
           onFork={vi.fn()}
           onOpenSidebar={vi.fn()}
           onReconnect={vi.fn()}
+          onReload={vi.fn()}
           onRename={vi.fn()}
         />
       </I18nProvider>,

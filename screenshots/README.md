@@ -137,10 +137,10 @@ state or regression baseline.
   configured minimum viewport; the responsive panel stays inside the
   conversation band and scrolls without covering the composer.
 - `agent-personality-settings-preview-1240x820.png` — the Agent settings expose
-  the thread personality alongside model, reasoning effort and work mode even
-  when older model catalogs omit the optional capability flag.
-- `agent-personality-settings-preview-840x620.png` — the same complete Agent
-  settings card at the configured minimum viewport.
+  thread behavior separately from global response verbosity and Plan-mode
+  reasoning effort.
+- `agent-personality-settings-preview-840x620.png` — the same Agent settings at
+  the configured minimum viewport with native vertical scrolling.
 - `config-editor-settings-preview-1240x820.png` — the global `config.toml`
   editor in browser-preview mode, with its bounded file identity, restart
   guidance and explicit reload/save controls.
@@ -187,3 +187,14 @@ state or regression baseline.
 
 Screenshots are taken only after waiting at least 0.5 seconds after the last
 view transition so asynchronously rendered content is visible.
+
+## 2026-07-26
+
+- `web-search-settings-preview-1240x820.png` — global web-search and reasoning
+  summary preferences isolated in the secondary Options section.
+- `web-search-settings-preview-840x620.png` — the Options section at the
+  configured minimum viewport without clipping or layout overflow.
+- `memory-settings-preview-1240x820.png` — experimental local-memory controls,
+  privacy boundary, quota guard and protected reset action.
+- `memory-settings-preview-840x620.png` — the same Memory section at minimum
+  viewport size with native vertical scrolling.

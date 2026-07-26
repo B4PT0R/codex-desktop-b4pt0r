@@ -71,7 +71,7 @@ export function useThreadHistory({
           "thread/resume",
           threadResumeParams(threadId),
         );
-        if (resumeGeneration.current !== generation) return;
+        if (resumeGeneration.current !== generation) return false;
         const page = response.initialTurnsPage;
         callbacks.current.onMessagesReplaced(
           page
@@ -83,9 +83,11 @@ export function useThreadHistory({
           threadId,
           threadRuntimeSettings(response),
         );
+        return true;
       } catch (error) {
         if (resumeGeneration.current === generation)
           callbacks.current.onError(t("thread.resumeError"), error);
+        return false;
       }
     },
     [t],

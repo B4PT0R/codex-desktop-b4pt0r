@@ -1,0 +1,58 @@
+// @vitest-environment jsdom
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const requestMock = vi.hoisted(() => vi.fn());
+vi.mock("../../src/lib/codex", () => ({
+  isDesktopApp: () => true,
+  request: requestMock,
+}));
+
+import { useMemorySettings } from "../../src/lib/useMemorySettings";
+
+beforeEach(() => requestMock.mockReset());
+
+describe("réglages globaux de mémoire", () => {
+  it("hydrate les valeurs Codex et écrit un contrôle ciblé", async () => {
+    requestMock.mockResolvedValueOnce({
+      config: {
+        features: { memories: true },
+        memories: {
+          disable_on_external_context: true,
+          generate_memories: false,
+          min_rate_limit_remaining_percent: 40,
+          use_memories: true,
+        },
+      },
+    });
+    const { result } = renderHook(() => useMemorySettings(true));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.enabled).toBe(true);
+    expect(result.current.generateMemories).toBe(false);
+    expect(result.current.disableOnExternalContext).toBe(true);
+    expect(result.current.minRateLimitRemainingPercent).toBe(40);
+
+    requestMock.mockResolvedValueOnce({});
+    await act(async () => {
+      expect(await result.current.setGenerateMemories(true)).toBe(true);
+    });
+    expect(requestMock).toHaveBeenLastCalledWith("config/value/write", {
+      keyPath: "memories.generate_memories",
+      mergeStrategy: "upsert",
+      value: true,
+    });
+  });
+
+  it("réinitialise la mémoire par la requête expérimentale dédiée", async () => {
+    requestMock.mockResolvedValueOnce({ config: {} });
+    const { result } = renderHook(() => useMemorySettings(true));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    requestMock.mockResolvedValueOnce({});
+    await act(async () => {
+      expect(await result.current.reset()).toBe(true);
+    });
+    expect(requestMock).toHaveBeenLastCalledWith("memory/reset");
+  });
+});

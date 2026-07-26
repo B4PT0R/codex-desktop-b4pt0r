@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { afterEach } from "vitest";
 import { Markdown } from "../../src/components/Markdown";
 import { ToolGroup } from "../../src/components/ToolGroup";
 import { SignalCards } from "../../src/components/SignalCards";
+import { MarkdownLinkProvider } from "../../src/components/MarkdownLinkContext";
 afterEach(cleanup);
 describe("rendu du chat", () => {
   it("rend le Markdown GFM", async () => {
@@ -20,6 +21,26 @@ describe("rendu du chat", () => {
       ),
     ).toBeVisible();
     expect(screen.getByText("cargo test")).toBeVisible();
+  });
+  it("route explicitement les liens web au lieu de demander une nouvelle fenêtre Electron", async () => {
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    render(
+      <MarkdownLinkProvider
+        value={{ fileOpener: "none", onError: vi.fn() }}
+      >
+        <Markdown>{"[Documentation](https://example.com/docs)"}</Markdown>
+      </MarkdownLinkProvider>,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("link", { name: "Documentation" }),
+    );
+    expect(open).toHaveBeenCalledWith(
+      "https://example.com/docs",
+      "_blank",
+      "noopener,noreferrer",
+    );
+    open.mockRestore();
   });
   it("diffère l’analyse Markdown pendant le streaming", async () => {
     const { rerender } = render(

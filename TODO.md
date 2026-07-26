@@ -28,11 +28,11 @@ OpenAI release.
 
 ## Verified baseline
 
-- Package: `dist/codex-desktop-linux_0.2.3_amd64.deb`
-- Size: 105,863,504 bytes
+- Package: `dist/codex-desktop-linux_0.2.4_amd64.deb`
+- Size: 105,987,316 bytes
 - SHA-256:
-  `2d5c8464d712e76b8c6b3d098e864c2fb31555ba524748c7f0cb2ef1fab1dafe`
-- Package metadata verified as `codex-desktop-linux 0.2.3` for Ubuntu amd64.
+  `7df1e625dda59fa2781588ccaf3a8d1fabb1711d7617956bc49cc818debabfe4`
+- Package metadata verified as `codex-desktop-linux 0.2.4` for Ubuntu amd64.
 - The current Config editor, tool-group fixes, App Server PATH fix, workspace
   `AGENTS.md` editor and dual-agent Realtime chat hierarchy are included in the
   release package, including the centralized Realtime shutdown cleanup.
@@ -50,21 +50,21 @@ OpenAI release.
 - App Server coverage was refreshed on 2026-07-25 against stable and
   experimental schemas plus official checkout `0dfa778dae6a`: the schemas
   expose 89/126 client requests, 10/11 server requests and 70 notifications.
-  This client emits 53 product methods (41 stable, 12 experimental), explicitly
+  This client emits 55 product methods (42 stable, 13 experimental), explicitly
   handles 54 notifications and answers 6 server requests. See
   `APP_SERVER_COVERAGE.md` for the classified inventory.
-- 448 Vitest/contract tests across 88 files pass, including 41 App Server
+- 469 Vitest/contract tests across 91 files pass, including 44 App Server
   contract cases.
-- 32 Electron/Node tests pass.
+- 36 Electron/Node tests pass.
 - Strict TypeScript and the production build pass.
 - Production dependency audit reports zero vulnerabilities. The full
   development-tree audit reports 16 high-severity advisories inherited through
   `electron-builder`; npm's forced remediation would downgrade its major
   version, so it was not applied. The compatible audit fix updated PostCSS and
   related build dependencies.
-- Main JS: 472.77 kB (138.68 kB gzip).
+- Main JS: 490.48 kB (143.60 kB gzip).
 - Lazy diff viewer: 89.50 kB (32.89 kB gzip).
-- Lazy Markdown/KaTeX: 698.43 kB (208.65 kB gzip).
+- Lazy Markdown/KaTeX: 698.59 kB (208.74 kB gzip).
 
 The worktree may contain the current reviewed UI lot. Inspect `git status`
 before starting and do not discard unrelated changes.
@@ -203,6 +203,14 @@ and update this section when priorities move.
   `~/.codex/config.toml`.
 - Browser automation owns a separate open-source Chromium process; never embed a
   general-purpose browser WebView inside the app.
+- Markdown links never navigate the Electron WebView. HTTP(S) targets use the
+  managed Chromium with system fallback; local references are canonicalized at
+  the native boundary and must exist. Relative paths use the current workspace;
+  absolute paths may reference sibling checkouts, global Codex files or
+  temporary artifacts. Files use the persisted `file_opener`, directories use
+  the OS file explorer, and neither path constructs a shell command. Non-UTF-8
+  and binary files use the OS default application instead of forcing the text
+  editor.
 - When Electron discovers Codex by absolute path (including an NVM install), its
   containing directory is prepended to the App Server child environment so
   agent tools inherit access to both `codex` and its neighboring Node runtime.
@@ -221,6 +229,26 @@ and update this section when priorities move.
 - Managed permission-profile and hook constraints are read only on the relevant
   settings pages. MCP configuration reload is explicit and distinct from an
   inventory refresh.
+- Global web search mode is read from Codex and written with the focused
+  comment-preserving `config/value/write` request. App Server 0.145.0 exposes no
+  thread or turn override, so the control belongs in the secondary Options
+  section and explicitly applies to new conversations rather than appearing
+  under the composer or among general application preferences.
+- The same structured global read hydrates the file opener in General and the
+  reasoning-summary style in Options. Both use focused, comment-preserving
+  writes. Response verbosity and Plan-mode effort use the same boundary but
+  remain grouped under Agent and models rather than turning Options into a
+  miscellaneous drawer.
+- The experimental Memory settings surface controls the canonical
+  `features.memories` and documented `memories.*` keys. Destructive clearing
+  uses the dedicated guarded `memory/reset` request; the client never edits
+  generated memory files or SQLite state directly. Per-thread memory mode stays
+  deferred until App Server replay exposes its effective value reliably.
+- Reloading from the thread-title menu re-runs `thread/resume` so persisted
+  history and effective server settings become authoritative again. The
+  separate compact control in General restarts the native App Server process,
+  refreshes its catalogues, then restores the current thread; both actions are
+  guarded while a turn or audio capture is active.
 - Composer permission and approval quick pickers emit independent partial
   `thread/settings/update` patches. Concurrent Full access and Never ask
   selections therefore cannot restore each other's stale field; the full

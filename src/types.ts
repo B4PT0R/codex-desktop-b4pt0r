@@ -57,6 +57,13 @@ export type ChatMessage = {
   signals?: AgentSignal[];
   streaming?: boolean;
   attachments?: string[];
+  memoryCitations?: MemoryCitation[];
+};
+export type MemoryCitation = {
+  path: string;
+  lineStart: number;
+  lineEnd: number;
+  note: string;
 };
 export type Approval = {
   requestId: number | string;

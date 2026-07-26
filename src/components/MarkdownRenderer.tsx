@@ -7,8 +7,12 @@ import remarkMath from "remark-math";
 import "katex/dist/katex.min.css";
 import { normalizeLatexDelimiters } from "../lib/normalizeLatexDelimiters";
 import { splitStableStreamingLatex } from "../lib/streamingLatex";
+import { classifyMarkdownLink } from "../lib/linkRouting";
+import { openMarkdownLink } from "../lib/markdownLinks";
+import { useMarkdownLinkRouting } from "./MarkdownLinkContext";
 
 export function MarkdownRenderer({ children }: { children: string }) {
+  const routing = useMarkdownLinkRouting();
   return (
     <ReactMarkdown
       remarkPlugins={[
@@ -26,11 +30,23 @@ export function MarkdownRenderer({ children }: { children: string }) {
         ],
       ]}
       components={{
-        a: ({ children: content, node: _, ...props }) => (
-          <a {...props} target="_blank" rel="noreferrer">
-            {content}
-          </a>
-        ),
+        a: ({ children: content, href, node: _, ...props }) => {
+          const target = classifyMarkdownLink(href ?? "");
+          return (
+            <a
+              {...props}
+              href={href}
+              rel={target.kind === "web" ? "noreferrer" : undefined}
+              onClick={(event) => {
+                if (target.kind === "anchor") return;
+                event.preventDefault();
+                void openMarkdownLink(href ?? "", routing).catch(routing.onError);
+              }}
+            >
+              {content}
+            </a>
+          );
+        },
         code: ({ children: content, className, node: _, ...props }) => (
           <code className={className} {...props}>
             {content}

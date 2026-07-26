@@ -9,6 +9,39 @@ const assistantMessage: ChatMessage = {
 };
 
 describe("événements de conversation", () => {
+  it("conserve les citations mémoire structurées d’un message finalisé", () => {
+    const updated = applyConversationEvent([], {
+      method: "item/completed",
+      params: {
+        item: {
+          id: "memory-answer",
+          type: "agentMessage",
+          text: "Je m’en souviens.",
+          memoryCitation: {
+            entries: [
+              {
+                path: "/home/user/.codex/memories/memory.md",
+                lineStart: 4,
+                lineEnd: 6,
+                note: "Préférence utilisateur",
+              },
+            ],
+            threadIds: ["thread-1"],
+          },
+        },
+      },
+    });
+
+    expect(updated[0].memoryCitations).toEqual([
+      {
+        path: "/home/user/.codex/memories/memory.md",
+        lineStart: 4,
+        lineEnd: 6,
+        note: "Préférence utilisateur",
+      },
+    ]);
+  });
+
   it("préserve les références des messages non concernés par un delta", () => {
     const older: ChatMessage = {
       id: "older",

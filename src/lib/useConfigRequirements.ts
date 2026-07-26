@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { isDesktopApp, request } from "./codex";
 import { appServerRecord } from "./appServerValues";
-import type { ApprovalPolicy } from "./protocol";
+import type { ApprovalPolicy, WebSearchMode } from "./protocol";
 
 export type ConfigRequirements = {
   managed: boolean;
@@ -9,6 +9,7 @@ export type ConfigRequirements = {
   allowedPermissionProfiles?: Record<string, boolean>;
   defaultPermission?: string;
   allowedApprovalPolicies?: ApprovalPolicy[];
+  allowedWebSearchModes?: WebSearchMode[];
 };
 
 const emptyRequirements: ConfigRequirements = {
@@ -56,6 +57,9 @@ export function normalizeConfigRequirements(
   const allowedApprovals = Array.isArray(value.allowedApprovalPolicies)
     ? value.allowedApprovalPolicies.filter(isApprovalPolicy)
     : undefined;
+  const allowedWebSearchModes = Array.isArray(value.allowedWebSearchModes)
+    ? value.allowedWebSearchModes.filter(isWebSearchMode)
+    : undefined;
   return {
     managed: true,
     managedHooksOnly: value.allowManagedHooksOnly === true,
@@ -73,7 +77,19 @@ export function normalizeConfigRequirements(
     allowedApprovalPolicies: allowedApprovals?.length
       ? allowedApprovals
       : undefined,
+    allowedWebSearchModes: allowedWebSearchModes?.length
+      ? allowedWebSearchModes
+      : undefined,
   };
+}
+
+function isWebSearchMode(value: unknown): value is WebSearchMode {
+  return (
+    value === "disabled" ||
+    value === "cached" ||
+    value === "indexed" ||
+    value === "live"
+  );
 }
 
 function isApprovalPolicy(value: unknown): value is ApprovalPolicy {

@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 const allowedCommands = new Set([
   "start_app_server",
+  "restart_app_server",
   "send_app_server",
   "read_desktop_settings",
   "update_desktop_settings",
@@ -15,6 +16,7 @@ const allowedCommands = new Set([
   "read_chromium_status",
   "open_chromium_target",
   "open_chromium_image",
+  "open_file_reference",
   "save_generated_image",
   "install_chromium",
   "cancel_chromium_install",

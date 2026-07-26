@@ -80,9 +80,11 @@ export class AppServerTransport {
     child.stderr.on("data", (chunk) => {
       stderr = `${stderr}${chunk}`.slice(-8_000);
     });
-    child.once("error", (error) => this.#handleExit(null, error.message));
+    child.once("error", (error) =>
+      this.#handleExit(child, null, error.message),
+    );
     child.once("exit", (code) =>
-      this.#handleExit(code, stderr.trim() || null),
+      this.#handleExit(child, code, stderr.trim() || null),
     );
     return true;
   }
@@ -101,13 +103,19 @@ export class AppServerTransport {
   }
 
   stop() {
-    this.#child?.kill();
+    const child = this.#child;
     this.#child = undefined;
     this.#initialized = false;
+    child?.kill();
   }
 
-  #handleExit(code, message) {
-    if (!this.#child) return;
+  async restart() {
+    this.stop();
+    return this.start();
+  }
+
+  #handleExit(child, code, message) {
+    if (this.#child !== child) return;
     this.#child = undefined;
     this.#initialized = false;
     this.#send("app-server-exited", { code, message });

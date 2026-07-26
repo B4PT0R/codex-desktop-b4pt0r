@@ -252,7 +252,10 @@ function completeItem(
     next = replaceAt(messages, index, {
       ...message,
       ...(message.id === item.id || message.sourceItemId === item.id
-        ? { streaming: false }
+        ? {
+            streaming: false,
+            memoryCitations: memoryCitations(item.memoryCitation),
+          }
         : {}),
       ...(hasTool
         ? {
@@ -293,10 +296,36 @@ function completeItem(
         id: item.id,
         role: "assistant",
         content: stringValue(item.text) ?? "",
+        memoryCitations: memoryCitations(item.memoryCitation),
       },
     ];
   }
   return next;
+}
+
+function memoryCitations(value: unknown): ChatMessage["memoryCitations"] {
+  const citation = record(value);
+  if (!Array.isArray(citation?.entries)) return undefined;
+  const entries = citation.entries.flatMap((candidate) => {
+    const entry = record(candidate);
+    const path = stringValue(entry?.path);
+    const note = stringValue(entry?.note) ?? "";
+    const lineStart = boundedLine(entry?.lineStart);
+    const lineEnd = boundedLine(entry?.lineEnd);
+    return path && lineStart && lineEnd && lineEnd >= lineStart
+      ? [{ path, note, lineStart, lineEnd }]
+      : [];
+  });
+  return entries.length > 0 ? entries : undefined;
+}
+
+function boundedLine(value: unknown) {
+  return typeof value === "number" &&
+    Number.isSafeInteger(value) &&
+    value > 0 &&
+    value <= 10_000_000
+    ? value
+    : undefined;
 }
 
 function countMessageSegments(messages: ChatMessage[], itemId: string) {

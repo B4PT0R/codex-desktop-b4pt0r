@@ -2,6 +2,8 @@ import type { MessageKey } from "../i18n/locales/fr";
 
 export type SettingsSectionId =
   | "general"
+  | "options"
+  | "memory"
   | "agent"
   | "appearance"
   | "voice"
@@ -43,6 +45,19 @@ const settingsGroupDefinitions: SettingsGroupDefinition[] = [
         id: "general",
         labelKey: "settings.section.general",
         keywords: "application startup démarrage notifications language langue",
+        available: true,
+      },
+      {
+        id: "options",
+        labelKey: "settings.section.options",
+        keywords:
+          "options secondary secondaires web search recherche internet cache live indexed indexée",
+        available: true,
+      },
+      {
+        id: "memory",
+        labelKey: "settings.section.memory",
+        keywords: "mémoire memory memories recall souvenir personnalisation",
         available: true,
       },
       {

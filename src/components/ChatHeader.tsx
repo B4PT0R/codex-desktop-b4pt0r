@@ -41,6 +41,7 @@ type ChatHeaderProps = {
   onFork: () => Promise<boolean>;
   onOpenSidebar: () => void;
   onReconnect: () => void;
+  onReload: () => Promise<boolean>;
   onRename: (name: string) => Promise<boolean>;
 };
 
@@ -59,6 +60,7 @@ export function ChatHeader({
   onFork,
   onOpenSidebar,
   onReconnect,
+  onReload,
   onRename,
 }: ChatHeaderProps) {
   const { t } = useI18n();
@@ -110,6 +112,13 @@ export function ChatHeader({
     if (saving || busy) return;
     setSaving(true);
     if (await onFork()) setMenuOpen(false);
+    setSaving(false);
+  }
+
+  async function reload() {
+    if (saving || busy || !connected) return;
+    setSaving(true);
+    if (await onReload()) setMenuOpen(false);
     setSaving(false);
   }
 
@@ -203,6 +212,17 @@ export function ChatHeader({
                     </span>
                   </div>
                 )}
+                <button
+                  className="thread-menu-action"
+                  disabled={busy || saving || !connected}
+                  onClick={reload}
+                >
+                  <RotateCcw className={saving ? "spin" : ""} />
+                  <span>
+                    <strong>{t("chat.actions.reload")}</strong>
+                    <small>{t("chat.actions.reloadDetail")}</small>
+                  </span>
+                </button>
                 <button
                   className="thread-menu-action"
                   disabled={!connected}

@@ -664,6 +664,50 @@ header button svg {
 .markdown-fallback {
   white-space: pre-wrap;
 }
+
+.memory-citations {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  color: #858580;
+  font-size: 10px;
+}
+
+.memory-citations > svg {
+  width: 13px;
+  height: 13px;
+  margin-top: 2px;
+}
+
+.memory-citations > div {
+  display: grid;
+  gap: 4px;
+}
+
+.memory-citations strong {
+  font-weight: 500;
+}
+
+.memory-citations button {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  width: fit-content;
+  color: #74746f;
+  font-size: 10px;
+  text-align: left;
+}
+
+.memory-citations button:hover {
+  color: #343431;
+  text-decoration: underline;
+}
+
+.memory-citations button small {
+  color: #999993;
+  font-size: 9px;
+}
 .streaming-latex {
   white-space: pre-wrap;
 }

@@ -14,6 +14,7 @@ describe("contraintes administrées", () => {
             malformed: "no",
           },
           allowedApprovalPolicies: ["on-request", "never", { granular: {} }],
+          allowedWebSearchModes: ["cached", "disabled", "invalid"],
         },
       }),
     ).toEqual({
@@ -25,6 +26,7 @@ describe("contraintes administrées", () => {
         ":danger-full-access": false,
       },
       allowedApprovalPolicies: ["on-request", "never"],
+      allowedWebSearchModes: ["cached", "disabled"],
     });
   });
 

@@ -32,6 +32,8 @@ App Server schema, important failure paths are covered, native boundaries are
 kept narrow, and the interface is tested at both desktop and compact window
 sizes.
 
+See the [changelog](CHANGELOG.md) for user-visible changes in each release.
+
 ## What is covered
 
 ### Complete conversation workflow
@@ -124,7 +126,7 @@ package:
 ```bash
 npm ci
 npm run electron:deb
-sudo apt install ./dist/codex-desktop-linux_0.2.3_amd64.deb
+sudo apt install ./dist/codex-desktop-linux_0.2.4_amd64.deb
 ```
 
 Launch it from the desktop menu or with:

@@ -7,7 +7,7 @@ export function reasoningEffortLabel(
   return (
     (
       {
-        none: t("settings.effort.minimal"),
+        none: t("settings.effort.none"),
         minimal: t("settings.effort.minimal"),
         low: t("settings.effort.low"),
         medium: t("settings.effort.medium"),

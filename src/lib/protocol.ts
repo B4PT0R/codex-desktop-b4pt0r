@@ -9,6 +9,17 @@ import type { ExternalAgentMigrationItem } from "./appServerTypes";
 
 export type Permission = string;
 export type ApprovalPolicy = "untrusted" | "on-request" | "never";
+export type WebSearchMode = "disabled" | "cached" | "indexed" | "live";
+export type ReasoningSummaryMode = "auto" | "concise" | "detailed" | "none";
+export type FileOpener = "vscode" | "vscode-insiders" | "windsurf" | "cursor" | "none";
+export type ModelVerbosity = "low" | "medium" | "high";
+export type PlanReasoningEffort =
+  | "none"
+  | "minimal"
+  | "low"
+  | "medium"
+  | "high"
+  | "xhigh";
 export type TurnContextItem =
   | { type: "localImage"; path: string }
   | { type: "mention"; name: string; path: string };
@@ -65,6 +76,46 @@ export function realtimeEphemeralThreadStartParams(
 }
 export function configReadParams(cwd?: string) {
   return { cwd: cwd ?? null, includeLayers: false };
+}
+export function configValueWriteParams(keyPath: string, value: unknown) {
+  return { keyPath, value, mergeStrategy: "upsert" as const };
+}
+export function webSearchConfigWriteParams(mode: WebSearchMode) {
+  return {
+    keyPath: "web_search",
+    value: mode,
+    mergeStrategy: "upsert" as const,
+  };
+}
+export function reasoningSummaryConfigWriteParams(mode: ReasoningSummaryMode) {
+  return {
+    keyPath: "model_reasoning_summary",
+    value: mode,
+    mergeStrategy: "upsert" as const,
+  };
+}
+export function fileOpenerConfigWriteParams(opener: FileOpener) {
+  return {
+    keyPath: "file_opener",
+    value: opener,
+    mergeStrategy: "upsert" as const,
+  };
+}
+export function modelVerbosityConfigWriteParams(verbosity: ModelVerbosity) {
+  return {
+    keyPath: "model_verbosity",
+    value: verbosity,
+    mergeStrategy: "upsert" as const,
+  };
+}
+export function planReasoningEffortConfigWriteParams(
+  effort: PlanReasoningEffort,
+) {
+  return {
+    keyPath: "plan_mode_reasoning_effort",
+    value: effort,
+    mergeStrategy: "upsert" as const,
+  };
 }
 export function turnStartParams(
   threadId: string,

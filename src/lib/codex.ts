@@ -105,6 +105,21 @@ export async function reconnect() {
   }
 }
 
+export async function restartAppServer() {
+  if (!isDesktopApp()) return;
+  initialized = false;
+  rpc.disconnect(new Error(translate("transport.restarting")));
+  notifyConnection(false);
+  try {
+    await invoke("restart_app_server");
+    await ensureConnected();
+  } catch (cause) {
+    const error = asError(cause, translate("transport.restartError"));
+    notifyConnection(false, error);
+    throw error;
+  }
+}
+
 async function ensureConnected() {
   if (initialized) return;
   if (!connectionPromise) {
@@ -124,7 +139,7 @@ async function initializeConnection() {
         clientInfo: {
           name: "codex-desktop-linux",
           title: "Codex Desktop Linux",
-          version: "0.2.3",
+          version: "0.2.4",
         },
         capabilities: { experimentalApi: true },
       });

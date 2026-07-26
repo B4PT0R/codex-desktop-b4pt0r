@@ -6,6 +6,7 @@ import {
   connect,
   reconnect,
   request,
+  restartAppServer,
   type AppServerMessage,
 } from "../../src/lib/codex";
 import {
@@ -20,6 +21,7 @@ vi.mock("../../src/lib/codex", () => ({
   isDesktopApp: vi.fn(() => true),
   reconnect: vi.fn(),
   request: vi.fn(),
+  restartAppServer: vi.fn(),
 }));
 vi.mock("../../src/i18n/I18nProvider", async () => {
   const { defaultTranslate } = await import("../../src/i18n/translate");
@@ -30,6 +32,7 @@ const mockedConnect = vi.mocked(connect);
 const mockedListen = vi.mocked(listen);
 const mockedReconnect = vi.mocked(reconnect);
 const mockedRequest = vi.mocked(request);
+const mockedRestart = vi.mocked(restartAppServer);
 let receiveMessage: ((message: AppServerMessage) => void) | undefined;
 let updateConnection: ((connected: boolean, error?: Error) => void) | undefined;
 
@@ -134,6 +137,29 @@ describe("connexion App Server", () => {
       await reconnecting;
     });
     expect(result.current.reconnecting).toBe(false);
+  });
+
+  it("redémarre App Server puis recharge ses catalogues", async () => {
+    const options = callbacks();
+    const { result } = renderHook(() => useAppServerConnection(options));
+    await waitFor(() => expect(options.onInitialized).toHaveBeenCalledOnce());
+    mockedRequest.mockClear();
+    mockedRestart.mockResolvedValue();
+
+    let restarted = false;
+    await act(async () => {
+      restarted = await result.current.restart();
+    });
+
+    expect(restarted).toBe(true);
+    expect(mockedRestart).toHaveBeenCalledOnce();
+    expect(mockedRequest).toHaveBeenCalledWith("model/list", { limit: 50 });
+    expect(mockedRequest).toHaveBeenCalledWith("thread/list", {
+      limit: 30,
+      sortKey: "updated_at",
+    });
+    expect(options.onInitialized).toHaveBeenCalledTimes(2);
+    expect(result.current.restartError).toBeUndefined();
   });
 
   it("nettoie les abonnements et ignore une initialisation devenue obsolète", async () => {

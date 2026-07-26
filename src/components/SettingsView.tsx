@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   Bot,
+  Brain,
   Boxes,
   FlaskConical,
   FileCog,
@@ -8,9 +9,11 @@ import {
   Mic,
   Palette,
   Plug,
+  RefreshCw,
   Search,
   Settings,
   ShieldCheck,
+  SlidersHorizontal,
   UserRound,
   Webhook,
 } from "lucide-react";
@@ -21,7 +24,15 @@ import {
   type ComponentType,
   type ReactNode,
 } from "react";
-import type { ApprovalPolicy, Permission } from "../lib/protocol";
+import type {
+  ApprovalPolicy,
+  FileOpener,
+  ModelVerbosity,
+  PlanReasoningEffort,
+  Permission,
+  ReasoningSummaryMode,
+  WebSearchMode,
+} from "../lib/protocol";
 import {
   filteredSettingsGroups,
   settingsSectionLabel,
@@ -48,6 +59,9 @@ import type { RealtimeSettingsController } from "../lib/useRealtimeSettings";
 import { VoiceSettings } from "./VoiceSettings";
 import { CodexConfigSettings } from "./CodexConfigSettings";
 import type { ConfigRequirements } from "../lib/useConfigRequirements";
+import type { CodexGlobalSettingsController } from "../lib/useCodexGlobalSettings";
+import type { MemorySettingsController } from "../lib/useMemorySettings";
+import { MemorySettings } from "./MemorySettings";
 
 export type SettingsViewProps = {
   account: AccountController;
@@ -68,6 +82,14 @@ export type SettingsViewProps = {
   personality: Personality;
   rateLimits: RateLimitsController;
   realtime: RealtimeSettingsController;
+  memory: MemorySettingsController;
+  webSearch: CodexGlobalSettingsController;
+  appServerRestart: {
+    available: boolean;
+    error?: string;
+    restart: () => Promise<boolean>;
+    restarting: boolean;
+  };
   section: SettingsSectionId;
   onChangeCollaborationMode: (mode: CollaborationMode) => void;
   onChangeEffort: (effort: string) => void;
@@ -82,6 +104,8 @@ export type SettingsViewProps = {
 
 const icons: Record<SettingsSectionId, ComponentType> = {
   general: Settings,
+  options: SlidersHorizontal,
+  memory: Brain,
   agent: Bot,
   appearance: Palette,
   voice: Mic,
@@ -94,6 +118,35 @@ const icons: Record<SettingsSectionId, ComponentType> = {
   hooks: Webhook,
   advanced: FlaskConical,
 };
+
+const webSearchModes: WebSearchMode[] = [
+  "cached",
+  "indexed",
+  "live",
+  "disabled",
+];
+const reasoningSummaryModes: ReasoningSummaryMode[] = [
+  "auto",
+  "concise",
+  "detailed",
+  "none",
+];
+const fileOpeners: FileOpener[] = [
+  "vscode",
+  "vscode-insiders",
+  "cursor",
+  "windsurf",
+  "none",
+];
+const modelVerbosities: ModelVerbosity[] = ["low", "medium", "high"];
+const planReasoningEfforts: PlanReasoningEffort[] = [
+  "none",
+  "minimal",
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+];
 
 export function SettingsView(props: SettingsViewProps) {
   const { t } = useI18n();
@@ -162,7 +215,17 @@ export function SettingsView(props: SettingsViewProps) {
 }
 
 function SettingsSection(props: SettingsViewProps) {
-  if (props.section === "general") return <GeneralSettings />;
+  if (props.section === "general")
+    return (
+      <GeneralSettings
+        appServerRestart={props.appServerRestart}
+        webSearch={props.webSearch}
+      />
+    );
+  if (props.section === "options")
+    return <OptionsSettings webSearch={props.webSearch} />;
+  if (props.section === "memory")
+    return <MemorySettings controller={props.memory} />;
   if (props.section === "agent") return <AgentSettings {...props} />;
   if (props.section === "appearance") return <AppearanceSettings />;
   if (props.section === "voice")
@@ -221,7 +284,13 @@ function AdvancedSettings({
   );
 }
 
-function GeneralSettings() {
+function GeneralSettings({
+  appServerRestart,
+  webSearch,
+}: {
+  appServerRestart: SettingsViewProps["appServerRestart"];
+  webSearch: CodexGlobalSettingsController;
+}) {
   const { locale, persistenceError, setLocale, t } = useI18n();
   const launchAtLogin = useLaunchAtLogin();
   const chromium = useChromium();
@@ -246,6 +315,26 @@ function GeneralSettings() {
           >
             <option value="fr">{t("settings.language.french")}</option>
             <option value="en">{t("settings.language.english")}</option>
+          </select>
+        </label>
+        <label>
+          <span className="settings-field-description">
+            <strong>{t("settings.fileOpener.title")}</strong>
+            <small>{t("settings.fileOpener.detail")}</small>
+          </span>
+          <select
+            aria-label={t("settings.fileOpener.title")}
+            disabled={webSearch.loading}
+            value={webSearch.fileOpener}
+            onChange={(event) =>
+              void webSearch.setFileOpener(event.target.value as FileOpener)
+            }
+          >
+            {fileOpeners.map((opener) => (
+              <option key={opener} value={opener}>
+                {t(`settings.fileOpener.${opener}`)}
+              </option>
+            ))}
           </select>
         </label>
         <label>
@@ -324,10 +413,39 @@ function GeneralSettings() {
             )}
           </div>
         </div>
+        <div className="settings-browser-row">
+          <span className="settings-field-description">
+            <strong>{t("settings.appServerRestart.title")}</strong>
+            <small>{t("settings.appServerRestart.detail")}</small>
+          </span>
+          <div className="settings-browser-status">
+            <button
+              className="app-server-restart-button secondary-button"
+              disabled={
+                !appServerRestart.available || appServerRestart.restarting
+              }
+              onClick={() => void appServerRestart.restart()}
+            >
+              <RefreshCw
+                className={appServerRestart.restarting ? "spin" : ""}
+              />
+              {t(
+                appServerRestart.restarting
+                  ? "settings.appServerRestart.running"
+                  : "settings.appServerRestart.action",
+              )}
+            </button>
+          </div>
+        </div>
       </div>
       {persistenceError && (
         <div className="inventory-message error" role="alert">
           {t("settings.persistence.error")} {persistenceError}
+        </div>
+      )}
+      {appServerRestart.error && (
+        <div className="inventory-message error" role="alert">
+          {t("settings.appServerRestart.error")} {appServerRestart.error}
         </div>
       )}
       {launchAtLogin.error && (
@@ -346,6 +464,77 @@ function GeneralSettings() {
       {chromium.error && (
         <div className="inventory-message error" role="alert">
           {t("settings.chromium.error")} {chromium.error}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function OptionsSettings({
+  webSearch,
+}: {
+  webSearch: CodexGlobalSettingsController;
+}) {
+  const { t } = useI18n();
+  return (
+    <section className="settings-page">
+      <header>
+        <p>{t("settings.options.description")}</p>
+      </header>
+      <div className="settings-card settings-fields">
+        <label>
+          <span className="settings-field-description">
+            <strong>{t("webSearch.title")}</strong>
+            <small>{t("webSearch.globalDetail")}</small>
+          </span>
+          <select
+            aria-label={t("webSearch.title")}
+            disabled={webSearch.loading || Boolean(webSearch.updating)}
+            value={webSearch.mode}
+            onChange={(event) =>
+              void webSearch.setMode(event.target.value as WebSearchMode)
+            }
+          >
+            {webSearchModes.map((mode) => (
+              <option
+                disabled={
+                  webSearch.allowed !== undefined &&
+                  !webSearch.allowed.includes(mode)
+                }
+                key={mode}
+                value={mode}
+              >
+                {t(`webSearch.${mode}`)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span className="settings-field-description">
+            <strong>{t("settings.reasoningSummary.title")}</strong>
+            <small>{t("settings.reasoningSummary.detail")}</small>
+          </span>
+          <select
+            aria-label={t("settings.reasoningSummary.title")}
+            disabled={webSearch.loading}
+            value={webSearch.reasoningSummary}
+            onChange={(event) =>
+              void webSearch.setReasoningSummary(
+                event.target.value as ReasoningSummaryMode,
+              )
+            }
+          >
+            {reasoningSummaryModes.map((mode) => (
+              <option key={mode} value={mode}>
+                {t(`settings.reasoningSummary.${mode}`)}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      {webSearch.error && (
+        <div className="inventory-message error" role="alert">
+          {t("webSearch.error")} {webSearch.error}
         </div>
       )}
     </section>
@@ -460,6 +649,42 @@ function AgentSettings(props: SettingsViewProps) {
               []
             ),
           )}
+        </SettingSelect>
+      </div>
+      <div className="settings-subsection-heading">
+        <strong>{t("settings.agent.globalDefaults")}</strong>
+        <small>{t("settings.agent.globalDefaultsDetail")}</small>
+      </div>
+      <div className="settings-card settings-fields">
+        <SettingSelect
+          label={t("settings.agent.verbosity")}
+          value={props.webSearch.modelVerbosity}
+          disabled={props.webSearch.loading}
+          onChange={(value) =>
+            void props.webSearch.setModelVerbosity(value as ModelVerbosity)
+          }
+        >
+          {modelVerbosities.map((verbosity) => (
+            <option value={verbosity} key={verbosity}>
+              {t(`settings.agent.verbosity.${verbosity}`)}
+            </option>
+          ))}
+        </SettingSelect>
+        <SettingSelect
+          label={t("settings.agent.planEffort")}
+          value={props.webSearch.planReasoningEffort}
+          disabled={props.webSearch.loading}
+          onChange={(value) =>
+            void props.webSearch.setPlanReasoningEffort(
+              value as PlanReasoningEffort,
+            )
+          }
+        >
+          {planReasoningEfforts.map((effort) => (
+            <option value={effort} key={effort}>
+              {reasoningEffortLabel(effort, t)}
+            </option>
+          ))}
         </SettingSelect>
       </div>
       <button className="settings-apply" onClick={props.onSave}>
@@ -599,6 +824,8 @@ const plannedSections: Record<
   Exclude<
     SettingsSectionId,
     | "general"
+    | "options"
+    | "memory"
     | "agent"
     | "appearance"
     | "voice"

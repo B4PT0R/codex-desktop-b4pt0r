@@ -15,6 +15,9 @@ import {
 } from "./RealtimeAssistantMessage";
 import { ApplicationErrorMessage } from "./ApplicationErrorMessage";
 import { GeneratedImageWidget } from "./GeneratedImageWidget";
+import { MarkdownLinkProvider } from "./MarkdownLinkContext";
+import type { FileOpener } from "../lib/protocol";
+import { MemoryCitations } from "./MemoryCitations";
 
 type ConversationProps = {
   activity: AgentActivity;
@@ -23,6 +26,9 @@ type ConversationProps = {
   messages: ChatMessage[];
   onLoadOlder?: () => void;
   onReviewDiff?: (tool: ToolCall) => void;
+  cwd?: string;
+  fileOpener?: FileOpener;
+  onLinkError?: (error: unknown) => void;
 };
 
 export function Conversation({
@@ -30,6 +36,9 @@ export function Conversation({
   canLoadOlder = false,
   loadingOlder = false,
   messages,
+  cwd,
+  fileOpener = "none",
+  onLinkError = () => undefined,
   onLoadOlder,
   onReviewDiff,
 }: ConversationProps) {
@@ -38,7 +47,8 @@ export function Conversation({
   const plan = latestPlan(messages);
 
   return (
-    <div className="conversation-shell">
+    <MarkdownLinkProvider value={{ cwd, fileOpener, onError: onLinkError }}>
+      <div className="conversation-shell">
       <div className="conversation-viewport">
         <section
           className="conversation"
@@ -76,7 +86,8 @@ export function Conversation({
           <PlanProgressWidget plan={plan} />
         </section>
       </div>
-    </div>
+      </div>
+    </MarkdownLinkProvider>
   );
 }
 
@@ -141,6 +152,9 @@ const ConversationMessage = memo(function ConversationMessage({
           <RealtimeTextMessage message={message} />
         ) : (
           <Markdown streaming={message.streaming}>{message.content}</Markdown>
+        )}
+        {message.memoryCitations && message.memoryCitations.length > 0 && (
+          <MemoryCitations citations={message.memoryCitations} />
         )}
         {trailingSignals && trailingSignals.length > 0 && (
           <SignalCards signals={trailingSignals} />

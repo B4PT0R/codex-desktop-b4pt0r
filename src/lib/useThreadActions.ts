@@ -25,7 +25,7 @@ type Options = {
   setThreads: Dispatch<SetStateAction<ThreadSummary[]>>;
   onActiveThreadRemoved: () => void;
   onError: (title: string, error: unknown) => void;
-  onForked: (threadId: string) => Promise<void>;
+  onForked: (threadId: string) => Promise<unknown>;
 };
 
 export function useThreadActions({

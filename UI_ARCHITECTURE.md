@@ -215,6 +215,17 @@ Google Chrome et Microsoft Edge ne satisfont pas la détection normale. Un overr
 `CODEX_CHROMIUM_EXECUTABLE` reste réservé aux besoins avancés de compatibilité avec
 une éventuelle évolution de l'automation officielle.
 
+Les liens du transcript passent par un routeur explicite plutôt que par la
+navigation de la WebView Electron. Les URL HTTP(S) ouvrent le Chromium géré,
+avec le navigateur système comme repli. Les références de fichiers sont
+résolues et canonicalisées par Electron : un chemin relatif part du workspace,
+alors qu’un chemin absolu peut viser un checkout voisin, la configuration Codex
+ou un artefact temporaire. Un fichier est ouvert par le schéma d’éditeur
+configuré sans commande shell lorsqu’il contient du texte UTF-8. Les fichiers
+non-UTF-8 ou binaires utilisent l’application système par défaut, et un dossier
+est délégué à l’explorateur de fichiers du système. Les protocoles inconnus et
+les chemins absents sont refusés avec une erreur visible dans la conversation.
+
 L’objectif autonome et `AGENTS.md` sont des actions de configuration contextuelle
 du thread ou du workspace. Elles sont regroupées dans le menu ouvert par le titre
 de la conversation afin de garder la barre supérieure calme, tout en restant

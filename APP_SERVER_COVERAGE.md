@@ -18,11 +18,11 @@ The installed schemas expose:
 | Server requests | 10 | 11 |
 | Server notifications | 70 | 70 |
 
-The desktop client opts into `capabilities.experimentalApi`. It emits 53 product
+The desktop client opts into `capabilities.experimentalApi`. It emits 55 product
 request methods in addition to the one-shot `initialize` handshake:
 
-- 41 are stable;
-- 12 are experimental;
+- 42 are stable;
+- 13 are experimental;
 - every request shape added or changed by this client is checked against the
   installed schema in the contract suite.
 
@@ -43,13 +43,14 @@ buttons.
 | Thread management | rename, fork, archive, unarchive, delete, compact | Complete | Success, confirmation and failure are covered. Archive, unarchive and close notifications reconcile the sidebar and active session when another client changes the thread. |
 | Turns and steering | `turn/start`, `turn/steer`, `turn/interrupt` | Complete | Text, images, file mentions, App mentions, collaboration, model, reasoning, personality and permission context are constructed through typed protocol helpers. |
 | Review | `review/start`, review-mode items, turn diffs | Complete | Inline review activity and the structured persistent diff panel are covered. |
-| Agent output | message streaming, reasoning summaries, plans, compaction, warnings and errors | Complete for user-facing output | Raw reasoning text and raw upstream response events are intentionally not rendered. Experimental raw plan deltas are not needed because `turn/plan/updated` drives the live plan widget. |
+| Agent output | message streaming, reasoning summaries, plans, compaction, memory citations, warnings and errors | Complete for user-facing output | Structured memory citations remain outside Markdown and open only through the bounded memory-file route. Raw reasoning text and raw upstream response events are intentionally not rendered. |
 | Tool activity | item lifecycle, command output, terminal interaction, file patches, MCP progress and completed artifacts | Complete for canonical Codex tools | Unknown item types are ignored safely. `item/fileChange/outputDelta` is not separately shown when patch updates/completion already provide the useful diff. |
 | Approvals and questions | command, file-change and permission approval requests; user input; MCP elicitation; resolved-request cleanup | Complete for v2 flows | Legacy `applyPatchApproval` and `execCommandApproval` callbacks are not used by this v2 client. |
 | Persistent goals | `thread/goal/get`, `thread/goal/set`, `thread/goal/clear`, goal notifications | Complete | Creation, update, pause/resume, progress and guarded deletion are covered. |
 | Thread behavior | `thread/settings/update`, `thread/settings/updated` | Complete for current controls | Model, effort, collaboration, personality, permission profile, approval policy and cwd changes are written. Start, resume and live notifications share one effective-state normalizer, so server state wins. |
 | Models and capability pickers | `model/list`, `collaborationMode/list`, `permissionProfile/list` | Complete for current controls | Collaboration-mode discovery is experimental. `modelProvider/capabilities/read` is not needed for the current single-provider UI. |
-| Global Codex defaults | `config/read` plus bounded native `config.toml` editing | Complete for current product scope | Structured reads hydrate defaults. Native editing preserves hand-authored TOML/comments through a narrowly scoped file boundary rather than pretending structured writes can round-trip them. |
+| Global Codex defaults | `config/read`, targeted `config/value/write`, plus bounded native `config.toml` editing | Complete for current product scope | One structured read hydrates web search, reasoning-summary style, file opener, response verbosity and Plan-mode effort. Their focused selectors use App Server's comment-preserving targeted write; the native editor remains the explicit surface for arbitrary hand-authored TOML. |
+| Local memories | targeted `config/value/write`, `memory/reset` | Experimental but usable | The UI controls documented global feature/use/generation/privacy/quota settings. Reset is explicitly confirmed and uses App Server's global reset; per-thread memory mode remains deferred. |
 | Skills | `skills/list`, `skills/config/write`, `skills/changed` | Complete | Inventory, warnings, enable/disable and refresh are covered. Runtime extra-root administration remains configuration-owned. |
 | Hooks | `hooks/list`, hook-prompt items, `hook/started`, `hook/completed` | Complete for current scope | Effective inventory, configuration warnings and a quiet runtime lifecycle are visible. Managed-only policy is explained when active. |
 | MCP | `mcpServerStatus/list`, OAuth login, `config/mcpServer/reload` and status notifications | Complete for inventory/authentication | Users can explicitly reload `config.toml` MCP configuration before refreshing inventory. Manual generic resource/tool invocation is intentionally absent. |
@@ -66,7 +67,7 @@ buttons.
 
 ## Emitted request inventory
 
-The 53 product methods currently emitted by the renderer are:
+The 55 product methods currently emitted by the renderer are:
 
 - **Threads and turns (23):** `thread/start`, `thread/resume`,
   `thread/list`, `thread/search`, `thread/turns/list`, `thread/name/set`,
@@ -77,9 +78,10 @@ The 53 product methods currently emitted by the renderer are:
   `thread/backgroundTerminals/list`,
   `thread/backgroundTerminals/terminate`, `turn/start`, `turn/steer`,
   `turn/interrupt`, `review/start`.
-- **Models, defaults and managed policy (6):** `model/list`,
+- **Models, defaults and managed policy (7):** `model/list`,
   `collaborationMode/list`, `permissionProfile/list`, `config/read`,
-  `configRequirements/read`, `config/mcpServer/reload`.
+  `config/value/write`, `configRequirements/read`, `config/mcpServer/reload`.
+- **Local memory (1 experimental):** `memory/reset`.
 - **Integrations and discovery (12):** `app/list`, `skills/list`,
   `skills/config/write`, `hooks/list`, `mcpServerStatus/list`,
   `mcpServer/oauth/login`, `fuzzyFileSearch/sessionStart`,
@@ -131,12 +133,12 @@ It intentionally does not answer:
 | `thread/unsubscribe`, elicitation counters | App Server lifecycle bookkeeping, not user actions. |
 | `thread/metadata/update` | Patches stored Git metadata only; it is not a stable Git/worktree product API. |
 | `thread/rollback` | Deprecated and intentionally excluded. |
-| `config/value/write`, `config/batchWrite` | Cannot round-trip comments or arbitrary hand-authored TOML. The bounded native editor owns raw `config.toml`; typed App Server reads still hydrate defaults. |
+| `config/batchWrite` and generic structured config forms | Arbitrary hand-authored TOML remains owned by the bounded raw editor. `config/value/write` is used only for focused controls whose comment-preserving behavior is verified upstream. |
 | `skills/extraRoots/set` | Runtime host configuration. Normal workspace/config-backed roots remain visible through `skills/list`. |
 | `app/read`, `app/installed` | `app/list` provides the connector data required by settings and mentions. |
 | Marketplace/plugin share/install/uninstall | Discovery may become useful later, but official docs still mark production install/uninstall under development and explicitly prohibit production clients from calling them. |
 | `experimentalFeature/*` | Global runtime feature mutation is not an ordinary desktop preference and can violate managed requirements. |
-| `thread/memoryMode/set`, `memory/reset` | Experimental and potentially destructive/global; defer until the memory user model and recovery semantics stabilize. |
+| `thread/memoryMode/set` | Per-thread memory controls remain experimental and are deferred until replay exposes the effective mode reliably. |
 | `remoteControl/*` | Experimental security/device-management surface requiring a complete enrollment, status, revoke and recovery flow. |
 | `environment/*` and thread environment notifications | Experimental remote-executor administration. Local Linux workspaces remain the supported daily flow. |
 | `feedback/upload` | Valuable only with explicit consent, redacted diagnostic preview and attachment controls. |

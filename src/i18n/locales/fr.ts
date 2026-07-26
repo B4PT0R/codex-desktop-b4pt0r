@@ -1,6 +1,23 @@
 export const fr = {
   "common.cancel": "Annuler",
   "common.confirm": "Confirmer",
+  "webSearch.title": "Recherche web",
+  "webSearch.globalDetail":
+    "Mode utilisé par défaut dans les nouvelles conversations Codex.",
+  "webSearch.cached": "Cache",
+  "webSearch.cached.detail":
+    "Résultats préindexés, avec une exposition réduite au web direct.",
+  "webSearch.indexed": "Indexée",
+  "webSearch.indexed.detail":
+    "Accès externe filtré par l’index de recherche.",
+  "webSearch.live": "En direct",
+  "webSearch.live.detail": "Recherche les informations les plus récentes.",
+  "webSearch.disabled": "Désactivée",
+  "webSearch.disabled.detail": "Retire l’outil de recherche web.",
+  "webSearch.error": "Impossible d’enregistrer le mode de recherche web.",
+  "link.openError": "Impossible d’ouvrir ce lien",
+  "citation.memory.title": "Sources de la mémoire",
+  "citation.memory.lines": "lignes {start}–{end}",
   "approval.decline": "Refuser",
   "approval.session": "Pour la session",
   "approval.once": "Autoriser une fois",
@@ -387,6 +404,9 @@ export const fr = {
   "chat.actions.saveName": "Enregistrer le nom",
   "chat.actions.compact": "Compacter le contexte",
   "chat.actions.compactDetail": "Libère de la place pour poursuivre ce chat",
+  "chat.actions.reload": "Recharger la session",
+  "chat.actions.reloadDetail":
+    "Relit l’historique et les réglages effectifs de ce thread",
   "chat.actions.fork": "Créer une branche",
   "chat.actions.forkDetail":
     "Poursuit depuis ici dans une nouvelle conversation",
@@ -514,6 +534,8 @@ export const fr = {
   "settings.group.integrations": "Intégrations",
   "settings.group.code": "Code",
   "settings.section.general": "Général",
+  "settings.section.options": "Options",
+  "settings.section.memory": "Mémoire",
   "settings.section.agent": "Agent et modèles",
   "settings.section.appearance": "Apparence",
   "settings.section.voice": "Voix",
@@ -527,11 +549,58 @@ export const fr = {
   "settings.section.advanced": "Avancé",
   "settings.general.description":
     "Préférences générales de l’application Linux.",
+  "settings.options.description":
+    "Réglages secondaires appliqués globalement aux nouvelles conversations.",
+  "settings.memory.description":
+    "Contrôle la mémoire locale utilisée par Codex entre les conversations.",
+  "settings.memory.experimental": "Expérimental",
+  "settings.memory.localTitle": "Mémoire locale Codex",
+  "settings.memory.localDetail":
+    "Stockée sous CODEX_HOME, séparément de la mémoire de ChatGPT.",
+  "settings.memory.enabled": "Activer la mémoire",
+  "settings.memory.enabledDetail":
+    "Autorise le pipeline local de mémorisation. Un redémarrage d’App Server peut être nécessaire.",
+  "settings.memory.use": "Utiliser les souvenirs existants",
+  "settings.memory.useDetail":
+    "Injecte les souvenirs locaux pertinents dans les nouvelles conversations.",
+  "settings.memory.generate": "Apprendre des nouvelles conversations",
+  "settings.memory.generateDetail":
+    "Rend les nouveaux threads éligibles à la génération de souvenirs.",
+  "settings.memory.external": "Exclure les conversations avec contexte externe",
+  "settings.memory.externalDetail":
+    "Écarte de l’apprentissage les threads utilisant le web, MCP ou la recherche d’outils.",
+  "settings.memory.threshold": "Quota restant minimum",
+  "settings.memory.thresholdDetail":
+    "La génération attend si le quota Codex restant descend sous ce seuil.",
+  "settings.memory.guidanceTitle": "Les règles durables restent dans AGENTS.md",
+  "settings.memory.guidanceDetail":
+    "La mémoire est une aide au rappel et ne remplace pas les instructions versionnées du projet.",
+  "settings.memory.reset": "Effacer la mémoire locale",
+  "settings.memory.resetDetail":
+    "Supprime les souvenirs générés et les travaux de consolidation en attente.",
+  "settings.memory.resetAction": "Réinitialiser",
+  "settings.memory.resetConfirm": "Tout effacer",
+  "settings.memory.error": "Impossible de modifier la mémoire :",
   "settings.language.title": "Langue de l’interface",
   "settings.language.detail":
     "Les textes de l’application utilisent le pack sélectionné.",
   "settings.language.french": "Français",
   "settings.language.english": "English",
+  "settings.fileOpener.title": "Ouvrir les fichiers avec",
+  "settings.fileOpener.detail":
+    "Application utilisée pour les liens vers les fichiers et le code.",
+  "settings.fileOpener.vscode": "Visual Studio Code",
+  "settings.fileOpener.vscode-insiders": "Visual Studio Code Insiders",
+  "settings.fileOpener.cursor": "Cursor",
+  "settings.fileOpener.windsurf": "Windsurf",
+  "settings.fileOpener.none": "Aucune application",
+  "settings.reasoningSummary.title": "Résumés de raisonnement",
+  "settings.reasoningSummary.detail":
+    "Niveau de détail des résumés visibles produits par l’agent.",
+  "settings.reasoningSummary.auto": "Automatiques",
+  "settings.reasoningSummary.concise": "Concis",
+  "settings.reasoningSummary.detailed": "Détaillés",
+  "settings.reasoningSummary.none": "Masqués",
   "settings.persistence.error":
     "Impossible d’enregistrer les préférences de l’application :",
   "settings.startup.title": "Lancer Codex à la connexion",
@@ -574,7 +643,16 @@ export const fr = {
   "settings.agent.friendly": "Amicale",
   "settings.agent.neutral": "Neutre",
   "settings.agent.workMode": "Mode de travail",
+  "settings.agent.globalDefaults": "Valeurs globales",
+  "settings.agent.globalDefaultsDetail":
+    "Préférences utilisées par défaut dans les nouvelles conversations.",
+  "settings.agent.verbosity": "Verbosité des réponses",
+  "settings.agent.verbosity.low": "Faible",
+  "settings.agent.verbosity.medium": "Moyenne",
+  "settings.agent.verbosity.high": "Élevée",
+  "settings.agent.planEffort": "Raisonnement en mode Plan",
   "settings.agent.defaultMode": "Agent",
+  "settings.effort.none": "Aucun",
   "settings.effort.minimal": "Minimal",
   "settings.effort.low": "Faible",
   "settings.effort.medium": "Moyen",
@@ -638,10 +716,17 @@ export const fr = {
   "settings.config.error": "Impossible d’enregistrer la configuration",
   "settings.config.saved": "Configuration enregistrée.",
   "settings.config.restart":
-    "Les threads déjà chargés peuvent conserver leurs réglages actuels. Relancez l’application pour garantir la prise en compte de toutes les modifications.",
+    "Les threads déjà chargés peuvent conserver leurs réglages actuels. Rechargez la session depuis son menu ou redémarrez App Server dans Général.",
   "settings.config.reload": "Recharger le fichier",
   "settings.config.save": "Enregistrer",
   "settings.config.saving": "Enregistrement…",
+  "settings.appServerRestart.title": "App Server",
+  "settings.appServerRestart.detail":
+    "Redémarre le backend Codex puis restaure la conversation courante.",
+  "settings.appServerRestart.action": "Redémarrer",
+  "settings.appServerRestart.running": "Redémarrage…",
+  "settings.appServerRestart.error":
+    "Le redémarrage d’App Server a échoué.",
   "settings.appearance.description":
     "Une interface calme et lisible adaptée au bureau Linux.",
   "settings.appearance.theme": "Thème",
@@ -822,6 +907,8 @@ export const fr = {
   "transport.appServerError": "Erreur App Server",
   "transport.connectError": "Impossible de se connecter à App Server",
   "transport.reconnectError": "Impossible de reconnecter App Server",
+  "transport.restarting": "Redémarrage d’App Server",
+  "transport.restartError": "Impossible de redémarrer App Server",
   "transport.browserPreview": "Mode aperçu navigateur",
   "transport.exit": "App Server s’est arrêté {detail}.",
   "transport.exitNoCode": "sans code de sortie",

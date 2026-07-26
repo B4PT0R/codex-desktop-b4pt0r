@@ -23,6 +23,7 @@ import {
   openChromiumTarget,
   stopManagedChromium,
 } from "./chromium.mjs";
+import { openFileReference } from "./file-reference.mjs";
 import { createMainWindow } from "./window.mjs";
 import {
   codexConfigPath,
@@ -65,6 +66,10 @@ function registerIpc() {
   ipcMain.handle("desktop:start_app_server", async (event) => {
     trusted(event);
     return appServer.start();
+  });
+  ipcMain.handle("desktop:restart_app_server", async (event) => {
+    trusted(event);
+    return appServer.restart();
   });
   ipcMain.handle("desktop:send_app_server", (event, args) => {
     trusted(event);
@@ -135,6 +140,10 @@ function registerIpc() {
   ipcMain.handle("desktop:open_chromium_image", (event, args) => {
     trusted(event);
     return openChromiumImage(args?.dataUrl, app.getPath("home"));
+  });
+  ipcMain.handle("desktop:open_file_reference", (event, args) => {
+    trusted(event);
+    return openFileReference(args, shell);
   });
   ipcMain.handle("desktop:save_generated_image", async (event, args) => {
     trusted(event);
