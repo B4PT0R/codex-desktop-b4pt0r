@@ -141,11 +141,6 @@ state or regression baseline.
   reasoning effort.
 - `agent-personality-settings-preview-840x620.png` — the same Agent settings at
   the configured minimum viewport with native vertical scrolling.
-- `config-editor-settings-preview-1240x820.png` — the global `config.toml`
-  editor in browser-preview mode, with its bounded file identity, restart
-  guidance and explicit reload/save controls.
-- `config-editor-settings-preview-840x620.png` — the responsive editor with the
-  complete action row remaining visible at the configured minimum viewport.
 - `workspace-agents-editor-preview-1240x820.png` — the workspace-scoped
   `AGENTS.md` editor opened from the thread-title action menu, with its full
   writing area and guarded save controls.
@@ -203,3 +198,18 @@ view transition so asynchronously rendered content is visible.
   pinned Chromium and MCP versions.
 - `shared-browser-settings-preview-840x620.png` — the same shared-browser
   controls at the configured minimum viewport without clipping or overflow.
+- `remote-control-settings-preview-1240x820.png` — the dedicated experimental
+  Remote Control section, including its pairing security boundary and explicit
+  browser-preview unavailable state.
+- `remote-control-settings-preview-840x620.png` — the same App Server-owned
+  Remote Control surface at the configured minimum viewport without clipping
+  or document overflow.
+- `config-settings-cards-preview-1240x820.png` — the airy Config landing page
+  presents `config.toml` and global `AGENTS.md` as compact document cards.
+- `config-settings-cards-preview-840x620.png` — the same two entry points remain
+  readable and contained at the configured minimum viewport.
+- `config-editor-modal-preview-1240x820.png` — the shared modal editor for
+  bounded Codex documents, with file identity, restart guidance and explicit
+  reload/save controls.
+- `config-editor-modal-preview-840x620.png` — the modal editor adapts to the
+  minimum viewport and active interface scale without clipping or overlap.

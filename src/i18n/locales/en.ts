@@ -522,6 +522,7 @@ export const en: Record<MessageKey, string> = {
   "settings.section.general": "General",
   "settings.section.options": "Options",
   "settings.section.memory": "Memory",
+  "settings.section.remoteControl": "Remote control",
   "settings.section.agent": "Agent and models",
   "settings.section.appearance": "Appearance",
   "settings.section.voice": "Voice",
@@ -566,6 +567,55 @@ export const en: Record<MessageKey, string> = {
   "settings.memory.resetAction": "Reset",
   "settings.memory.resetConfirm": "Delete all",
   "settings.memory.error": "Unable to update memory:",
+  "settings.remoteControl.description":
+    "Allow ChatGPT to resume and control Codex sessions running on this computer.",
+  "settings.remoteControl.experimental": "Experimental",
+  "settings.remoteControl.securityTitle": "Every device must be paired",
+  "settings.remoteControl.securityDetail":
+    "App Server owns the remote channel, temporary codes, and grants. Disabling the relay does not revoke paired devices; revoke any device you do not recognize.",
+  "settings.remoteControl.desktopOnlyTitle":
+    "Available in the installed application",
+  "settings.remoteControl.desktopOnlyDetail":
+    "The browser preview does not start App Server's remote relay.",
+  "settings.remoteControl.managedTitle":
+    "Remote control is disabled by your organization",
+  "settings.remoteControl.managedDetail":
+    "A managed policy prevents it from being enabled on this device.",
+  "settings.remoteControl.thisDevice": "This computer",
+  "settings.remoteControl.enabled": "Enable remote control",
+  "settings.remoteControl.status.disabled": "Disabled",
+  "settings.remoteControl.status.connecting": "Connecting",
+  "settings.remoteControl.status.connected": "Connected",
+  "settings.remoteControl.status.errored": "Connection error",
+  "settings.remoteControl.retry": "Try again",
+  "settings.remoteControl.pairingTitle": "Pair a device",
+  "settings.remoteControl.pairingDetail":
+    "Create a temporary code, then enter it in ChatGPT to authorize that device.",
+  "settings.remoteControl.pairingAction": "Create code",
+  "settings.remoteControl.pairingStarting": "Creating…",
+  "settings.remoteControl.pairingCode": "Pairing code",
+  "settings.remoteControl.pairingCodeDetail":
+    "This code grants access to your local Codex sessions until it expires.",
+  "settings.remoteControl.pairingExpires": "Expires {time}.",
+  "settings.remoteControl.pairingClaimed":
+    "Device paired. The device list has been refreshed.",
+  "settings.remoteControl.devicesTitle": "Authorized devices",
+  "settings.remoteControl.devicesDetail":
+    "These clients can control Codex on this computer.",
+  "settings.remoteControl.refresh": "Refresh",
+  "settings.remoteControl.devicesLoading": "Reading devices…",
+  "settings.remoteControl.devicesEmpty": "No paired devices",
+  "settings.remoteControl.devicesEmptyDetail":
+    "Create a code to connect ChatGPT to this computer.",
+  "settings.remoteControl.unknownDevice": "Unnamed device",
+  "settings.remoteControl.appVersion": "App {version}",
+  "settings.remoteControl.lastSeen": "Last seen {time}",
+  "settings.remoteControl.revoke": "Revoke",
+  "settings.remoteControl.revokeNamed": "Revoke {name}",
+  "settings.remoteControl.revokeConfirm":
+    "This device will immediately lose access.",
+  "settings.remoteControl.loadMore": "Show more devices",
+  "settings.remoteControl.error": "Unable to update remote control",
   "settings.language.title": "Interface language",
   "settings.language.detail": "App text uses the selected language pack.",
   "settings.language.french": "Français",
@@ -700,8 +750,27 @@ export const en: Record<MessageKey, string> = {
   "settings.config.restart":
     "Already loaded threads may retain their current settings. Reload the session from its menu or restart App Server in General.",
   "settings.config.reload": "Reload file",
+  "settings.config.edit": "Edit",
+  "settings.config.closeEditor": "Close editor",
+  "settings.config.discardConfirm": "Some changes have not been saved.",
+  "settings.config.discard": "Discard changes",
   "settings.config.save": "Save",
   "settings.config.saving": "Saving…",
+  "settings.globalAgents.title": "Personal instructions",
+  "settings.globalAgents.description":
+    "Define rules that Codex applies by default across your projects. More specific local AGENTS.md files still take precedence.",
+  "settings.globalAgents.loading": "Reading global instructions…",
+  "settings.globalAgents.editor": "Global AGENTS.md contents",
+  "settings.globalAgents.placeholder":
+    "Add your durable personal preferences and rules here…",
+  "settings.globalAgents.error": "Unable to save global AGENTS.md",
+  "settings.globalAgents.saved": "Global AGENTS.md saved.",
+  "settings.globalAgents.restart":
+    "Codex loads these instructions when a session starts. Reload already open conversations to apply changes.",
+  "settings.globalAgents.overrideTitle":
+    "AGENTS.override.md currently takes precedence",
+  "settings.globalAgents.overrideDetail":
+    "{path} is not empty, so Codex ignores this global AGENTS.md while that override remains active.",
   "settings.appServerRestart.title": "App Server",
   "settings.appServerRestart.detail":
     "Restart the Codex backend, then restore the current conversation.",

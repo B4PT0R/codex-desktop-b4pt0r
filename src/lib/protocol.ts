@@ -80,6 +80,35 @@ export function configReadParams(cwd?: string) {
 export function configValueWriteParams(keyPath: string, value: unknown) {
   return { keyPath, value, mergeStrategy: "upsert" as const };
 }
+export function remoteControlEnableParams() {
+  return {};
+}
+export function remoteControlDisableParams() {
+  return {};
+}
+export function remoteControlPairingStartParams() {
+  return { manualCode: true };
+}
+export function remoteControlPairingStatusParams(pairingCode: string) {
+  return { pairingCode, manualPairingCode: null };
+}
+export function remoteControlClientsListParams(
+  environmentId: string,
+  cursor: string | null = null,
+) {
+  return {
+    environmentId,
+    cursor,
+    limit: 50,
+    order: "desc" as const,
+  };
+}
+export function remoteControlClientRevokeParams(
+  environmentId: string,
+  clientId: string,
+) {
+  return { environmentId, clientId };
+}
 export function webSearchConfigWriteParams(mode: WebSearchMode) {
   return {
     keyPath: "web_search",

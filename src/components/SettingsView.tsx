@@ -9,6 +9,7 @@ import {
   Mic,
   Palette,
   Plug,
+  RadioTower,
   RefreshCw,
   Search,
   Settings,
@@ -62,6 +63,8 @@ import type { ConfigRequirements } from "../lib/useConfigRequirements";
 import type { CodexGlobalSettingsController } from "../lib/useCodexGlobalSettings";
 import type { MemorySettingsController } from "../lib/useMemorySettings";
 import { MemorySettings } from "./MemorySettings";
+import type { RemoteControlController } from "../lib/useRemoteControl";
+import { RemoteControlSettings } from "./RemoteControlSettings";
 
 export type SettingsViewProps = {
   account: AccountController;
@@ -83,6 +86,7 @@ export type SettingsViewProps = {
   rateLimits: RateLimitsController;
   realtime: RealtimeSettingsController;
   memory: MemorySettingsController;
+  remoteControl: RemoteControlController;
   webSearch: CodexGlobalSettingsController;
   appServerRestart: {
     available: boolean;
@@ -106,6 +110,7 @@ const icons: Record<SettingsSectionId, ComponentType> = {
   general: Settings,
   options: SlidersHorizontal,
   memory: Brain,
+  remoteControl: RadioTower,
   agent: Bot,
   appearance: Palette,
   voice: Mic,
@@ -227,6 +232,8 @@ function SettingsSection(props: SettingsViewProps) {
     return <OptionsSettings webSearch={props.webSearch} />;
   if (props.section === "memory")
     return <MemorySettings controller={props.memory} />;
+  if (props.section === "remoteControl")
+    return <RemoteControlSettings controller={props.remoteControl} />;
   if (props.section === "agent") return <AgentSettings {...props} />;
   if (props.section === "appearance") return <AppearanceSettings />;
   if (props.section === "voice")
@@ -859,6 +866,7 @@ const plannedSections: Record<
     | "general"
     | "options"
     | "memory"
+    | "remoteControl"
     | "agent"
     | "appearance"
     | "voice"

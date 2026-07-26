@@ -7,6 +7,7 @@ describe("contraintes administrées", () => {
       normalizeConfigRequirements({
         requirements: {
           allowManagedHooksOnly: true,
+          allowRemoteControl: false,
           defaultPermissions: ":workspace",
           allowedPermissionProfiles: {
             ":workspace": true,
@@ -20,6 +21,7 @@ describe("contraintes administrées", () => {
     ).toEqual({
       managed: true,
       managedHooksOnly: true,
+      allowRemoteControl: false,
       defaultPermission: ":workspace",
       allowedPermissionProfiles: {
         ":workspace": true,
