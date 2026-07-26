@@ -7,12 +7,16 @@ import { writeFileAtomically } from "./atomic-write.mjs";
 const MAX_CONFIG_BYTES = 1_000_000;
 
 export function codexConfigPath(home, env = process.env) {
+  return path.join(codexHomePath(home, env), "config.toml");
+}
+
+export function codexHomePath(home, env = process.env) {
   const configuredHome = env.CODEX_HOME;
-  const codexHome =
+  return (
     typeof configuredHome === "string" && path.isAbsolute(configuredHome)
       ? configuredHome
-      : path.join(home, ".codex");
-  return path.join(codexHome, "config.toml");
+      : path.join(home, ".codex")
+  );
 }
 
 export async function readCodexConfig(file) {

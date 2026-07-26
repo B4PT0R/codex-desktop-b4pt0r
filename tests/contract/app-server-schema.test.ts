@@ -58,6 +58,12 @@ import {
   modelVerbosityConfigWriteParams,
   planReasoningEffortConfigWriteParams,
   reasoningSummaryConfigWriteParams,
+  remoteControlClientRevokeParams,
+  remoteControlClientsListParams,
+  remoteControlDisableParams,
+  remoteControlEnableParams,
+  remoteControlPairingStartParams,
+  remoteControlPairingStatusParams,
   webSearchConfigWriteParams,
 } from "../../src/lib/protocol";
 import { userInputResponse } from "../../src/lib/userInput";
@@ -129,6 +135,34 @@ describe("contrat Codex installé", () => {
       configValueWriteParams("memories.use_memories", false),
     );
     expect(schema("MemoryResetResponse")).toBeDefined();
+  });
+  it("accepte le cycle de vie complet du contrôle à distance", () => {
+    validates(
+      "NullableRemoteControlEnableParams",
+      remoteControlEnableParams(),
+    );
+    validates(
+      "NullableRemoteControlDisableParams",
+      remoteControlDisableParams(),
+    );
+    validates(
+      "RemoteControlPairingStartParams",
+      remoteControlPairingStartParams(),
+    );
+    validates(
+      "RemoteControlPairingStatusParams",
+      remoteControlPairingStatusParams("pair-1"),
+    );
+    validates(
+      "RemoteControlClientsListParams",
+      remoteControlClientsListParams("env-1"),
+    );
+    validates(
+      "RemoteControlClientsRevokeParams",
+      remoteControlClientRevokeParams("env-1", "client-1"),
+    );
+    expect(schema("RemoteControlStatusReadResponse")).toBeDefined();
+    expect(schema("RemoteControlStatusChangedNotification")).toBeDefined();
   });
   it("expose les contraintes administrées et le rechargement MCP", () => {
     expect(schema("ConfigRequirementsReadResponse")).toHaveProperty(

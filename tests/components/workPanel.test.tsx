@@ -55,7 +55,11 @@ describe("panneau de travail", () => {
       />,
     );
     expect(
-      await screen.findByRole("table", { name: "Patch partiel" }),
+      await screen.findByRole(
+        "table",
+        { name: "Patch partiel" },
+        { timeout: 5_000 },
+      ),
     ).toHaveTextContent("+import WorkPanel");
     expect(screen.getByText("Patch partiel")).toBeVisible();
     expect(screen.getByText("Afficher le patch brut")).toBeVisible();

@@ -235,6 +235,25 @@ fournit pas un accès générique aux fichiers : elle borne lecture et écriture
 seul `<workspace>/AGENTS.md`, détecte les conflits externes, refuse les liens
 symboliques et remplace le fichier atomiquement.
 
+Le `AGENTS.md` personnel appartient en revanche à la section **Config**, à côté
+de `config.toml`, car sa portée est globale à Codex plutôt que liée au workspace
+courant. Son éditeur suit les mêmes garanties natives sur le seul chemin
+`$CODEX_HOME/AGENTS.md` et signale explicitement un `AGENTS.override.md` global
+non vide, qui prend priorité selon les règles de découverte Codex.
+La page garde ces deux documents sous forme de cartes compactes et ouvre leur
+éditeur partagé dans une modale : le contenu long ne monopolise ainsi pas la
+navigation Config, tandis que focus, raccourci d’enregistrement et protection
+des brouillons suivent le même contrat pour les deux fichiers.
+
+Le **Contrôle à distance** possède une section personnelle distincte, placée à
+côté de Memory plutôt que dans Config ou Permissions. Elle reflète l’état
+autoritaire d’App Server : activation persistante du relais, connexion,
+association par code temporaire, liste paginée des appareils et révocation
+confirmée. L’interface n’émule aucun de ces états côté client et rend
+explicitement les cas aperçu navigateur, politique administrée et erreur. La
+désactivation interrompt le relais mais ne prétend pas supprimer les
+autorisations déjà accordées.
+
 ## Audit de l’UI actuelle
 
 ### Conserver

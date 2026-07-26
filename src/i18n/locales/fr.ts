@@ -536,6 +536,7 @@ export const fr = {
   "settings.section.general": "Général",
   "settings.section.options": "Options",
   "settings.section.memory": "Mémoire",
+  "settings.section.remoteControl": "Contrôle à distance",
   "settings.section.agent": "Agent et modèles",
   "settings.section.appearance": "Apparence",
   "settings.section.voice": "Voix",
@@ -581,6 +582,56 @@ export const fr = {
   "settings.memory.resetAction": "Réinitialiser",
   "settings.memory.resetConfirm": "Tout effacer",
   "settings.memory.error": "Impossible de modifier la mémoire :",
+  "settings.remoteControl.description":
+    "Autorisez ChatGPT à reprendre et piloter les sessions Codex exécutées sur cet ordinateur.",
+  "settings.remoteControl.experimental": "Expérimental",
+  "settings.remoteControl.securityTitle": "Chaque appareil doit être associé",
+  "settings.remoteControl.securityDetail":
+    "App Server gère le canal distant, les codes temporaires et les autorisations. Désactiver le relais ne révoque pas les appareils associés ; révoquez tout appareil que vous ne reconnaissez pas.",
+  "settings.remoteControl.desktopOnlyTitle":
+    "Disponible dans l’application installée",
+  "settings.remoteControl.desktopOnlyDetail":
+    "L’aperçu navigateur ne démarre pas le relais distant d’App Server.",
+  "settings.remoteControl.managedTitle":
+    "Le contrôle à distance est désactivé par votre organisation",
+  "settings.remoteControl.managedDetail":
+    "Une politique administrée empêche son activation sur cet appareil.",
+  "settings.remoteControl.thisDevice": "Cet ordinateur",
+  "settings.remoteControl.enabled": "Activer le contrôle à distance",
+  "settings.remoteControl.status.disabled": "Désactivé",
+  "settings.remoteControl.status.connecting": "Connexion en cours",
+  "settings.remoteControl.status.connected": "Connecté",
+  "settings.remoteControl.status.errored": "Connexion en erreur",
+  "settings.remoteControl.retry": "Réessayer",
+  "settings.remoteControl.pairingTitle": "Associer un appareil",
+  "settings.remoteControl.pairingDetail":
+    "Créez un code temporaire, puis saisissez-le dans ChatGPT pour autoriser cet appareil.",
+  "settings.remoteControl.pairingAction": "Créer un code",
+  "settings.remoteControl.pairingStarting": "Création…",
+  "settings.remoteControl.pairingCode": "Code d’association",
+  "settings.remoteControl.pairingCodeDetail":
+    "Ce code donne accès à vos sessions Codex locales jusqu’à son expiration.",
+  "settings.remoteControl.pairingExpires": "Expire le {time}.",
+  "settings.remoteControl.pairingClaimed":
+    "Appareil associé. La liste des appareils a été actualisée.",
+  "settings.remoteControl.devicesTitle": "Appareils autorisés",
+  "settings.remoteControl.devicesDetail":
+    "Ces clients peuvent piloter Codex sur cet ordinateur.",
+  "settings.remoteControl.refresh": "Actualiser",
+  "settings.remoteControl.devicesLoading": "Lecture des appareils…",
+  "settings.remoteControl.devicesEmpty": "Aucun appareil associé",
+  "settings.remoteControl.devicesEmptyDetail":
+    "Créez un code pour connecter ChatGPT à cet ordinateur.",
+  "settings.remoteControl.unknownDevice": "Appareil sans nom",
+  "settings.remoteControl.appVersion": "App {version}",
+  "settings.remoteControl.lastSeen": "Vu pour la dernière fois le {time}",
+  "settings.remoteControl.revoke": "Révoquer",
+  "settings.remoteControl.revokeNamed": "Révoquer {name}",
+  "settings.remoteControl.revokeConfirm":
+    "Cet appareil perdra immédiatement son accès.",
+  "settings.remoteControl.loadMore": "Afficher plus d’appareils",
+  "settings.remoteControl.error":
+    "Impossible de mettre à jour le contrôle à distance",
   "settings.language.title": "Langue de l’interface",
   "settings.language.detail":
     "Les textes de l’application utilisent le pack sélectionné.",
@@ -718,8 +769,29 @@ export const fr = {
   "settings.config.restart":
     "Les threads déjà chargés peuvent conserver leurs réglages actuels. Rechargez la session depuis son menu ou redémarrez App Server dans Général.",
   "settings.config.reload": "Recharger le fichier",
+  "settings.config.edit": "Modifier",
+  "settings.config.closeEditor": "Fermer l’éditeur",
+  "settings.config.discardConfirm":
+    "Des modifications ne sont pas enregistrées.",
+  "settings.config.discard": "Ignorer les modifications",
   "settings.config.save": "Enregistrer",
   "settings.config.saving": "Enregistrement…",
+  "settings.globalAgents.title": "Instructions personnelles",
+  "settings.globalAgents.description":
+    "Définissez les règles que Codex applique par défaut dans tous vos projets. Les AGENTS.md locaux plus spécifiques restent prioritaires.",
+  "settings.globalAgents.loading": "Lecture des instructions globales…",
+  "settings.globalAgents.editor": "Contenu du AGENTS.md global",
+  "settings.globalAgents.placeholder":
+    "Ajoutez ici vos préférences et règles personnelles durables…",
+  "settings.globalAgents.error":
+    "Impossible d’enregistrer le AGENTS.md global",
+  "settings.globalAgents.saved": "AGENTS.md global enregistré.",
+  "settings.globalAgents.restart":
+    "Codex charge ces instructions au démarrage d’une session. Rechargez les conversations déjà ouvertes pour appliquer les changements.",
+  "settings.globalAgents.overrideTitle":
+    "AGENTS.override.md est actuellement prioritaire",
+  "settings.globalAgents.overrideDetail":
+    "Le fichier {path} est non vide : Codex ignore donc ce AGENTS.md global tant que cet override reste actif.",
   "settings.appServerRestart.title": "App Server",
   "settings.appServerRestart.detail":
     "Redémarre le backend Codex puis restaure la conversation courante.",

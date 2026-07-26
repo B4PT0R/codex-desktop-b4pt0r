@@ -4,6 +4,7 @@ export type SettingsSectionId =
   | "general"
   | "options"
   | "memory"
+  | "remoteControl"
   | "agent"
   | "appearance"
   | "voice"
@@ -58,6 +59,13 @@ const settingsGroupDefinitions: SettingsGroupDefinition[] = [
         id: "memory",
         labelKey: "settings.section.memory",
         keywords: "mémoire memory memories recall souvenir personnalisation",
+        available: true,
+      },
+      {
+        id: "remoteControl",
+        labelKey: "settings.section.remoteControl",
+        keywords:
+          "remote control distance appareil device pairing association chatgpt relay relais",
         available: true,
       },
       {

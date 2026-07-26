@@ -15,7 +15,8 @@ official `codex app-server`. It covers the ordinary desktop workflow end to end:
 - App Server startup, reconnect, thread creation/resume/search and pagination;
 - streaming messages, steering, reasoning, plans, tools, approvals and errors;
 - model, reasoning, personality, collaboration and permission settings;
-- bounded global `config.toml` editing with validation and conflict detection;
+- bounded global `config.toml` and `AGENTS.md` editing with validation and
+  conflict detection;
 - Markdown/GFM, streaming and completed LaTeX, structured multi-file diffs;
 - files, Apps, MCP, skills, hooks, account, quotas and reset credits;
 - dictation through the Codex OAuth transcription endpoint and Realtime voice;
@@ -28,11 +29,16 @@ OpenAI release.
 
 ## Verified baseline
 
-- Package: `dist/codex-desktop-linux_0.2.4_amd64.deb`
-- Size: 105,987,316 bytes
+- Package: `dist/codex-desktop-linux_0.2.5_amd64.deb`
+- Size: 105,881,184 bytes
 - SHA-256:
-  `7df1e625dda59fa2781588ccaf3a8d1fabb1711d7617956bc49cc818debabfe4`
-- Package metadata verified as `codex-desktop-linux 0.2.4` for Ubuntu amd64.
+  `b8eed269d48ad193e8a0f256862b1316ab549724625e5c9f7c7f2066f101ff87`
+- Package metadata verified as `codex-desktop-linux 0.2.5` for Ubuntu amd64.
+- Packaged ASAR:
+  `e922edc17eaa3b1334819186f490d047fa3ca8ad36cdbe01ace88b9e386f5c91`
+- The release package includes the App Server-owned Remote control settings
+  surface, guarded global `AGENTS.md` editing, modal Config editors and the
+  corrected XDG launch-at-login integration.
 - The current Config editor, tool-group fixes, App Server PATH fix, workspace
   `AGENTS.md` editor and dual-agent Realtime chat hierarchy are included in the
   release package, including the centralized Realtime shutdown cleanup.
@@ -50,19 +56,19 @@ OpenAI release.
 - App Server coverage was refreshed on 2026-07-25 against stable and
   experimental schemas plus official checkout `0dfa778dae6a`: the schemas
   expose 89/126 client requests, 10/11 server requests and 70 notifications.
-  This client emits 55 product methods (42 stable, 13 experimental), explicitly
-  handles 54 notifications and answers 6 server requests. See
+  This client emits 62 product methods (42 stable, 20 experimental), explicitly
+  handles 55 notifications and answers 6 server requests. See
   `APP_SERVER_COVERAGE.md` for the classified inventory.
-- 469 Vitest/contract tests across 91 files pass, including 44 App Server
+- 478 Vitest/contract tests across 93 files pass, including 45 App Server
   contract cases.
-- 36 Electron/Node tests pass.
+- 43 Electron/Node tests pass.
 - Strict TypeScript and the production build pass.
 - Production dependency audit reports zero vulnerabilities. The full
   development-tree audit reports 16 high-severity advisories inherited through
   `electron-builder`; npm's forced remediation would downgrade its major
   version, so it was not applied. The compatible audit fix updated PostCSS and
   related build dependencies.
-- Main JS: 490.48 kB (143.60 kB gzip).
+- Main JS: 503.27 kB (146.77 kB gzip).
 - Lazy diff viewer: 89.50 kB (32.89 kB gzip).
 - Lazy Markdown/KaTeX: 698.59 kB (208.74 kB gzip).
 
@@ -176,6 +182,15 @@ and update this section when priorities move.
 - Global Config editing never exposes a generic filesystem primitive. Electron
   resolves only `$CODEX_HOME/config.toml`, limits it to 1 MB, validates TOML,
   rejects stale versions and replaces the file atomically with mode `0600`.
+- Personal instruction editing is similarly limited to
+  `$CODEX_HOME/AGENTS.md`, with a 1 MB bound, symlink rejection, atomic writes
+  and external-change detection. Config warns when a non-empty
+  `AGENTS.override.md` takes precedence instead of silently implying that
+  edits are effective.
+- Launch at login uses the Linux XDG autostart entry
+  `~/.config/autostart/codex-desktop.desktop`, written atomically with the
+  packaged executable and `--hidden`; enabling it removes the retired Tauri
+  entry instead of relying on Electron's unsupported Linux login-item API.
 - Completed and streaming LaTeX remain separate rendering paths so incomplete
   formulas cannot destabilize streaming.
 - Realtime uses a separate ephemeral voice thread because persistent voice
@@ -244,6 +259,12 @@ and update this section when priorities move.
   uses the dedicated guarded `memory/reset` request; the client never edits
   generated memory files or SQLite state directly. Per-thread memory mode stays
   deferred until App Server replay exposes its effective value reliably.
+- The experimental Remote control settings surface delegates relay state,
+  temporary pairing codes and authorized-device grants entirely to App Server.
+  Enable/disable is persisted by the backend, live status notifications remain
+  authoritative, managed policy can force the surface unavailable, and device
+  revocation requires an explicit second confirmation. Disabling the relay does
+  not revoke paired devices.
 - Reloading from the thread-title menu re-runs `thread/resume` so persisted
   history and effective server settings become authoritative again. The
   separate compact control in General restarts the native App Server process,

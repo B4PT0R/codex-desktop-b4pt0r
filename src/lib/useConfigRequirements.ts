@@ -6,6 +6,7 @@ import type { ApprovalPolicy, WebSearchMode } from "./protocol";
 export type ConfigRequirements = {
   managed: boolean;
   managedHooksOnly: boolean;
+  allowRemoteControl?: boolean;
   allowedPermissionProfiles?: Record<string, boolean>;
   defaultPermission?: string;
   allowedApprovalPolicies?: ApprovalPolicy[];
@@ -63,6 +64,10 @@ export function normalizeConfigRequirements(
   return {
     managed: true,
     managedHooksOnly: value.allowManagedHooksOnly === true,
+    allowRemoteControl:
+      typeof value.allowRemoteControl === "boolean"
+        ? value.allowRemoteControl
+        : undefined,
     allowedPermissionProfiles: allowed
       ? Object.fromEntries(
           Object.entries(allowed).flatMap(([id, enabled]) =>

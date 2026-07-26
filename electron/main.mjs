@@ -35,9 +35,19 @@ import {
   writeWorkspaceAgents,
 } from "./workspace-agents.mjs";
 import {
+  globalAgentsPath,
+  readGlobalAgents,
+  writeGlobalAgents,
+} from "./global-agents.mjs";
+import {
   generatedImageSaveOptions,
   saveGeneratedImage,
 } from "./generated-image.mjs";
+import {
+  autostartPath,
+  readLaunchAtLogin,
+  setLaunchAtLogin,
+} from "./autostart.mjs";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const isDevelopment = !app.isPackaged;
@@ -113,17 +123,34 @@ function registerIpc() {
       args?.expectedVersion,
     );
   });
-  ipcMain.handle("desktop:read_launch_at_login", (event) => {
+  ipcMain.handle("desktop:read_global_agents", (event) => {
     trusted(event);
-    return app.getLoginItemSettings().openAtLogin;
+    return readGlobalAgents(
+      globalAgentsPath(app.getPath("home"), process.env),
+    );
   });
-  ipcMain.handle("desktop:set_launch_at_login", (event, args) => {
+  ipcMain.handle("desktop:write_global_agents", (event, args) => {
     trusted(event);
-    app.setLoginItemSettings({
-      openAtLogin: Boolean(args?.enabled),
-      args: ["--hidden"],
-    });
-    return app.getLoginItemSettings().openAtLogin;
+    return writeGlobalAgents(
+      globalAgentsPath(app.getPath("home"), process.env),
+      args?.content,
+      args?.expectedVersion,
+    );
+  });
+  ipcMain.handle("desktop:read_launch_at_login", async (event) => {
+    trusted(event);
+    return readLaunchAtLogin(
+      autostartPath(app.getPath("home"), process.env),
+      process.execPath,
+    );
+  });
+  ipcMain.handle("desktop:set_launch_at_login", async (event, args) => {
+    trusted(event);
+    return setLaunchAtLogin(
+      autostartPath(app.getPath("home"), process.env),
+      process.execPath,
+      Boolean(args?.enabled),
+    );
   });
   ipcMain.handle("desktop:transcribe_dictation", (event, args) => {
     trusted(event);

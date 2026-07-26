@@ -137,6 +137,42 @@ const memory = {
   setMinRateLimitRemainingPercent: vi.fn().mockResolvedValue(true),
   reset: vi.fn().mockResolvedValue(true),
 };
+const remoteControl = {
+  available: true,
+  allowed: true,
+  clients: [
+    {
+      clientId: "client-1",
+      displayName: "Téléphone de Baptiste",
+      deviceType: "phone",
+      platform: "iOS",
+      osVersion: "19",
+      deviceModel: "iPhone",
+      appVersion: "1.2.3",
+      lastSeenAt: 1_772_694_000,
+    },
+  ],
+  clientsLoading: false,
+  disabling: false,
+  enabling: false,
+  loading: false,
+  nextCursor: null,
+  pairing: undefined,
+  pairingClaimed: false,
+  pairingLoading: false,
+  status: {
+    status: "connected" as const,
+    serverName: "linux-box",
+    installationId: "install-1",
+    environmentId: "env-1",
+  },
+  disable: vi.fn().mockResolvedValue(true),
+  enable: vi.fn().mockResolvedValue(true),
+  loadMoreClients: vi.fn().mockResolvedValue(undefined),
+  refresh: vi.fn().mockResolvedValue(undefined),
+  revokeClient: vi.fn().mockResolvedValue(true),
+  startPairing: vi.fn().mockResolvedValue(true),
+};
 
 afterEach(() => {
   cleanup();
@@ -161,6 +197,7 @@ function renderSettings(
     integrations,
     model: "gpt-a",
     memory,
+    remoteControl,
     models: [
       { id: "gpt-a", label: "GPT A" },
       { id: "gpt-b", label: "GPT B" },
@@ -294,6 +331,32 @@ describe("centre de réglages", () => {
     expect(reset).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Tout effacer" }));
     expect(reset).toHaveBeenCalledOnce();
+  });
+
+  it("active le pairing distant et protège la révocation d’un appareil", async () => {
+    const startPairing = vi.fn().mockResolvedValue(true);
+    const revokeClient = vi.fn().mockResolvedValue(true);
+    renderSettings({
+      section: "remoteControl",
+      remoteControl: { ...remoteControl, startPairing, revokeClient },
+    });
+
+    expect(
+      screen.getByRole("heading", { name: "Contrôle à distance", level: 1 }),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Créer un code" }));
+    expect(startPairing).toHaveBeenCalledOnce();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Révoquer Téléphone de Baptiste",
+      }),
+    );
+    expect(revokeClient).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Révoquer" }));
+    await waitFor(() =>
+      expect(revokeClient).toHaveBeenCalledWith("client-1"),
+    );
   });
 
   it("charge la vue secondaire avant de restituer la section demandée", async () => {
@@ -452,15 +515,65 @@ describe("centre de réglages", () => {
 
   it("édite la configuration globale dans l’aperçu sans quitter les réglages", async () => {
     renderSettings({ section: "config" });
+    expect(screen.queryByLabelText("Contenu de config.toml")).toBeNull();
+    expect(screen.getAllByText("Aperçu navigateur")).toHaveLength(2);
+    fireEvent.click(
+      screen.getByRole("button", { name: /config\.toml.*Modifier/ }),
+    );
+    expect(
+      screen.getByRole("dialog", { name: "config.toml" }),
+    ).toBeVisible();
     const editor = await screen.findByLabelText("Contenu de config.toml");
     expect((editor as HTMLTextAreaElement).value).toContain(
       'model = "gpt-5.4"',
     );
-    expect(screen.getByText("Aperçu navigateur")).toBeVisible();
     fireEvent.change(editor, {
       target: { value: 'model = "gpt-5.6"\n' },
     });
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
     expect(await screen.findByText("Configuration enregistrée.")).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Fermer l’éditeur" }),
+    );
+    expect(screen.queryByRole("dialog", { name: "config.toml" })).toBeNull();
+  });
+
+  it("édite les instructions personnelles globales dans Config", async () => {
+    renderSettings({ section: "config" });
+    fireEvent.click(
+      screen.getByRole("button", { name: /AGENTS\.md.*Modifier/ }),
+    );
+    const editor = await screen.findByLabelText(
+      "Contenu du AGENTS.md global",
+    );
+    expect((editor as HTMLTextAreaElement).value).toContain(
+      "Personal Codex defaults",
+    );
+    fireEvent.change(editor, {
+      target: { value: "# Mes règles\n" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+    expect(
+      await screen.findByText("AGENTS.md global enregistré."),
+    ).toBeVisible();
+  });
+
+  it("protège les modifications de Config à la fermeture de la modale", async () => {
+    const props = renderSettings({ section: "config" });
+    fireEvent.click(
+      screen.getByRole("button", { name: /config\.toml.*Modifier/ }),
+    );
+    const editor = await screen.findByLabelText("Contenu de config.toml");
+    fireEvent.change(editor, { target: { value: "model = \"changed\"\n" } });
+    fireEvent.keyDown(editor, { key: "Escape" });
+
+    expect(props.onClose).not.toHaveBeenCalled();
+    expect(
+      screen.getByText("Des modifications ne sont pas enregistrées."),
+    ).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Ignorer les modifications" }),
+    );
+    expect(screen.queryByRole("dialog", { name: "config.toml" })).toBeNull();
   });
 });

@@ -3,6 +3,29 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.2.5] - 2026-07-26
+
+### Added
+
+- Dedicated experimental Remote Control settings backed entirely by App
+  Server, with persistent relay state, temporary ChatGPT pairing codes,
+  authorized-device inventory, and guarded revocation.
+- Guarded global `AGENTS.md` editing alongside `config.toml` in Config.
+
+### Changed
+
+- Config documents now open in focused modal editors instead of occupying the
+  settings page permanently.
+- Remote Control, Config, and compact settings layouts now remain contained at
+  the supported desktop and minimum window sizes.
+
+### Fixed
+
+- Launch at login now uses a validated XDG autostart entry and safely replaces
+  the retired desktop entry.
+- App Server startup preserves access to the discovered Codex executable and
+  its neighboring runtime.
+
 ## [0.2.4] - 2026-07-26
 
 ### Added
@@ -85,6 +108,7 @@ follows semantic versioning while the public interface is taking shape.
 - Native Electron packaging for Debian/Ubuntu.
 - Stable Chromium microphone capture for dictation and Realtime voice.
 
+[0.2.5]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.2.4...v0.2.5
 [0.2.4]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.2.1...v0.2.2

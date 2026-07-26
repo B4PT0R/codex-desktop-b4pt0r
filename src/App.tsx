@@ -81,6 +81,7 @@ import { useRealtimeSettings } from "./lib/useRealtimeSettings";
 import { useCodexDefaults } from "./lib/useCodexDefaults";
 import { useCodexGlobalSettings } from "./lib/useCodexGlobalSettings";
 import { useMemorySettings } from "./lib/useMemorySettings";
+import { useRemoteControl } from "./lib/useRemoteControl";
 import {
   threadRuntimeSettings,
   threadRuntimeSettingsFromNotification,
@@ -273,6 +274,10 @@ export default function App() {
     configRequirements.allowedWebSearchModes,
   );
   const memory = useMemorySettings(connection.connected);
+  const remoteControl = useRemoteControl(
+    connection.connected,
+    configRequirements.allowRemoteControl !== false,
+  );
   useCodexDefaults({
     connected: connection.connected,
     cwd,
@@ -884,6 +889,7 @@ export default function App() {
         rateLimits={rateLimits}
         realtime={realtime}
         memory={memory}
+        remoteControl={remoteControl}
         webSearch={webSearch}
         appServerRestart={{
           available:

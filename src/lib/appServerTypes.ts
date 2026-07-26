@@ -280,6 +280,42 @@ export type GetAccountTokenUsageResponse = {
   dailyUsageBuckets: Array<{ startDate: string; tokens: number }> | null;
 };
 
+export type RemoteControlConnectionStatus =
+  | "disabled"
+  | "connecting"
+  | "connected"
+  | "errored";
+
+export type RemoteControlStatus = {
+  status: RemoteControlConnectionStatus;
+  serverName: string;
+  installationId: string;
+  environmentId: string | null;
+};
+
+export type RemoteControlPairing = {
+  pairingCode: string;
+  manualPairingCode: string | null;
+  environmentId: string;
+  expiresAt: number;
+};
+
+export type RemoteControlClient = {
+  clientId: string;
+  displayName: string | null;
+  deviceType: string | null;
+  platform: string | null;
+  osVersion: string | null;
+  deviceModel: string | null;
+  appVersion: string | null;
+  lastSeenAt: number | null;
+};
+
+export type RemoteControlClientsListResponse = {
+  data: RemoteControlClient[];
+  nextCursor: string | null;
+};
+
 export type AppInfo = {
   id: string;
   name: string;

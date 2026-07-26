@@ -72,6 +72,8 @@ See the [changelog](CHANGELOG.md) for user-visible changes in each release.
   hooks.
 - Read the signed-in account, quotas, usage windows, workspace messages, and
   available reset credits.
+- Enable App Server's experimental remote-control relay, create temporary
+  ChatGPT pairing codes, and review or revoke authorized devices.
 - Edit the official Codex `config.toml` through a bounded editor that preserves
   hand-written content and detects external changes.
 
@@ -126,7 +128,7 @@ package:
 ```bash
 npm ci
 npm run electron:deb
-sudo apt install ./dist/codex-desktop-linux_0.2.4_amd64.deb
+sudo apt install ./dist/codex-desktop-linux_0.2.5_amd64.deb
 ```
 
 Launch it from the desktop menu or with:

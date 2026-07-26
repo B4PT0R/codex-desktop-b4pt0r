@@ -18,15 +18,15 @@ The installed schemas expose:
 | Server requests | 10 | 11 |
 | Server notifications | 70 | 70 |
 
-The desktop client opts into `capabilities.experimentalApi`. It emits 55 product
+The desktop client opts into `capabilities.experimentalApi`. It emits 62 product
 request methods in addition to the one-shot `initialize` handshake:
 
 - 42 are stable;
-- 13 are experimental;
+- 20 are experimental;
 - every request shape added or changed by this client is checked against the
   installed schema in the contract suite.
 
-It explicitly interprets 54 of the 70 notification method names and answers 6
+It explicitly interprets 55 of the 70 notification method names and answers 6
 of the 11 server-request methods. Unknown additive notifications remain
 forward-compatible and do not crash the session. Counts are useful audit
 checkpoints, not product targets: App Server deliberately includes host,
@@ -51,6 +51,7 @@ buttons.
 | Models and capability pickers | `model/list`, `collaborationMode/list`, `permissionProfile/list` | Complete for current controls | Collaboration-mode discovery is experimental. `modelProvider/capabilities/read` is not needed for the current single-provider UI. |
 | Global Codex defaults | `config/read`, targeted `config/value/write`, plus bounded native `config.toml` editing | Complete for current product scope | One structured read hydrates web search, reasoning-summary style, file opener, response verbosity and Plan-mode effort. Their focused selectors use App Server's comment-preserving targeted write; the native editor remains the explicit surface for arbitrary hand-authored TOML. |
 | Local memories | targeted `config/value/write`, `memory/reset` | Experimental but usable | The UI controls documented global feature/use/generation/privacy/quota settings. Reset is explicitly confirmed and uses App Server's global reset; per-thread memory mode remains deferred. |
+| Remote control | `remoteControl/enable`, `remoteControl/disable`, status, pairing and client management | Experimental but complete for the current App Server flow | A dedicated Settings section exposes persistent relay state, temporary manual pairing codes, authorized-device pagination and guarded revocation. Managed policy, unavailable, connecting and error states are explicit. App Server remains the sole owner of relay and grant state. |
 | Skills | `skills/list`, `skills/config/write`, `skills/changed` | Complete | Inventory, warnings, enable/disable and refresh are covered. Runtime extra-root administration remains configuration-owned. |
 | Hooks | `hooks/list`, hook-prompt items, `hook/started`, `hook/completed` | Complete for current scope | Effective inventory, configuration warnings and a quiet runtime lifecycle are visible. Managed-only policy is explained when active. |
 | MCP | `mcpServerStatus/list`, OAuth login, `config/mcpServer/reload` and status notifications | Complete for inventory/authentication | Users can explicitly reload `config.toml` MCP configuration before refreshing inventory. Manual generic resource/tool invocation is intentionally absent. |
@@ -67,7 +68,7 @@ buttons.
 
 ## Emitted request inventory
 
-The 55 product methods currently emitted by the renderer are:
+The 62 product methods currently emitted by the renderer are:
 
 - **Threads and turns (23):** `thread/start`, `thread/resume`,
   `thread/list`, `thread/search`, `thread/turns/list`, `thread/name/set`,
@@ -82,6 +83,10 @@ The 55 product methods currently emitted by the renderer are:
   `collaborationMode/list`, `permissionProfile/list`, `config/read`,
   `config/value/write`, `configRequirements/read`, `config/mcpServer/reload`.
 - **Local memory (1 experimental):** `memory/reset`.
+- **Remote control (7 experimental):** `remoteControl/enable`,
+  `remoteControl/disable`, `remoteControl/status/read`,
+  `remoteControl/pairing/start`, `remoteControl/pairing/status`,
+  `remoteControl/client/list`, `remoteControl/client/revoke`.
 - **Integrations and discovery (12):** `app/list`, `skills/list`,
   `skills/config/write`, `hooks/list`, `mcpServerStatus/list`,
   `mcpServer/oauth/login`, `fuzzyFileSearch/sessionStart`,
@@ -96,13 +101,14 @@ The 55 product methods currently emitted by the renderer are:
 - **Realtime (3):** `thread/realtime/start`, `thread/realtime/stop`,
   `thread/realtime/listVoices`.
 
-The 12 experimental methods in that inventory are:
+The 20 experimental methods in that inventory are:
 
 `collaborationMode/list`, the three `fuzzyFileSearch/session*` methods,
 `thread/backgroundTerminals/list`, `thread/backgroundTerminals/terminate`,
 `thread/realtime/start`, `thread/realtime/stop`,
 `thread/realtime/listVoices`, `thread/search`, `thread/settings/update`, and
-`thread/turns/list`.
+`thread/turns/list`, `memory/reset`, plus the seven `remoteControl/*` methods
+listed above.
 
 ## Server-initiated requests
 
@@ -139,7 +145,6 @@ It intentionally does not answer:
 | Marketplace/plugin share/install/uninstall | Discovery may become useful later, but official docs still mark production install/uninstall under development and explicitly prohibit production clients from calling them. |
 | `experimentalFeature/*` | Global runtime feature mutation is not an ordinary desktop preference and can violate managed requirements. |
 | `thread/memoryMode/set` | Per-thread memory controls remain experimental and are deferred until replay exposes the effective mode reliably. |
-| `remoteControl/*` | Experimental security/device-management surface requiring a complete enrollment, status, revoke and recovery flow. |
 | `environment/*` and thread environment notifications | Experimental remote-executor administration. Local Linux workspaces remain the supported daily flow. |
 | `feedback/upload` | Valuable only with explicit consent, redacted diagnostic preview and attachment controls. |
 | `windowsSandbox/*` and Windows warnings | Not applicable to the Linux package. |
@@ -150,9 +155,9 @@ It intentionally does not answer:
 1. **Diagnostic feedback:** design redacted export first, then optionally add
    guarded `feedback/upload`.
 
-Remote control, environments, memory reset and feature-flag mutation remain
-deliberately later than these compatibility improvements. No stable App Server
-Git/worktree workflow exists in this snapshot.
+Environments and feature-flag mutation remain deliberately later than these
+compatibility improvements. No stable App Server Git/worktree workflow exists
+in this snapshot.
 
 ## Audit procedure
 
