@@ -18,10 +18,10 @@ The installed schemas expose:
 | Server requests | 10 | 11 |
 | Server notifications | 70 | 70 |
 
-The desktop client opts into `capabilities.experimentalApi`. It emits 62 product
+The desktop client opts into `capabilities.experimentalApi`. It emits 63 product
 request methods in addition to the one-shot `initialize` handshake:
 
-- 42 are stable;
+- 43 are stable;
 - 20 are experimental;
 - every request shape added or changed by this client is checked against the
   installed schema in the contract suite.
@@ -52,7 +52,7 @@ buttons.
 | Global Codex defaults | `config/read`, targeted `config/value/write`, plus bounded native `config.toml` editing | Complete for current product scope | One structured read hydrates web search, reasoning-summary style, file opener, response verbosity and Plan-mode effort. Their focused selectors use App Server's comment-preserving targeted write; the native editor remains the explicit surface for arbitrary hand-authored TOML. |
 | Local memories | targeted `config/value/write`, `memory/reset` | Experimental but usable | The UI controls documented global feature/use/generation/privacy/quota settings. Reset is explicitly confirmed and uses App Server's global reset; per-thread memory mode remains deferred. |
 | Remote control | `remoteControl/enable`, `remoteControl/disable`, status, pairing and client management | Experimental but complete for the current App Server flow | A dedicated Settings section exposes persistent relay state, temporary manual pairing codes, authorized-device pagination and guarded revocation. Managed policy, unavailable, connecting and error states are explicit. App Server remains the sole owner of relay and grant state. |
-| Skills | `skills/list`, `skills/config/write`, `skills/changed` | Complete | Inventory, warnings, enable/disable and refresh are covered. Runtime extra-root administration remains configuration-owned. |
+| Skills | structured `skill` turn input, `skills/list`, `skills/config/write`, `skills/extraRoots/set`, `skills/changed` | Complete | Inventory, warnings, enable/disable and refresh are covered. Enabled skills can be attached explicitly from the composer and remain identified when persisted user input is replayed. Implicit invocation is not claimed because App Server emits no corresponding lifecycle item. The app registers its packaged shared-browser routing skill as a process-scoped extra root without modifying user or workspace skills. |
 | Hooks | `hooks/list`, hook-prompt items, `hook/started`, `hook/completed` | Complete for current scope | Effective inventory, configuration warnings and a quiet runtime lifecycle are visible. Managed-only policy is explained when active. |
 | MCP | `mcpServerStatus/list`, OAuth login, `config/mcpServer/reload` and status notifications | Complete for inventory/authentication | Users can explicitly reload `config.toml` MCP configuration before refreshing inventory. Manual generic resource/tool invocation is intentionally absent. |
 | Apps/connectors | `app/list`, list updates, `$app` mentions and typed `app://` context | Complete | `app/read` and `app/installed` do not add value to the current picker/invocation flow. |
@@ -63,12 +63,12 @@ buttons.
 | Realtime voice v3 | start/stop, voice list, SDP, transcript, audio/session lifecycle notifications, `thread/inject_items` | Complete for model-context persistence | Experimental voice transport with stable raw-item injection. The client uses browser-owned WebRTC only; it does **not** claim a WebSocket fallback. Finalized utterances are injected into the persistent parent rollout in order. Current resume projection omits standalone injected response items, so visual replay remains a backend gap. |
 | Dictation | Codex OAuth transcription endpoint through the native Electron boundary | Complete, indirect | This is not an App Server realtime request. Capture uses WebM/Opus and the authenticated Codex backend transcription endpoint. |
 | Background terminals | list and terminate | Complete for focused inspection | Experimental. Bulk `clean` is not exposed because individual termination is safer and sufficient. |
-| Shared Playwright browser | `config/mcpServer/reload` after native setup | Complete, native + MCP | Electron owns a pinned Playwright/MCP runtime and an opt-in private Chromium download. The UI and App Server connect to the same loopback MCP server and persistent visible context; the system browser is the fallback. |
+| Shared Playwright browser | `config/mcpServer/reload`, `skills/extraRoots/set` after native setup | Complete, native + MCP | Electron owns a pinned Playwright/MCP runtime and an opt-in private Chromium download. The UI and App Server connect to the same loopback MCP server and persistent visible context; a packaged host skill routes browser work to that MCP instead of unsupported official-desktop Browser surfaces. The system browser is the fallback. |
 | Workspace instructions | no App Server request | Complete, native | `<workspace>/AGENTS.md` is edited through a single-file bounded native boundary with conflict detection and atomic replacement. |
 
 ## Emitted request inventory
 
-The 62 product methods currently emitted by the renderer are:
+The 63 product methods currently emitted by the renderer are:
 
 - **Threads and turns (23):** `thread/start`, `thread/resume`,
   `thread/list`, `thread/search`, `thread/turns/list`, `thread/name/set`,
@@ -87,8 +87,8 @@ The 62 product methods currently emitted by the renderer are:
   `remoteControl/disable`, `remoteControl/status/read`,
   `remoteControl/pairing/start`, `remoteControl/pairing/status`,
   `remoteControl/client/list`, `remoteControl/client/revoke`.
-- **Integrations and discovery (12):** `app/list`, `skills/list`,
-  `skills/config/write`, `hooks/list`, `mcpServerStatus/list`,
+- **Integrations and discovery (13):** `app/list`, `skills/list`,
+  `skills/config/write`, `skills/extraRoots/set`, `hooks/list`, `mcpServerStatus/list`,
   `mcpServer/oauth/login`, `fuzzyFileSearch/sessionStart`,
   `fuzzyFileSearch/sessionUpdate`, `fuzzyFileSearch/sessionStop`,
   `externalAgentConfig/detect`, `externalAgentConfig/import`,
@@ -140,7 +140,6 @@ It intentionally does not answer:
 | `thread/metadata/update` | Patches stored Git metadata only; it is not a stable Git/worktree product API. |
 | `thread/rollback` | Deprecated and intentionally excluded. |
 | `config/batchWrite` and generic structured config forms | Arbitrary hand-authored TOML remains owned by the bounded raw editor. `config/value/write` is used only for focused controls whose comment-preserving behavior is verified upstream. |
-| `skills/extraRoots/set` | Runtime host configuration. Normal workspace/config-backed roots remain visible through `skills/list`. |
 | `app/read`, `app/installed` | `app/list` provides the connector data required by settings and mentions. |
 | Marketplace/plugin share/install/uninstall | Discovery may become useful later, but official docs still mark production install/uninstall under development and explicitly prohibit production clients from calling them. |
 | `experimentalFeature/*` | Global runtime feature mutation is not an ordinary desktop preference and can violate managed requirements. |

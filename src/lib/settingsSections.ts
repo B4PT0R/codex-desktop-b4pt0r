@@ -2,6 +2,7 @@ import type { MessageKey } from "../i18n/locales/fr";
 
 export type SettingsSectionId =
   | "general"
+  | "browser"
   | "options"
   | "memory"
   | "remoteControl"
@@ -13,7 +14,6 @@ export type SettingsSectionId =
   | "mcp"
   | "permissions"
   | "config"
-  | "git"
   | "hooks"
   | "advanced";
 
@@ -46,6 +46,13 @@ const settingsGroupDefinitions: SettingsGroupDefinition[] = [
         id: "general",
         labelKey: "settings.section.general",
         keywords: "application startup démarrage notifications language langue",
+        available: true,
+      },
+      {
+        id: "browser",
+        labelKey: "settings.section.browser",
+        keywords:
+          "web browser navigateur chromium playwright shared partagé mcp internet",
         available: true,
       },
       {
@@ -126,12 +133,6 @@ const settingsGroupDefinitions: SettingsGroupDefinition[] = [
         keywords:
           "config configuration toml global codex options features modèles",
         available: true,
-      },
-      {
-        id: "git",
-        labelKey: "settings.section.git",
-        keywords: "worktree project projet environment environnement",
-        available: false,
       },
       {
         id: "hooks",

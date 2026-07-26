@@ -22,7 +22,8 @@ export type PlanReasoningEffort =
   | "xhigh";
 export type TurnContextItem =
   | { type: "localImage"; path: string }
-  | { type: "mention"; name: string; path: string };
+  | { type: "mention"; name: string; path: string }
+  | { type: "skill"; name: string; path: string };
 
 export function threadStartParams(
   cwd: string | undefined,
@@ -294,6 +295,9 @@ export function skillsListParams(cwd: string, forceReload = false) {
     cwds: cwd ? [cwd] : [],
     forceReload,
   };
+}
+export function skillsExtraRootsSetParams(root: string) {
+  return { extraRoots: [root] };
 }
 export function hooksListParams(cwd: string) {
   return { cwds: cwd ? [cwd] : [] };

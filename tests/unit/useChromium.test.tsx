@@ -58,6 +58,28 @@ describe("navigateur Chromium partagé", () => {
     expect(invokeMock).toHaveBeenLastCalledWith("cancel_chromium_install");
   });
 
+  it("désactive le partage et recharge la configuration MCP", async () => {
+    const enabled = {
+      ...missing,
+      available: true,
+      enabled: true,
+      running: true,
+    };
+    const reloadMcp = vi.fn().mockResolvedValue(undefined);
+    invokeMock.mockResolvedValueOnce(enabled).mockResolvedValueOnce({
+      ...enabled,
+      enabled: false,
+      running: false,
+    });
+    const { result } = renderHook(useChromium);
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(() => result.current.disable(reloadMcp));
+    expect(invokeMock).toHaveBeenLastCalledWith("disable_chromium");
+    expect(result.current.status?.enabled).toBe(false);
+    expect(reloadMcp).toHaveBeenCalledOnce();
+  });
+
   it("rend les erreurs de détection récupérables", async () => {
     invokeMock.mockRejectedValueOnce(new Error("status unavailable"));
     const { result } = renderHook(useChromium);

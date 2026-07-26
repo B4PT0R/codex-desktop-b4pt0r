@@ -3,6 +3,36 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.3.0] - 2026-07-27
+
+### Added
+
+- App-scoped `use-shared-browser` skill that routes browser tasks to the
+  managed Playwright session without changing user or workspace skills.
+- Explicit skill selection from the composer's add menu, with structured App
+  Server input and discreet replayable markers in the conversation.
+- Dedicated Web Browser settings for activation, versions, connection state,
+  repair, cancellation, and disable flows.
+
+### Changed
+
+- Browser and Computer Use surfaces unsupported by this client are disabled
+  only for its App Server process, keeping the CLI and other Codex clients
+  untouched.
+- Shared-browser activation now configures matched app-owned Playwright
+  components and keeps the system browser as a clear fallback.
+- App Server notification parsing and effective thread behavior ownership were
+  extracted from the page coordinator into focused, tested modules.
+- Contributor documentation and curated browser/skill screenshots now describe
+  the consolidated community-beta workflow.
+
+### Fixed
+
+- Late remote-control device responses can no longer repopulate a disabled or
+  superseded environment.
+- Permission and approval display fallbacks can no longer become accidental
+  explicit overrides when starting a thread.
+
 ## [0.2.6] - 2026-07-26
 
 ### Added
@@ -126,6 +156,7 @@ follows semantic versioning while the public interface is taking shape.
 - Native Electron packaging for Debian/Ubuntu.
 - Stable Chromium microphone capture for dictation and Realtime voice.
 
+[0.3.0]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.2.6...v0.3.0
 [0.2.6]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.2.4...v0.2.5
 [0.2.4]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.2.3...v0.2.4

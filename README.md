@@ -1,11 +1,11 @@
 # Codex Desktop Linux
 
-**A serious, Linux-first desktop client for Codex.**
+**A polished, Linux-first desktop client for Codex.**
 
-Codex Desktop Linux brings the day-to-day Codex workflow to Linux in a focused
-Electron application: persistent conversations, streaming agent activity,
-permissions, reviews, integrations, voice, account usage, and the desktop
-ergonomics expected from a long-running development tool.
+Codex Desktop Linux brings the everyday Codex workflow into a focused Electron
+application: persistent conversations, clear agent activity, voice, permissions,
+integrations, account usage, and the ergonomics expected from a desktop
+development tool.
 
 ![Codex Desktop Linux in its dark theme](screenshots/welcome-dark-native-1240x820.png)
 
@@ -13,114 +13,108 @@ ergonomics expected from a long-running development tool.
 > This is an independent community project. It is not an official OpenAI
 > product, is not affiliated with OpenAI, and must not be presented as one.
 
-## Built for Linux, from scratch
+## Why this project exists
 
-This project is not a rebuild, repackaging, or port of the official desktop
-application. The Electron shell, React interface, native Linux integration,
-state management, interaction design, and App Server protocol integration were
-implemented from scratch for this project.
+Linux users can already use Codex from the CLI and the VS Code extension. This
+client complements them with a comfortable home for long-running conversations,
+visible session controls, rich activity rendering, global configuration, and
+voice workflows—without requiring users to leave the application for routine
+Codex setup.
 
-It does use the official `codex app-server` supplied by the installed Codex
-CLI. App Server remains the source of truth for models, threads, permissions,
-approvals, account state, and agent activity. The goal is to provide a
-maintainable Linux client around that official backend rather than reimplement
-the Codex agent itself.
+The desktop shell, React interface, Linux integration, and App Server protocol
+layer were built specifically for this project. The agent itself is not
+reimplemented: the application launches the official `codex app-server` from
+the installed Codex CLI and treats it as the source of truth for threads,
+models, permissions, approvals, account state, and agent activity.
 
-The project started as a functional first draft and has since received a
-deliberate reliability pass: protocol shapes are checked against the installed
-App Server schema, important failure paths are covered, native boundaries are
-kept narrow, and the interface is tested at both desktop and compact window
-sizes.
+The result is an independent Linux client that stays close to the Codex product
+family while remaining free to refine its own interaction design.
 
-See the [changelog](CHANGELOG.md) for user-visible changes in each release.
+## Highlights
 
-## What is covered
-
-### Complete conversation workflow
+### Conversations that remain readable
 
 - Create, resume, search, rename, fork, compact, archive, and delete threads.
-- Page through long histories and follow streaming answers without losing your
+- Follow streaming output and page through long histories without losing your
   place.
-- Send text, images, file mentions, connected-app mentions, and follow-up
-  steering while a turn is active.
-- Interrupt work safely and recover from connection or App Server failures.
+- Send text, images, file references, connected-app mentions, and skills.
+- Steer an active turn, interrupt work safely, and recover from App Server
+  failures.
+- Render Markdown, GFM, streaming LaTeX, plans, reasoning summaries, warnings,
+  citations, generated media, and structured multi-file diffs.
+- Keep technical activity compact with progressively disclosed tool groups.
 
-### Clear agent activity
+### Codex controls where they are useful
 
-- Render Markdown, GitHub-Flavored Markdown, and LaTeX.
-- Present reasoning summaries, live plans, warnings, reviews, and collaboration
-  activity without overwhelming the main conversation.
-- Group commands, file changes, web results, MCP calls, and other tools into
-  readable progressive disclosures.
-- Review structured multi-file diffs and generated media in dedicated surfaces.
-
-### Explicit control
-
-- Select the model, reasoning effort, personality, and collaboration mode.
+- Choose model, reasoning effort, personality, and collaboration mode.
 - Keep permission profiles and approval policy separate and visible.
-- Handle command, file-change, permission, user-question, and MCP approval
-  requests.
-- Inspect and edit the active workspace's `AGENTS.md` through a guarded,
-  workspace-scoped editor.
-- Run explicit local shell commands only after a clear host-access
-  confirmation.
-
-### Integrations and account
-
-- Discover connected Apps and use them as structured composer mentions.
-- Inspect and manage skills, MCP servers, OAuth connections, and effective
-  hooks.
-- Read the signed-in account, quotas, usage windows, workspace messages, and
-  available reset credits.
-- Enable App Server's experimental remote-control relay, create temporary
-  ChatGPT pairing codes, and review or revoke authorized devices.
-- Edit the official Codex `config.toml` through a bounded editor that preserves
-  hand-written content and detects external changes.
+- Handle command, file-change, user-question, permission, and MCP requests.
+- Inspect account state, quotas, reset windows, workspace messages, Apps,
+  skills, hooks, and MCP servers.
+- Edit `config.toml`, global instructions, and the active workspace's
+  `AGENTS.md` through guarded, conflict-aware editors.
+- Reload the current thread or restart App Server when a configuration change
+  cannot apply live.
 
 ### Voice and dictation
 
-- Capture microphone dictation and insert the transcription into the composer.
+- Capture microphone dictation directly into the composer.
 - Run full-duplex Realtime voice conversations through App Server and WebRTC.
-- Stream user and assistant transcripts directly into the conversation.
+- Stream both speakers into the conversation while keeping concurrent text
+  activity distinguishable.
 - Preserve finalized voice exchanges in the parent thread's model context.
 
-Realtime is currently an experimental App Server capability and may depend on
-the connected account. The current App Server can retain injected voice items
-for model context without projecting all of them back as normal visual history,
-so voice replay after reopening a thread remains limited by the backend.
+Realtime is an experimental App Server capability and may depend on the
+connected account. Current App Server versions retain injected voice items for
+future model context but do not always project them back into ordinary visual
+history.
 
-### Linux desktop experience
+### A browser shared with the agent
 
-- Dark, light, and system themes with several interface-size presets and finer
-  keyboard scaling.
-- Responsive layouts down to the configured compact window size.
-- Keyboard-friendly composer menus, focus handling, and accessible dialogs.
-- System tray, single-instance behavior, and optional launch at login.
-- Optional shared Playwright Chromium session for browser automation and
-  full-size viewing. One activation downloads the matching private browser and
-  configures Playwright MCP so the app and Codex agent use the same visible
-  tabs; the system browser remains the no-setup fallback.
+The optional shared-browser workflow gives the user and Codex one visible,
+persistent Chromium context:
+
+- one guided activation downloads the Chromium build matching the app-pinned
+  Playwright and Playwright MCP versions;
+- browser links from the application and Playwright tools used by the agent
+  share the same tabs;
+- a bundled, app-scoped skill directs browser work to this session without
+  modifying global or workspace skills;
+- progress, cancellation, repair, disable, and connection failures remain
+  visible;
+- the system browser is the no-setup fallback.
+
+No system Chromium installation is assumed, and the application never invokes a
+distribution package manager for this feature.
+
+### A native-feeling Linux desktop
+
+- Light, dark, and system themes with adjustable interface scale.
+- Responsive layouts down to the supported compact window size.
+- Keyboard-friendly menus, focus handling, and accessible dialogs.
+- System tray, single-instance behavior, optional launch at login, and native
+  Debian packaging.
 
 ![Realtime voice and concurrent text activity](screenshots/realtime-dual-agent-chat-preview-1240x820.png)
 
-## Current platform scope
+## Platform scope
 
 Linux is the primary platform. Development and packaged validation currently
-focus on Ubuntu, with a Debian package produced for amd64 systems. Broader
-distribution testing and additional package formats are future work.
+focus on Ubuntu, with an amd64 Debian package. Broader Debian-family testing and
+additional package formats remain future work.
 
-The client follows the installed App Server rather than assuming capabilities
-from model names or hard-coded Codex versions. Experimental backend features
-are isolated and are expected to evolve.
+The client follows the installed App Server rather than inferring capabilities
+from model names or hard-coded Codex versions. Experimental backend surfaces
+are isolated and fail gracefully when unavailable.
 
 ## Requirements
 
 - A recent Linux desktop environment.
-- Node.js 22.12 or newer when building from source.
 - An installed and authenticated `codex` CLI available in `PATH`.
+- Node.js 22.12 or newer when building from source.
 
-The explicit `CODEX_EXECUTABLE` environment variable can point to another Codex
-binary when automatic discovery is not appropriate.
+Set `CODEX_EXECUTABLE` to an absolute Codex binary when automatic discovery is
+not appropriate.
 
 ## Build and install
 
@@ -130,30 +124,32 @@ package:
 ```bash
 npm ci
 npm run electron:deb
-sudo apt install ./dist/codex-desktop-linux_0.2.6_amd64.deb
+sudo apt install ./dist/codex-desktop-linux_0.3.0_amd64.deb
 ```
 
-Launch it from the desktop menu or with:
+Launch the installed application from the desktop menu or run:
 
 ```bash
 codex-desktop
 ```
 
-For local development:
+For desktop development:
 
 ```bash
 npm install
 npm run electron:dev
 ```
 
-The browser-only preview is useful for interface work, but it uses simulated
-data and does not replace validation against the packaged Electron application:
+For interface-only work, the browser preview provides simulated data:
 
 ```bash
 npm run dev
 ```
 
-## Local data and security
+The preview is useful for visual iteration but does not replace verification
+against Electron and a real App Server.
+
+## Data and security
 
 Codex authentication and backend configuration remain owned by the official
 Codex installation. This client does not copy authentication tokens into its
@@ -171,15 +167,14 @@ Official Codex configuration remains in:
 ~/.codex/config.toml
 ```
 
-The renderer is sandboxed and context-isolated. Native operations are exposed
-through focused IPC boundaries rather than generic filesystem or command
-access. Destructive actions, host shell commands, sensitive permissions, and
-system package installation require explicit confirmation.
+The renderer is sandboxed and context-isolated. Native operations use focused
+IPC boundaries rather than generic filesystem or command access. Destructive
+actions, host commands, and sensitive permissions remain explicit.
 
 On Ubuntu 24.04 and newer, AppArmor can interfere with the user namespaces used
-by Codex sandboxing. Use the targeted setup in
-[Ubuntu Bubblewrap and AppArmor](docs/ubuntu-bubblewrap-apparmor.md); do not
-disable AppArmor globally.
+by Codex sandboxing. Follow the targeted
+[Ubuntu Bubblewrap and AppArmor guide](docs/ubuntu-bubblewrap-apparmor.md);
+never disable AppArmor globally.
 
 ## Verification
 
@@ -201,17 +196,20 @@ npm run test:contract
 
 ## Contributing
 
-Contributions should improve the existing foundations incrementally rather than
-rewrite working subsystems. Start with:
+This repository is designed to be continued with Codex. A contributor can open
+the checkout, ask the agent to inspect the current handoff and App Server
+schema, implement one bounded change, run the relevant checks, and leave the
+project ready for the next person.
 
-- [AGENTS.md](AGENTS.md) for the contributor contract and definition of done;
-- [TODO.md](TODO.md) for the current baseline and prioritized work;
-- [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md) for product and interaction
-  decisions;
-- [APP_SERVER_COVERAGE.md](APP_SERVER_COVERAGE.md) for protocol coverage and
+Start with:
+
+- [AGENTS.md](AGENTS.md) — contributor contract and definition of done;
+- [TODO.md](TODO.md) — current baseline and prioritized work;
+- [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md) — durable interface decisions;
+- [APP_SERVER_COVERAGE.md](APP_SERVER_COVERAGE.md) — protocol coverage and
   intentional exclusions;
-- [screenshots/README.md](screenshots/README.md) for the curated visual
-  checkpoints.
+- [CHANGELOG.md](CHANGELOG.md) — user-visible release history;
+- [screenshots/README.md](screenshots/README.md) — curated visual checkpoints.
 
-The most useful contributions are focused, testable, and explicit about loading,
-failure, unavailable, and recovery states—not only the successful path.
+Prefer focused, testable improvements that handle loading, failure,
+unavailable, cancellation, and recovery states—not only the happy path.

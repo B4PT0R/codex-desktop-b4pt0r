@@ -3,6 +3,21 @@ import { access, readdir } from "node:fs/promises";
 import path from "node:path";
 import { createInterface } from "node:readline";
 
+export const appServerArguments = [
+  "app-server",
+  "-c",
+  "features.realtime_conversation=true",
+  "-c",
+  "features.browser_use=false",
+  "-c",
+  "features.browser_use_external=false",
+  "-c",
+  "features.in_app_browser=false",
+  "-c",
+  "features.computer_use=false",
+  "--stdio",
+];
+
 async function exists(candidate) {
   try {
     await access(candidate);
@@ -65,7 +80,7 @@ export class AppServerTransport {
     const executable = await findCodexExecutable();
     const child = spawn(
       executable,
-      ["app-server", "-c", "features.realtime_conversation=true", "--stdio"],
+      appServerArguments,
       {
         env: environmentForCodex(executable),
         stdio: ["pipe", "pipe", "pipe"],

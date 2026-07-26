@@ -203,6 +203,23 @@ describe("constructeurs JSON-RPC", () => {
       { type: "text", text: "bonjour" },
       { type: "localImage", path: "/tmp/a.png" },
     ]));
+  it("conserve une invocation de skill explicite", () =>
+    expect(
+      turnStartParams("thr", "gpt-test", "$review vérifie", [
+        {
+          type: "skill",
+          name: "review",
+          path: "/tmp/skills/review/SKILL.md",
+        },
+      ]).input,
+    ).toEqual([
+      { type: "text", text: "$review vérifie" },
+      {
+        type: "skill",
+        name: "review",
+        path: "/tmp/skills/review/SKILL.md",
+      },
+    ]));
   it("applique le comportement au tour", () =>
     expect(
       turnStartParams("thr", "gpt-test", "go", [], {

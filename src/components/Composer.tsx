@@ -7,9 +7,14 @@ import {
 import { ArrowUp, AudioWaveform, Mic, Plus, Square } from "lucide-react";
 import { openDialog as open } from "../lib/nativeBridge";
 import { isDesktopApp } from "../lib/codex";
-import { AddMenu, AppsMenu, CommandMenu } from "./ComposerMenus";
+import {
+  AddMenu,
+  AppsMenu,
+  CommandMenu,
+  SkillsMenu,
+} from "./ComposerMenus";
 import { FileSearchMenu } from "./FileSearchMenu";
-import type { AppInfo } from "../lib/appServerTypes";
+import type { AppInfo, AppServerSkill } from "../lib/appServerTypes";
 import type { TurnContextItem } from "../lib/protocol";
 import { useI18n } from "../i18n/I18nProvider";
 import { useFileSearch, type FileSearchResult } from "../lib/useFileSearch";
@@ -19,6 +24,9 @@ type ComposerProps = {
   apps: AppInfo[];
   appsError?: string;
   appsLoading: boolean;
+  skills: AppServerSkill[];
+  skillsError?: string;
+  skillsLoading: boolean;
   canSteer: boolean;
   cwd: string;
   hasThread: boolean;
@@ -29,6 +37,7 @@ type ComposerProps = {
   onOpenMcp: () => void;
   onOpenPlugins: () => void;
   onNeedApps: () => void;
+  onNeedSkills: () => void;
   onSend: (text: string, context: TurnContextItem[]) => void;
   onStop: () => void;
   onToggleVoice: () => void;
@@ -40,6 +49,9 @@ export function Composer({
   apps,
   appsError,
   appsLoading,
+  skills,
+  skillsError,
+  skillsLoading,
   canSteer,
   cwd,
   hasThread,
@@ -50,6 +62,7 @@ export function Composer({
   onOpenMcp,
   onOpenPlugins,
   onNeedApps,
+  onNeedSkills,
   onSend,
   onStop,
   onToggleVoice,
@@ -58,7 +71,9 @@ export function Composer({
   const { t } = useI18n();
   const [text, setText] = useState("");
   const [context, setContext] = useState<TurnContextItem[]>([]);
-  const [menu, setMenu] = useState<"add" | "apps" | "files" | null>(null);
+  const [menu, setMenu] = useState<
+    "add" | "apps" | "files" | "skills" | null
+  >(null);
   const [fileQuery, setFileQuery] = useState("");
   const [commandMenuDismissed, setCommandMenuDismissed] = useState(false);
   const input = useRef<HTMLInputElement>(null);
@@ -205,6 +220,10 @@ export function Composer({
             onNeedApps();
             setMenu("apps");
           }}
+          onOpenSkills={() => {
+            onNeedSkills();
+            setMenu("skills");
+          }}
           onOpenFiles={() => {
             setFileQuery("");
             setMenu("files");
@@ -264,6 +283,33 @@ export function Composer({
           }}
         />
       )}
+      {menu === "skills" && (
+        <SkillsMenu
+          skills={skills}
+          error={skillsError}
+          loading={skillsLoading}
+          menuRef={menuSurface}
+          onMenuKeyDown={moveInMenu}
+          onBack={() => setMenu("add")}
+          onSelect={(skill) => {
+            if (
+              !context.some(
+                (item) => item.type === "skill" && item.path === skill.path,
+              )
+            ) {
+              setContext((items) => [
+                ...items,
+                { type: "skill", name: skill.name, path: skill.path },
+              ]);
+              setText((value) =>
+                `${value}${value && !value.endsWith(" ") ? " " : ""}$${skill.name} `,
+              );
+            }
+            setMenu(null);
+            textarea.current?.focus();
+          }}
+        />
+      )}
       {context.length > 0 && (
         <div className="attachments">
           {context.map((item, index) => (
@@ -271,9 +317,11 @@ export function Composer({
               key={`${item.type}-${item.path}-${index}`}
               onClick={() => removeContext(index, item)}
             >
-              {item.type === "mention"
-                ? `@${item.name}`
-                : item.path.split("/").at(-1)}{" "}
+              {item.type === "skill"
+                ? `$${item.name}`
+                : item.type === "mention"
+                  ? `@${item.name}`
+                  : item.path.split("/").at(-1)}{" "}
               <span>×</span>
             </button>
           ))}
@@ -395,10 +443,13 @@ export function Composer({
 
   function removeContext(index: number, item: TurnContextItem) {
     setContext((items) => items.filter((_, current) => current !== index));
-    if (item.type === "mention") {
-      const token = item.path.startsWith("app://")
-        ? `$${appSlug(item.name)}`
-        : `@${item.name}`;
+    if (item.type === "mention" || item.type === "skill") {
+      const token =
+        item.type === "skill"
+          ? `$${item.name}`
+          : item.path.startsWith("app://")
+            ? `$${appSlug(item.name)}`
+            : `@${item.name}`;
       setText((value) =>
         value
           .replace(token, "")

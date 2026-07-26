@@ -134,12 +134,13 @@ scrollable. Cette structure est retenue à la place d’une grande modale.
 
 Le centre utilise une navigation interne durable :
 
-1. **Général** — apparence, démarrage, notifications, comportement de fenêtre ;
-2. **Agent et modèles** — modèle, effort, personnalité, modes de collaboration ;
-3. **Permissions** — profils, approbations et exigences administrées ;
-4. **Intégrations** — MCP, apps/connecteurs, plugins, skills et hooks ;
-5. **Compte et utilisation** — connexion, quotas, consommation et messages ;
-6. **Avancé** — fonctions expérimentales, import d’autres agents, contrôle distant,
+1. **Général** — langue, démarrage, ouverture des fichiers et cycle App Server ;
+2. **Navigateur web** — Chromium Playwright partagé, activation, état et réparation ;
+3. **Agent et modèles** — modèle, effort, personnalité, modes de collaboration ;
+4. **Permissions** — profils, approbations et exigences administrées ;
+5. **Intégrations** — MCP, apps/connecteurs, plugins, skills et hooks ;
+6. **Compte et utilisation** — connexion, quotas, consommation et messages ;
+7. **Avancé** — fonctions expérimentales, import d’autres agents, contrôle distant,
    diagnostics et feedback.
 
 État actuel : les inventaires stables `skills/list`, `mcpServerStatus/list` et
@@ -149,9 +150,17 @@ leur origine, confiance et commande sont consultables, sans simuler une API de m
 Les apps accessibles et activées de
 `app/list` apparaissent dans les réglages et peuvent être ajoutées au compositeur
 comme mentions structurées `app://`; le catalogue complet n'est pas chargé dans
-la navigation quotidienne. Le catalogue et l’installation de
+la navigation quotidienne. Les skills actives peuvent être jointes depuis le
+menu d’ajout : le compositeur envoie alors l’item App Server structuré
+`{ type: "skill", name, path }` et le message utilisateur affiche un indicateur
+discret, restauré depuis le même item lors du replay. Une invocation implicite
+reste volontairement sans indicateur, App Server ne publiant aucun événement
+stable qui permettrait de l’attribuer avec certitude. Le catalogue et l’installation de
 plugins restent isolés tant que la documentation officielle les interdit aux
 clients de production.
+Les surfaces propres à un plugin ne deviennent pas des catégories globales :
+Git et la gestion de workspaces restent exposés par les workflows ou plugins
+qui les possèdent, pas par une section native vide du centre de réglages.
 
 Les profils nommés de `permissionProfile/list`, les presets de
 `collaborationMode/list`, l’identité `account/read` et l’activité
@@ -202,6 +211,13 @@ shell Electron. L’application embarque des versions épinglées de
 uniquement après activation explicite. Le navigateur, son profil persistant,
 les sorties MCP et les artefacts servis localement appartiennent aux données
 utilisateur de Codex Desktop sous `~/.local/share/codex-desktop/`.
+L’activation, les versions installées, l’état de partage et la réparation sont
+regroupés dans la section autonome **Navigateur web** plutôt que dans les
+préférences générales.
+La désactivation arrête le serveur local et retire l’entrée MCP `playwright`
+uniquement si elle correspond encore à celle que l’application possède ; une
+configuration Playwright personnalisée créée ensuite par l’utilisateur est
+préservée.
 
 La couche native possède le serveur Playwright MCP HTTP lié au loopback. L’UI
 est un client minimal de ce serveur pour ouvrir les liens ; App Server reçoit
@@ -211,6 +227,22 @@ l’agent manipulent les mêmes onglets visibles. Aucune installation Chromium
 système, détection Snap/Flatpak ou élévation de privilèges n’appartient au chemin
 normal. Lorsque la fonction est inactive, incomplète ou indisponible, les URL
 HTTP(S) sont confiées au navigateur par défaut du système.
+
+Le processus App Server de ce client neutralise localement `browser_use`,
+`browser_use_external`, `in_app_browser` et `computer_use`. Le Browser officiel
+et son skill ne sont pas pris en charge par cette interface et ne doivent pas
+être proposés en concurrence avec Playwright MCP. Ces surcharges ne sont pas
+écrites dans `config.toml` et n’affectent donc ni la CLI ni les autres clients.
+
+L’application embarque en complément la skill `use-shared-browser` comme
+ressource externe à l’archive ASAR. À chaque nouveau processus App Server, le
+renderer enregistre ce répertoire en lecture seule avec
+`skills/extraRoots/set`. La skill reste ainsi propre à ce client : elle n’est
+copiée ni dans `~/.codex/skills`, ni dans le workspace, et ne modifie pas le
+comportement de la CLI. Sa dépendance MCP `playwright` et ses instructions
+orientent les demandes de navigation vers la fenêtre partagée, expliquent
+l’indisponibilité des surfaces Browser de l’application officielle et
+interdisent d’installer une pile de navigation concurrente.
 
 Les liens du transcript passent par un routeur explicite plutôt que par la
 navigation de la WebView Electron. Les URL HTTP(S) ouvrent la session Playwright partagée,

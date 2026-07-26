@@ -21,6 +21,7 @@ export type ChromiumController = {
   error?: string;
   refresh: () => Promise<void>;
   install: (afterConfigure?: () => Promise<void>) => Promise<void>;
+  disable: (afterConfigure?: () => Promise<void>) => Promise<void>;
   cancelInstall: () => Promise<void>;
 };
 
@@ -75,11 +76,38 @@ export function useChromium(): ChromiumController {
     }
   }, [native, status?.installing]);
 
+  const disable = useCallback(
+    async (afterConfigure?: () => Promise<void>) => {
+      if (!native || loading || !status?.enabled) return;
+      setLoading(true);
+      setError(undefined);
+      try {
+        setStatus(await invoke<ChromiumStatus>("disable_chromium"));
+        await afterConfigure?.();
+      } catch (cause) {
+        setError(errorMessage(cause));
+        await refresh();
+      } finally {
+        setLoading(false);
+      }
+    },
+    [loading, native, refresh, status?.enabled],
+  );
+
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
-  return { native, status, loading, error, refresh, install, cancelInstall };
+  return {
+    native,
+    status,
+    loading,
+    error,
+    refresh,
+    install,
+    disable,
+    cancelInstall,
+  };
 }
 
 export async function openInChromium(target: string) {

@@ -1,0 +1,13 @@
+interface:
+  display_name: "Shared Web Browser"
+  short_description: "Use the app-managed shared Playwright browser"
+  default_prompt: "Use $use-shared-browser to open and inspect this page in the shared browser."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "playwright"
+      description: "Codex Desktop shared Playwright browser"
+      transport: "streamable_http"
+      url: "http://localhost:8931/mcp"
+policy:
+  allow_implicit_invocation: true

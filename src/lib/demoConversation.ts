@@ -1,4 +1,7 @@
-import type { RateLimitResetCreditsSummary } from "./appServerTypes";
+import type {
+  AppServerSkill,
+  RateLimitResetCreditsSummary,
+} from "./appServerTypes";
 import type { ChatMessage, Quota, ThreadSummary } from "../types";
 import type { ThreadTelemetry } from "./sessionTelemetry";
 
@@ -163,6 +166,26 @@ export function isDemoPreview() {
     new URLSearchParams(window.location.search).has("demo")
   );
 }
+
+export const demoSkills: AppServerSkill[] = [
+  {
+    name: "use-shared-browser",
+    shortDescription: "Use the visible shared Playwright browser",
+    description:
+      "Open and interact with pages in the browser shared with the user.",
+    path: "/opt/Codex Desktop/resources/skills/use-shared-browser/SKILL.md",
+    scope: "system",
+    enabled: true,
+  },
+  {
+    name: "skill-creator",
+    shortDescription: "Create or update a Codex skill",
+    description: "Guide the creation of focused reusable agent instructions.",
+    path: "/preview/skills/skill-creator/SKILL.md",
+    scope: "system",
+    enabled: true,
+  },
+];
 
 export const demoTelemetry: ThreadTelemetry = {
   context: {

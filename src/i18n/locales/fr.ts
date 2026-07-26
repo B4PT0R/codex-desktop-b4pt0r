@@ -468,12 +468,17 @@ export const fr = {
   "composer.apps.detail": "Ajouter un connecteur à la demande",
   "composer.apps.loading": "Chargement des apps…",
   "composer.apps.empty": "Aucune app connectée disponible",
+  "composer.skills": "Skills",
+  "composer.skills.detail": "Joindre des instructions explicites à la demande",
+  "composer.skills.loading": "Chargement des skills…",
+  "composer.skills.empty": "Aucune skill active disponible",
   "composer.plugins": "Skills et plugins",
   "composer.plugins.detail": "Configurer les intégrations disponibles",
   "composer.mcp": "Serveurs MCP",
   "composer.mcp.detail": "Consulter les sources d’outils",
   "composer.shell": "Commande shell locale",
   "composer.shell.detail": "Exécuter sur l’hôte avec confirmation",
+  "conversation.skill": "Skill · {name}",
   "shellCommand.title": "Exécuter cette commande locale ?",
   "shellCommand.description":
     "La commande utilise le shell configuré pour cette conversation.",
@@ -534,6 +539,7 @@ export const fr = {
   "settings.group.integrations": "Intégrations",
   "settings.group.code": "Code",
   "settings.section.general": "Général",
+  "settings.section.browser": "Navigateur web",
   "settings.section.options": "Options",
   "settings.section.memory": "Mémoire",
   "settings.section.remoteControl": "Contrôle à distance",
@@ -545,11 +551,24 @@ export const fr = {
   "settings.section.mcp": "Serveurs MCP",
   "settings.section.permissions": "Permissions",
   "settings.section.config": "Configuration",
-  "settings.section.git": "Git et espaces de travail",
   "settings.section.hooks": "Hooks",
   "settings.section.advanced": "Avancé",
   "settings.general.description":
     "Préférences générales de l’application Linux.",
+  "settings.browser.description":
+    "Navigateur visible partagé entre l’application et l’agent Codex.",
+  "settings.browser.enabledTitle": "Activer le navigateur partagé",
+  "settings.browser.enabledDetail":
+    "Autorise l’application et l’agent à utiliser la même session Playwright visible.",
+  "settings.browser.enabled": "Activé",
+  "settings.browser.disabled": "Désactivé",
+  "settings.browser.installedInactive":
+    "Chromium est installé et sera conservé pour une prochaine activation.",
+  "settings.browser.downloadOnEnable":
+    "Le Chromium compatible sera téléchargé après confirmation.",
+  "settings.browser.routingTitle": "Outils navigateur de l’agent",
+  "settings.browser.routingDetail":
+    "Le Browser officiel non pris en charge et son skill sont désactivés dans cette application. L’agent utilise uniquement le MCP Playwright partagé.",
   "settings.options.description":
     "Réglages secondaires appliqués globalement aux nouvelles conversations.",
   "settings.memory.description":
@@ -832,13 +851,6 @@ export const fr = {
   "settings.voice.loading": "Chargement des voix…",
   "settings.voice.inventoryError":
     "Impossible d’actualiser le catalogue vocal : {detail}. Le catalogue v3 intégré reste disponible.",
-  "settings.git.description":
-    "Intégration Git et organisation des espaces de travail.",
-  "settings.git.repository": "Dépôt courant",
-  "settings.git.repositoryDetail": "Branche, remote et changements",
-  "settings.git.worktrees": "Worktrees",
-  "settings.git.worktreesDetail":
-    "Création et sélection d’environnements isolés",
   "settings.hooks.description":
     "Automatisations déclenchées autour des tâches Codex.",
   "settings.hooks.available": "Hooks disponibles",

@@ -193,11 +193,16 @@ view transition so asynchronously rendered content is visible.
   privacy boundary, quota guard and protected reset action.
 - `memory-settings-preview-840x620.png` — the same Memory section at minimum
   viewport size with native vertical scrolling.
-- `shared-browser-settings-preview-1240x820.png` — ready state for the opt-in
-  Playwright browser shared by the desktop client and Codex, including the
-  pinned Chromium and MCP versions.
+- `shared-browser-settings-preview-1240x820.png` — dedicated Web Browser
+  settings section in its ready state, including the pinned Chromium and MCP
+  versions shared by the desktop client and Codex.
 - `shared-browser-settings-preview-840x620.png` — the same shared-browser
   controls at the configured minimum viewport without clipping or overflow.
+- `composer-skill-selection-preview-1240x820.png` — the `+` menu’s compact
+  explicit-skill picker together with the selected context chip and the
+  persisted skill marker on the preceding user turn.
+- `composer-skill-selection-preview-840x620.png` — the same light-theme flow at
+  minimum size, including the harmonized submenu header and bounded popover.
 - `remote-control-settings-preview-1240x820.png` — the dedicated experimental
   Remote Control section, including its pairing security boundary and explicit
   browser-preview unavailable state.

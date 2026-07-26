@@ -39,6 +39,22 @@ beforeEach(() => {
 });
 
 describe("historique de conversation", () => {
+  it("identifie discrètement les skills explicitement jointes au tour", () => {
+    renderConversation({
+      activity: null,
+      messages: [
+        {
+          id: "skill-turn",
+          role: "user",
+          content: "$use-shared-browser ouvre cette page",
+          skills: [{ name: "use-shared-browser" }],
+        },
+      ],
+    });
+
+    expect(screen.getByText("Skill · use-shared-browser")).toBeVisible();
+  });
+
   it("affiche les citations mémoire structurées hors du Markdown", () => {
     renderConversation({
       activity: null,

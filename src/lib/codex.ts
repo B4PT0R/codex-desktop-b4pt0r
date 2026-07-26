@@ -6,6 +6,7 @@ import {
 } from "./nativeBridge";
 import { JsonRpcClient } from "./jsonRpc";
 import { defaultTranslate, type Translate } from "../i18n/translate";
+import { skillsExtraRootsSetParams } from "./protocol";
 
 export type AppServerMessage = {
   id?: number | string;
@@ -139,7 +140,7 @@ async function initializeConnection() {
         clientInfo: {
           name: "codex-desktop-linux",
           title: "Codex Desktop Linux",
-          version: "0.2.6",
+          version: "0.3.0",
         },
         capabilities: { experimentalApi: true },
       });
@@ -147,6 +148,11 @@ async function initializeConnection() {
       if (!isReusableInitialization(error)) throw error;
     }
     await notify("initialized", {});
+    const skillRoot = await invoke<string>("read_bundled_skills_root");
+    await rpc.request(
+      "skills/extraRoots/set",
+      skillsExtraRootsSetParams(skillRoot),
+    );
   }
   initialized = true;
   notifyConnection(true);

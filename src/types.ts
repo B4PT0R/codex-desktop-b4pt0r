@@ -57,6 +57,8 @@ export type ChatMessage = {
   signals?: AgentSignal[];
   streaming?: boolean;
   attachments?: string[];
+  /** Explicit skill input items attached to this user turn. */
+  skills?: Array<{ name: string }>;
   memoryCitations?: MemoryCitation[];
 };
 export type MemoryCitation = {

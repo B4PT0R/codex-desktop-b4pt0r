@@ -5,7 +5,7 @@ import {
   Boxes,
   FlaskConical,
   FileCog,
-  GitBranch,
+  Globe2,
   Mic,
   Palette,
   Plug,
@@ -108,6 +108,7 @@ export type SettingsViewProps = {
 
 const icons: Record<SettingsSectionId, ComponentType> = {
   general: Settings,
+  browser: Globe2,
   options: SlidersHorizontal,
   memory: Brain,
   remoteControl: RadioTower,
@@ -119,7 +120,6 @@ const icons: Record<SettingsSectionId, ComponentType> = {
   mcp: Plug,
   permissions: ShieldCheck,
   config: FileCog,
-  git: GitBranch,
   hooks: Webhook,
   advanced: FlaskConical,
 };
@@ -224,10 +224,11 @@ function SettingsSection(props: SettingsViewProps) {
     return (
       <GeneralSettings
         appServerRestart={props.appServerRestart}
-        integrations={props.integrations}
         webSearch={props.webSearch}
       />
     );
+  if (props.section === "browser")
+    return <BrowserSettings integrations={props.integrations} />;
   if (props.section === "options")
     return <OptionsSettings webSearch={props.webSearch} />;
   if (props.section === "memory")
@@ -294,17 +295,13 @@ function AdvancedSettings({
 
 function GeneralSettings({
   appServerRestart,
-  integrations,
   webSearch,
 }: {
   appServerRestart: SettingsViewProps["appServerRestart"];
-  integrations: IntegrationsController;
   webSearch: CodexGlobalSettingsController;
 }) {
   const { locale, persistenceError, setLocale, t } = useI18n();
   const launchAtLogin = useLaunchAtLogin();
-  const chromium = useChromium();
-  const [confirmChromiumInstall, setConfirmChromiumInstall] = useState(false);
   return (
     <section className="settings-page">
       <header>
@@ -373,6 +370,92 @@ function GeneralSettings({
         </label>
         <div className="settings-browser-row">
           <span className="settings-field-description">
+            <strong>{t("settings.appServerRestart.title")}</strong>
+            <small>{t("settings.appServerRestart.detail")}</small>
+          </span>
+          <div className="settings-browser-status">
+            <button
+              className="app-server-restart-button secondary-button"
+              disabled={
+                !appServerRestart.available || appServerRestart.restarting
+              }
+              onClick={() => void appServerRestart.restart()}
+            >
+              <RefreshCw
+                className={appServerRestart.restarting ? "spin" : ""}
+              />
+              {t(
+                appServerRestart.restarting
+                  ? "settings.appServerRestart.running"
+                  : "settings.appServerRestart.action",
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+      {persistenceError && (
+        <div className="inventory-message error" role="alert">
+          {t("settings.persistence.error")} {persistenceError}
+        </div>
+      )}
+      {appServerRestart.error && (
+        <div className="inventory-message error" role="alert">
+          {t("settings.appServerRestart.error")} {appServerRestart.error}
+        </div>
+      )}
+      {launchAtLogin.error && (
+        <div className="inventory-message error" role="alert">
+          {t("settings.startup.error")} {launchAtLogin.error}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function BrowserSettings({
+  integrations,
+}: {
+  integrations: IntegrationsController;
+}) {
+  const { t } = useI18n();
+  const chromium = useChromium();
+  const [confirmInstall, setConfirmInstall] = useState(false);
+
+  return (
+    <section className="settings-page">
+      <header>
+        <p>{t("settings.browser.description")}</p>
+      </header>
+      <div className="settings-card settings-fields">
+        <label>
+          <span className="settings-field-description">
+            <strong>{t("settings.browser.enabledTitle")}</strong>
+            <small>{t("settings.browser.enabledDetail")}</small>
+          </span>
+          <span className="startup-toggle">
+            <input
+              type="checkbox"
+              checked={chromium.status?.enabled === true}
+              disabled={
+                !chromium.native ||
+                chromium.loading ||
+                chromium.status?.installing === true
+              }
+              aria-label={t("settings.browser.enabledTitle")}
+              onChange={(event) => {
+                if (event.target.checked) setConfirmInstall(true);
+                else void chromium.disable(integrations.reloadMcp);
+              }}
+            />
+            {t(
+              chromium.status?.enabled
+                ? "settings.browser.enabled"
+                : "settings.browser.disabled",
+            )}
+          </span>
+        </label>
+        <div className="settings-browser-row">
+          <span className="settings-field-description">
             <strong>{t("settings.chromium.title")}</strong>
             <small>{t("settings.chromium.detail")}</small>
           </span>
@@ -414,22 +497,20 @@ function GeneralSettings({
               <button onClick={() => void chromium.cancelInstall()}>
                 {t("settings.chromium.cancel")}
               </button>
-            ) : confirmChromiumInstall ? (
+            ) : confirmInstall ? (
               <div className="settings-browser-confirm" role="group">
-                <small>
-                  {t("settings.chromium.confirm")}
-                </small>
+                <small>{t("settings.chromium.confirm")}</small>
                 <span>
                   <button
                     className="secondary-button"
-                    onClick={() => setConfirmChromiumInstall(false)}
+                    onClick={() => setConfirmInstall(false)}
                   >
                     {t("common.cancel")}
                   </button>
                   <button
                     disabled={!chromium.status?.installSupported}
                     onClick={() => {
-                      setConfirmChromiumInstall(false);
+                      setConfirmInstall(false);
                       void chromium.install(integrations.reloadMcp);
                     }}
                   >
@@ -438,61 +519,23 @@ function GeneralSettings({
                 </span>
               </div>
             ) : (
-              <button
-                disabled={
-                  chromium.loading || !chromium.status?.installSupported
-                }
-                onClick={() => setConfirmChromiumInstall(true)}
-              >
-                {t(
-                  chromium.status?.available
-                    ? "settings.chromium.activate"
-                    : "settings.chromium.install",
-                )}
-              </button>
+              <small>
+                {chromium.status?.available
+                  ? t("settings.browser.installedInactive")
+                  : t("settings.browser.downloadOnEnable")}
+              </small>
             )}
           </div>
         </div>
-        <div className="settings-browser-row">
-          <span className="settings-field-description">
-            <strong>{t("settings.appServerRestart.title")}</strong>
-            <small>{t("settings.appServerRestart.detail")}</small>
+      </div>
+      <div className="settings-card">
+        <div className="settings-explanation">
+          <span>
+            <strong>{t("settings.browser.routingTitle")}</strong>
+            <small>{t("settings.browser.routingDetail")}</small>
           </span>
-          <div className="settings-browser-status">
-            <button
-              className="app-server-restart-button secondary-button"
-              disabled={
-                !appServerRestart.available || appServerRestart.restarting
-              }
-              onClick={() => void appServerRestart.restart()}
-            >
-              <RefreshCw
-                className={appServerRestart.restarting ? "spin" : ""}
-              />
-              {t(
-                appServerRestart.restarting
-                  ? "settings.appServerRestart.running"
-                  : "settings.appServerRestart.action",
-              )}
-            </button>
-          </div>
         </div>
       </div>
-      {persistenceError && (
-        <div className="inventory-message error" role="alert">
-          {t("settings.persistence.error")} {persistenceError}
-        </div>
-      )}
-      {appServerRestart.error && (
-        <div className="inventory-message error" role="alert">
-          {t("settings.appServerRestart.error")} {appServerRestart.error}
-        </div>
-      )}
-      {launchAtLogin.error && (
-        <div className="inventory-message error" role="alert">
-          {t("settings.startup.error")} {launchAtLogin.error}
-        </div>
-      )}
       {chromium.native &&
         !chromium.loading &&
         !chromium.status?.available &&
@@ -864,6 +907,7 @@ const plannedSections: Record<
   Exclude<
     SettingsSectionId,
     | "general"
+    | "browser"
     | "options"
     | "memory"
     | "remoteControl"
@@ -882,19 +926,6 @@ const plannedSections: Record<
     items: Array<{ title: MessageKey; detail: MessageKey }>;
   }
 > = {
-  git: {
-    description: "settings.git.description",
-    items: [
-      {
-        title: "settings.git.repository",
-        detail: "settings.git.repositoryDetail",
-      },
-      {
-        title: "settings.git.worktrees",
-        detail: "settings.git.worktreesDetail",
-      },
-    ],
-  },
   advanced: {
     description: "settings.advanced.description",
     items: [

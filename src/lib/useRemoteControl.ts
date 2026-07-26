@@ -61,10 +61,14 @@ export function useRemoteControl(
   const [revokingClientId, setRevokingClientId] = useState<string>();
   const [error, setError] = useState<string>();
   const generation = useRef(0);
+  const clientsGeneration = useRef(0);
   const pairingPollInFlight = useRef(false);
 
   const loadClients = useCallback(
     async (environmentId: string, cursor: string | null = null) => {
+      const current = cursor
+        ? clientsGeneration.current
+        : ++clientsGeneration.current;
       setClientsLoading(true);
       try {
         const response = normalizeRemoteControlClients(
@@ -73,6 +77,7 @@ export function useRemoteControl(
             remoteControlClientsListParams(environmentId, cursor),
           ),
         );
+        if (current !== clientsGeneration.current) return;
         setClients((current) =>
           cursor
             ? [
@@ -89,9 +94,10 @@ export function useRemoteControl(
         setNextCursor(response.nextCursor);
         setError(undefined);
       } catch (cause) {
-        setError(errorMessage(cause));
+        if (current === clientsGeneration.current)
+          setError(errorMessage(cause));
       } finally {
-        setClientsLoading(false);
+        if (current === clientsGeneration.current) setClientsLoading(false);
       }
     },
     [],
@@ -110,6 +116,8 @@ export function useRemoteControl(
       setError(undefined);
       if (next.environmentId) await loadClients(next.environmentId);
       else {
+        clientsGeneration.current += 1;
+        setClientsLoading(false);
         setClients([]);
         setNextCursor(null);
       }
@@ -124,7 +132,9 @@ export function useRemoteControl(
     if (connected) void refresh();
     else {
       generation.current += 1;
+      clientsGeneration.current += 1;
       setLoading(false);
+      setClientsLoading(false);
       setStatus(undefined);
       setClients([]);
       setPairing(undefined);
@@ -140,6 +150,8 @@ export function useRemoteControl(
         setStatus(next);
         if (next.environmentId) void loadClients(next.environmentId);
         else {
+          clientsGeneration.current += 1;
+          setClientsLoading(false);
           setClients([]);
           setNextCursor(null);
         }
@@ -203,6 +215,8 @@ export function useRemoteControl(
       );
       setStatus(next);
       if (!enabled) {
+        clientsGeneration.current += 1;
+        setClientsLoading(false);
         setPairing(undefined);
         setClients([]);
         setNextCursor(null);

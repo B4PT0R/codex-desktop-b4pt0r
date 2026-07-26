@@ -1,6 +1,15 @@
-import { ArrowLeft, Blocks, FileSearch, ImagePlus, Plug, Server, TerminalSquare } from "lucide-react";
+import {
+  ArrowLeft,
+  Blocks,
+  FileSearch,
+  ImagePlus,
+  Plug,
+  Server,
+  Sparkles,
+  TerminalSquare,
+} from "lucide-react";
 import { filteredComposerCommands } from "../lib/commands";
-import type { AppInfo } from "../lib/appServerTypes";
+import type { AppInfo, AppServerSkill } from "../lib/appServerTypes";
 import { useI18n } from "../i18n/I18nProvider";
 import type { KeyboardEventHandler, Ref } from "react";
 
@@ -71,6 +80,7 @@ type AddMenuProps = {
   onOpenFiles: () => void;
   onShellCommand: () => void;
   onOpenApps: () => void;
+  onOpenSkills: () => void;
   onPickImages: () => void;
   onOpenMcp: () => void;
   onOpenPlugins: () => void;
@@ -79,6 +89,7 @@ type AddMenuProps = {
 export function AddMenu({
   onPickImages,
   onOpenApps,
+  onOpenSkills,
   onOpenMcp,
   onOpenPlugins,
   onOpenFiles,
@@ -123,6 +134,13 @@ export function AddMenu({
           <small>{t("composer.apps.detail")}</small>
         </span>
       </button>
+      <button role="menuitem" onClick={onOpenSkills}>
+        <Sparkles />
+        <span>
+          <b>{t("composer.skills")}</b>
+          <small>{t("composer.skills.detail")}</small>
+        </span>
+      </button>
       <button role="menuitem" onClick={onOpenPlugins}>
         <Plug />
         <span>
@@ -137,6 +155,61 @@ export function AddMenu({
           <small>{t("composer.mcp.detail")}</small>
         </span>
       </button>
+    </div>
+  );
+}
+
+export function SkillsMenu({
+  skills,
+  error,
+  loading,
+  onBack,
+  onSelect,
+  menuRef,
+  onMenuKeyDown,
+}: {
+  skills: AppServerSkill[];
+  error?: string;
+  loading: boolean;
+  onBack: () => void;
+  onSelect: (skill: AppServerSkill) => void;
+} & ComposerMenuSurfaceProps) {
+  const { t } = useI18n();
+  const enabledSkills = skills.filter((skill) => skill.enabled);
+  return (
+    <div
+      className="composer-menu skills-menu"
+      ref={menuRef}
+      role="menu"
+      aria-label={t("composer.skills")}
+      onKeyDown={onMenuKeyDown}
+    >
+      <button className="composer-menu-back" role="menuitem" onClick={onBack}>
+        <ArrowLeft /> {t("composer.skills")}
+      </button>
+      {loading && enabledSkills.length === 0 ? (
+        <p>{t("composer.skills.loading")}</p>
+      ) : error ? (
+        <p>{error}</p>
+      ) : enabledSkills.length === 0 ? (
+        <p>{t("composer.skills.empty")}</p>
+      ) : (
+        enabledSkills.map((skill) => (
+          <button
+            key={skill.path}
+            role="menuitem"
+            onClick={() => onSelect(skill)}
+          >
+            <Sparkles />
+            <span>
+              <b>{skill.name}</b>
+              {(skill.shortDescription || skill.description) && (
+                <small>{skill.shortDescription || skill.description}</small>
+              )}
+            </span>
+          </button>
+        ))
+      )}
     </div>
   );
 }

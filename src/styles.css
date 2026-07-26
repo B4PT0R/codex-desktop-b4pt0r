@@ -803,6 +803,19 @@ header button svg {
 .file-chip svg {
   width: 15px;
 }
+.skill-chip {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  color: #aaa9a3;
+  font-size: 11px;
+}
+.skill-chip svg {
+  width: 14px;
+  color: #8fa8d2;
+}
 .spin {
   animation: spin 1s linear infinite;
 }

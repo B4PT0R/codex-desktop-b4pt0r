@@ -34,11 +34,12 @@ import {
   type Permission,
   type TurnContextItem,
 } from "./lib/protocol";
-import { activityFromEvent, type AgentActivity } from "./lib/activity";
+import type { AgentActivity } from "./lib/activity";
 import {
   demoTelemetry,
   demoQuotas,
   demoResetCredits,
+  demoSkills,
   demoThreads,
   initialPreviewMessages,
   isDemoPreview,
@@ -52,23 +53,16 @@ import { useCapabilityCatalog } from "./lib/useCapabilityCatalog";
 import { useAccount } from "./lib/useAccount";
 import { useApps } from "./lib/useApps";
 import { useRateLimits } from "./lib/useRateLimits";
-import { threadStatusFromValue } from "./lib/threadLifecycle";
 import {
   removeDeletedThread,
   removeDeletedThreadTelemetry,
 } from "./lib/threadDeletion";
 import type { SettingsSectionId } from "./lib/settingsSections";
 import { commandFromText } from "./lib/commands";
-import {
-  contextUsageFromValue,
-  modelRerouteFromValue,
-  type ThreadTelemetry,
-} from "./lib/sessionTelemetry";
+import type { ThreadTelemetry } from "./lib/sessionTelemetry";
 import type {
   ChatMessage,
-  CollaborationMode,
   Model,
-  Personality,
   ThreadSummary,
   ToolCall,
 } from "./types";
@@ -84,7 +78,6 @@ import { useMemorySettings } from "./lib/useMemorySettings";
 import { useRemoteControl } from "./lib/useRemoteControl";
 import {
   threadRuntimeSettings,
-  threadRuntimeSettingsFromNotification,
   type ThreadRuntimeSettings,
 } from "./lib/threadRuntimeSettings";
 import { threadSummary } from "./lib/threadSummary";
@@ -94,9 +87,10 @@ import {
   removeThread,
   restoreThread,
 } from "./lib/threadReconciliation";
-import { appServerRecord, appServerString } from "./lib/appServerValues";
+import { routeAppNotification } from "./lib/appNotificationRouting";
 import { useRealtimeConversation } from "./lib/useRealtimeConversation";
 import { useConversationEventQueue } from "./lib/useConversationEventQueue";
+import { useThreadRuntimeState } from "./lib/useThreadRuntimeState";
 import "./styles.css";
 import "./realtime.css";
 import "./activity.css";
@@ -145,17 +139,10 @@ export default function App() {
   translateRef.current = t;
   const activeThreadRef = useRef<string | undefined>(undefined);
   const workspaceChanged = useRef(false);
-  const permissionSource = useRef<"fallback" | "user" | "server">("fallback");
-  const approvalSource = useRef<"fallback" | "user" | "server">("fallback");
   const [messages, setMessages] = useState<ChatMessage[]>(
       initialPreviewMessages,
     ),
     [models, setModels] = useState(fallbackModels),
-    [model, setModel] = useState(fallbackModels[0].id),
-    [effort, setEffort] = useState("medium"),
-    [personality, setPersonality] = useState<Personality>("pragmatic"),
-    [collaborationMode, setCollaborationMode] =
-      useState<CollaborationMode>("default"),
     [busy, setBusy] = useState(false),
     [activity, setActivity] = useState<AgentActivity>(null),
     [dictating, setDictating] = useState(false),
@@ -176,10 +163,27 @@ export default function App() {
     [sidebarWidth, setSidebarWidth] = useState(260),
     [settings, setSettings] = useState<SettingsSectionId | null>(null),
     [appsEnabled, setAppsEnabled] = useState(false),
-    [workPanel, setWorkPanel] = useState<ToolCall>(),
-    [permission, setPermission] = useState<Permission>(":workspace");
-  const [approvalPolicy, setApprovalPolicy] =
-    useState<ApprovalPolicy>("on-request");
+    [workPanel, setWorkPanel] = useState<ToolCall>();
+  const runtime = useThreadRuntimeState({
+    model: fallbackModels[0].id,
+    effort: "medium",
+    personality: "pragmatic",
+    collaborationMode: "default",
+    permission: ":workspace",
+    approvalPolicy: "on-request",
+  });
+  const {
+    approvalPolicy,
+    collaborationMode,
+    effort,
+    model,
+    permission,
+    personality,
+    setCollaborationMode,
+    setEffort,
+    setModel,
+    setPersonality,
+  } = runtime;
   const dictationSequence = useRef(0);
   const [cwd, setCwd] = useState(
     () => localStorage.getItem("codex-desktop.cwd") ?? "",
@@ -283,12 +287,7 @@ export default function App() {
     cwd,
     enabled: !threadId,
     onDefaults: (defaults) => {
-      if (defaults.model) setModel(defaults.model);
-      if (defaults.effort) setEffort(defaults.effort);
-      if (defaults.approvalPolicy) {
-        setApprovalPolicy(defaults.approvalPolicy);
-        approvalSource.current = "server";
-      }
+      runtime.applyServerDefaults(defaults);
     },
     onError: (error) => showError(t("app.initializationIncomplete"), error),
   });
@@ -345,10 +344,7 @@ export default function App() {
     setTurnId(undefined);
     threadHistory.reset();
     setBusy(false);
-    permissionSource.current = "fallback";
-    setPermission(":workspace");
-    approvalSource.current = "fallback";
-    setApprovalPolicy("on-request");
+    runtime.resetAccessSettings();
   }
   activeThreadRef.current = threadId;
   async function selectDirectory() {
@@ -386,111 +382,84 @@ export default function App() {
     }
   }
   function handle(msg: AppServerMessage) {
-    const params = appServerRecord(msg.params);
-    const item = appServerRecord(params?.item);
-    const nextActivity = activityFromEvent(
-      msg.method ?? "",
-      appServerString(item?.type),
-    );
-    if (nextActivity !== undefined) setActivity(nextActivity);
+    const routed = routeAppNotification(msg);
+    if (routed.activity !== undefined) setActivity(routed.activity);
     if (interactiveRequests.handleMessage(msg)) return;
-    if (!msg.method?.startsWith("thread/realtime/"))
-      enqueueConversationEvent(msg);
-    if (msg.method === "turn/started") {
-      const turn = appServerRecord(params?.turn);
-      setTurnId(appServerString(turn?.id));
-    }
-    if (msg.method === "turn/completed") setBusy(false);
-    if (msg.method === "error" && params?.willRetry !== true) {
-      setBusy(false);
-      setActivity(null);
-    }
-    if (msg.method === "thread/name/updated") {
-      const updatedThreadId = appServerString(params?.threadId);
-      const name = appServerString(params?.threadName);
-      if (updatedThreadId)
+    if (routed.conversationEvent) enqueueConversationEvent(msg);
+    if (routed.startsTurn) setTurnId(routed.turnId);
+    if (routed.completesTurn) setBusy(false);
+    if (routed.clearsActivity) setActivity(null);
+
+    const threadEvent = routed.thread;
+    if (threadEvent) {
+      if (threadEvent.type === "nameUpdated") {
         setThreads((items) =>
           items.map((thread) =>
-            thread.id === updatedThreadId
-              ? { ...thread, name: name ?? null }
+            thread.id === threadEvent.threadId
+              ? { ...thread, name: threadEvent.name }
               : thread,
           ),
         );
-    }
-    if (msg.method === "thread/status/changed") {
-      const changedThreadId = appServerString(params?.threadId);
-      const status = threadStatusFromValue(params?.status);
-      if (changedThreadId && status)
+      } else if (threadEvent.type === "statusChanged") {
         setThreads((items) =>
           items.map((thread) =>
-            thread.id === changedThreadId ? { ...thread, status } : thread,
+            thread.id === threadEvent.threadId
+              ? { ...thread, status: threadEvent.status }
+              : thread,
           ),
         );
-    }
-    if (msg.method === "thread/settings/updated") {
-      const updatedThreadId = appServerString(params?.threadId);
-      const runtimeSettings = threadRuntimeSettingsFromNotification(params);
-      if (updatedThreadId === activeThreadRef.current && runtimeSettings)
-        applyThreadRuntimeSettings(runtimeSettings);
-    }
-    if (msg.method === "thread/archived") {
-      const archivedThreadId = appServerString(params?.threadId);
-      if (archivedThreadId) {
+      } else if (
+        threadEvent.type === "settingsUpdated" &&
+        threadEvent.threadId === activeThreadRef.current
+      ) {
+        applyThreadRuntimeSettings(threadEvent.settings);
+      } else if (threadEvent.type === "archived") {
         setThreads((items) =>
-          removeThread(items, archivedThreadId),
+          removeThread(items, threadEvent.threadId),
         );
-        threadSearch.remove(archivedThreadId);
-        if (activeThreadRef.current === archivedThreadId) newChat();
-      }
-    }
-    if (msg.method === "thread/unarchived") {
-      const unarchivedThreadId = appServerString(params?.threadId);
-      if (unarchivedThreadId) void reconcileUnarchivedThread(unarchivedThreadId);
-    }
-    if (msg.method === "thread/closed") {
-      const closedThreadId = appServerString(params?.threadId);
-      if (closedThreadId)
-        setThreads((items) => markThreadClosed(items, closedThreadId));
-    }
-    if (msg.method === "thread/deleted") {
-      const deletedThreadId = appServerString(params?.threadId);
-      if (deletedThreadId) {
-        setThreads((items) => removeDeletedThread(items, deletedThreadId));
+        threadSearch.remove(threadEvent.threadId);
+        if (activeThreadRef.current === threadEvent.threadId) newChat();
+      } else if (threadEvent.type === "unarchived") {
+        void reconcileUnarchivedThread(threadEvent.threadId);
+      } else if (threadEvent.type === "closed") {
+        setThreads((items) => markThreadClosed(items, threadEvent.threadId));
+      } else if (threadEvent.type === "deleted") {
+        setThreads((items) => removeDeletedThread(items, threadEvent.threadId));
         setThreadTelemetry((items) =>
-          removeDeletedThreadTelemetry(items, deletedThreadId),
+          removeDeletedThreadTelemetry(items, threadEvent.threadId),
         );
-        if (activeThreadRef.current === deletedThreadId) newChat();
-        threadSearch.remove(deletedThreadId);
+        if (activeThreadRef.current === threadEvent.threadId) newChat();
+        threadSearch.remove(threadEvent.threadId);
       }
     }
-    if (msg.method === "thread/tokenUsage/updated") {
-      const usageThreadId = appServerString(params?.threadId);
-      const context = contextUsageFromValue(params?.tokenUsage);
-      if (usageThreadId && context)
+
+    const telemetryEvent = routed.telemetry;
+    if (telemetryEvent) {
+      if (telemetryEvent.type === "contextUpdated") {
         setThreadTelemetry((items) => ({
           ...items,
-          [usageThreadId]: { ...items[usageThreadId], context },
+          [telemetryEvent.threadId]: {
+            ...items[telemetryEvent.threadId],
+            context: telemetryEvent.context,
+          },
         }));
-    }
-    if (msg.method === "model/rerouted") {
-      const rerouteThreadId = appServerString(params?.threadId);
-      const reroute = modelRerouteFromValue(params);
-      if (rerouteThreadId && reroute)
+      } else if (telemetryEvent.type === "modelRerouted") {
         setThreadTelemetry((items) => ({
           ...items,
-          [rerouteThreadId]: { ...items[rerouteThreadId], reroute },
+          [telemetryEvent.threadId]: {
+            ...items[telemetryEvent.threadId],
+            reroute: telemetryEvent.reroute,
+          },
         }));
-    }
-    if (msg.method === "turn/started") {
-      const startedThreadId = appServerString(params?.threadId);
-      if (startedThreadId)
+      } else {
         setThreadTelemetry((items) => ({
           ...items,
-          [startedThreadId]: {
-            ...items[startedThreadId],
+          [telemetryEvent.threadId]: {
+            ...items[telemetryEvent.threadId],
             reroute: undefined,
           },
         }));
+      }
     }
     realtimeConversation.handleMessage(msg);
   }
@@ -500,9 +469,9 @@ export default function App() {
       threadStartParams(
         cwd || undefined,
         model,
-        permissionSource.current === "fallback" ? undefined : permission,
+        runtime.permissionForStart,
         personality,
-        approvalSource.current === "fallback" ? undefined : approvalPolicy,
+        runtime.approvalPolicyForStart,
       ),
     );
     const id = r.thread.id as string;
@@ -575,10 +544,17 @@ export default function App() {
       }
       return;
     }
-    const attachments = context.map((item) =>
-      item.type === "mention"
-        ? `@${item.name}`
-        : (item.path.split("/").at(-1) ?? item.path),
+    const attachments = context.flatMap((item) =>
+      item.type === "skill"
+        ? []
+        : [
+            item.type === "mention"
+              ? `@${item.name}`
+              : (item.path.split("/").at(-1) ?? item.path),
+          ],
+    );
+    const skills = context.flatMap((item) =>
+      item.type === "skill" ? [{ name: item.name }] : [],
     );
     setMessages((x) => [
       ...x,
@@ -587,6 +563,7 @@ export default function App() {
         role: "user",
         content: text || t("app.attachments"),
         attachments,
+        skills,
       },
     ]);
     if (busy) {
@@ -704,17 +681,13 @@ export default function App() {
     if (dictating) return;
     try {
       const parentThreadId = threadId ?? (await createThread());
-      const effectivePermission =
-        permissionSource.current === "fallback" ? undefined : permission;
-      const effectiveApprovalPolicy =
-        approvalSource.current === "fallback" ? undefined : approvalPolicy;
       await realtimeConversation.start({
         parentThreadId,
         cwd: cwd || undefined,
         model,
-        permission: effectivePermission,
+        permission: runtime.permissionForStart,
         personality,
-        approvalPolicy: effectiveApprovalPolicy,
+        approvalPolicy: runtime.approvalPolicyForStart,
         voice: realtime.voice,
       });
     } catch (e) {
@@ -773,17 +746,7 @@ export default function App() {
       setCwd(settings.cwd);
       persistWorkspace(settings.cwd);
     }
-    if (settings.model) setModel(settings.model);
-    if (settings.effort) setEffort(settings.effort);
-    if (settings.permission) setPermission(settings.permission);
-    if (settings.permission) permissionSource.current = "server";
-    if (settings.personality) setPersonality(settings.personality);
-    if (settings.collaborationMode)
-      setCollaborationMode(settings.collaborationMode);
-    if (settings.approvalPolicy) {
-      setApprovalPolicy(settings.approvalPolicy);
-      approvalSource.current = "server";
-    }
+    runtime.applyServerSettings(settings);
   }
   async function reconcileUnarchivedThread(unarchivedThreadId: string) {
     try {
@@ -823,8 +786,7 @@ export default function App() {
   }
   async function changePermission(nextPermission: Permission) {
     const previousPermission = permission;
-    setPermission(nextPermission);
-    permissionSource.current = "user";
+    runtime.selectPermission(nextPermission);
     if (!threadId) return true;
     try {
       await request(
@@ -833,15 +795,14 @@ export default function App() {
       );
       return true;
     } catch (error) {
-      setPermission(previousPermission);
+      runtime.selectPermission(previousPermission);
       showError(t("app.saveSettingsError"), error);
       return false;
     }
   }
   async function changeApprovalPolicy(nextPolicy: ApprovalPolicy) {
     const previousPolicy = approvalPolicy;
-    setApprovalPolicy(nextPolicy);
-    approvalSource.current = "user";
+    runtime.selectApprovalPolicy(nextPolicy);
     if (!threadId) return true;
     try {
       await request(
@@ -850,7 +811,7 @@ export default function App() {
       );
       return true;
     } catch (error) {
-      setApprovalPolicy(previousPolicy);
+      runtime.selectApprovalPolicy(previousPolicy);
       showError(t("app.saveSettingsError"), error);
       return false;
     }
@@ -905,16 +866,10 @@ export default function App() {
         }}
         section={settings}
         onChangeCollaborationMode={setCollaborationMode}
-        onChangeApprovalPolicy={(nextPolicy) => {
-          approvalSource.current = "user";
-          setApprovalPolicy(nextPolicy);
-        }}
+        onChangeApprovalPolicy={runtime.selectApprovalPolicy}
         onChangeEffort={setEffort}
         onChangeModel={changeModel}
-        onChangePermission={(nextPermission) => {
-          permissionSource.current = "user";
-          setPermission(nextPermission);
-        }}
+        onChangePermission={runtime.selectPermission}
         onChangePersonality={setPersonality}
         onClose={() => setSettings(null)}
         onSave={saveSettings}
@@ -1006,6 +961,15 @@ export default function App() {
         />
         <ChatFooter
           apps={apps}
+          skills={
+            isDemoPreview() ? demoSkills : integrations.skills.data
+          }
+          skillsError={
+            isDemoPreview() ? undefined : integrations.skills.error
+          }
+          skillsLoading={
+            isDemoPreview() ? false : integrations.skills.loading
+          }
           busy={busy}
           canSteer={Boolean(threadId && turnId)}
           cwd={cwd}
@@ -1044,6 +1008,9 @@ export default function App() {
             isDemoPreview() ? async () => undefined : rateLimits.consumeReset
           }
           onNeedApps={() => setAppsEnabled(true)}
+          onNeedSkills={() => {
+            if (!isDemoPreview()) void integrations.refreshSkills();
+          }}
           onOpenMcpSettings={() => setSettings("mcp")}
           onOpenPluginSettings={() => setSettings("plugins")}
           onSend={send}

@@ -30,6 +30,7 @@ import {
   hooksListParams,
   permissionProfileListParams,
   skillsConfigWriteParams,
+  skillsExtraRootsSetParams,
   skillsListParams,
   threadArchiveParams,
   threadBehaviorUpdateParams,
@@ -328,7 +329,14 @@ describe("contrat Codex installé", () => {
         "thr_1",
         "gpt-5.4",
         "bonjour",
-        [{ type: "localImage", path: "/tmp/image.png" }],
+        [
+          { type: "localImage", path: "/tmp/image.png" },
+          {
+            type: "skill",
+            name: "use-shared-browser",
+            path: "/opt/Codex Desktop/resources/skills/use-shared-browser/SKILL.md",
+          },
+        ],
         {
           effort: "high",
           personality: "friendly",
@@ -418,6 +426,10 @@ describe("contrat Codex installé", () => {
   it("accepte l’inventaire et la configuration des intégrations", () => {
     validates("HooksListParams", hooksListParams("/tmp/project"));
     validates("SkillsListParams", skillsListParams("/tmp/project", true));
+    validates(
+      "SkillsExtraRootsSetParams",
+      skillsExtraRootsSetParams("/opt/Codex Desktop/resources/skills"),
+    );
     validates(
       "SkillsConfigWriteParams",
       skillsConfigWriteParams("/tmp/skills/review/SKILL.md", false),

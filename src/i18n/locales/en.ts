@@ -455,12 +455,17 @@ export const en: Record<MessageKey, string> = {
   "composer.apps.detail": "Add a connector for this request",
   "composer.apps.loading": "Loading apps…",
   "composer.apps.empty": "No connected app available",
+  "composer.skills": "Skills",
+  "composer.skills.detail": "Attach explicit instructions to this request",
+  "composer.skills.loading": "Loading skills…",
+  "composer.skills.empty": "No enabled skill available",
   "composer.plugins": "Skills and plugins",
   "composer.plugins.detail": "Configure available integrations",
   "composer.mcp": "MCP servers",
   "composer.mcp.detail": "View tool sources",
   "composer.shell": "Local shell command",
   "composer.shell.detail": "Run on the host after confirmation",
+  "conversation.skill": "Skill · {name}",
   "shellCommand.title": "Run this local command?",
   "shellCommand.description":
     "The command uses the shell configured for this conversation.",
@@ -520,6 +525,7 @@ export const en: Record<MessageKey, string> = {
   "settings.group.integrations": "Integrations",
   "settings.group.code": "Code",
   "settings.section.general": "General",
+  "settings.section.browser": "Web Browser",
   "settings.section.options": "Options",
   "settings.section.memory": "Memory",
   "settings.section.remoteControl": "Remote control",
@@ -531,10 +537,23 @@ export const en: Record<MessageKey, string> = {
   "settings.section.mcp": "MCP servers",
   "settings.section.permissions": "Permissions",
   "settings.section.config": "Configuration",
-  "settings.section.git": "Git and workspaces",
   "settings.section.hooks": "Hooks",
   "settings.section.advanced": "Advanced",
   "settings.general.description": "General preferences for the Linux app.",
+  "settings.browser.description":
+    "Visible browser shared by the app and the Codex agent.",
+  "settings.browser.enabledTitle": "Enable shared browser",
+  "settings.browser.enabledDetail":
+    "Lets the app and agent use the same visible Playwright session.",
+  "settings.browser.enabled": "Enabled",
+  "settings.browser.disabled": "Disabled",
+  "settings.browser.installedInactive":
+    "Chromium is installed and will be kept for the next activation.",
+  "settings.browser.downloadOnEnable":
+    "The matching Chromium will be downloaded after confirmation.",
+  "settings.browser.routingTitle": "Agent browser tools",
+  "settings.browser.routingDetail":
+    "The unsupported official Browser and its skill are disabled in this app. The agent uses only the shared Playwright MCP.",
   "settings.options.description":
     "Secondary settings applied globally to new conversations.",
   "settings.memory.description":
@@ -806,11 +825,6 @@ export const en: Record<MessageKey, string> = {
   "settings.voice.loading": "Loading voices…",
   "settings.voice.inventoryError":
     "Unable to refresh the voice catalog: {detail}. The built-in v3 catalog remains available.",
-  "settings.git.description": "Git integration and workspace organization.",
-  "settings.git.repository": "Current repository",
-  "settings.git.repositoryDetail": "Branch, remote, and changes",
-  "settings.git.worktrees": "Worktrees",
-  "settings.git.worktreesDetail": "Create and select isolated environments",
   "settings.hooks.description": "Automations triggered around Codex tasks.",
   "settings.hooks.available": "Available hooks",
   "settings.hooks.availableDetail": "Status, source, and triggers",

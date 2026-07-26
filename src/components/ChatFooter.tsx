@@ -10,12 +10,16 @@ import { ModelQuickPicker } from "./ModelQuickPicker";
 import { PermissionQuickPicker } from "./PermissionQuickPicker";
 import type { PermissionProfileSummary } from "../lib/appServerTypes";
 import type { RateLimitResetCreditsSummary } from "../lib/appServerTypes";
+import type { AppServerSkill } from "../lib/appServerTypes";
 import { QuotaQuickPicker } from "./QuotaQuickPicker";
 import { ContextGauge } from "./ContextGauge";
 import { ApprovalQuickPicker } from "./ApprovalQuickPicker";
 
 type ChatFooterProps = {
   apps: AppsController;
+  skills: AppServerSkill[];
+  skillsError?: string;
+  skillsLoading: boolean;
   busy: boolean;
   canSteer: boolean;
   cwd: string;
@@ -41,6 +45,7 @@ type ChatFooterProps = {
   onChangeModel: (model: string) => void;
   onCompact: () => void;
   onNeedApps: () => void;
+  onNeedSkills: () => void;
   onOpenMcpSettings: () => void;
   onChangePermission: (permission: Permission) => Promise<boolean>;
   onChangeApprovalPolicy: (policy: ApprovalPolicy) => Promise<boolean>;
@@ -54,6 +59,9 @@ type ChatFooterProps = {
 
 export function ChatFooter({
   apps,
+  skills,
+  skillsError,
+  skillsLoading,
   busy,
   canSteer,
   cwd,
@@ -79,6 +87,7 @@ export function ChatFooter({
   onChangeModel,
   onCompact,
   onNeedApps,
+  onNeedSkills,
   onOpenMcpSettings,
   onChangePermission,
   onChangeApprovalPolicy,
@@ -97,6 +106,9 @@ export function ChatFooter({
           apps={apps.apps}
           appsError={apps.error}
           appsLoading={apps.loading}
+          skills={skills}
+          skillsError={skillsError}
+          skillsLoading={skillsLoading}
           busy={busy}
           canSteer={canSteer}
           cwd={cwd}
@@ -106,6 +118,7 @@ export function ChatFooter({
           dictationProcessing={dictationProcessing}
           dictationInsertion={dictationInsertion}
           onNeedApps={onNeedApps}
+          onNeedSkills={onNeedSkills}
           onOpenMcp={onOpenMcpSettings}
           onOpenPlugins={onOpenPluginSettings}
           onSend={onSend}

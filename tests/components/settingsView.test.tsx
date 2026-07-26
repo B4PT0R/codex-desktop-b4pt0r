@@ -239,6 +239,7 @@ describe("centre de réglages", () => {
       screen.getByRole("button", { name: "Redémarrer" }),
     );
     expect(restart).toHaveBeenCalledOnce();
+    expect(screen.queryByText("Navigateur Chromium partagé")).toBeNull();
   });
 
   it("modifie le mode global de recherche web depuis Options", () => {
@@ -387,7 +388,9 @@ describe("centre de réglages", () => {
       ).toHaveFocus(),
     );
     expect(screen.getByLabelText("Langue de l’interface")).toBeVisible();
-    expect(screen.getAllByText("Prévu").length).toBeGreaterThan(0);
+    expect(
+      screen.queryByRole("button", { name: /Git et espaces de travail/ }),
+    ).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: /Serveurs MCP/ }));
     expect(props.onSelectSection).toHaveBeenCalledWith("mcp");
     fireEvent.click(
@@ -456,13 +459,16 @@ describe("centre de réglages", () => {
         };
       return undefined;
     });
-    renderSettings();
+    renderSettings({ section: "browser" });
+    expect(
+      screen.getByRole("heading", { name: "Navigateur web", level: 1 }),
+    ).toBeVisible();
 
-    const install = await screen.findByRole("button", {
+    const enabled = await screen.findByRole("checkbox", {
       name: "Activer le navigateur partagé",
     });
-    await waitFor(() => expect(install).toBeEnabled());
-    fireEvent.click(install);
+    await waitFor(() => expect(enabled).toBeEnabled());
+    fireEvent.click(enabled);
     expect(invoke).not.toHaveBeenCalledWith("install_chromium", expect.anything());
     expect(
       await screen.findByText(
@@ -479,6 +485,7 @@ describe("centre de réglages", () => {
     expect(
       await screen.findByText("Prêt · partagé avec Codex"),
     ).toBeVisible();
+    expect(enabled).toBeChecked();
   });
 
   it("conserve les réglages fonctionnels du thread", () => {

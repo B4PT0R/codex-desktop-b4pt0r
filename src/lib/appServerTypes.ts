@@ -85,6 +85,7 @@ export type SendCreditsNudgeResponse = {
 export type AppServerInput = {
   type: string;
   text?: string;
+  name?: string;
   path?: string;
 };
 

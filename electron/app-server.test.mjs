@@ -1,9 +1,23 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  appServerArguments,
   environmentForCodex,
   findCodexExecutable,
 } from "./app-server.mjs";
+
+test("disables unsupported native browser surfaces for this App Server", () => {
+  assert.deepEqual(
+    appServerArguments.filter((argument) => argument.startsWith("features.")),
+    [
+      "features.realtime_conversation=true",
+      "features.browser_use=false",
+      "features.browser_use_external=false",
+      "features.in_app_browser=false",
+      "features.computer_use=false",
+    ],
+  );
+});
 
 test("honors the explicit Codex executable override", async () => {
   assert.equal(

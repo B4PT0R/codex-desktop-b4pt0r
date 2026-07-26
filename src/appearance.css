@@ -185,6 +185,19 @@
   border-color: #d5d5cf;
 }
 
+:root[data-theme="light"] .attachments button {
+  color: #555550;
+  border-color: #d5d5cf;
+  background: #f3f3ef;
+}
+
+:root[data-theme="light"] .attachments button:hover,
+:root[data-theme="light"] .attachments button:focus-visible {
+  color: #292925;
+  border-color: #bdbdb6;
+  background: #e8e8e2;
+}
+
 :root[data-theme="light"] button:focus-visible,
 :root[data-theme="light"] a:focus-visible,
 :root[data-theme="light"] summary:focus-visible,
@@ -207,6 +220,12 @@
 :root[data-theme="light"] .composer-menu button:active:not(:disabled) {
   color: #292925;
   background: #e8e8e2;
+}
+
+:root[data-theme="light"] .composer-menu .composer-menu-back {
+  color: #353530;
+  border-color: #d5d5cf;
+  background: #fff;
 }
 
 :root[data-theme="light"] .composer-actions .stop {

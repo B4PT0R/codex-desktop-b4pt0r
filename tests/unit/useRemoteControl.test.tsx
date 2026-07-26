@@ -125,4 +125,54 @@ describe("contrôle à distance", () => {
     expect(() => normalizeRemoteControlPairing({ pairingCode: 12 })).toThrow();
     expect(() => normalizeRemoteControlClients({ data: [{}] })).toThrow();
   });
+
+  it("ignore une liste d'appareils devenue obsolète après désactivation", async () => {
+    let resolveClients:
+      | ((value: {
+          data: { clientId: string; displayName: string }[];
+          nextCursor: null;
+        }) => void)
+      | undefined;
+    requestMock.mockImplementation((method) => {
+      if (method === "remoteControl/status/read")
+        return Promise.resolve({
+          status: "connected",
+          serverName: "linux-box",
+          installationId: "install-1",
+          environmentId: "env-1",
+        });
+      if (method === "remoteControl/client/list")
+        return new Promise((resolve) => {
+          resolveClients = resolve;
+        });
+      return Promise.resolve({});
+    });
+
+    const { result } = renderHook(() => useRemoteControl(true));
+    await waitFor(() => expect(resolveClients).toBeTypeOf("function"));
+
+    const handler = subscribeMock.mock.calls[0]?.[0];
+    act(() =>
+      handler?.({
+        method: "remoteControl/status/changed",
+        params: {
+          status: "disabled",
+          serverName: "linux-box",
+          installationId: "install-1",
+          environmentId: null,
+        },
+      }),
+    );
+    await act(async () => {
+      resolveClients?.({
+        data: [{ clientId: "stale", displayName: "Ancien appareil" }],
+        nextCursor: null,
+      });
+      await Promise.resolve();
+    });
+
+    expect(result.current.status?.status).toBe("disabled");
+    expect(result.current.clients).toEqual([]);
+    expect(result.current.clientsLoading).toBe(false);
+  });
 });

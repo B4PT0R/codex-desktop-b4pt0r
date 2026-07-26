@@ -100,6 +100,7 @@ const ConversationMessage = memo(function ConversationMessage({
   onReviewDiff?: (tool: ToolCall) => void;
   stepClosed: boolean;
 }) {
+  const { t } = useI18n();
   const [revealed, setRevealed] = useState(
     () => !message.revealAfter || message.revealAfter <= Date.now(),
   );
@@ -139,6 +140,12 @@ const ConversationMessage = memo(function ConversationMessage({
           <span className="file-chip" key={attachment}>
             <Folder />
             {attachment}
+          </span>
+        ))}
+        {message.skills?.map((skill) => (
+          <span className="skill-chip" key={skill.name}>
+            <Sparkles />
+            {t("conversation.skill", { name: skill.name })}
           </span>
         ))}
         {reasoningSignals && reasoningSignals.length > 0 && (

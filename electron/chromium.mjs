@@ -6,7 +6,10 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import { BrowserArtifactServer } from "./browser-artifacts.mjs";
-import { ensurePlaywrightCodexConfig } from "./playwright-codex-config.mjs";
+import {
+  ensurePlaywrightCodexConfig,
+  removePlaywrightCodexConfig,
+} from "./playwright-codex-config.mjs";
 import {
   PlaywrightMcpClient,
   playwrightToolError,
@@ -90,6 +93,18 @@ export class SharedBrowserManager {
     this.#installer.kill();
     this.#installer = undefined;
     return true;
+  }
+
+  async deactivate() {
+    this.cancelInstall();
+    await this.#stopServer();
+    await this.#artifacts.stop();
+    await removePlaywrightCodexConfig({
+      endpoint: MCP_URL,
+      environment: this.#environment,
+      spawnProcess: this.#spawn,
+    });
+    return this.status(false);
   }
 
   async openTarget(target, enabled) {
@@ -236,7 +251,7 @@ export class SharedBrowserManager {
 
   async #connectClient() {
     if (this.#client) return this.#client;
-    const client = new PlaywrightMcpClient(MCP_URL, "0.2.6");
+    const client = new PlaywrightMcpClient(MCP_URL, "0.3.0");
     await client.connect();
     this.#client = client;
     return client;

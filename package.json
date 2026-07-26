@@ -2,7 +2,7 @@
   "name": "codex-desktop-linux",
   "productName": "Codex Desktop",
   "desktopName": "codex-desktop.desktop",
-  "version": "0.2.6",
+  "version": "0.3.0",
   "description": "Independent desktop client for Codex on Linux",
   "author": {
     "name": "Codex Desktop Linux contributors",
@@ -36,6 +36,15 @@
       "dist/assets/**/*",
       "electron/**/*",
       "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/skills",
+        "to": "skills",
+        "filter": [
+          "**/*"
+        ]
+      }
     ],
     "linux": {
       "syncDesktopName": true,

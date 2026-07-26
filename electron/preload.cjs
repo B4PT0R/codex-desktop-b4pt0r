@@ -4,6 +4,7 @@ const allowedCommands = new Set([
   "start_app_server",
   "restart_app_server",
   "send_app_server",
+  "read_bundled_skills_root",
   "read_desktop_settings",
   "update_desktop_settings",
   "read_codex_config",
@@ -21,6 +22,7 @@ const allowedCommands = new Set([
   "open_file_reference",
   "save_generated_image",
   "install_chromium",
+  "disable_chromium",
   "cancel_chromium_install",
 ]);
 const allowedEvents = new Set([

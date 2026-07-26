@@ -18,6 +18,11 @@ describe("reprise de conversation", () => {
                 content: [
                   { type: "text", text: "Analyse ceci" },
                   { type: "localImage", path: "/tmp/capture.png" },
+                  {
+                    type: "skill",
+                    name: "use-shared-browser",
+                    path: "/skills/use-shared-browser/SKILL.md",
+                  },
                 ],
               },
               {
@@ -47,7 +52,9 @@ describe("reprise de conversation", () => {
       {
         id: "user-1",
         role: "user",
-        content: "Analyse ceci\n/tmp/capture.png",
+        content: "Analyse ceci",
+        attachments: ["capture.png"],
+        skills: [{ name: "use-shared-browser" }],
       },
       {
         id: "signal-reasoning-1",

@@ -19,6 +19,8 @@ function renderlessComposerProps(): ComponentProps<typeof Composer> {
   return {
     apps: [],
     appsLoading: false,
+    skills: [],
+    skillsLoading: false,
     busy: false,
     canSteer: false,
     cwd: "/work/project",
@@ -29,6 +31,7 @@ function renderlessComposerProps(): ComponentProps<typeof Composer> {
     onOpenMcp: vi.fn(),
     onOpenPlugins: vi.fn(),
     onNeedApps: vi.fn(),
+    onNeedSkills: vi.fn(),
     onSend: vi.fn(),
     onStop: vi.fn(),
     onToggleVoice: vi.fn(),
@@ -205,6 +208,55 @@ describe("composer", () => {
     expect(props.onSend).toHaveBeenCalledWith("$github recherche les issues", [
       { type: "mention", name: "GitHub", path: "app://github-connector" },
     ]);
+  });
+
+  it("joint une skill active comme item App Server structuré", () => {
+    const props = renderComposer({
+      skills: [
+        {
+          name: "use-shared-browser",
+          description: "Utiliser le navigateur partagé",
+          path: "/opt/Codex Desktop/resources/skills/use-shared-browser/SKILL.md",
+          scope: "system",
+          enabled: true,
+        },
+        {
+          name: "disabled-skill",
+          description: "Ne doit pas être proposée",
+          path: "/tmp/disabled/SKILL.md",
+          scope: "user",
+          enabled: false,
+        },
+      ],
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Ajouter du contexte" }),
+    );
+    fireEvent.click(
+      screen.getByRole("menuitem", {
+        name: /Joindre des instructions explicites/,
+      }),
+    );
+    expect(props.onNeedSkills).toHaveBeenCalledOnce();
+    expect(screen.queryByText("disabled-skill")).toBeNull();
+    fireEvent.click(
+      screen.getByRole("menuitem", { name: /use-shared-browser/ }),
+    );
+    expect(screen.getByRole("textbox")).toHaveValue("$use-shared-browser ");
+    fireEvent.change(screen.getByRole("textbox"), {
+      target: { value: "$use-shared-browser ouvre cette page" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Envoyer" }));
+    expect(props.onSend).toHaveBeenCalledWith(
+      "$use-shared-browser ouvre cette page",
+      [
+        {
+          type: "skill",
+          name: "use-shared-browser",
+          path: "/opt/Codex Desktop/resources/skills/use-shared-browser/SKILL.md",
+        },
+      ],
+    );
   });
 
   it("centralise les intégrations dans le menu d’ajout", () => {

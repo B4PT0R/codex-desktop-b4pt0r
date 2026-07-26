@@ -95,12 +95,18 @@
 }
 
 .apps-menu,
+.skills-menu,
 .file-search-menu {
   max-height: min(430px, calc(100vh - 210px));
   overflow-y: auto;
 }
 
+.skills-menu {
+  width: min(330px, calc(100% - 20px));
+}
+
 .apps-menu .composer-menu-back,
+.skills-menu .composer-menu-back,
 .file-search-menu .composer-menu-back {
   position: sticky;
   top: 0;
@@ -116,6 +122,12 @@
 .apps-menu svg {
   width: 18px;
   flex: 0 0 auto;
+}
+
+.skills-menu svg {
+  width: 15px;
+  flex: 0 0 auto;
+  color: #aaa9a3;
 }
 
 .file-search-input {
@@ -155,7 +167,8 @@
   white-space: nowrap;
 }
 
-.apps-menu button:not(.composer-menu-back) small {
+.apps-menu button:not(.composer-menu-back) small,
+.skills-menu button:not(.composer-menu-back) small {
   display: -webkit-box;
   overflow: hidden;
   -webkit-box-orient: vertical;

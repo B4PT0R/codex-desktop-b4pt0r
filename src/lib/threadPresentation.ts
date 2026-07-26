@@ -28,15 +28,28 @@ function messagesFromTurns(
   for (const turn of turns) {
     for (const item of turn.items ?? []) {
       if (item.type === "userMessage") {
+        const content = item.content ?? [];
+        const text = content
+          .filter((entry) => entry.type === "text")
+          .map((entry) => entry.text ?? "")
+          .filter(Boolean)
+          .join("\n");
+        const attachments = content.flatMap((entry) =>
+          entry.type === "localImage" && entry.path
+            ? [entry.path.split("/").at(-1) ?? entry.path]
+            : [],
+        );
+        const skills = content.flatMap((entry) =>
+          entry.type === "skill" && entry.name ? [{ name: entry.name }] : [],
+        );
         messages = [
           ...messages,
           {
             id: item.id,
             role: "user",
-            content:
-              item.content
-                ?.map((entry) => entry.text ?? entry.path ?? "")
-                .join("\n") ?? "",
+            content: text,
+            ...(attachments.length > 0 ? { attachments } : {}),
+            ...(skills.length > 0 ? { skills } : {}),
           },
         ];
         continue;

@@ -44,6 +44,7 @@ import {
   readLaunchAtLogin,
   setLaunchAtLogin,
 } from "./autostart.mjs";
+import { bundledSkillsRoot } from "./bundled-skills.mjs";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const isDevelopment = !app.isPackaged;
@@ -84,6 +85,14 @@ function registerIpc() {
       throw new Error("Invalid App Server message");
     }
     appServer.send(args.message);
+  });
+  ipcMain.handle("desktop:read_bundled_skills_root", (event) => {
+    trusted(event);
+    return bundledSkillsRoot({
+      appRoot: root,
+      packaged: app.isPackaged,
+      resourcesPath: process.resourcesPath,
+    });
   });
   ipcMain.handle("desktop:read_desktop_settings", (event) => {
     trusted(event);
@@ -200,6 +209,13 @@ function registerIpc() {
       sharedBrowserEnabled: true,
     });
     return status;
+  });
+  ipcMain.handle("desktop:disable_chromium", async (event) => {
+    trusted(event);
+    await updateSettings(settingsPath(app.getPath("home")), {
+      sharedBrowserEnabled: false,
+    });
+    return sharedBrowser.deactivate();
   });
   ipcMain.handle("desktop:cancel_chromium_install", (event) => {
     trusted(event);

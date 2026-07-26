@@ -37,6 +37,30 @@ export async function ensurePlaywrightCodexConfig({
   return true;
 }
 
+export async function removePlaywrightCodexConfig({
+  endpoint,
+  environment,
+  spawnProcess,
+}) {
+  const executable = await findCodexExecutable(environment);
+  const codexEnvironment = environmentForCodex(executable, environment);
+  const current = await runCodex(
+    executable,
+    ["mcp", "get", SERVER_NAME, "--json"],
+    codexEnvironment,
+    spawnProcess,
+    true,
+  );
+  if (!isExpectedPlaywrightConfig(current, endpoint)) return false;
+  await runCodex(
+    executable,
+    ["mcp", "remove", SERVER_NAME],
+    codexEnvironment,
+    spawnProcess,
+  );
+  return true;
+}
+
 export function isExpectedPlaywrightConfig(output, endpoint) {
   try {
     const config = JSON.parse(output);
