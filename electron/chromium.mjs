@@ -236,7 +236,7 @@ export class SharedBrowserManager {
 
   async #connectClient() {
     if (this.#client) return this.#client;
-    const client = new PlaywrightMcpClient(MCP_URL, "0.3.0");
+    const client = new PlaywrightMcpClient(MCP_URL, "0.2.6");
     await client.connect();
     this.#client = client;
     return client;

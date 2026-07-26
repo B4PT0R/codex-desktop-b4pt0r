@@ -30,9 +30,13 @@ OpenAI release.
 
 ## Verified baseline
 
-- Package: `dist/codex-desktop-linux_0.3.0_amd64.deb`
-- Size and SHA-256: refresh after rebuilding the merged v0.3.0 package.
-- Package metadata verified as `codex-desktop-linux 0.3.0` for Ubuntu amd64.
+- Package: `dist/codex-desktop-linux_0.2.6_amd64.deb`
+- Size: 108,445,520 bytes
+- SHA-256:
+  `4288f339227217351857d6b89b47cb35e165e2f6cd01dfc894d50be8e7c5f3d0`
+- Package metadata verified as `codex-desktop-linux 0.2.6` for Ubuntu amd64.
+- Packaged ASAR:
+  `e3ae94f98a35dd56d29b2c3b7db831600501def867ae67cd9bbcec7e84c7d76d`
 - The release package includes the App Server-owned Remote control settings
   surface, guarded global `AGENTS.md` editing, modal Config editors and the
   corrected XDG launch-at-login integration.
@@ -58,7 +62,7 @@ OpenAI release.
   `APP_SERVER_COVERAGE.md` for the classified inventory.
 - 478 Vitest/contract tests across 93 files pass, including 45 App Server
   contract cases.
-- 43 Electron/Node tests pass.
+- 47 Electron/Node tests pass.
 - Strict TypeScript and the production build pass.
 - The packaged ASAR contains the pinned Playwright Core and Playwright MCP
   command-line runtimes. The managed Chromium download, visible launch,
@@ -69,7 +73,7 @@ OpenAI release.
   `electron-builder`; npm's forced remediation would downgrade its major
   version, so it was not applied. The compatible audit fix updated PostCSS and
   related build dependencies.
-- Main JS: 503.27 kB (146.77 kB gzip).
+- Main JS: 503.91 kB (146.94 kB gzip).
 - Lazy diff viewer: 89.50 kB (32.89 kB gzip).
 - Lazy Markdown/KaTeX: 698.59 kB (208.74 kB gzip).
 
