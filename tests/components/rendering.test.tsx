@@ -22,6 +22,18 @@ describe("rendu du chat", () => {
     ).toBeVisible();
     expect(screen.getByText("cargo test")).toBeVisible();
   });
+  it("réserve la justification aux paragraphes assez longs", async () => {
+    const longParagraph = "Texte suffisamment développé pour la lecture. ".repeat(
+      6,
+    );
+    const { rerender } = render(<Markdown>{"Texte court."}</Markdown>);
+    expect(await screen.findByText("Texte court.")).not.toHaveClass("justified");
+
+    rerender(<Markdown>{longParagraph}</Markdown>);
+    expect(await screen.findByText(longParagraph.trim())).toHaveClass(
+      "justified",
+    );
+  });
   it("route explicitement les liens web au lieu de demander une nouvelle fenêtre Electron", async () => {
     const open = vi.spyOn(window, "open").mockImplementation(() => null);
     render(

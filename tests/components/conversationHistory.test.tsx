@@ -195,6 +195,7 @@ describe("historique de conversation", () => {
       }),
     ).toBeVisible();
     expect(screen.getAllByText("Plan")).toHaveLength(1);
+    expect(document.querySelector(".conversation")).toHaveClass("has-plan");
   });
 
   it("place le raisonnement avant le texte streamé de l’agent", () => {
@@ -408,8 +409,13 @@ describe("historique de conversation", () => {
     Object.defineProperties(conversation, {
       clientHeight: { configurable: true, value: 400 },
       scrollHeight: { configurable: true, value: 1_200 },
+      scrollTop: { configurable: true, value: 800 },
+    });
+    fireEvent.scroll(conversation!);
+    Object.defineProperties(conversation, {
       scrollTop: { configurable: true, value: 100 },
     });
+    fireEvent.wheel(conversation!, { deltaY: -100 });
     fireEvent.scroll(conversation!);
     rerender(
       <I18nProvider>
@@ -423,5 +429,56 @@ describe("historique de conversation", () => {
       </I18nProvider>,
     );
     expect(scrollTo).toHaveBeenCalledTimes(callsWhileFollowing);
+  });
+
+  it("reste ancré en bas pendant la stabilisation d'un long historique", () => {
+    let notifyResize: ResizeObserverCallback | undefined;
+    class ResizeObserverMock {
+      constructor(callback: ResizeObserverCallback) {
+        notifyResize = callback;
+      }
+      disconnect() {}
+      observe() {}
+      unobserve() {}
+    }
+    vi.stubGlobal("ResizeObserver", ResizeObserverMock);
+    const { container } = renderConversation({
+      activity: null,
+      messages: [
+        { id: "user-long", role: "user", content: "Question ancienne" },
+        {
+          id: "assistant-long",
+          role: "assistant",
+          content: "Réponse très longue avec des blocs rendus tardivement",
+        },
+      ],
+    });
+    const conversation = container.querySelector(".conversation");
+    Object.defineProperty(conversation, "scrollHeight", {
+      configurable: true,
+      value: 3_600,
+    });
+
+    act(() => notifyResize?.([], {} as ResizeObserver));
+
+    expect(scrollTo).toHaveBeenLastCalledWith({
+      behavior: "auto",
+      top: 3_600,
+    });
+    const callsWhileFollowing = scrollTo.mock.calls.length;
+    Object.defineProperties(conversation, {
+      clientHeight: { configurable: true, value: 400 },
+      scrollHeight: { configurable: true, value: 4_000 },
+      scrollTop: { configurable: true, value: 3_600 },
+    });
+    fireEvent.scroll(conversation!);
+    Object.defineProperties(conversation, {
+      scrollTop: { configurable: true, value: 100 },
+    });
+    fireEvent.wheel(conversation!, { deltaY: -100 });
+    fireEvent.scroll(conversation!);
+    act(() => notifyResize?.([], {} as ResizeObserver));
+    expect(scrollTo).toHaveBeenCalledTimes(callsWhileFollowing);
+    vi.unstubAllGlobals();
   });
 });

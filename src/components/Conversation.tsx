@@ -49,43 +49,53 @@ export function Conversation({
   return (
     <MarkdownLinkProvider value={{ cwd, fileOpener, onError: onLinkError }}>
       <div className="conversation-shell">
-      <div className="conversation-viewport">
-        <section
-          className="conversation"
-          onScroll={scroll.onScroll}
-          ref={scroll.container}
-        >
-          {canLoadOlder && (
-            <div className="history-loader">
-              <button disabled={loadingOlder} onClick={onLoadOlder} type="button">
-                {loadingOlder
-                  ? t("conversation.history.loading")
-                  : t("conversation.history.loadOlder")}
-              </button>
+        <div className="conversation-viewport">
+          <section
+            className={`conversation${plan ? " has-plan" : ""}`}
+            onKeyDown={scroll.onKeyDown}
+            onPointerDown={scroll.onPointerDown}
+            onPointerUp={scroll.onPointerUp}
+            onScroll={scroll.onScroll}
+            onWheel={scroll.onWheel}
+            ref={scroll.container}
+          >
+            <div className="conversation-content" ref={scroll.content}>
+              {canLoadOlder && (
+                <div className="history-loader">
+                  <button
+                    disabled={loadingOlder}
+                    onClick={onLoadOlder}
+                    type="button"
+                  >
+                    {loadingOlder
+                      ? t("conversation.history.loading")
+                      : t("conversation.history.loadOlder")}
+                  </button>
+                </div>
+              )}
+              {messages.length === 0 ? (
+                <div className="empty codex-mark" aria-label="Codex">
+                  <span className="hero-logo">
+                    <Sparkles />
+                  </span>
+                  <h1>{t("empty.title")}</h1>
+                  <p>{t("empty.subtitle")}</p>
+                </div>
+              ) : (
+                messages.map((message, messageIndex) => (
+                  <ConversationMessage
+                    key={message.id}
+                    message={message}
+                    onReviewDiff={onReviewDiff}
+                    stepClosed={messageIndex < messages.length - 1}
+                  />
+                ))
+              )}
+              <AgentStatus activity={activity} />
+              <PlanProgressWidget plan={plan} />
             </div>
-          )}
-          {messages.length === 0 ? (
-            <div className="empty codex-mark" aria-label="Codex">
-              <span className="hero-logo">
-                <Sparkles />
-              </span>
-              <h1>{t("empty.title")}</h1>
-              <p>{t("empty.subtitle")}</p>
-            </div>
-          ) : (
-            messages.map((message, messageIndex) => (
-              <ConversationMessage
-                key={message.id}
-                message={message}
-                onReviewDiff={onReviewDiff}
-                stepClosed={messageIndex < messages.length - 1}
-              />
-            ))
-          )}
-          <AgentStatus activity={activity} />
-          <PlanProgressWidget plan={plan} />
-        </section>
-      </div>
+          </section>
+        </div>
       </div>
     </MarkdownLinkProvider>
   );

@@ -124,7 +124,7 @@ package:
 ```bash
 npm ci
 npm run electron:deb
-sudo apt install ./dist/codex-desktop-linux_0.3.0_amd64.deb
+sudo apt install ./dist/codex-desktop-linux_0.3.1_amd64.deb
 ```
 
 Launch the installed application from the desktop menu or run:

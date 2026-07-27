@@ -1,5 +1,10 @@
 import katex from "katex";
-import { memo, useMemo } from "react";
+import {
+  isValidElement,
+  memo,
+  useMemo,
+  type ReactNode,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
@@ -52,11 +57,39 @@ export function MarkdownRenderer({ children }: { children: string }) {
             {content}
           </code>
         ),
+        p: ({ children: content, node: _, ...props }) => {
+          const justify = markdownTextLength(content) >= 180;
+          return (
+            <p
+              className={`markdown-paragraph${justify ? " justified" : ""}`}
+              {...props}
+            >
+              {content}
+            </p>
+          );
+        },
       }}
     >
       {normalizeLatexDelimiters(children)}
     </ReactMarkdown>
   );
+}
+
+function markdownTextLength(node: ReactNode): number {
+  if (typeof node === "string" || typeof node === "number") {
+    return String(node).length;
+  }
+  if (Array.isArray(node)) {
+    return node.reduce(
+      (length: number, child: ReactNode) =>
+        length + markdownTextLength(child),
+      0,
+    );
+  }
+  if (isValidElement<{ children?: ReactNode }>(node)) {
+    return markdownTextLength(node.props.children);
+  }
+  return 0;
 }
 
 export function StreamingLatexRenderer({ children }: { children: string }) {

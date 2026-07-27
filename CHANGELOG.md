@@ -3,6 +3,28 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.3.1] - 2026-07-27
+
+### Changed
+
+- Conversation items now share a consistent agent column while the compact
+  Plan remains visually distinct.
+- Inter-turn and completed-action spacing is tighter without sacrificing the
+  separation between user, agent, and technical activity.
+- Long Markdown paragraphs can use justified typography with automatic
+  hyphenation; short replies retain natural alignment.
+- Active Plan progress is denser and sits immediately above the composer,
+  leaving more of the current stream visible.
+
+### Fixed
+
+- Long persisted threads remain anchored to their latest content while lazy
+  Markdown, images, and other deferred layouts settle.
+- Intentional upward scrolling reliably suspends automatic bottom following
+  without confusing browser layout shifts for user input.
+- Plan spinners are correctly sized and vertically aligned, and no longer
+  trigger a flickering scrollbar on hover.
+
 ## [0.3.0] - 2026-07-27
 
 ### Added
@@ -156,6 +178,7 @@ follows semantic versioning while the public interface is taking shape.
 - Native Electron packaging for Debian/Ubuntu.
 - Stable Chromium microphone capture for dictation and Realtime voice.
 
+[0.3.1]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.2.6...v0.3.0
 [0.2.6]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.2.4...v0.2.5

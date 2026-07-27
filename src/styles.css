@@ -30,12 +30,16 @@
   background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-  min-width: 42px;
-  min-height: 42px;
   border: 2px solid transparent;
   border-radius: 999px;
   background: transparent;
   background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:vertical {
+  min-height: 42px;
+}
+*::-webkit-scrollbar-thumb:horizontal {
+  min-width: 42px;
 }
 *:hover::-webkit-scrollbar-thumb,
 *:focus-within::-webkit-scrollbar-thumb {
@@ -624,6 +628,12 @@ header button svg {
   overflow: auto;
   padding: 44px max(22px, calc((100% - 760px) / 2)) 120px;
 }
+.conversation.has-plan {
+  padding-bottom: 16px;
+}
+.conversation-content {
+  min-height: 100%;
+}
 .history-loader {
   display: flex;
   justify-content: center;
@@ -648,12 +658,18 @@ header button svg {
 }
 .message {
   display: flex;
-  margin: 0 0 34px;
+  margin: 0 0 28px;
   content-visibility: auto;
   contain-intrinsic-size: auto 120px;
 }
 .message.user {
   justify-content: flex-end;
+}
+.message.assistant .message-content {
+  width: 95%;
+}
+.message:has(.tool-group:last-child) {
+  margin-bottom: 22px;
 }
 .message-content {
   max-width: 100%;
@@ -747,6 +763,11 @@ header button svg {
 }
 .message p:last-child {
   margin-bottom: 0;
+}
+.message.assistant .markdown-paragraph.justified {
+  hyphens: auto;
+  text-align: justify;
+  text-justify: inter-word;
 }
 .message h1,
 .message h2,

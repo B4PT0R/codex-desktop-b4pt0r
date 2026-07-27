@@ -198,6 +198,15 @@ view transition so asynchronously rendered content is visible.
   versions shared by the desktop client and Codex.
 - `shared-browser-settings-preview-840x620.png` — the same shared-browser
   controls at the configured minimum viewport without clipping or overflow.
+
+## 2026-07-27
+
+- `chat-widths-preview-1240x820.png` — agent text, Realtime and generated media
+  share one consistent conversation column while the Plan remains intentionally
+  narrower and centered.
+- `plan-progress-preview-840x620.png` — active Plan progress uses the
+  conversation’s bottom reserve and ends just above the composer, keeping the
+  latest response visible at the configured minimum viewport.
 - `composer-skill-selection-preview-1240x820.png` — the `+` menu’s compact
   explicit-skill picker together with the selected context chip and the
   persisted skill marker on the preceding user turn.

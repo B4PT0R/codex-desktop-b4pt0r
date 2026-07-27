@@ -33,8 +33,23 @@ is not a product goal.
 
 ## Active objective
 
-Maintain **v0.3.0** as the current community beta and choose the next bounded
+Maintain **v0.3.1** as the current community beta and choose the next bounded
 post-release lot from the priorities below.
+
+The completed conversation-polish lot:
+
+- follows late content-height changes while the reader remains near the bottom,
+  including lazy Markdown, media and browser layout stabilization;
+- stops following immediately when the reader intentionally scrolls upward;
+- uses an immediate initial/thread-replacement jump and preserves smooth
+  scrolling only for genuinely appended prompts;
+- shortens the conversation’s bottom reserve while an active Plan is present,
+  so the widget ends just above the composer and leaves the stream visible;
+- reduces Plan density without hiding its current steps;
+- aligns agent text, Realtime, action, signal, error and media surfaces to one
+  95% conversation column while leaving the Plan intentionally compact;
+- tightens inter-turn spacing and justifies only substantial Markdown
+  paragraphs, avoiding stretched short replies.
 
 Feature scope is frozen unless final validation finds a reproducible blocker.
 The release closes the shared-browser and explicit-skill lot:
@@ -56,31 +71,10 @@ The release closes the shared-browser and explicit-skill lot:
 - light/dark submenu, hover and focus states reviewed at desktop and minimum
   window sizes.
 
-The v0.3.0 source, package metadata and installed files passed final
-verification. Because App Server lives inside the desktop process, installation
-was performed over the running v0.2.6 instance; the installed v0.3.0 code takes
+The v0.3.1 source, package metadata and installed files passed final
+verification. Installation was performed over the running v0.3.0 instance so
+the current App Server session remained intact; the installed v0.3.1 code takes
 effect on the user's next deliberate application relaunch.
-
-## Release checklist
-
-Complete in order:
-
-- [x] Review the complete worktree and keep unrelated user changes intact.
-- [x] Bump application and package metadata to `0.3.0`.
-- [x] Add the v0.3.0 user-facing summary to `CHANGELOG.md`.
-- [x] Run the full automated verification matrix.
-- [x] Build the final `.deb` and verify its metadata and bundled skill files.
-- [x] Reinstall the final package.
-- [ ] Smoke-test packaged Electron:
-  - reopen an existing thread;
-  - select `use-shared-browser` from `+`;
-  - invoke the shared browser implicitly from plain language;
-  - confirm the user and agent observe the same tab;
-  - disable and re-enable the browser;
-  - confirm system-browser fallback;
-  - verify skill markers after thread replay.
-- [x] Commit the reviewed lot, tag v0.3.0, and push to GitHub.
-- [x] Replace this objective with the next bounded post-release task.
 
 ## Verified candidate baseline
 
@@ -89,26 +83,26 @@ Complete in order:
   checkout `0dfa778dae6a`.
 - Client protocol inventory: 63 product request methods, 55 interpreted
   notification methods and 6 handled server requests.
-- Frontend/unit/contract: 492 tests across 95 files, including 45 installed
+- Frontend/unit/contract: 494 tests across 95 files, including 45 installed
   App Server contract cases.
 - Electron/Node: 51 tests.
 - Strict TypeScript: passing.
 - Production Vite build: passing.
 - Production dependency audit: zero vulnerabilities.
-- Main JS: 510.66 kB, 148.49 kB gzip.
+- Main JS: 511.63 kB, 148.78 kB gzip.
 - Lazy diff viewer: 89.50 kB, 32.89 kB gzip.
-- Lazy Markdown/KaTeX: 698.59 kB, 208.74 kB gzip.
+- Lazy Markdown/KaTeX: 698.90 kB, 208.87 kB gzip.
 
 Current release artifact:
 
-- package: `dist/codex-desktop-linux_0.3.0_amd64.deb`;
-- size: 108,447,916 bytes;
+- package: `dist/codex-desktop-linux_0.3.1_amd64.deb`;
+- size: 108,448,336 bytes;
 - package SHA-256:
-  `bb12398cf0663c91c423135a28ac4b594669700d17ccf9597bcf2fe5c14bc562`;
+  `a1116085968fe834cfa16f1879a0cff3e444b2e53f66382ff36ad7b7a8ecd291`;
 - packaged ASAR SHA-256:
-  `c3b12eb65befaba34aa491750d486e4dad442e00668cd4c546187f700b6db259`.
+  `719bf93c179b27fb0ee5611c9b8334eb8b2290946a1ccb5f604f31e57f8c3f3f`.
 
-`dpkg-query` reports `codex-desktop-linux 0.3.0 amd64 install ok installed`;
+`dpkg-query` reports `codex-desktop-linux 0.3.1 amd64 install ok installed`;
 the installed ASAR matches the packaged hash and the shared-browser skill
 resources are present outside the ASAR.
 
@@ -170,7 +164,7 @@ resources are present outside the ASAR.
   `electron-builder`; production dependencies have no reported vulnerability.
 - The lazy Markdown/KaTeX chunk is large but is not a release blocker.
 
-## Post-v0.3.0 priorities
+## Post-v0.3.1 priorities
 
 Choose one bounded lot at a time:
 
