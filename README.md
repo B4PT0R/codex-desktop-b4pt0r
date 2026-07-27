@@ -14,7 +14,7 @@ give Linux users a reliable, comprehensive, and pleasant desktop surface that
 complements the Codex CLI while respecting the product concepts exposed by the
 official backend.
 
-![Codex Desktop Linux in its dark theme](screenshots/welcome-dark-native-1240x820.png)
+![Codex Desktop Linux conversation in its light theme](screenshots/showcase-light-1240x820.png)
 
 > [!IMPORTANT]
 > This is an independent community project. It is not an official OpenAI
@@ -103,7 +103,7 @@ distribution package manager for this feature.
 - System tray, single-instance behavior, optional launch at login, and native
   Debian packaging.
 
-![Realtime voice and concurrent text activity](screenshots/realtime-dual-agent-chat-preview-1240x820.png)
+![Realtime voice, text activity, and Plan in the dark theme](screenshots/showcase-dark-1240x820.png)
 
 ## Platform scope
 
@@ -225,7 +225,7 @@ Start with:
 - [APP_SERVER_COVERAGE.md](APP_SERVER_COVERAGE.md) — protocol coverage and
   intentional exclusions;
 - [CHANGELOG.md](CHANGELOG.md) — user-visible release history;
-- [screenshots/README.md](screenshots/README.md) — curated visual checkpoints.
+- [screenshots/README.md](screenshots/README.md) — reproducible public showcase.
 
 Prefer focused, testable improvements that handle loading, failure,
 unavailable, cancellation, and recovery states—not only the happy path.

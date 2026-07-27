@@ -6,7 +6,7 @@ import type { ChatMessage, Quota, ThreadSummary } from "../types";
 import type { ThreadTelemetry } from "./sessionTelemetry";
 
 const demoGeneratedImageUrl = new URL(
-  "../../screenshots/generated-image-widget-source.jpg",
+  "../assets/generated-image-widget-source.jpg",
   import.meta.url,
 ).href;
 
@@ -163,8 +163,114 @@ index 08a1e34..66d19a2 100644
   ];
 }
 
+export function readmeDemoConversation(): ChatMessage[] {
+  return [
+    {
+      id: "readme-user-1",
+      role: "user",
+      content:
+        "Review the workspace navigation and make long Codex sessions easier to scan.",
+    },
+    {
+      id: "readme-assistant-1",
+      role: "assistant",
+      content:
+        "I’ll inspect the conversation hierarchy, tighten technical activity, and validate the result at the supported window sizes.",
+      signals: [
+        {
+          id: "readme-plan",
+          kind: "plan",
+          title: "Implementation plan",
+          steps: [
+            { step: "Review the conversation layout", status: "completed" },
+            { step: "Group threads by workspace", status: "completed" },
+            { step: "Polish light and dark themes", status: "completed" },
+            { step: "Validate the packaged client", status: "inProgress" },
+          ],
+          status: "running",
+        },
+        {
+          id: "readme-reasoning",
+          kind: "reasoning",
+          title: "Interface analysis",
+          detail:
+            "The main conversation should stay calm while tools, plans, and session controls remain available through progressive disclosure.",
+          status: "done",
+        },
+      ],
+      tools: [
+        {
+          id: "readme-search",
+          kind: "webSearch",
+          title: "Inspect workspace navigation",
+          detail: 'rg "Sidebar|conversation|workspace" src tests',
+          status: "done",
+          durationMs: 92,
+        },
+        {
+          id: "readme-tests",
+          kind: "commandExecution",
+          title: "Run interface tests",
+          detail: "npm test",
+          status: "done",
+          output: "494 tests passed",
+          exitCode: 0,
+          durationMs: 3_184,
+        },
+        {
+          id: "readme-files",
+          kind: "fileChange",
+          title: "Update navigation and theme",
+          detail: "Sidebar.tsx, appearance.css, rendering tests",
+          status: "done",
+          diff: `diff --git a/src/components/Sidebar.tsx b/src/components/Sidebar.tsx
+index 32c0da5..a7c85d0 100644
+--- a/src/components/Sidebar.tsx
++++ b/src/components/Sidebar.tsx
+@@ -153,6 +153,8 @@ export function Sidebar() {
++  <SidebarThreadGroup
++    expanded={selectedWorkspace === workspace}
++  />`,
+        },
+      ],
+    },
+    {
+      id: "readme-user-2",
+      role: "user",
+      content:
+        "That feels much clearer. Keep compaction subtle and confirm the compact layout.",
+    },
+    {
+      id: "readme-text-agent",
+      role: "assistant",
+      modality: "realtimeText",
+      content:
+        "The layout remains stable at **840 × 620**. Workspace groups stay accessible, the latest thread opens automatically, and primary text now uses a softer reader-friendly ink.",
+      signals: [
+        {
+          id: "readme-compaction",
+          kind: "compaction",
+          title: "Context compacted",
+          status: "done",
+        },
+      ],
+    },
+    {
+      id: "readme-voice-agent",
+      role: "assistant",
+      modality: "realtimeVoice",
+      content:
+        "The packaged Electron client is ready. TypeScript, App Server contracts, and native tests all pass.",
+    },
+  ];
+}
+
 export function initialPreviewMessages() {
-  return isDemoPreview() ? demoConversation() : [];
+  return isReadmeDemoPreview()
+    ? readmeDemoConversation()
+    : isDemoPreview()
+      ? demoConversation()
+      : [];
 }
 
 export function isDemoPreview() {
@@ -172,6 +278,13 @@ export function isDemoPreview() {
     (window.location.hostname === "127.0.0.1" ||
       window.location.hostname === "localhost") &&
     new URLSearchParams(window.location.search).has("demo")
+  );
+}
+
+export function isReadmeDemoPreview() {
+  return (
+    isDemoPreview() &&
+    new URLSearchParams(window.location.search).get("demo") === "readme"
   );
 }
 
@@ -311,3 +424,71 @@ export const demoThreads: ThreadSummary[] = [
     cwd: "/home/baptiste/dev/experimental-workbench-with-a-long-name",
   },
 ];
+
+export const readmeDemoThreads: ThreadSummary[] = [
+  {
+    id: "demo-current",
+    name: "Polish the Electron interface",
+    cwd: "/home/developer/projects/codex-desktop-linux",
+    status: "active",
+  },
+  {
+    id: "readme-realtime",
+    name: "Stabilize Realtime voice",
+    cwd: "/home/developer/projects/codex-desktop-linux",
+  },
+  {
+    id: "readme-package",
+    name: "Prepare the Debian release",
+    cwd: "/home/developer/projects/codex-desktop-linux",
+  },
+  {
+    id: "readme-schema",
+    name: "Compare the App Server v2 schema",
+    cwd: "/home/developer/projects/codex",
+  },
+  {
+    id: "readme-changelog",
+    name: "Review the latest Codex changelog",
+    cwd: "/home/developer/projects/codex",
+  },
+  {
+    id: "readme-audio",
+    name: "Document OAuth audio endpoints",
+    cwd: "/home/developer/projects/codex-backend-sdk",
+  },
+  {
+    id: "readme-transcription",
+    name: "Extend transcription coverage",
+    cwd: "/home/developer/projects/codex-backend-sdk",
+  },
+  {
+    id: "readme-browser",
+    name: "Test the shared Chromium session",
+    cwd: "/home/developer/projects/browser-workflows",
+  },
+  {
+    id: "readme-docs",
+    name: "Refresh the contributor guide",
+    cwd: "/home/developer/projects/documentation",
+  },
+  {
+    id: "readme-search",
+    name: "Improve multilingual search",
+    cwd: "/home/developer/projects/documentation",
+  },
+  {
+    id: "readme-dashboard",
+    name: "Build an activity dashboard",
+    cwd: "/home/developer/projects/agent-dashboard",
+  },
+  {
+    id: "readme-empty",
+    preview: "Design a welcoming empty state",
+    cwd: "/home/developer/projects/agent-dashboard",
+  },
+];
+
+export function previewDemoThreads() {
+  return isReadmeDemoPreview() ? readmeDemoThreads : demoThreads;
+}

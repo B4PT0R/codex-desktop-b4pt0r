@@ -91,6 +91,13 @@ export function useI18n() {
 }
 
 function initialLocale(): Locale {
+  const previewLocale =
+    (window.location.hostname === "127.0.0.1" ||
+      window.location.hostname === "localhost") &&
+    new URLSearchParams(window.location.search).has("demo")
+      ? new URLSearchParams(window.location.search).get("locale")
+      : null;
+  if (previewLocale === "fr" || previewLocale === "en") return previewLocale;
   const stored = localStorage.getItem("codex-desktop.locale");
   if (stored === "fr" || stored === "en") return stored;
   return navigator.language.toLocaleLowerCase().startsWith("fr") ? "fr" : "en";

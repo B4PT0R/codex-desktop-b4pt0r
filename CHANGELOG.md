@@ -3,6 +3,15 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## Unreleased
+
+### Changed
+
+- The public README now uses a deterministic English showcase in both light and
+  dark themes.
+- Historical interface captures were removed from the current tree in favor of
+  two maintained showcase images; previous checkpoints remain in Git history.
+
 ## [0.3.2] - 2026-07-27
 
 ### Added

@@ -60,6 +60,10 @@ matrix is green, and the signed-off Debian package is installed locally and
 published on GitHub. The repository is public at
 `https://github.com/B4PT0R/codex-desktop-b4pt0r`; no active blocker is known.
 
+The public README uses a deterministic English-only `demo=readme` fixture.
+`screenshots/` intentionally retains only the current light and dark showcase;
+older visual checkpoints remain recoverable from Git history.
+
 ## Verified candidate baseline
 
 - Installed Codex: `codex-cli 0.145.0`.
@@ -67,13 +71,13 @@ published on GitHub. The repository is public at
   checkout `0dfa778dae6a`.
 - Client protocol inventory: 63 product request methods, 55 interpreted
   notification methods and 6 handled server requests.
-- Frontend/unit/contract: 494 tests across 95 files, including 45 installed
+- Frontend/unit/contract: 495 tests across 95 files, including 45 installed
   App Server contract cases.
 - Electron/Node: 51 tests.
 - Strict TypeScript: passing.
 - Production Vite build: passing.
 - Production dependency audit: zero vulnerabilities.
-- Main JS: 513.00 kB, 149.21 kB gzip.
+- Main JS: 516.95 kB, 150.28 kB gzip.
 - Lazy diff viewer: 89.50 kB, 32.89 kB gzip.
 - Lazy Markdown/KaTeX: 698.90 kB, 208.87 kB gzip.
 

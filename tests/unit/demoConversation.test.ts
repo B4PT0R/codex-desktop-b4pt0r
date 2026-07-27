@@ -4,6 +4,8 @@ import {
   demoQuotas,
   demoTelemetry,
   demoThreads,
+  readmeDemoConversation,
+  readmeDemoThreads,
 } from "../../src/lib/demoConversation";
 
 describe("conversation de démonstration", () => {
@@ -60,5 +62,18 @@ describe("conversation de démonstration", () => {
     expect(demoThreads.some((thread) => thread.status === "systemError")).toBe(
       true,
     );
+  });
+
+  it("fournit une démonstration README entièrement en anglais", () => {
+    const messages = readmeDemoConversation();
+    expect(messages[0]?.content).toContain("workspace navigation");
+    expect(messages.flatMap((message) => message.signals ?? [])).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ title: "Implementation plan" }),
+        expect.objectContaining({ title: "Context compacted" }),
+      ]),
+    );
+    expect(readmeDemoThreads[0]?.name).toBe("Polish the Electron interface");
+    expect(readmeDemoThreads.length).toBeGreaterThan(10);
   });
 });

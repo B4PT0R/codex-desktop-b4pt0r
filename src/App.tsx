@@ -40,9 +40,10 @@ import {
   demoQuotas,
   demoResetCredits,
   demoSkills,
-  demoThreads,
+  previewDemoThreads,
   initialPreviewMessages,
   isDemoPreview,
+  isReadmeDemoPreview,
 } from "./lib/demoConversation";
 import { useThreadHistory } from "./lib/useThreadHistory";
 import { useDemoPlayback } from "./lib/useDemoPlayback";
@@ -154,7 +155,7 @@ export default function App() {
     [threadId, setThreadId] = useState<string>(),
     [turnId, setTurnId] = useState<string>(),
     [threads, setThreads] = useState<ThreadSummary[]>(() =>
-      isDemoPreview() ? demoThreads : [],
+      isDemoPreview() ? previewDemoThreads() : [],
     ),
     [threadTelemetry, setThreadTelemetry] = useState<
       Record<string, ThreadTelemetry>
@@ -884,7 +885,8 @@ export default function App() {
         open={sidebar}
         width={sidebarWidth}
         selectedThreadId={
-          threadId ?? (isDemoPreview() ? demoThreads[0]?.id : undefined)
+          threadId ??
+          (isDemoPreview() ? previewDemoThreads()[0]?.id : undefined)
         }
         threads={threads}
         search={threadSearch}
@@ -931,7 +933,7 @@ export default function App() {
             currentThread?.name ?? currentThread?.preview ?? t("app.newChat")
           }
           demoPlayback={
-            demoPlayback.enabled
+            demoPlayback.enabled && !isReadmeDemoPreview()
               ? {
                   hasPlayed: demoPlayback.hasPlayed,
                   running: demoPlayback.running,
