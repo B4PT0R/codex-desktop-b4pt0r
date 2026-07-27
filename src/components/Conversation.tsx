@@ -59,7 +59,10 @@ export function Conversation({
             onWheel={scroll.onWheel}
             ref={scroll.container}
           >
-            <div className="conversation-content" ref={scroll.content}>
+            <div
+              className={`conversation-content${messages.length === 0 ? " is-empty" : ""}`}
+              ref={scroll.content}
+            >
               {canLoadOlder && (
                 <div className="history-loader">
                   <button

@@ -157,7 +157,7 @@
 
 :root[data-theme="light"] .background-terminals-trigger:hover,
 :root[data-theme="light"] .background-terminals-trigger[aria-expanded="true"] {
-  color: #292925;
+  color: var(--reader-ink);
   background: #e2e2dc;
 }
 
@@ -172,5 +172,5 @@
 }
 
 :root[data-theme="light"] .background-terminal-row code {
-  color: #292925;
+  color: var(--reader-ink);
 }

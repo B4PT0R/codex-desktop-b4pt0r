@@ -17,6 +17,11 @@ const threads = [
     cwd: "/work/desktop",
     status: "active" as const,
   },
+  {
+    id: "gamma",
+    name: "Polir la sidebar",
+    cwd: "/work/desktop",
+  },
   { id: "beta", preview: "Ajouter les tests", cwd: "/work/tests" },
 ];
 
@@ -44,6 +49,7 @@ function renderSidebar(
     <Sidebar
       cwd=""
       open
+      selectedThreadId="alpha"
       width={260}
       threads={threads}
       search={search}
@@ -132,11 +138,29 @@ describe("barre latérale", () => {
 
     expect(screen.getByText("desktop")).toBeVisible();
     expect(screen.getByText("tests")).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "desktop" }),
+    ).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Polir la sidebar")).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Ajouter les tests" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByLabelText("En cours")).toBeVisible();
     fireEvent.click(
       screen.getByRole("button", { name: "Archiver Corriger la navigation" }),
     );
     expect(onArchive).toHaveBeenCalledWith(threads[0]);
+
+    fireEvent.click(screen.getByRole("button", { name: "tests" }));
+    expect(
+      screen.getByRole("button", { name: "Ajouter les tests" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "desktop" }),
+    ).toHaveAttribute("aria-expanded", "false");
+    expect(
+      screen.queryByRole("button", { name: "Corriger la navigation" }),
+    ).not.toBeInTheDocument();
   });
 
   it("demande confirmation avant de supprimer une conversation", async () => {

@@ -50,6 +50,12 @@ Responsabilités :
 - montrer uniquement les états nécessitant une lecture rapide : actif, erreur ;
 - ouvrir le sélecteur d’espace de travail, le compte et les réglages.
 
+Les workspaces forment un accordéon compact : le groupe du thread actif
+s’ouvre automatiquement, un seul groupe reste déplié lors de la navigation
+ordinaire, et tous les groupes contenant des résultats s’ouvrent pendant une
+recherche. Le repli reste une préférence de présentation locale et ne modifie
+aucun état App Server.
+
 App Server : `thread/list`, `thread/search`, `thread/start`, `thread/resume`,
 `thread/archive`, `thread/unarchive`, `thread/status/changed`,
 `thread/name/updated`. La page récente reste bornée tandis que la recherche interroge

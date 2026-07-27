@@ -85,9 +85,11 @@ describe("historique de conversation", () => {
 
   it("présente un accueil centré dans un nouveau chat", () => {
     renderConversation({ activity: null, messages: [] });
-    expect(
-      screen.getByRole("heading", { name: "Construisez tout avec Codex" }),
-    ).toBeVisible();
+    const heading = screen.getByRole("heading", {
+      name: "Construisez tout avec Codex",
+    });
+    expect(heading).toBeVisible();
+    expect(heading.closest(".conversation-content")).toHaveClass("is-empty");
     expect(screen.getByText(/Décrivez une idée/)).toBeVisible();
   });
 

@@ -110,6 +110,14 @@ index 08a1e34..66d19a2 100644
       modality: "realtimeText",
       content:
         "La mise en page reste stable à **840 × 620**. Le curseur disparaît au repos et réapparaît au survol ou au focus clavier.\n\nLe paquet Debian a été reconstruit : la barre de menu native a disparu tandis que le menu du tray reste disponible.\n\nLe renderer scientifique prend aussi en charge l’énergie $E = mc^2$ et des blocs LaTeX élaborés.\n\nUn développement aligné :\n\n\\[\n\\begin{aligned}\n(a+b)^2 &= (a+b)(a+b) \\\\\n        &= a^2 + 2ab + b^2, \\\\\n\\frac{d}{dx}\\,e^{x^2} &= 2x e^{x^2}.\n\\end{aligned}\n\\]\n\nUne opération matricielle :\n\n\\[\n\\begin{bmatrix}\n1 & 2 \\\\\n3 & 4\n\\end{bmatrix}\n\\begin{pmatrix}\nx \\\\\ny\n\\end{pmatrix}\n=\n\\begin{pmatrix}\nx + 2y \\\\\n3x + 4y\n\\end{pmatrix}\n\\]\n\nEt une définition par morceaux :\n\n\\[\nf(x)=\n\\begin{cases}\nx^2, & x \\ge 0, \\\\\n-x,  & x < 0.\n\\end{cases}\n\\]",
+      signals: [
+        {
+          id: "demo-compaction",
+          kind: "compaction",
+          title: "Contexte compacté",
+          status: "done",
+        },
+      ],
       tools: [
         {
           id: "demo-check",

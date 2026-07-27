@@ -210,7 +210,7 @@
 
 :root[data-theme="light"] .generated-image-toggle:hover,
 :root[data-theme="light"] .generated-image-toggle:focus-visible {
-  color: #292925;
+  color: var(--reader-ink);
   background: transparent;
   outline: 0;
   box-shadow: none;
@@ -236,7 +236,7 @@
 }
 
 :root[data-theme="light"] .generated-image-actions button:hover:not(:disabled) {
-  color: #292925;
+  color: var(--reader-ink);
   border-color: #bdbdb6;
   background: #e9e9e4;
 }

@@ -105,8 +105,23 @@
 .signal-card.plan {
   border-color: #557184;
 }
-.signal-card.compaction {
-  border-color: #655f55;
+.signal-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 2px;
+  color: #777772;
+  font-size: 11px;
+}
+.signal-note > svg:first-child {
+  width: 12px;
+  height: 12px;
+  color: #81796d;
+}
+.signal-note .signal-state {
+  width: 12px;
+  height: 12px;
+  color: #777772;
 }
 .signal-card.review {
   border-color: #58725e;

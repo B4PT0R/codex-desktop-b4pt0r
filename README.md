@@ -118,13 +118,21 @@ not appropriate.
 
 ## Build and install
 
-Clone the repository, install the locked dependencies, and build the Debian
-package:
+Download the current `.deb` from
+[GitHub Releases](https://github.com/B4PT0R/codex-desktop-b4pt0r/releases/latest),
+then install it with:
+
+```bash
+sudo apt install ./codex-desktop-linux_0.3.2_amd64.deb
+```
+
+To build from source instead, clone the repository, install the locked
+dependencies, and build the Debian package:
 
 ```bash
 npm ci
 npm run electron:deb
-sudo apt install ./dist/codex-desktop-linux_0.3.1_amd64.deb
+sudo apt install ./dist/codex-desktop-linux_0.3.2_amd64.deb
 ```
 
 Launch the installed application from the desktop menu or run:

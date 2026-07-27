@@ -230,7 +230,7 @@
 :root[data-theme="light"] .mcp-elicitation-fields input:not([type="checkbox"]),
 :root[data-theme="light"] .mcp-elicitation-fields select,
 :root[data-theme="light"] .mcp-elicitation-url > code {
-  color: #292925;
+  color: var(--reader-ink);
   border-color: #d5d5cf;
   background: #f2f2ee;
 }

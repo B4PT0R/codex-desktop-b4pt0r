@@ -207,8 +207,8 @@ describe("rendu du chat", () => {
     expect(screen.getByLabelText("Erreur")).toBeVisible();
     expect(screen.queryByLabelText("Terminé")).toBeNull();
   });
-  it("affiche un spinner accessible pendant une compaction", () => {
-    render(
+  it("masque l’item pendant la compaction puis affiche une fin discrète", () => {
+    const { rerender } = render(
       <SignalCards
         signals={[
           {
@@ -220,7 +220,24 @@ describe("rendu du chat", () => {
         ]}
       />,
     );
-    expect(screen.getByLabelText("En cours")).toHaveClass("spin");
-    expect(screen.queryByLabelText("Terminé")).toBeNull();
+    expect(screen.queryByText("Compaction du contexte")).toBeNull();
+    expect(screen.queryByLabelText("En cours")).toBeNull();
+
+    rerender(
+      <SignalCards
+        signals={[
+          {
+            id: "compact",
+            kind: "compaction",
+            title: "Contexte compacté",
+            status: "done",
+          },
+        ]}
+      />,
+    );
+    const note = screen.getByText("Contexte compacté").closest(".signal-note");
+    expect(note).toBeVisible();
+    expect(note).not.toHaveAttribute("open");
+    expect(screen.getByLabelText("Terminé")).toBeVisible();
   });
 });

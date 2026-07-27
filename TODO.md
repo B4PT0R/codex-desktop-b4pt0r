@@ -33,48 +33,31 @@ is not a product goal.
 
 ## Active objective
 
-Maintain **v0.3.1** as the current community beta and choose the next bounded
-post-release lot from the priorities below.
+Finalize **v0.3.2** and publish the repository for its first public release.
+The release candidate contains:
 
-The completed conversation-polish lot:
+- present each workspace as a compact collapsible group with its thread count;
+- automatically open the workspace containing the active thread;
+- keep a single workspace expanded during ordinary navigation;
+- expose every matching group while global thread search is active;
+- preserve archive, delete, running/error states and keyboard accessibility;
+- validate the hierarchy at 1240×820 and 840×620 in the shared browser.
 
-- follows late content-height changes while the reader remains near the bottom,
-  including lazy Markdown, media and browser layout stabilization;
-- stops following immediately when the reader intentionally scrolls upward;
-- uses an immediate initial/thread-replacement jump and preserves smooth
-  scrolling only for genuinely appended prompts;
-- shortens the conversation’s bottom reserve while an active Plan is present,
-  so the widget ends just above the composer and leaves the stream visible;
-- reduces Plan density without hiding its current steps;
-- aligns agent text, Realtime, action, signal, error and media surfaces to one
-  95% conversation column while leaving the Plan intentionally compact;
-- tightens inter-turn spacing and justifies only substantial Markdown
-  paragraphs, avoiding stretched short replies.
+The same candidate also simplifies context-compaction activity: the turn-level
+spinner remains the sole active progress indicator, while the conversation
+retains only a quiet, non-expandable completion marker.
 
-Feature scope is frozen unless final validation finds a reproducible blocker.
-The release closes the shared-browser and explicit-skill lot:
+The empty conversation now establishes a real flex-height owner for its welcome
+composition. Its visible logo-and-copy group remains exactly centered in the
+usable chat viewport at both reference sizes instead of relying on a
+content-sized percentage height. The large light-theme mark uses a softer dark
+anthracite shared consistently with the navigation mark. That warm anthracite
+is now the light theme's common reader ink for primary prose, headings, inputs
+and active controls; secondary and semantic colors remain distinct.
 
-- pinned app-owned Playwright Core and Playwright MCP;
-- opt-in matching Chromium download in application data;
-- one visible persistent browser context shared by the user and agent;
-- dedicated Web Browser settings with activation, progress, repair and
-  disable paths;
-- system-browser fallback when the managed browser is inactive or unavailable;
-- unsupported official Browser/Computer Use surfaces disabled only for this
-  client’s App Server process;
-- packaged `use-shared-browser` host skill registered through
-  `skills/extraRoots/set`;
-- implicit browser routing validated in a fresh application session;
-- explicit skill selection from the composer’s `+` menu using App Server’s
-  canonical structured `skill` input;
-- discreet skill markers restored from persisted user-message input;
-- light/dark submenu, hover and focus states reviewed at desktop and minimum
-  window sizes.
-
-The v0.3.1 source, package metadata and installed files passed final
-verification. Installation was performed over the running v0.3.0 instance so
-the current App Server session remained intact; the installed v0.3.1 code takes
-effect on the user's next deliberate application relaunch.
+The browser preview passes at both reference sizes, the full verification
+matrix is green, and the signed-off Debian candidate is installed locally.
+Commit, tag, GitHub release publication and repository visibility remain.
 
 ## Verified candidate baseline
 
@@ -89,20 +72,20 @@ effect on the user's next deliberate application relaunch.
 - Strict TypeScript: passing.
 - Production Vite build: passing.
 - Production dependency audit: zero vulnerabilities.
-- Main JS: 511.63 kB, 148.78 kB gzip.
+- Main JS: 513.00 kB, 149.21 kB gzip.
 - Lazy diff viewer: 89.50 kB, 32.89 kB gzip.
 - Lazy Markdown/KaTeX: 698.90 kB, 208.87 kB gzip.
 
 Current release artifact:
 
-- package: `dist/codex-desktop-linux_0.3.1_amd64.deb`;
-- size: 108,448,336 bytes;
+- package: `dist/codex-desktop-linux_0.3.2_amd64.deb`;
+- size: 108,449,156 bytes;
 - package SHA-256:
-  `a1116085968fe834cfa16f1879a0cff3e444b2e53f66382ff36ad7b7a8ecd291`;
+  `b0309078f8030bf26a339783654c29a0f89dd3ebe8161c658f540d06212370b0`;
 - packaged ASAR SHA-256:
-  `719bf93c179b27fb0ee5611c9b8334eb8b2290946a1ccb5f604f31e57f8c3f3f`.
+  `171c904e80f82420aac9575c4c686c33680851df43d57fcefbb980afd18e30a7`.
 
-`dpkg-query` reports `codex-desktop-linux 0.3.1 amd64 install ok installed`;
+`dpkg-query` reports `codex-desktop-linux 0.3.2 amd64 install ok installed`;
 the installed ASAR matches the packaged hash and the shared-browser skill
 resources are present outside the ASAR.
 

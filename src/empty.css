@@ -1,10 +1,19 @@
 .empty.codex-mark {
   display: flex;
-  height: 100%;
   margin: 0;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+.conversation-content.is-empty {
+  display: flex;
+  flex-direction: column;
+}
+
+.conversation-content.is-empty .empty.codex-mark {
+  flex: 1;
+  /* Balance the conversation's larger bottom reserve above the composer. */
   transform: translateY(38px);
 }
 

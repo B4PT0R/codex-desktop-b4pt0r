@@ -1,18 +1,17 @@
 import {
-  Archive,
   Folder,
   MessageSquarePlus,
   PanelLeft,
   Search,
   Settings2,
   Sparkles,
-  Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { ThreadSummary } from "../types";
 import type { ThreadSearchController } from "../lib/useThreadSearch";
 import { ThreadDeleteDialog } from "./ThreadDeleteDialog";
+import { SidebarThreadGroup } from "./SidebarThreadGroup";
 
 type SidebarProps = {
   cwd: string;
@@ -52,6 +51,7 @@ export function Sidebar({
   const { t } = useI18n();
   const [deleting, setDeleting] = useState(false);
   const [deleteCandidate, setDeleteCandidate] = useState<ThreadSummary>();
+  const [expandedGroup, setExpandedGroup] = useState<string>();
   const searchInput = useRef<HTMLInputElement>(null);
   const resizeStart = useRef<{
     pointerId: number;
@@ -77,6 +77,28 @@ export function Sidebar({
     }
     return [...groups.entries()];
   }, [t, visibleThreads]);
+  const searching = Boolean(search.query.trim());
+  const selectedThread = threads.find(
+    (thread) => thread.id === selectedThreadId,
+  );
+  const selectedGroup = selectedThread
+    ? selectedThread.cwd || t("sidebar.otherThreads")
+    : undefined;
+  const currentWorkspace = threadGroups.some(([group]) => group === cwd)
+    ? cwd
+    : undefined;
+  const groupKeySignature = threadGroups.map(([group]) => group).join("\u0000");
+
+  useEffect(() => {
+    if (searching) return;
+    const preferredGroup = selectedGroup || currentWorkspace;
+    setExpandedGroup((current) => {
+      if (preferredGroup) return preferredGroup;
+      return current && groupKeySignature.split("\u0000").includes(current)
+        ? current
+        : undefined;
+    });
+  }, [currentWorkspace, groupKeySignature, searching, selectedGroup]);
 
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
@@ -131,58 +153,22 @@ export function Sidebar({
       </div>
       <nav aria-label={t("sidebar.recentThreads")}>
         {threadGroups.map(([group, groupThreads]) => (
-          <section className="thread-group" key={group}>
-            <div className="thread-group-title" title={group}>
-              <Folder /> <span>{projectName(group)}</span>
-            </div>
-            {groupThreads.map((thread) => {
-              const label =
-                thread.name || thread.preview || t("sidebar.untitled");
-              return (
-                <div className="thread-row" key={thread.id}>
-                  <button
-                    className={selectedThreadId === thread.id ? "selected" : ""}
-                    onClick={() => onResume(thread.id)}
-                  >
-                    <span className="thread-copy">
-                      <span>{label}</span>
-                      {thread.searchSnippet && (
-                        <small>{thread.searchSnippet}</small>
-                      )}
-                    </span>
-                    {thread.status === "active" && (
-                      <i
-                        className="thread-running"
-                        aria-label={t("sidebar.running")}
-                      />
-                    )}
-                    {thread.status === "systemError" && (
-                      <i
-                        className="thread-error"
-                        aria-label={t("sidebar.error")}
-                      />
-                    )}
-                  </button>
-                  <button
-                    className="thread-archive"
-                    aria-label={`${t("sidebar.archive")} ${label}`}
-                    title={t("sidebar.archiveTitle")}
-                    onClick={() => onArchive(thread)}
-                  >
-                    <Archive />
-                  </button>
-                  <button
-                    className="thread-delete"
-                    aria-label={`${t("sidebar.delete")} ${label}`}
-                    title={t("sidebar.deleteTitle")}
-                    onClick={() => setDeleteCandidate(thread)}
-                  >
-                    <Trash2 />
-                  </button>
-                </div>
-              );
-            })}
-          </section>
+          <SidebarThreadGroup
+            expanded={searching || expandedGroup === group}
+            group={group}
+            key={group}
+            lockedOpen={searching}
+            onArchive={onArchive}
+            onDelete={setDeleteCandidate}
+            onResume={onResume}
+            onToggle={() =>
+              setExpandedGroup((current) =>
+                current === group ? undefined : group,
+              )
+            }
+            selectedThreadId={selectedThreadId}
+            threads={groupThreads}
+          />
         ))}
         {threads.length === 0 && (
           <p className="thread-list-empty">{t("sidebar.empty")}</p>
@@ -299,8 +285,4 @@ export function Sidebar({
 
 function clampSidebarWidth(width: number) {
   return Math.round(Math.min(420, Math.max(220, width)));
-}
-
-function projectName(path: string) {
-  return path.split(/[\\/]/).filter(Boolean).at(-1) ?? path;
 }

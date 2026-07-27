@@ -28,7 +28,9 @@ export const SignalCards = memo(function SignalCards({
 }) {
   const { t } = useI18n();
   const visibleSignals = signals.filter(
-    (signal) => signal.kind !== "reasoning" || Boolean(signal.detail?.trim()),
+    (signal) =>
+      (signal.kind !== "reasoning" || Boolean(signal.detail?.trim())) &&
+      (signal.kind !== "compaction" || signal.status !== "running"),
   );
   if (visibleSignals.length === 0) return null;
   return (
@@ -36,6 +38,15 @@ export const SignalCards = memo(function SignalCards({
       {visibleSignals.map((signal) => {
         const Icon = icons[signal.kind];
         const running = signal.status === "running";
+        if (signal.kind === "compaction") {
+          return (
+            <div className="signal-note compaction" key={signal.id}>
+              <Icon />
+              <span>{signal.title}</span>
+              <Check aria-label={t("signal.done")} className="signal-state" />
+            </div>
+          );
+        }
         return (
           <details
             className={`signal-card ${signal.kind}`}

@@ -205,6 +205,7 @@ describe("signaux agent", () => {
       }),
     ).toMatchObject({
       title: "Contexte compacté",
+      detail: undefined,
       status: "done",
     });
   });

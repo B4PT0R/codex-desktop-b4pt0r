@@ -215,7 +215,7 @@ export function completedSignal(
     return {
       ...signal,
       title: t("signal.compaction"),
-      detail: t("signal.compaction.detail"),
+      detail: undefined,
       status: "done",
     };
   }

@@ -201,6 +201,27 @@ view transition so asynchronously rendered content is visible.
 
 ## 2026-07-27
 
+- `welcome-centered-preview-1240x820.png` — the complete welcome logo and copy
+  centered against the usable conversation viewport rather than an
+  content-sized empty-state box, with the light-theme hero softened to a dark
+  anthracite shared by the sidebar mark.
+- `welcome-centered-preview-840x620.png` — the same true vertical centering at
+  the configured minimum viewport without horizontal overflow.
+- `reader-ink-conversation-preview-1240x820.png` — the light conversation shell
+  using one warm anthracite ink for primary prose, headings, inputs and active
+  controls while preserving secondary and semantic colors.
+- `reader-ink-conversation-preview-840x620.png` — the same reader-like palette
+  at the configured minimum viewport without layout overflow.
+- `sidebar-workspace-accordion-preview-1240x820.png` — recent conversations
+  grouped into a compact workspace accordion with the active thread’s group
+  open and per-workspace thread counts.
+- `sidebar-workspace-accordion-preview-840x620.png` — the same hierarchy at the
+  configured minimum viewport, keeping folder and settings controls fixed.
+- `compaction-complete-preview-1240x820.png` — completed context compaction as
+  a quiet non-interactive signal below the agent response, without duplicating
+  the turn-level progress state.
+- `compaction-complete-preview-840x620.png` — the same compact completion signal
+  contained inside the conversation column at the minimum viewport.
 - `chat-widths-preview-1240x820.png` — agent text, Realtime and generated media
   share one consistent conversation column while the Plan remains intentionally
   narrower and centered.

@@ -3,6 +3,31 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.3.2] - 2026-07-27
+
+### Added
+
+- Recent conversations are grouped into accessible collapsible workspaces, with
+  the active workspace opened automatically and global search exposing every
+  matching group.
+
+### Changed
+
+- Context compaction now relies on the turn-level progress indicator while it
+  runs, then leaves only a quiet non-expandable completion marker in the chat.
+- The empty conversation composition is centered against the usable chat
+  viewport at both desktop and compact window sizes.
+- The light theme uses a warm anthracite reader ink for primary text, inputs,
+  active controls, and both Codex marks instead of near-black foregrounds.
+
+### Fixed
+
+- Workspace expansion remains deterministic across thread selection, manual
+  navigation, and search without losing archive, delete, running, or error
+  actions.
+- The welcome logo and copy no longer drift upward when the composer reserve
+  changes.
+
 ## [0.3.1] - 2026-07-27
 
 ### Changed
@@ -178,6 +203,7 @@ follows semantic versioning while the public interface is taking shape.
 - Native Electron packaging for Debian/Ubuntu.
 - Stable Chromium microphone capture for dictation and Realtime voice.
 
+[0.3.2]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.2.6...v0.3.0
 [0.2.6]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.2.5...v0.2.6
