@@ -7,11 +7,19 @@ application: persistent conversations, clear agent activity, voice, permissions,
 integrations, account usage, and the ergonomics expected from a desktop
 development tool.
 
+The project is built in the spirit of the interaction model and App Server
+architecture established by Codex. It does not try to reproduce, visually clone,
+or pass itself off as the official desktop application. Its purpose is narrower:
+give Linux users a reliable, comprehensive, and pleasant desktop surface that
+complements the Codex CLI while respecting the product concepts exposed by the
+official backend.
+
 ![Codex Desktop Linux in its dark theme](screenshots/welcome-dark-native-1240x820.png)
 
 > [!IMPORTANT]
 > This is an independent community project. It is not an official OpenAI
-> product, is not affiliated with OpenAI, and must not be presented as one.
+> product, is not affiliated with or endorsed by OpenAI, and must not be
+> presented as one.
 
 ## Why this project exists
 
