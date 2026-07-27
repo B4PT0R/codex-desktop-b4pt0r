@@ -33,8 +33,8 @@ is not a product goal.
 
 ## Active objective
 
-Finalize **v0.3.2** and publish the repository for its first public release.
-The release candidate contains:
+Maintain **v0.3.2** as the current public release and choose the next bounded
+lot from the priorities below. The completed release contains:
 
 - present each workspace as a compact collapsible group with its thread count;
 - automatically open the workspace containing the active thread;
@@ -56,8 +56,9 @@ is now the light theme's common reader ink for primary prose, headings, inputs
 and active controls; secondary and semantic colors remain distinct.
 
 The browser preview passes at both reference sizes, the full verification
-matrix is green, and the signed-off Debian candidate is installed locally.
-Commit, tag, GitHub release publication and repository visibility remain.
+matrix is green, and the signed-off Debian package is installed locally and
+published on GitHub. The repository is public at
+`https://github.com/B4PT0R/codex-desktop-b4pt0r`; no active blocker is known.
 
 ## Verified candidate baseline
 
@@ -147,7 +148,7 @@ resources are present outside the ASAR.
   `electron-builder`; production dependencies have no reported vulnerability.
 - The lazy Markdown/KaTeX chunk is large but is not a release blocker.
 
-## Post-v0.3.1 priorities
+## Post-v0.3.2 priorities
 
 Choose one bounded lot at a time:
 
