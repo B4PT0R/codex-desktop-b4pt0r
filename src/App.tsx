@@ -727,6 +727,11 @@ export default function App() {
       showError(t("app.dictationUnavailable"), error);
     }
   }
+  const consumeDictationInsertion = useCallback((id: number) => {
+    setDictationInsertion((current) =>
+      current?.id === id ? undefined : current,
+    );
+  }, []);
   async function interrupt() {
     try {
       if (threadId && turnId)
@@ -1008,6 +1013,7 @@ export default function App() {
           onNeedSkills={() => {
             if (!isDemoPreview()) void integrations.refreshSkills();
           }}
+          onConsumeDictationInsertion={consumeDictationInsertion}
           onOpenMcpSettings={() => setSettings("mcp")}
           onOpenPluginSettings={() => setSettings("plugins")}
           onSend={send}

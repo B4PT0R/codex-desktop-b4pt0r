@@ -9,6 +9,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ComponentProps } from "react";
+import { useState } from "react";
 import { Composer } from "../../src/components/Composer";
 import { I18nProvider } from "../../src/i18n/I18nProvider";
 
@@ -32,6 +33,7 @@ function renderlessComposerProps(): ComponentProps<typeof Composer> {
     onOpenPlugins: vi.fn(),
     onNeedApps: vi.fn(),
     onNeedSkills: vi.fn(),
+    onConsumeDictationInsertion: vi.fn(),
     onSend: vi.fn(),
     onStop: vi.fn(),
     onToggleVoice: vi.fn(),
@@ -73,7 +75,42 @@ describe("composer", () => {
       dictationInsertion: { id: 1, text: "texte dicté" },
     });
     expect(screen.getByRole("textbox")).toHaveValue("texte dicté");
+    expect(dictated.onConsumeDictationInsertion).toHaveBeenCalledWith(1);
     expect(dictated.onSend).not.toHaveBeenCalled();
+  });
+
+  it("ne réinjecte pas une dictée déjà consommée après son envoi", async () => {
+    function DictationHarness() {
+      const [insertion, setInsertion] = useState<
+        { id: number; text: string } | undefined
+      >({ id: 1, text: "message dicté" });
+      const [generation, setGeneration] = useState(0);
+      return (
+        <Composer
+          key={generation}
+          {...renderlessComposerProps()}
+          dictationInsertion={insertion}
+          onConsumeDictationInsertion={(id) =>
+            setInsertion((current) =>
+              current?.id === id ? undefined : current,
+            )
+          }
+          onSend={() => setGeneration((current) => current + 1)}
+        />
+      );
+    }
+
+    render(
+      <I18nProvider>
+        <DictationHarness />
+      </I18nProvider>,
+    );
+    const textbox = screen.getByRole("textbox");
+    await waitFor(() => expect(textbox).toHaveValue("message dicté"));
+    fireEvent.click(screen.getByRole("button", { name: "Envoyer" }));
+    await waitFor(() =>
+      expect(screen.getByRole("textbox")).toHaveValue(""),
+    );
   });
 
   it("empêche le chevauchement des deux sessions audio", () => {

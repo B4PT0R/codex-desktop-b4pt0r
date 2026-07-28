@@ -3,7 +3,7 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
-## Unreleased
+## [0.3.3] - 2026-07-28
 
 ### Added
 
@@ -27,6 +27,18 @@ follows semantic versioning while the public interface is taking shape.
   dark themes.
 - Historical interface captures were removed from the current tree in favor of
   two maintained showcase images; previous checkpoints remain in Git history.
+
+### Fixed
+
+- Dictated text is consumed exactly once and no longer reappears in the
+  composer after the message has been sent.
+- Opening a web link now renews an expired app-owned Playwright MCP session
+  instead of failing with `Session not found` when no agent browser session is
+  active, and keeps its event channel alive so Chromium remains open after
+  navigation.
+- Shared-browser shutdown now signals the managed MCP child before Electron can
+  exit, and a subsequent instance removes only a verified app-owned stale
+  server instead of falling back because port `8931` remains occupied.
 
 ## [0.3.2] - 2026-07-27
 
@@ -228,6 +240,7 @@ follows semantic versioning while the public interface is taking shape.
 - Native Electron packaging for Debian/Ubuntu.
 - Stable Chromium microphone capture for dictation and Realtime voice.
 
+[0.3.3]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.2.6...v0.3.0

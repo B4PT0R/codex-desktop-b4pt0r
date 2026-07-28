@@ -39,6 +39,7 @@ type ComposerProps = {
   onOpenPlugins: () => void;
   onNeedApps: () => void;
   onNeedSkills: () => void;
+  onConsumeDictationInsertion: (id: number) => void;
   onSend: (text: string, context: TurnContextItem[]) => void;
   onStop: () => void;
   onToggleVoice: () => void;
@@ -64,6 +65,7 @@ export function Composer({
   onOpenPlugins,
   onNeedApps,
   onNeedSkills,
+  onConsumeDictationInsertion,
   onSend,
   onStop,
   onToggleVoice,
@@ -99,8 +101,9 @@ export function Composer({
         .filter(Boolean)
         .join(" "),
     );
+    onConsumeDictationInsertion(dictationInsertion.id);
     textarea.current?.focus();
-  }, [dictationInsertion]);
+  }, [dictationInsertion, onConsumeDictationInsertion]);
 
   function submit() {
     if (!canSubmit) return;

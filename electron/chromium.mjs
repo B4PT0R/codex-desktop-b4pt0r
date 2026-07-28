@@ -3,6 +3,10 @@ import {
   access,
   chmod,
   mkdir,
+  readFile,
+  stat,
+  unlink,
+  writeFile,
 } from "node:fs/promises";
 import path from "node:path";
 import { BrowserArtifactServer } from "./browser-artifacts.mjs";
@@ -142,10 +146,12 @@ export class SharedBrowserManager {
   }
 
   async #stopServer() {
-    await this.#client?.close().catch(() => undefined);
+    const client = this.#client;
+    const server = this.#server;
     this.#client = undefined;
-    this.#server?.kill();
     this.#server = undefined;
+    server?.kill();
+    await client?.close().catch(() => undefined);
   }
 
   async #installBrowser() {
@@ -196,6 +202,7 @@ export class SharedBrowserManager {
   async #startServer(executable) {
     if (this.#server && this.#server.exitCode == null) return;
     const paths = sharedBrowserPaths(this.#home);
+    await stopStaleSharedBrowserServer(paths.serverPid, paths.profile);
     await Promise.all([
       privateDirectory(paths.profile),
       privateDirectory(paths.output),
@@ -229,16 +236,28 @@ export class SharedBrowserManager {
       },
     );
     this.#server = child;
+    try {
+      await writeFile(paths.serverPid, `${child.pid}\n`, {
+        encoding: "utf8",
+        mode: 0o600,
+      });
+    } catch (error) {
+      child.kill();
+      this.#server = undefined;
+      throw error;
+    }
     child.stderr?.on("data", (chunk) => {
       stderr = `${stderr}${chunk}`.slice(-MAX_INSTALL_LOG);
     });
     child.once("exit", () => {
       if (this.#server === child) this.#server = undefined;
+      void removeOwnedPidFile(paths.serverPid, child.pid);
       void this.#client?.close().catch(() => undefined);
       this.#client = undefined;
     });
     child.once("error", () => {
       if (this.#server === child) this.#server = undefined;
+      void removeOwnedPidFile(paths.serverPid, child.pid);
     });
     try {
       await waitForServer(child);
@@ -251,7 +270,7 @@ export class SharedBrowserManager {
 
   async #connectClient() {
     if (this.#client) return this.#client;
-    const client = new PlaywrightMcpClient(MCP_URL, "0.3.1");
+    const client = new PlaywrightMcpClient(MCP_URL, "0.3.3");
     await client.connect();
     this.#client = client;
     return client;
@@ -289,7 +308,31 @@ export function sharedBrowserPaths(home) {
     profile: path.join(root, "browser-profile"),
     output: path.join(root, "browser-output"),
     artifacts: path.join(root, "browser-artifacts"),
+    serverPid: path.join(root, "playwright-mcp.pid"),
   };
+}
+
+export function isOwnedSharedBrowserProcess(
+  argv,
+  uid,
+  profile,
+  currentUid = process.getuid?.(),
+) {
+  if (
+    !Array.isArray(argv) ||
+    (typeof currentUid === "number" && uid !== currentUid)
+  )
+    return false;
+  const cli = argv.some(
+    (argument) =>
+      argument.endsWith("/@playwright/mcp/cli.js") ||
+      argument.includes("/@playwright/mcp/cli.js"),
+  );
+  return (
+    cli &&
+    argumentValue(argv, "--port") === String(MCP_PORT) &&
+    argumentValue(argv, "--user-data-dir") === profile
+  );
 }
 
 async function validateTarget(target) {
@@ -308,6 +351,70 @@ async function validateTarget(target) {
 async function privateDirectory(directory) {
   await mkdir(directory, { recursive: true, mode: 0o700 });
   await chmod(directory, 0o700);
+}
+
+async function stopStaleSharedBrowserServer(pidFile, profile) {
+  let pid;
+  try {
+    pid = Number.parseInt((await readFile(pidFile, "utf8")).trim(), 10);
+  } catch (error) {
+    if (error.code === "ENOENT") return;
+    throw error;
+  }
+  if (!Number.isSafeInteger(pid) || pid <= 1 || pid === process.pid) {
+    await unlink(pidFile).catch(() => undefined);
+    return;
+  }
+  if (process.platform !== "linux") {
+    await unlink(pidFile).catch(() => undefined);
+    return;
+  }
+  try {
+    const [command, processStat] = await Promise.all([
+      readFile(`/proc/${pid}/cmdline`),
+      stat(`/proc/${pid}`),
+    ]);
+    const argv = command
+      .toString("utf8")
+      .split("\0")
+      .filter(Boolean);
+    if (!isOwnedSharedBrowserProcess(argv, processStat.uid, profile)) {
+      await unlink(pidFile).catch(() => undefined);
+      return;
+    }
+    process.kill(pid, "SIGTERM");
+    for (let attempt = 0; attempt < 20; attempt++) {
+      await delay(50);
+      try {
+        process.kill(pid, 0);
+      } catch (error) {
+        if (error.code === "ESRCH") break;
+        throw error;
+      }
+    }
+  } catch (error) {
+    if (error.code !== "ENOENT" && error.code !== "ESRCH") throw error;
+  } finally {
+    await removeOwnedPidFile(pidFile, pid);
+  }
+}
+
+async function removeOwnedPidFile(pidFile, pid) {
+  try {
+    if (Number.parseInt((await readFile(pidFile, "utf8")).trim(), 10) === pid)
+      await unlink(pidFile);
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+}
+
+function argumentValue(argv, flag) {
+  const index = argv.indexOf(flag);
+  return index === -1 ? undefined : argv[index + 1];
+}
+
+function delay(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 async function browserVersion(executable) {

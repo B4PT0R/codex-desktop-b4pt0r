@@ -47,6 +47,7 @@ type ChatFooterProps = {
   onCompact: () => void;
   onNeedApps: () => void;
   onNeedSkills: () => void;
+  onConsumeDictationInsertion: (id: number) => void;
   onOpenMcpSettings: () => void;
   onChangePermission: (permission: Permission) => Promise<boolean>;
   onChangeApprovalPolicy: (policy: ApprovalPolicy) => Promise<boolean>;
@@ -91,6 +92,7 @@ export function ChatFooter({
   onCompact,
   onNeedApps,
   onNeedSkills,
+  onConsumeDictationInsertion,
   onOpenMcpSettings,
   onChangePermission,
   onChangeApprovalPolicy,
@@ -122,6 +124,7 @@ export function ChatFooter({
           dictationInsertion={dictationInsertion}
           onNeedApps={onNeedApps}
           onNeedSkills={onNeedSkills}
+          onConsumeDictationInsertion={onConsumeDictationInsertion}
           onOpenMcp={onOpenMcpSettings}
           onOpenPlugins={onOpenPluginSettings}
           onSend={onSend}

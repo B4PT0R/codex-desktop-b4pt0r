@@ -33,7 +33,7 @@ is not a product goal.
 
 ## Active objective
 
-Maintain **v0.3.2** as the current public release and enforce a strict settings
+Maintain **v0.3.3** as the current public release and enforce a strict settings
 scope boundary. Settings sections own only persistent global preferences.
 Model, effort and Plan mode share the model popover; permissions and approvals
 share the Security popover in the main session bar. Config keeps guided uncommon TOML fields and
@@ -85,6 +85,25 @@ palette explicitly; technical descriptions are consistently set at 10px/15px
 while the dark theme retains its existing surfaces. The browser console reported
 no warnings or errors during this review.
 
+Dictation insertions are acknowledged by the composer as soon as they are
+applied. A consumed transcript cannot be replayed if the composer remounts
+while the resulting message creates or updates a thread.
+
+The native shared-browser client keeps the app-owned MCP event channel open
+through a persistent Node HTTP stream for the application lifetime. It also
+recognizes an expired session, performs one
+fresh handshake and retries the requested navigation once. Ordinary links
+therefore remain independent from an active agent MCP session without closing
+Chromium after navigation or hiding unrelated Playwright failures.
+The event stream is attached immediately after initialization, before the
+initialized notification, because Playwright MCP gates backend creation on that
+transport. The client answers Playwright's JSON-RPC heartbeat requests from the
+stream; otherwise the server closes the backend and browser after its
+five-second ping timeout. Native
+shutdown signals the server child synchronously before awaiting graceful
+cleanup; startup may remove a stale PID only after verifying the current user,
+Playwright CLI, fixed port and app-owned browser profile.
+
 ## Verified candidate baseline
 
 - Installed Codex: `codex-cli 0.145.0`.
@@ -92,26 +111,26 @@ no warnings or errors during this review.
   checkout `0dfa778dae6a`.
 - Client protocol inventory: 63 product request methods, 55 interpreted
   notification methods and 6 handled server requests.
-- Frontend/unit/contract: 498 tests across 95 files, including 45 installed
+- Frontend/unit/contract: 499 tests across 95 files, including 45 installed
   App Server contract cases.
-- Electron/Node: 51 tests.
+- Electron/Node: 55 tests.
 - Strict TypeScript: passing.
 - Production Vite build: passing.
 - Production dependency audit: zero vulnerabilities.
-- Main JS: 527.09 kB, 152.95 kB gzip.
+- Main JS: 527.30 kB, 153.07 kB gzip.
 - Lazy diff viewer: 89.50 kB, 32.89 kB gzip.
 - Lazy Markdown/KaTeX: 698.90 kB, 208.87 kB gzip.
 
 Current release artifact:
 
-- package: `dist/codex-desktop-linux_0.3.2_amd64.deb`;
-- size: 108,452,480 bytes;
+- package: `dist/codex-desktop-linux_0.3.3_amd64.deb`;
+- size: 108,455,612 bytes;
 - package SHA-256:
-  `a3b69d12a69fbbad4d87012ee1d23605cf84b9f0d74fef3d7d9c198c7da29ca8`;
+  `287bd56f953349758730b0396818ee97c9d27aef1f9dcdd3814606e383c07156`;
 - packaged ASAR SHA-256:
-  `7870115a43de3148176327710e4774d17882d1aacb0d885920d1792865a900ea`.
+  `95e2fca734fce64b21c54f8aa1b8b1d386a92e66ec36e171dac3c516f7b613a0`.
 
-`dpkg-query` reports `codex-desktop-linux 0.3.2 amd64 install ok installed`;
+`dpkg-query` reports `codex-desktop-linux 0.3.3 amd64 install ok installed`;
 the installed ASAR matches the packaged hash and the shared-browser skill
 resources are present outside the ASAR.
 
@@ -173,7 +192,7 @@ resources are present outside the ASAR.
   `electron-builder`; production dependencies have no reported vulnerability.
 - The lazy Markdown/KaTeX chunk is large but is not a release blocker.
 
-## Post-v0.3.2 priorities
+## Post-v0.3.3 priorities
 
 Choose one bounded lot at a time:
 

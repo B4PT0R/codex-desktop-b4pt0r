@@ -248,6 +248,16 @@ l’agent manipulent les mêmes onglets visibles. Aucune installation Chromium
 système, détection Snap/Flatpak ou élévation de privilèges n’appartient au chemin
 normal. Lorsque la fonction est inactive, incomplète ou indisponible, les URL
 HTTP(S) sont confiées au navigateur par défaut du système.
+La session MCP interne utilisée par l’UI est indépendante de celle d’App Server.
+Elle conserve son canal d’événements HTTP ouvert afin que Playwright maintienne
+le contexte partagé même sans tour agent actif. Le flux est attaché dès que
+`initialize` fournit l’identifiant de session, avant la notification
+`initialized`, puis le client répond aux heartbeats JSON-RPC reçus sur ce flux.
+Si Playwright expire la session, le client natif refait une fois son handshake
+et rejoue la navigation ; les autres erreurs restent visibles et suivent le
+repli normal. Le serveur enfant est signalé avant la fin d’Electron. Une reprise
+après fermeture anormale ne termine un PID résiduel qu’après validation de son
+propriétaire, de sa commande, de son port et du profil applicatif.
 
 Le processus App Server de ce client neutralise localement `browser_use`,
 `browser_use_external`, `in_app_browser` et `computer_use`. Le Browser officiel
