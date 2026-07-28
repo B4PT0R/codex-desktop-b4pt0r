@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { MessageCircleQuestion } from "lucide-react";
 import { useDialogFocus } from "../lib/useDialogFocus";
 import { useI18n } from "../i18n/I18nProvider";
+import { RoundIcon } from "./RoundIcon";
 import {
   freeFormAnswer,
   userInputResponse,
@@ -67,9 +68,12 @@ export function UserInputDialog({
         onKeyDown={onDialogKeyDown}
         tabIndex={-1}
       >
-        <span className="approval-icon">
-          <MessageCircleQuestion />
-        </span>
+        <RoundIcon
+          className="approval-icon"
+          icon={MessageCircleQuestion}
+          size="large"
+          variant="primary"
+        />
         <h2 id="user-input-title">{t("userInput.title")}</h2>
         <div className="user-input-questions">
           {request.questions.map((question) => (

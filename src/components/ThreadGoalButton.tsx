@@ -4,6 +4,7 @@ import { useI18n } from "../i18n/I18nProvider";
 import type { MessageKey } from "../i18n/locales/fr";
 import { useThreadGoal } from "../lib/useThreadGoal";
 import "../thread-goal.css";
+import { RoundIconButton } from "./RoundIcon";
 
 export function ThreadGoalButton({
   connected,
@@ -87,17 +88,21 @@ export function ThreadGoalButton({
       ref={root}
     >
       {!hideTrigger && (
-        <button
+        <RoundIconButton
           ref={opener}
           className={controller.goal ? "thread-goal-trigger active" : "thread-goal-trigger"}
           aria-expanded={open}
           aria-label={t(controller.goal ? "goal.open" : "goal.create")}
+          icon={Target}
+          label={
+            controller.goal
+              ? t(statusKey(controller.goal.status))
+              : undefined
+          }
           title={t(controller.goal ? "goal.open" : "goal.create")}
           onClick={() => setOpen(!open)}
-        >
-          <Target />
-          {controller.goal && <span>{t(statusKey(controller.goal.status))}</span>}
-        </button>
+          variant={controller.goal ? "secondary" : "tertiary"}
+        />
       )}
       {open && (
         <div
@@ -180,9 +185,13 @@ export function ThreadGoalButton({
                 </button>
               </span>
             ) : controller.goal ? (
-              <button className="goal-clear" aria-label={t("goal.clear")} onClick={() => setConfirmingClear(true)}>
-                <Trash2 />
-              </button>
+              <RoundIconButton
+                aria-label={t("goal.clear")}
+                className="goal-clear"
+                icon={Trash2}
+                onClick={() => setConfirmingClear(true)}
+                variant="tertiary"
+              />
             ) : null}
             <button
               className="goal-save"

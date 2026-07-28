@@ -16,10 +16,22 @@ describe("réglage global de recherche web", () => {
   it("hydrate la valeur utilisateur puis l'écrit via App Server", async () => {
     requestMock.mockResolvedValueOnce({
       config: {
+        allow_login_shell: false,
+        approval_policy: "never",
+        cli_auth_credentials_store: "keyring",
+        default_permissions: ":read-only",
         file_opener: "cursor",
+        mcp_oauth_credentials_store: "file",
+        model: "gpt-test",
+        model_auto_compact_token_limit: 64_000,
+        model_reasoning_effort: "high",
         model_verbosity: "high",
         model_reasoning_summary: "detailed",
         plan_mode_reasoning_effort: "xhigh",
+        personality: "friendly",
+        project_doc_fallback_filenames: ["CLAUDE.md"],
+        project_doc_max_bytes: 65_536,
+        tool_output_token_limit: 12_000,
         web_search: "indexed",
       },
     });
@@ -30,6 +42,20 @@ describe("réglage global de recherche web", () => {
     expect(result.current.reasoningSummary).toBe("detailed");
     expect(result.current.modelVerbosity).toBe("high");
     expect(result.current.planReasoningEffort).toBe("xhigh");
+    expect(result.current.advanced).toEqual({
+      allowLoginShell: false,
+      approvalPolicy: "never",
+      cliAuthCredentialsStore: "keyring",
+      defaultPermissions: ":read-only",
+      mcpOauthCredentialsStore: "file",
+      model: "gpt-test",
+      modelAutoCompactTokenLimit: 64_000,
+      modelReasoningEffort: "high",
+      personality: "friendly",
+      projectDocFallbackFilenames: ["CLAUDE.md"],
+      projectDocMaxBytes: 65_536,
+      toolOutputTokenLimit: 12_000,
+    });
     expect(requestMock).toHaveBeenCalledWith("config/read", {
       cwd: null,
       includeLayers: false,
@@ -92,6 +118,39 @@ describe("réglage global de recherche web", () => {
     });
     expect(result.current.mode).toBe("cached");
     expect(result.current.error).toBe("écriture refusée");
+  });
+
+  it("écrit une valeur guidée et retire une limite automatique", async () => {
+    requestMock.mockResolvedValueOnce({ config: {} });
+    const { result } = renderHook(() => useCodexGlobalSettings(true));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    requestMock.mockResolvedValue({ status: "ok" });
+    await act(async () => {
+      expect(
+        await result.current.setAdvanced(
+          "default_permissions",
+          ":danger-full-access",
+        ),
+      ).toBe(true);
+      expect(
+        await result.current.setAdvanced(
+          "model_auto_compact_token_limit",
+          null,
+        ),
+      ).toBe(true);
+    });
+
+    expect(requestMock).toHaveBeenNthCalledWith(2, "config/value/write", {
+      keyPath: "default_permissions",
+      mergeStrategy: "upsert",
+      value: ":danger-full-access",
+    });
+    expect(requestMock).toHaveBeenNthCalledWith(3, "config/value/write", {
+      keyPath: "model_auto_compact_token_limit",
+      mergeStrategy: "replace",
+      value: null,
+    });
   });
 
   it("refuse localement un mode exclu par les contraintes", async () => {

@@ -7,6 +7,7 @@ import {
   FileCog,
   Globe2,
   Mic,
+  MessageSquare,
   Palette,
   Plug,
   RadioTower,
@@ -14,7 +15,6 @@ import {
   Search,
   Settings,
   ShieldCheck,
-  SlidersHorizontal,
   UserRound,
   Webhook,
 } from "lucide-react";
@@ -26,23 +26,21 @@ import {
   type ReactNode,
 } from "react";
 import type {
-  ApprovalPolicy,
   FileOpener,
   ModelVerbosity,
   PlanReasoningEffort,
-  Permission,
   ReasoningSummaryMode,
   WebSearchMode,
 } from "../lib/protocol";
 import {
-  filteredSettingsGroups,
+  filteredSettingsSections,
   settingsSectionLabel,
   type SettingsSectionId,
 } from "../lib/settingsSections";
 import { useI18n } from "../i18n/I18nProvider";
 import type { MessageKey } from "../i18n/locales/fr";
 import { reasoningEffortLabel } from "../lib/reasoningEffort";
-import type { CollaborationMode, Model, Personality } from "../types";
+import type { Model, Personality } from "../types";
 import type { IntegrationsController } from "../lib/useIntegrations";
 import { McpSettings, SkillsSettings } from "./IntegrationSettings";
 import type { CapabilityCatalog } from "../lib/useCapabilityCatalog";
@@ -65,24 +63,19 @@ import type { MemorySettingsController } from "../lib/useMemorySettings";
 import { MemorySettings } from "./MemorySettings";
 import type { RemoteControlController } from "../lib/useRemoteControl";
 import { RemoteControlSettings } from "./RemoteControlSettings";
+import { RoundIconButton } from "./RoundIcon";
 
 export type SettingsViewProps = {
   account: AccountController;
   apps: AppsController;
   capabilities: CapabilityCatalog;
-  collaborationMode: CollaborationMode;
   configRequirements?: ConfigRequirements & {
     error?: string;
     loading?: boolean;
   };
-  effort: string;
   externalAgentImport: ExternalAgentImportController;
   integrations: IntegrationsController;
-  model: string;
   models: Model[];
-  permission: Permission;
-  approvalPolicy: ApprovalPolicy;
-  personality: Personality;
   rateLimits: RateLimitsController;
   realtime: RealtimeSettingsController;
   memory: MemorySettingsController;
@@ -95,21 +88,14 @@ export type SettingsViewProps = {
     restarting: boolean;
   };
   section: SettingsSectionId;
-  onChangeCollaborationMode: (mode: CollaborationMode) => void;
-  onChangeEffort: (effort: string) => void;
-  onChangeModel: (model: string) => void;
-  onChangePermission: (permission: Permission) => void;
-  onChangeApprovalPolicy: (policy: ApprovalPolicy) => void;
-  onChangePersonality: (personality: Personality) => void;
   onClose: () => void;
-  onSave: () => void;
   onSelectSection: (section: SettingsSectionId) => void;
 };
 
 const icons: Record<SettingsSectionId, ComponentType> = {
   general: Settings,
   browser: Globe2,
-  options: SlidersHorizontal,
+  chat: MessageSquare,
   memory: Brain,
   remoteControl: RadioTower,
   agent: Bot,
@@ -157,7 +143,7 @@ export function SettingsView(props: SettingsViewProps) {
   const { t } = useI18n();
   const [query, setQuery] = useState("");
   const heading = useRef<HTMLHeadingElement>(null);
-  const groups = filteredSettingsGroups(query, t);
+  const sections = filteredSettingsSections(query, t);
   useEffect(() => heading.current?.focus(), [props.section]);
   useEffect(() => {
     const close = (event: KeyboardEvent) => {
@@ -173,9 +159,13 @@ export function SettingsView(props: SettingsViewProps) {
         className="settings-navigation"
         aria-label={t("settings.navigation")}
       >
-        <button className="settings-back" onClick={props.onClose}>
-          <ArrowLeft /> {t("settings.back")}
-        </button>
+        <RoundIconButton
+          className="settings-back"
+          icon={ArrowLeft}
+          label={t("settings.back")}
+          onClick={props.onClose}
+          variant="tertiary"
+        />
         <label className="settings-search">
           <Search />
           <input
@@ -185,28 +175,24 @@ export function SettingsView(props: SettingsViewProps) {
           />
         </label>
         <nav>
-          {groups.map((group) => (
-            <section key={group.label}>
-              <h2>{group.label}</h2>
-              {group.items.map((item) => {
-                const Icon = icons[item.id];
-                return (
-                  <button
-                    key={item.id}
-                    aria-current={
-                      props.section === item.id ? "page" : undefined
-                    }
-                    onClick={() => props.onSelectSection(item.id)}
-                  >
-                    <Icon />
-                    <span>{item.label}</span>
-                    {!item.available && <small>{t("settings.planned")}</small>}
-                  </button>
-                );
-              })}
-            </section>
+          {sections.map((item) => (
+            <RoundIconButton
+              key={item.id}
+              aria-current={props.section === item.id ? "page" : undefined}
+              gap="large"
+              icon={icons[item.id]}
+              label={
+                <>
+                  <span>{item.label}</span>
+                  {!item.available && <small>{t("settings.planned")}</small>}
+                </>
+              }
+              onClick={() => props.onSelectSection(item.id)}
+              size="large"
+              variant="tertiary"
+            />
           ))}
-          {groups.length === 0 && <p>{t("settings.noResults")}</p>}
+          {sections.length === 0 && <p>{t("settings.noResults")}</p>}
         </nav>
       </aside>
       <main className="settings-content">
@@ -228,9 +214,14 @@ function SettingsSection(props: SettingsViewProps) {
       />
     );
   if (props.section === "browser")
-    return <BrowserSettings integrations={props.integrations} />;
-  if (props.section === "options")
-    return <OptionsSettings webSearch={props.webSearch} />;
+    return (
+      <BrowserSettings
+        integrations={props.integrations}
+        webSearch={props.webSearch}
+      />
+    );
+  if (props.section === "chat")
+    return <ChatSettings webSearch={props.webSearch} />;
   if (props.section === "memory")
     return <MemorySettings controller={props.memory} />;
   if (props.section === "remoteControl")
@@ -240,7 +231,8 @@ function SettingsSection(props: SettingsViewProps) {
   if (props.section === "voice")
     return <VoiceSettings controller={props.realtime} />;
   if (props.section === "permissions") return <PermissionSettings {...props} />;
-  if (props.section === "config") return <CodexConfigSettings />;
+  if (props.section === "config")
+    return <CodexConfigSettings globalSettings={props.webSearch} />;
   if (props.section === "plugins")
     return (
       <SkillsSettings apps={props.apps} integrations={props.integrations} />
@@ -414,8 +406,10 @@ function GeneralSettings({
 
 function BrowserSettings({
   integrations,
+  webSearch,
 }: {
   integrations: IntegrationsController;
+  webSearch: CodexGlobalSettingsController;
 }) {
   const { t } = useI18n();
   const chromium = useChromium();
@@ -426,6 +420,35 @@ function BrowserSettings({
       <header>
         <p>{t("settings.browser.description")}</p>
       </header>
+      <div className="settings-card settings-fields">
+        <label>
+          <span className="settings-field-description">
+            <strong>{t("webSearch.title")}</strong>
+            <small>{t("webSearch.globalDetail")}</small>
+          </span>
+          <select
+            aria-label={t("webSearch.title")}
+            disabled={webSearch.loading || Boolean(webSearch.updating)}
+            value={webSearch.mode}
+            onChange={(event) =>
+              void webSearch.setMode(event.target.value as WebSearchMode)
+            }
+          >
+            {webSearchModes.map((mode) => (
+              <option
+                disabled={
+                  webSearch.allowed !== undefined &&
+                  !webSearch.allowed.includes(mode)
+                }
+                key={mode}
+                value={mode}
+              >
+                {t(`webSearch.${mode}`)}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
       <div className="settings-card settings-fields">
         <label>
           <span className="settings-field-description">
@@ -549,11 +572,16 @@ function BrowserSettings({
           {t("settings.chromium.error")} {chromium.error}
         </div>
       )}
+      {webSearch.error && (
+        <div className="inventory-message error" role="alert">
+          {t("webSearch.error")} {webSearch.error}
+        </div>
+      )}
     </section>
   );
 }
 
-function OptionsSettings({
+function ChatSettings({
   webSearch,
 }: {
   webSearch: CodexGlobalSettingsController;
@@ -562,36 +590,9 @@ function OptionsSettings({
   return (
     <section className="settings-page">
       <header>
-        <p>{t("settings.options.description")}</p>
+        <p>{t("settings.chat.description")}</p>
       </header>
       <div className="settings-card settings-fields">
-        <label>
-          <span className="settings-field-description">
-            <strong>{t("webSearch.title")}</strong>
-            <small>{t("webSearch.globalDetail")}</small>
-          </span>
-          <select
-            aria-label={t("webSearch.title")}
-            disabled={webSearch.loading || Boolean(webSearch.updating)}
-            value={webSearch.mode}
-            onChange={(event) =>
-              void webSearch.setMode(event.target.value as WebSearchMode)
-            }
-          >
-            {webSearchModes.map((mode) => (
-              <option
-                disabled={
-                  webSearch.allowed !== undefined &&
-                  !webSearch.allowed.includes(mode)
-                }
-                key={mode}
-                value={mode}
-              >
-                {t(`webSearch.${mode}`)}
-              </option>
-            ))}
-          </select>
-        </label>
         <label>
           <span className="settings-field-description">
             <strong>{t("settings.reasoningSummary.title")}</strong>
@@ -615,11 +616,6 @@ function OptionsSettings({
           </select>
         </label>
       </div>
-      {webSearch.error && (
-        <div className="inventory-message error" role="alert">
-          {t("webSearch.error")} {webSearch.error}
-        </div>
-      )}
     </section>
   );
 }
@@ -656,29 +652,30 @@ function PlannedSettings({
 
 function AgentSettings(props: SettingsViewProps) {
   const { t } = useI18n();
+  const defaults = props.webSearch.advanced;
   const selectedModel = props.models.find(
-    (candidate) => candidate.id === props.model,
+    (candidate) => candidate.id === defaults.model,
   );
-  const efforts = selectedModel?.supportedReasoningEfforts ?? [
-    { reasoningEffort: props.effort, description: "" },
-  ];
+  const efforts =
+    selectedModel?.supportedReasoningEfforts?.map(
+      (option) => option.reasoningEffort,
+    ) ?? planReasoningEfforts.filter((effort) => effort !== "none");
   return (
     <section className="settings-page">
       <header>
         <p>{t("settings.agent.description")}</p>
-        <span className="scope-badge">{t("settings.currentConversation")}</span>
+        <span className="scope-badge">{t("settings.config.global")}</span>
       </header>
-      {props.capabilities.collaborationModes.error && (
-        <div className="inventory-message error" role="alert">
-          {t("settings.agent.presetsUnavailable")}
-        </div>
-      )}
       <div className="settings-card settings-fields">
         <SettingSelect
           label={t("settings.agent.model")}
-          value={props.model}
-          onChange={props.onChangeModel}
+          value={defaults.model ?? ""}
+          disabled={props.webSearch.loading}
+          onChange={(value) =>
+            void props.webSearch.setAdvanced("model", value || null)
+          }
         >
+          <option value="">{t("settings.global.automatic")}</option>
           {props.models.map((model) => (
             <option value={model.id} key={model.id}>
               {model.label}
@@ -687,58 +684,38 @@ function AgentSettings(props: SettingsViewProps) {
         </SettingSelect>
         <SettingSelect
           label={t("settings.agent.effort")}
-          value={props.effort}
-          onChange={props.onChangeEffort}
+          value={defaults.modelReasoningEffort ?? ""}
+          disabled={props.webSearch.loading}
+          onChange={(value) =>
+            void props.webSearch.setAdvanced(
+              "model_reasoning_effort",
+              value || null,
+            )
+          }
         >
-          {efforts.map((option) => (
-            <option value={option.reasoningEffort} key={option.reasoningEffort}>
-              {reasoningEffortLabel(option.reasoningEffort, t)}
+          <option value="">{t("settings.global.automatic")}</option>
+          {efforts.map((effort) => (
+            <option value={effort} key={effort}>
+              {reasoningEffortLabel(effort, t)}
             </option>
           ))}
         </SettingSelect>
         <SettingSelect
           label={t("settings.agent.personality")}
-          value={props.personality}
-          disabled={selectedModel?.supportsPersonality === false}
-          disabledReason={t("settings.agent.personalityUnavailable")}
+          value={defaults.personality ?? ""}
+          disabled={props.webSearch.loading}
           onChange={(value) =>
-            props.onChangePersonality(value as Personality)
+            void props.webSearch.setAdvanced(
+              "personality",
+              value || null,
+            )
           }
         >
+          <option value="">{t("settings.global.automatic")}</option>
           <option value="pragmatic">{t("settings.agent.pragmatic")}</option>
           <option value="friendly">{t("settings.agent.friendly")}</option>
           <option value="none">{t("settings.agent.neutral")}</option>
         </SettingSelect>
-        <SettingSelect
-          label={t("settings.agent.workMode")}
-          value={props.collaborationMode}
-          onChange={(value) => {
-            const preset = props.capabilities.collaborationModes.data.find(
-              (candidate) => candidate.mode === value,
-            );
-            props.onChangeCollaborationMode(value as CollaborationMode);
-            if (preset?.reasoning_effort)
-              props.onChangeEffort(preset.reasoning_effort);
-          }}
-        >
-          {props.capabilities.collaborationModes.data.flatMap((preset) =>
-            preset.mode ? (
-              <option value={preset.mode} key={preset.mode}>
-                {preset.name === "Default"
-                  ? t("settings.agent.defaultMode")
-                  : preset.name}
-              </option>
-            ) : (
-              []
-            ),
-          )}
-        </SettingSelect>
-      </div>
-      <div className="settings-subsection-heading">
-        <strong>{t("settings.agent.globalDefaults")}</strong>
-        <small>{t("settings.agent.globalDefaultsDetail")}</small>
-      </div>
-      <div className="settings-card settings-fields">
         <SettingSelect
           label={t("settings.agent.verbosity")}
           value={props.webSearch.modelVerbosity}
@@ -770,20 +747,26 @@ function AgentSettings(props: SettingsViewProps) {
           ))}
         </SettingSelect>
       </div>
-      <button className="settings-apply" onClick={props.onSave}>
-        {t("settings.apply")}
-      </button>
+      {props.webSearch.error && (
+        <div className="inventory-message error" role="alert">
+          {props.webSearch.error}
+        </div>
+      )}
     </section>
   );
 }
 
 function PermissionSettings(props: SettingsViewProps) {
   const { t } = useI18n();
+  const defaults = props.webSearch.advanced;
+  const knownPermission = props.capabilities.permissionProfiles.data.some(
+    (profile) => profile.id === defaults.defaultPermissions,
+  );
   return (
     <section className="settings-page">
       <header>
         <p>{t("settings.permissions.description")}</p>
-        <span className="scope-badge">{t("settings.currentConversation")}</span>
+        <span className="scope-badge">{t("settings.config.global")}</span>
       </header>
       {props.capabilities.permissionProfiles.error && (
         <div className="inventory-message error" role="alert">
@@ -811,9 +794,16 @@ function PermissionSettings(props: SettingsViewProps) {
       <div className="settings-card settings-fields">
         <SettingSelect
           label={t("settings.permissions.profile")}
-          value={props.permission}
-          onChange={props.onChangePermission}
+          value={defaults.defaultPermissions}
+          onChange={(value) =>
+            void props.webSearch.setAdvanced("default_permissions", value)
+          }
         >
+          {!knownPermission && (
+            <option value={defaults.defaultPermissions}>
+              {t("settings.config.value.custom")} — {defaults.defaultPermissions}
+            </option>
+          )}
           {props.capabilities.permissionProfiles.data.map((profile) => (
             <option
               value={profile.id}
@@ -837,11 +827,14 @@ function PermissionSettings(props: SettingsViewProps) {
         </SettingSelect>
         <SettingSelect
           label={t("approvalPolicy.title")}
-          value={props.approvalPolicy}
+          value={defaults.approvalPolicy}
           onChange={(value) =>
-            props.onChangeApprovalPolicy(value as ApprovalPolicy)
+            void props.webSearch.setAdvanced("approval_policy", value)
           }
         >
+          {defaults.approvalPolicy === "custom" && (
+            <option value="custom">{t("settings.config.value.custom")}</option>
+          )}
           {(["untrusted", "on-request", "never"] as const).map((policy) => (
             <option
               disabled={
@@ -866,9 +859,6 @@ function PermissionSettings(props: SettingsViewProps) {
           </span>
         </div>
       </div>
-      <button className="settings-apply" onClick={props.onSave}>
-        {t("settings.apply")}
-      </button>
     </section>
   );
 }
@@ -908,7 +898,7 @@ const plannedSections: Record<
     SettingsSectionId,
     | "general"
     | "browser"
-    | "options"
+    | "chat"
     | "memory"
     | "remoteControl"
     | "agent"

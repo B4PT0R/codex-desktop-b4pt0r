@@ -31,8 +31,6 @@ export type ComposerCommand = {
 };
 
 export const composerCommands: ComposerCommand[] = [
-  command("model", { settingsSection: "agent" }),
-  command("permissions", { settingsSection: "permissions" }),
   command("plan"),
   command("review", { requiresThread: true }),
   command("new"),

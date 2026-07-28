@@ -51,7 +51,7 @@ type StartRealtimeConversationOptions = {
   cwd?: string;
   model: string;
   permission?: Permission;
-  personality: Personality;
+  personality?: Personality;
   approvalPolicy?: ApprovalPolicy;
   voice: RealtimeVoice;
 };

@@ -90,8 +90,7 @@
   background: #f0e1df;
 }
 
-:root[data-theme="light"] .settings-navigation nav button small,
-:root[data-theme="light"] .settings-navigation nav h2 {
+:root[data-theme="light"] .settings-navigation nav button small {
   color: #85857f;
 }
 
@@ -154,10 +153,18 @@
 :root[data-theme="light"] .settings-search,
 :root[data-theme="light"] .settings-search input,
 :root[data-theme="light"] .settings-fields select,
+:root[data-theme="light"] .settings-fields select option,
+:root[data-theme="light"] .config-guided-text-control input,
 :root[data-theme="light"] .user-input-freeform {
   color: var(--reader-ink);
   border-color: #d5d5cf;
   background: #f7f7f4;
+}
+
+:root[data-theme="light"] .config-guided-text-control button {
+  color: #5d5d57;
+  border-color: #d5d5cf;
+  background: #f3f3ef;
 }
 
 :root[data-theme="light"] .composer-shell:focus-within {
@@ -250,10 +257,23 @@
   background: #f3e4e2;
 }
 
-:root[data-theme="light"] .composer-actions .send {
-  border-color: #292925;
+:root[data-theme="light"]
+  .composer-actions
+  .send[data-enabled="true"] {
+  border-color: #66635c;
   color: #f7f7f4;
-  background: #292925;
+  background: #66635c;
+}
+
+:root[data-theme="light"]
+  .composer-actions
+  .send[data-enabled="true"]:hover,
+:root[data-theme="light"]
+  .composer-actions
+  .send[data-enabled="true"]:focus-visible {
+  border-color: #55534d;
+  color: #fff;
+  background: #55534d;
 }
 
 :root[data-theme="light"] .composer-actions .send:disabled {
@@ -312,33 +332,53 @@
   background: #e4e4de;
 }
 
-:root[data-theme="light"] .permission-quick-picker,
-:root[data-theme="light"] .approval-quick-picker {
+:root[data-theme="light"] .model-quick-picker-effort button.selected:hover,
+:root[data-theme="light"]
+  .model-quick-picker-effort
+  button.selected:focus-visible {
+  color: var(--reader-ink);
+  border-color: #96968f;
+  background: #d9d9d2;
+}
+
+:root[data-theme="light"] .model-quick-picker-mode {
+  border-color: #e0e0da;
+}
+
+:root[data-theme="light"] .model-quick-picker-mode input {
+  border-color: #8f8c84;
+}
+
+:root[data-theme="light"] .model-quick-picker-mode input:checked {
+  border-color: #5e5c56;
+  background: #4b4944;
+  box-shadow: inset 0 0 0 3px #f8f7f3;
+}
+
+:root[data-theme="light"] .security-quick-picker {
   color: #393934;
   border-color: #d5d5cf;
   background: #fff;
   box-shadow: 0 18px 50px #3d3d3526;
 }
 
-:root[data-theme="light"] .permission-quick-picker-heading,
-:root[data-theme="light"] .approval-quick-picker .permission-quick-picker-heading {
+:root[data-theme="light"] .security-quick-picker-section + .security-quick-picker-section {
   border-color: #e0e0da;
 }
 
-:root[data-theme="light"] .permission-quick-picker-list button:hover:not(:disabled),
-:root[data-theme="light"] .permission-quick-picker-list button:focus-visible:not(:disabled),
-:root[data-theme="light"] .permission-quick-picker-list button.selected,
-:root[data-theme="light"] .approval-quick-picker .permission-quick-picker-list button:hover:not(:disabled),
-:root[data-theme="light"] .approval-quick-picker .permission-quick-picker-list button:focus-visible:not(:disabled),
-:root[data-theme="light"] .approval-quick-picker .permission-quick-picker-list button.selected {
+:root[data-theme="light"] .security-quick-picker-section-heading strong {
   color: var(--reader-ink);
-  background: #efefeb;
 }
 
-:root[data-theme="light"] .permission-quick-picker-icon,
-:root[data-theme="light"] .approval-quick-picker .permission-quick-picker-icon {
-  border-color: #d5d5cf;
-  color: #6f6f69;
+:root[data-theme="light"] .security-quick-picker .permission-quick-picker-heading {
+  border-color: #e0e0da;
+}
+
+:root[data-theme="light"] .security-quick-picker .permission-quick-picker-list button:hover:not(:disabled),
+:root[data-theme="light"] .security-quick-picker .permission-quick-picker-list button:focus-visible:not(:disabled),
+:root[data-theme="light"] .security-quick-picker .permission-quick-picker-list button.selected {
+  color: var(--reader-ink);
+  background: #efefeb;
 }
 
 :root[data-theme="light"] .conversation-viewport::before,
@@ -355,7 +395,6 @@
 
 :root[data-theme="light"] .plan-progress-icon {
   color: #56778b;
-  border-color: #d0d0ca;
 }
 
 :root[data-theme="light"] .plan-progress-heading strong,
@@ -643,20 +682,50 @@
   background: #edf3ed;
 }
 
-:root[data-theme="light"] .config-editor-heading {
-  border-color: #e0e0da;
-}
-
-:root[data-theme="light"] .config-editor-heading strong {
+:root[data-theme="light"] .config-document-section h2,
+:root[data-theme="light"] .config-document-summary strong,
+:root[data-theme="light"] .config-editor-dialog > header strong {
   color: #44443f;
 }
 
-:root[data-theme="light"] .config-editor-card textarea {
+:root[data-theme="light"] .config-document-card:hover {
+  border-color: #c8c8c1;
+  background: #f1f1ed;
+}
+
+:root[data-theme="light"] .config-document-icon {
+  color: #666660;
+  border-color: #d5d5cf;
+  background: #f3f3ef;
+}
+
+:root[data-theme="light"] .config-document-edit,
+:root[data-theme="light"] .config-document-card em,
+:root[data-theme="light"] .config-editor-dialog header em {
+  color: #666660;
+  border-color: #d5d5cf;
+}
+
+:root[data-theme="light"] .config-editor-dialog {
+  color: var(--reader-ink);
+  border-color: #d2d2cc;
+  background: #fbfbf9;
+  box-shadow: 0 25px 80px #3d3d3540;
+}
+
+:root[data-theme="light"] .config-editor-dialog > header button:hover {
+  color: #44443f;
+  background: #ecece7;
+}
+
+:root[data-theme="light"] .config-editor-surface,
+:root[data-theme="light"] .config-editor-surface textarea {
   color: #3f3f3a;
+  border-color: #d8d8d2;
   background: #fbfbf9;
 }
 
-:root[data-theme="light"] .config-editor-card textarea:focus-visible {
+:root[data-theme="light"] .config-editor-surface textarea:focus-visible {
   box-shadow: inset 0 0 0 1px #8b8b8366;
 }
 

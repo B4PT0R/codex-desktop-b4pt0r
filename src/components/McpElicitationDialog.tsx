@@ -2,6 +2,7 @@ import { openUrl } from "../lib/nativeBridge";
 import { ExternalLink, ListChecks } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useI18n } from "../i18n/I18nProvider";
+import { RoundIcon } from "./RoundIcon";
 import {
   mcpElicitationResponse,
   type McpElicitationField,
@@ -69,9 +70,12 @@ export function McpElicitationDialog({
         tabIndex={-1}
       >
         <header>
-          <span className="approval-icon">
-            <ListChecks />
-          </span>
+          <RoundIcon
+            className="approval-icon"
+            icon={ListChecks}
+            size="large"
+            variant="primary"
+          />
           <span>
             <small>{t("mcpElicitation.server", { server: request.serverName })}</small>
             <h2 id={titleId}>

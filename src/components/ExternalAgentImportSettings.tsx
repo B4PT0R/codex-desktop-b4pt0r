@@ -14,6 +14,7 @@ import type {
   ExternalAgentMigrationItemType,
   ExternalAgentMigrationSource,
 } from "../lib/appServerTypes";
+import { RoundIconButton } from "./RoundIcon";
 import {
   externalAgentDetailNames,
   externalAgentItemKey,
@@ -135,12 +136,13 @@ export function ExternalAgentImportSettings({
               })}
             </small>
             {!confirming ? (
-              <button
+              <RoundIconButton
                 disabled={selectedItems.length === 0 || controller.importing}
+                icon={Download}
+                label={t("externalImport.prepare")}
                 onClick={() => setConfirming(true)}
-              >
-                <Download /> {t("externalImport.prepare")}
-              </button>
+                variant="secondary"
+              />
             ) : (
               <div className="external-import-confirm" role="group">
                 <span>
@@ -227,14 +229,15 @@ export function ExternalAgentImportSettings({
             <History />
             <h3 id="external-import-history">{t("externalImport.history")}</h3>
           </span>
-          <button
+          <RoundIconButton
             className="icon-button"
             aria-label={t("externalImport.refreshHistory")}
             disabled={controller.historyLoading}
+            icon={RefreshCw}
+            iconClassName={controller.historyLoading ? "spinning" : ""}
             onClick={() => void controller.refreshHistory()}
-          >
-            <RefreshCw className={controller.historyLoading ? "spinning" : ""} />
-          </button>
+            variant="tertiary"
+          />
         </header>
         {controller.histories.length === 0 ? (
           <small>{t("externalImport.noHistory")}</small>

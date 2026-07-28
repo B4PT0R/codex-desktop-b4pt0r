@@ -521,27 +521,24 @@ export const en: Record<MessageKey, string> = {
   "settings.search": "Search settings",
   "settings.noResults": "No settings found",
   "settings.planned": "Planned",
-  "settings.group.personal": "Personal",
-  "settings.group.integrations": "Integrations",
-  "settings.group.code": "Code",
   "settings.section.general": "General",
-  "settings.section.browser": "Web Browser",
-  "settings.section.options": "Options",
+  "settings.section.browser": "Web",
+  "settings.section.chat": "Chat",
   "settings.section.memory": "Memory",
   "settings.section.remoteControl": "Remote control",
-  "settings.section.agent": "Agent and models",
+  "settings.section.agent": "Agent",
   "settings.section.appearance": "Appearance",
   "settings.section.voice": "Voice",
   "settings.section.account": "Account and usage",
   "settings.section.plugins": "Plugins and apps",
   "settings.section.mcp": "MCP servers",
-  "settings.section.permissions": "Permissions",
+  "settings.section.permissions": "Permission defaults",
   "settings.section.config": "Configuration",
   "settings.section.hooks": "Hooks",
   "settings.section.advanced": "Advanced",
   "settings.general.description": "General preferences for the Linux app.",
   "settings.browser.description":
-    "Visible browser shared by the app and the Codex agent.",
+    "Global web search and shared browser preferences.",
   "settings.browser.enabledTitle": "Enable shared browser",
   "settings.browser.enabledDetail":
     "Lets the app and agent use the same visible Playwright session.",
@@ -554,8 +551,8 @@ export const en: Record<MessageKey, string> = {
   "settings.browser.routingTitle": "Agent browser tools",
   "settings.browser.routingDetail":
     "The unsupported official Browser and its skill are disabled in this app. The agent uses only the shared Playwright MCP.",
-  "settings.options.description":
-    "Secondary settings applied globally to new conversations.",
+  "settings.chat.description":
+    "Controls how much detail Codex exposes in the conversation.",
   "settings.memory.description":
     "Controls the local memory Codex uses across conversations.",
   "settings.memory.experimental": "Experimental",
@@ -682,12 +679,9 @@ export const en: Record<MessageKey, string> = {
   "desktopSettings.saveError": "Unable to save the last workspace",
   "settings.plannedArchitecture": "Planned architecture",
   "settings.toConnect": "Not connected yet",
-  "settings.apply": "Apply and return",
-  "settings.currentConversation": "Current conversation",
+  "settings.global.automatic": "Automatic (recommended)",
   "settings.agent.description":
-    "Behavior for the current thread and its upcoming turns.",
-  "settings.agent.presetsUnavailable":
-    "App Server presets are unavailable — built-in modes remain usable.",
+    "Defaults used when starting new conversations.",
   "settings.agent.model": "Model",
   "settings.agent.effort": "Reasoning effort",
   "settings.agent.personality": "Personality",
@@ -696,7 +690,6 @@ export const en: Record<MessageKey, string> = {
   "settings.agent.pragmatic": "Pragmatic",
   "settings.agent.friendly": "Friendly",
   "settings.agent.neutral": "Neutral",
-  "settings.agent.workMode": "Work mode",
   "settings.agent.globalDefaults": "Global defaults",
   "settings.agent.globalDefaultsDetail":
     "Preferences used by default in new conversations.",
@@ -705,7 +698,6 @@ export const en: Record<MessageKey, string> = {
   "settings.agent.verbosity.medium": "Medium",
   "settings.agent.verbosity.high": "High",
   "settings.agent.planEffort": "Plan mode reasoning",
-  "settings.agent.defaultMode": "Agent",
   "settings.effort.none": "None",
   "settings.effort.minimal": "Minimal",
   "settings.effort.low": "Low",
@@ -713,19 +705,26 @@ export const en: Record<MessageKey, string> = {
   "settings.effort.high": "High",
   "settings.effort.xhigh": "Very high",
   "settings.effort.ultra": "Ultra",
-  "modelPicker.title": "Choose model and reasoning pace",
+  "modelPicker.title": "Choose model and reasoning",
   "modelPicker.model": "Model",
   "modelPicker.modelDetail": "Engine used for the next messages",
-  "modelPicker.effort": "Reasoning pace",
+  "modelPicker.effort": "Reasoning",
   "modelPicker.effortDetail": "Depth and time allocated to reasoning",
+  "modelPicker.planMode": "Plan mode",
+  "modelPicker.planModeDetail":
+    "Prepare and maintain a plan before acting",
   "permissionPicker.title": "Permission level",
   "permissionPicker.detail": "Access granted to Codex for this conversation",
   "permissionPicker.readOnlyDetail": "Read files without changing them",
   "permissionPicker.workspaceDetail": "Edit files inside the workspace",
   "permissionPicker.fullAccessDetail":
     "Access the system and network without restriction",
+  "securityPicker.trigger": "Security",
+  "securityPicker.title": "Security",
+  "securityPicker.detail":
+    "Access granted to Codex and when confirmation is required",
   "settings.permissions.description":
-    "Choose what Codex can read, modify, and run.",
+    "Default access and confirmation policy for new conversations.",
   "settings.permissions.catalogUnavailable":
     "The App Server catalog is unavailable — built-in profiles remain usable.",
   "settings.permissions.profile": "Permission profile",
@@ -759,6 +758,61 @@ export const en: Record<MessageKey, string> = {
   "settings.requirements.error": "Unable to read managed requirements.",
   "settings.config.description":
     "Edit the global configuration used by Codex and App Server.",
+  "settings.config.guided.title": "Guided configuration",
+  "settings.config.guided.description":
+    "Configure advanced options whose name, unit, or accepted values are difficult to infer.",
+  "settings.config.guided.error": "Unable to update configuration:",
+  "settings.config.defaults.title": "Defaults for new conversations",
+  "settings.config.defaults.description":
+    "These choices become the initial permissions and approval policy for new threads.",
+  "settings.config.defaultPermissions.title": "Default permissions",
+  "settings.config.defaultPermissions.detail":
+    "Access profile used when a conversation does not provide an explicit override.",
+  "settings.config.defaultPermissions.read-only": "Read only",
+  "settings.config.defaultPermissions.workspace": "Workspace",
+  "settings.config.defaultPermissions.danger-full-access": "Full access",
+  "settings.config.defaultApprovals.title": "Default approvals",
+  "settings.config.defaultApprovals.detail":
+    "Controls when new conversations must ask for your confirmation.",
+  "settings.config.value.custom": "Custom configuration in config.toml",
+  "settings.config.context.title": "Context and outputs",
+  "settings.config.context.description":
+    "Control when Codex compacts its context and how much tool output it retains.",
+  "settings.config.compactLimit.title": "Compaction threshold",
+  "settings.config.compactLimit.detail":
+    "Total token count before automatic compaction. Automatic uses the model limit.",
+  "settings.config.toolOutputLimit.title": "Retained output per tool",
+  "settings.config.toolOutputLimit.detail":
+    "Maximum number of tokens retained for each tool result.",
+  "settings.config.projectDocs.title": "Project instructions",
+  "settings.config.projectDocs.description":
+    "Control discovery and size limits for instruction files added to context.",
+  "settings.config.projectDocLimit.title": "Maximum instruction size",
+  "settings.config.projectDocLimit.detail":
+    "Maximum content read from AGENTS.md files for the first turn.",
+  "settings.config.fallbackFiles.title": "Fallback filenames",
+  "settings.config.fallbackFiles.detail":
+    "Ordered comma-separated list used when AGENTS.md is absent.",
+  "settings.config.fallbackFiles.save": "Save fallback filenames",
+  "settings.config.runtime.title": "Runtime and credentials",
+  "settings.config.runtime.description":
+    "Choose shell behavior and the stores used for local secrets.",
+  "settings.config.loginShell.title": "Allow login shells",
+  "settings.config.loginShell.detail":
+    "Allows shell tools to load the login profile when they request it.",
+  "settings.config.cliCredentials.title": "Codex CLI credentials",
+  "settings.config.cliCredentials.detail":
+    "Storage used for CLI login credentials.",
+  "settings.config.mcpCredentials.title": "MCP OAuth credentials",
+  "settings.config.mcpCredentials.detail":
+    "Storage used for MCP server OAuth tokens.",
+  "settings.config.credentials.auto": "Automatic",
+  "settings.config.credentials.file": "Local file",
+  "settings.config.credentials.keyring": "System keyring",
+  "settings.config.value.automatic": "Automatic (model)",
+  "settings.config.advanced.title": "Advanced configuration",
+  "settings.config.advanced.description":
+    "Edit config.toml directly for options that do not have a guided setting.",
   "settings.config.global": "Global configuration",
   "settings.config.file": "config.toml",
   "settings.config.preview": "Browser preview",

@@ -12,6 +12,7 @@ import type { ThreadSummary } from "../types";
 import type { ThreadSearchController } from "../lib/useThreadSearch";
 import { ThreadDeleteDialog } from "./ThreadDeleteDialog";
 import { SidebarThreadGroup } from "./SidebarThreadGroup";
+import { RoundIconButton } from "./RoundIcon";
 
 type SidebarProps = {
   cwd: string;
@@ -127,9 +128,12 @@ export function Sidebar({
           <Sparkles />
         </span>
         <strong>Codex</strong>
-        <button onClick={onClose} aria-label={t("sidebar.hide")}>
-          <PanelLeft />
-        </button>
+        <RoundIconButton
+          aria-label={t("sidebar.hide")}
+          icon={PanelLeft}
+          onClick={onClose}
+          variant="tertiary"
+        />
       </div>
       <button className="new-chat" onClick={onNewChat}>
         <MessageSquarePlus /> {t("sidebar.newChat")} <kbd>Ctrl N</kbd>
@@ -195,13 +199,29 @@ export function Sidebar({
         )}
       </nav>
       <div className="sidebar-bottom">
-        <button onClick={onSelectDirectory} title={t("sidebar.changeFolder")}>
-          <Folder />{" "}
-          <span className="cwd-label">{cwd || t("sidebar.chooseFolder")}</span>
-        </button>
-        <button onClick={onOpenSettings}>
-          <Settings2 /> {t("sidebar.settings")}
-        </button>
+        <RoundIconButton
+          className="sidebar-bottom-action"
+          gap="large"
+          icon={Folder}
+          label={
+            <span className="cwd-label">
+              {cwd || t("sidebar.chooseFolder")}
+            </span>
+          }
+          onClick={onSelectDirectory}
+          size="large"
+          title={t("sidebar.changeFolder")}
+          variant="tertiary"
+        />
+        <RoundIconButton
+          className="sidebar-bottom-action"
+          gap="large"
+          icon={Settings2}
+          label={t("sidebar.settings")}
+          onClick={onOpenSettings}
+          size="large"
+          variant="tertiary"
+        />
       </div>
       {deleteCandidate && (
         <ThreadDeleteDialog

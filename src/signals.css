@@ -161,18 +161,7 @@
   padding: 8px 10px;
 }
 .plan-progress-icon {
-  display: grid;
-  width: 22px;
-  height: 22px;
-  flex: 0 0 auto;
-  place-items: center;
-  border: 1px solid #454540;
-  border-radius: 50%;
   color: #8fa9ba;
-}
-.plan-progress-icon svg {
-  width: 11px;
-  height: 11px;
 }
 .plan-progress-heading > div {
   display: grid;

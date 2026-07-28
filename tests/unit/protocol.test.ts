@@ -157,6 +157,29 @@ describe("constructeurs JSON-RPC", () => {
     expect(
       threadStartParams("/tmp/project", "gpt-test", undefined),
     ).not.toHaveProperty("permissions"));
+  it("omet la personnalité lorsqu’elle n’est pas prise en charge", () => {
+    expect(
+      threadStartParams("/tmp/project", "gpt-test", ":workspace", undefined),
+    ).not.toHaveProperty("personality");
+    expect(
+      turnStartParams("thr", "gpt-test", "go", [], {
+        effort: "high",
+        personality: undefined,
+        mode: "default",
+      }),
+    ).not.toHaveProperty("personality");
+    expect(
+      threadBehaviorUpdateParams(
+        "thr",
+        "gpt-test",
+        "high",
+        undefined,
+        "default",
+        ":workspace",
+        "on-request",
+      ),
+    ).not.toHaveProperty("personality");
+  });
   it("transmet explicitement une politique d’approbation sélectionnée", () =>
     expect(
       threadStartParams(

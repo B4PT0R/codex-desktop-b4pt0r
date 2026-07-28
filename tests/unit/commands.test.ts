@@ -16,8 +16,6 @@ describe("composer commands", () => {
 
   it("expose uniquement des commandes réellement branchées", () => {
     expect(composerCommands.map((command) => command.id)).toEqual([
-      "model",
-      "permissions",
       "plan",
       "review",
       "new",

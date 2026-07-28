@@ -138,15 +138,22 @@ L’app officielle utilise une vue dédiée qui remplace temporairement l’espa
 travail, avec « Retour à l’app », recherche, groupes de navigation et contenu
 scrollable. Cette structure est retenue à la place d’une grande modale.
 
+Le centre utilise une frontière de portée stricte : toutes ses sections
+configurent exclusivement des préférences persistantes globales. Le modèle,
+l’effort et le mode Plan du thread restent dans le popover Modèle ; permissions
+et approbations partagent le popover Security sous le composer.
+
 Le centre utilise une navigation interne durable :
 
 1. **Général** — langue, démarrage, ouverture des fichiers et cycle App Server ;
-2. **Navigateur web** — Chromium Playwright partagé, activation, état et réparation ;
-3. **Agent et modèles** — modèle, effort, personnalité, modes de collaboration ;
-4. **Permissions** — profils, approbations et exigences administrées ;
-5. **Intégrations** — MCP, apps/connecteurs, plugins, skills et hooks ;
-6. **Compte et utilisation** — connexion, quotas, consommation et messages ;
-7. **Avancé** — fonctions expérimentales, import d’autres agents, contrôle distant,
+2. **Web** — recherche web globale, Chromium Playwright partagé, activation, état et réparation ;
+3. **Chat** — résumés et futures préférences globales qui contrôlent le niveau de détail visible ;
+4. **Agent** — modèle, effort, personnalité et comportement globaux ;
+5. **Permissions par défaut** — profils, approbations et exigences administrées ;
+6. **Configuration** — champs TOML globaux guidés, éditeur brut et instructions personnelles ;
+7. **Intégrations** — MCP, apps/connecteurs, plugins, skills et hooks ;
+8. **Compte et utilisation** — connexion, quotas, consommation et messages ;
+9. **Avancé** — fonctions expérimentales, import d’autres agents, contrôle distant,
    diagnostics et feedback.
 
 État actuel : les inventaires stables `skills/list`, `mcpServerStatus/list` et
@@ -185,9 +192,17 @@ si `rateLimitReachedType` signale explicitement des crédits workspace épuisés
 une limite workspace atteinte ; un simple quota personnel ne déclenche pas cette
 action.
 
-Les valeurs du thread courant apparaissent dans « Agent et modèles » et
-« Permissions » avec une indication explicite de leur portée. Les préférences
-globales ne doivent pas être sauvegardées implicitement comme réglages du thread.
+Les réglages courants du thread ne sont jamais répétés dans les sections
+globales. Le mode Plan est une section du sélecteur de modèle ; permissions et
+approbations sont regroupées dans Security ; la personnalité reste un défaut
+global dans Agent.
+
+Les icônes circulaires statiques et interactives utilisent la primitive commune
+`RoundIcon`/`RoundIconButton`. Ses variantes `primary`, `secondary` et
+`tertiary` définissent le niveau d’accent, de fond et de bordure ; les features
+ne surchargent que les couleurs sémantiques. Les tailles `small`, `medium` et
+`large` ainsi que le label texte optionnel appartiennent aussi à la primitive ;
+les composants ne recréent pas leur propre géométrie d’icône.
 
 La connexion ChatGPT gérée par Codex ouvre le navigateur système, conserve le
 `loginId` pour permettre réouverture et annulation, et attend la notification de
@@ -206,7 +221,7 @@ les identifiants Bedrock externes restent administrés hors de l’application.
 | MCP, apps, plugins, skills, hooks | Réglages Intégrations, mentions         | Catalogue et état de connexion          |
 | Compte, quotas, usage, messages   | Réglages Compte, indicateurs discrets   | Global, jamais mélangé au contexte      |
 | Realtime                          | Compositeur et conversation             | Action directe, parole streamée dans le message vocal principal |
-| Configuration                     | Réglages par domaine                    | Pas d’éditeur TOML générique par défaut |
+| Configuration                     | Réglages globaux par domaine, éditeur TOML borné | Guidage courant + échappatoire avancée |
 | Expérimental et import            | Réglages Avancé                         | Isolé et clairement signalé             |
 | FS, process, exec, ressources MCP | Infrastructure/panneaux                 | Pas de console RPC générique            |
 | Warnings, diagnostics, feedback   | Conversation ou Avancé selon portée     | Actionnable, dédupliqué                 |
@@ -218,7 +233,7 @@ uniquement après activation explicite. Le navigateur, son profil persistant,
 les sorties MCP et les artefacts servis localement appartiennent aux données
 utilisateur de Codex Desktop sous `~/.local/share/codex-desktop/`.
 L’activation, les versions installées, l’état de partage et la réparation sont
-regroupés dans la section autonome **Navigateur web** plutôt que dans les
+regroupés dans la section autonome **Web** plutôt que dans les
 préférences générales.
 La désactivation arrête le serveur local et retire l’entrée MCP `playwright`
 uniquement si elle correspond encore à celle que l’application possède ; une

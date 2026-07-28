@@ -1,6 +1,6 @@
 # Codex Desktop Linux — Handoff
 
-Last updated: 2026-07-27
+Last updated: 2026-07-28
 
 Read `AGENTS.md` before contributing. This file records only the current
 baseline, active objective and next useful work. Durable UI decisions belong in
@@ -33,8 +33,13 @@ is not a product goal.
 
 ## Active objective
 
-Maintain **v0.3.2** as the current public release and choose the next bounded
-lot from the priorities below. The completed release contains:
+Maintain **v0.3.2** as the current public release and enforce a strict settings
+scope boundary. Settings sections own only persistent global preferences.
+Model, effort and Plan mode share the model popover; permissions and approvals
+share the Security popover in the main session bar. Config keeps guided uncommon TOML fields and
+the bounded raw editor instead of becoming the owner of every global setting.
+
+The completed release contains:
 
 - present each workspace as a compact collapsible group with its thread count;
 - automatically open the workspace containing the active thread;
@@ -64,6 +69,22 @@ The public README uses a deterministic English-only `demo=readme` fixture.
 `screenshots/` intentionally retains only the current light and dark showcase;
 older visual checkpoints remain recoverable from Git history.
 
+The settings-scope and guided Config lot has focused component and controller
+regression coverage and was visually reviewed at 1240×820 and 840×620.
+Agent and Permission defaults write the corresponding global TOML values;
+the global personality default remains editable independently of the current
+model capability and takes effect on subsequent compatible sessions;
+Config retains
+only uncommon guided fields, the raw editor and global instructions. Web
+combines global search behavior with the shared browser lifecycle, while
+Chat owns reasoning summaries and future global feedback-detail preferences.
+The ambiguous Options section has been removed. The narrow layout preserves
+readable labels, usable controls and horizontal containment.
+Light-theme cards, select menus, text inputs and the raw editor use the light
+palette explicitly; technical descriptions are consistently set at 10px/15px
+while the dark theme retains its existing surfaces. The browser console reported
+no warnings or errors during this review.
+
 ## Verified candidate baseline
 
 - Installed Codex: `codex-cli 0.145.0`.
@@ -71,24 +92,24 @@ older visual checkpoints remain recoverable from Git history.
   checkout `0dfa778dae6a`.
 - Client protocol inventory: 63 product request methods, 55 interpreted
   notification methods and 6 handled server requests.
-- Frontend/unit/contract: 495 tests across 95 files, including 45 installed
+- Frontend/unit/contract: 498 tests across 95 files, including 45 installed
   App Server contract cases.
 - Electron/Node: 51 tests.
 - Strict TypeScript: passing.
 - Production Vite build: passing.
 - Production dependency audit: zero vulnerabilities.
-- Main JS: 516.95 kB, 150.28 kB gzip.
+- Main JS: 527.09 kB, 152.95 kB gzip.
 - Lazy diff viewer: 89.50 kB, 32.89 kB gzip.
 - Lazy Markdown/KaTeX: 698.90 kB, 208.87 kB gzip.
 
 Current release artifact:
 
 - package: `dist/codex-desktop-linux_0.3.2_amd64.deb`;
-- size: 108,449,156 bytes;
+- size: 108,452,480 bytes;
 - package SHA-256:
-  `b0309078f8030bf26a339783654c29a0f89dd3ebe8161c658f540d06212370b0`;
+  `a3b69d12a69fbbad4d87012ee1d23605cf84b9f0d74fef3d7d9c198c7da29ca8`;
 - packaged ASAR SHA-256:
-  `171c904e80f82420aac9575c4c686c33680851df43d57fcefbb980afd18e30a7`.
+  `7870115a43de3148176327710e4774d17882d1aacb0d885920d1792865a900ea`.
 
 `dpkg-query` reports `codex-desktop-linux 0.3.2 amd64 install ok installed`;
 the installed ASAR matches the packaged hash and the shared-browser skill

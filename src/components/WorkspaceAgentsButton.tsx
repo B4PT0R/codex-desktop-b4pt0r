@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import { useWorkspaceAgents } from "../lib/useWorkspaceAgents";
 import "../workspace-agents.css";
+import { RoundIconButton } from "./RoundIcon";
 
 export function WorkspaceAgentsButton({
   cwd,
@@ -65,18 +66,18 @@ export function WorkspaceAgentsButton({
   return (
     <>
       {!hideTrigger && (
-        <button
+        <RoundIconButton
           ref={opener}
           className="workspace-agents-trigger"
           aria-expanded={open}
           aria-haspopup="dialog"
           aria-label={t("agents.open")}
+          icon={FileText}
+          label="AGENTS.md"
           title={t("agents.open")}
           onClick={() => setOpen(true)}
-        >
-          <FileText />
-          <span>AGENTS.md</span>
-        </button>
+          variant="tertiary"
+        />
       )}
       {open && (
         <div
@@ -112,12 +113,12 @@ export function WorkspaceAgentsButton({
                 </small>
               </span>
               {!nativeApp && <em>{t("agents.preview")}</em>}
-              <button
+              <RoundIconButton
                 aria-label={t("agents.close")}
+                icon={X}
                 onClick={requestClose}
-              >
-                <X />
-              </button>
+                variant="tertiary"
+              />
             </header>
             <p>{t("agents.description")}</p>
             <div className="workspace-agents-editor">

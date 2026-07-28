@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import { useI18n } from "../i18n/I18nProvider";
+import { RoundIconButton } from "./RoundIcon";
 
 type ConfigDocumentEditorProps = {
   description: string;
@@ -21,7 +22,7 @@ type ConfigDocumentEditorProps = {
   notice?: ReactNode;
   onChange: (value: string) => void;
   onReload: () => Promise<void>;
-  onSave: () => Promise<void>;
+  onSave: () => Promise<unknown>;
   placeholder?: string;
   restartNote: string;
   saved: boolean;
@@ -137,12 +138,12 @@ export function ConfigDocumentEditor({
                 <small>{filePath}</small>
               </span>
               {!native && <em>{t("settings.config.preview")}</em>}
-              <button
+              <RoundIconButton
                 aria-label={t("settings.config.closeEditor")}
+                icon={X}
                 onClick={requestClose}
-              >
-                <X />
-              </button>
+                variant="tertiary"
+              />
             </header>
             <p>{description}</p>
             <div className="config-editor-surface">
@@ -196,13 +197,14 @@ export function ConfigDocumentEditor({
                 </span>
               ) : (
                 <>
-                  <button
+                  <RoundIconButton
                     className="secondary-button"
                     disabled={loading || saving}
+                    icon={RotateCcw}
+                    label={t("settings.config.reload")}
                     onClick={() => void onReload()}
-                  >
-                    <RotateCcw /> {t("settings.config.reload")}
-                  </button>
+                    variant="secondary"
+                  />
                   <button
                     disabled={!dirty || loading || saving}
                     onClick={() => void onSave()}

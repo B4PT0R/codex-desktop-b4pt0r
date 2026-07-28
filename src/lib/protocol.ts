@@ -29,7 +29,7 @@ export function threadStartParams(
   cwd: string | undefined,
   model: string,
   permission?: Permission,
-  personality: Personality = "pragmatic",
+  personality?: Personality,
   approvalPolicy?: ApprovalPolicy,
 ) {
   return {
@@ -37,7 +37,7 @@ export function threadStartParams(
     model,
     ...(permission ? { permissions: permission } : {}),
     ...(approvalPolicy ? { approvalPolicy } : {}),
-    personality,
+    ...(personality ? { personality } : {}),
   };
 }
 export function realtimeThreadForkParams(
@@ -61,7 +61,7 @@ export function realtimeEphemeralThreadStartParams(
   cwd: string | undefined,
   model: string,
   permission?: Permission,
-  personality: Personality = "pragmatic",
+  personality?: Personality,
   approvalPolicy?: ApprovalPolicy,
 ) {
   return {
@@ -176,7 +176,9 @@ export function turnStartParams(
     input,
     model,
     effort: behavior?.effort,
-    personality: behavior?.personality,
+    ...(behavior?.personality
+      ? { personality: behavior.personality }
+      : {}),
     collaborationMode,
   };
 }
@@ -395,7 +397,7 @@ export function threadBehaviorUpdateParams(
   threadId: string,
   model: string,
   effort: string,
-  personality: Personality,
+  personality: Personality | undefined,
   mode: CollaborationMode,
   permission: Permission,
   approvalPolicy: ApprovalPolicy,
@@ -404,7 +406,7 @@ export function threadBehaviorUpdateParams(
     threadId,
     model,
     effort,
-    personality,
+    ...(personality ? { personality } : {}),
     permissions: permission,
     approvalPolicy,
     collaborationMode: {

@@ -2,6 +2,7 @@ import { Check, ClipboardList, LoaderCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { AgentSignal } from "../types";
+import { RoundIcon } from "./RoundIcon";
 
 type PlanPhase = "active" | "complete" | "exiting";
 
@@ -58,9 +59,12 @@ export function PlanProgressWidget({
       className={`plan-progress-widget ${phase}${complete ? " plan-done" : ""}`}
     >
       <div className="plan-progress-heading">
-        <span className="plan-progress-icon">
-          {complete ? <Check /> : <ClipboardList />}
-        </span>
+        <RoundIcon
+          className="plan-progress-icon"
+          icon={complete ? Check : ClipboardList}
+          size="small"
+          variant="secondary"
+        />
         <div>
           <strong>
             {complete ? t("planProgress.complete") : displayedPlan.title}

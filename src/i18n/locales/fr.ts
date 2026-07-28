@@ -535,28 +535,25 @@ export const fr = {
   "settings.search": "Rechercher dans les paramètres",
   "settings.noResults": "Aucun réglage trouvé",
   "settings.planned": "Prévu",
-  "settings.group.personal": "Personnel",
-  "settings.group.integrations": "Intégrations",
-  "settings.group.code": "Code",
   "settings.section.general": "Général",
-  "settings.section.browser": "Navigateur web",
-  "settings.section.options": "Options",
+  "settings.section.browser": "Web",
+  "settings.section.chat": "Chat",
   "settings.section.memory": "Mémoire",
   "settings.section.remoteControl": "Contrôle à distance",
-  "settings.section.agent": "Agent et modèles",
+  "settings.section.agent": "Agent",
   "settings.section.appearance": "Apparence",
   "settings.section.voice": "Voix",
   "settings.section.account": "Compte et utilisation",
   "settings.section.plugins": "Plugins et apps",
   "settings.section.mcp": "Serveurs MCP",
-  "settings.section.permissions": "Permissions",
+  "settings.section.permissions": "Permissions par défaut",
   "settings.section.config": "Configuration",
   "settings.section.hooks": "Hooks",
   "settings.section.advanced": "Avancé",
   "settings.general.description":
     "Préférences générales de l’application Linux.",
   "settings.browser.description":
-    "Navigateur visible partagé entre l’application et l’agent Codex.",
+    "Préférences globales de recherche web et du navigateur partagé.",
   "settings.browser.enabledTitle": "Activer le navigateur partagé",
   "settings.browser.enabledDetail":
     "Autorise l’application et l’agent à utiliser la même session Playwright visible.",
@@ -569,8 +566,8 @@ export const fr = {
   "settings.browser.routingTitle": "Outils navigateur de l’agent",
   "settings.browser.routingDetail":
     "Le Browser officiel non pris en charge et son skill sont désactivés dans cette application. L’agent utilise uniquement le MCP Playwright partagé.",
-  "settings.options.description":
-    "Réglages secondaires appliqués globalement aux nouvelles conversations.",
+  "settings.chat.description":
+    "Contrôle le niveau de détail présenté par Codex dans la conversation.",
   "settings.memory.description":
     "Contrôle la mémoire locale utilisée par Codex entre les conversations.",
   "settings.memory.experimental": "Expérimental",
@@ -702,12 +699,9 @@ export const fr = {
     "Impossible d’enregistrer le dernier espace de travail",
   "settings.plannedArchitecture": "Architecture prévue",
   "settings.toConnect": "À brancher",
-  "settings.apply": "Appliquer et revenir",
-  "settings.currentConversation": "Conversation actuelle",
+  "settings.global.automatic": "Automatique (recommandé)",
   "settings.agent.description":
-    "Comportement du thread courant et de ses prochains tours.",
-  "settings.agent.presetsUnavailable":
-    "Presets App Server indisponibles — les modes intégrés restent utilisables.",
+    "Valeurs utilisées par défaut au démarrage des nouvelles conversations.",
   "settings.agent.model": "Modèle",
   "settings.agent.effort": "Effort de raisonnement",
   "settings.agent.personality": "Personnalité",
@@ -716,7 +710,6 @@ export const fr = {
   "settings.agent.pragmatic": "Pragmatique",
   "settings.agent.friendly": "Amicale",
   "settings.agent.neutral": "Neutre",
-  "settings.agent.workMode": "Mode de travail",
   "settings.agent.globalDefaults": "Valeurs globales",
   "settings.agent.globalDefaultsDetail":
     "Préférences utilisées par défaut dans les nouvelles conversations.",
@@ -725,7 +718,6 @@ export const fr = {
   "settings.agent.verbosity.medium": "Moyenne",
   "settings.agent.verbosity.high": "Élevée",
   "settings.agent.planEffort": "Raisonnement en mode Plan",
-  "settings.agent.defaultMode": "Agent",
   "settings.effort.none": "Aucun",
   "settings.effort.minimal": "Minimal",
   "settings.effort.low": "Faible",
@@ -738,6 +730,9 @@ export const fr = {
   "modelPicker.modelDetail": "Moteur utilisé pour les prochains messages",
   "modelPicker.effort": "Raisonnement",
   "modelPicker.effortDetail": "Profondeur et temps accordés à la réflexion",
+  "modelPicker.planMode": "Mode Plan",
+  "modelPicker.planModeDetail":
+    "Prépare et maintient un plan avant d’agir",
   "permissionPicker.title": "Niveau de permission",
   "permissionPicker.detail": "Accès accordé à Codex pour cette conversation",
   "permissionPicker.readOnlyDetail": "Lire les fichiers sans les modifier",
@@ -745,8 +740,12 @@ export const fr = {
     "Modifier les fichiers dans l’espace de travail",
   "permissionPicker.fullAccessDetail":
     "Accéder au système et au réseau sans restriction",
+  "securityPicker.trigger": "Sécurité",
+  "securityPicker.title": "Sécurité",
+  "securityPicker.detail":
+    "Accès accordé à Codex et moments où une confirmation est requise",
   "settings.permissions.description":
-    "Définissez ce que Codex peut lire, modifier et exécuter.",
+    "Accès et politique de confirmation appliqués par défaut aux nouvelles conversations.",
   "settings.permissions.catalogUnavailable":
     "Catalogue App Server indisponible — les profils intégrés restent utilisables.",
   "settings.permissions.profile": "Profil de permissions",
@@ -782,6 +781,64 @@ export const fr = {
     "Impossible de lire les contraintes administrées.",
   "settings.config.description":
     "Modifiez la configuration globale utilisée par Codex et App Server.",
+  "settings.config.guided.title": "Configuration guidée",
+  "settings.config.guided.description":
+    "Réglez les options avancées dont le nom, l’unité ou les valeurs attendues sont difficiles à deviner.",
+  "settings.config.guided.error":
+    "Impossible de modifier la configuration :",
+  "settings.config.defaults.title":
+    "Valeurs par défaut des nouvelles conversations",
+  "settings.config.defaults.description":
+    "Ces choix deviennent les permissions et approbations initiales des nouveaux threads.",
+  "settings.config.defaultPermissions.title": "Permissions par défaut",
+  "settings.config.defaultPermissions.detail":
+    "Profil d’accès appliqué lorsqu’une conversation ne fournit pas de remplacement explicite.",
+  "settings.config.defaultPermissions.read-only": "Lecture seule",
+  "settings.config.defaultPermissions.workspace": "Espace de travail",
+  "settings.config.defaultPermissions.danger-full-access": "Accès complet",
+  "settings.config.defaultApprovals.title": "Approbations par défaut",
+  "settings.config.defaultApprovals.detail":
+    "Définit quand les nouvelles conversations doivent demander votre confirmation.",
+  "settings.config.value.custom":
+    "Configuration personnalisée dans config.toml",
+  "settings.config.context.title": "Contexte et sorties",
+  "settings.config.context.description":
+    "Maîtrisez quand Codex compacte son contexte et combien de sortie d’outil il conserve.",
+  "settings.config.compactLimit.title": "Seuil de compactage",
+  "settings.config.compactLimit.detail":
+    "Nombre total de jetons avant compactage automatique. Automatique utilise la limite du modèle.",
+  "settings.config.toolOutputLimit.title": "Sortie conservée par outil",
+  "settings.config.toolOutputLimit.detail":
+    "Nombre maximal de jetons conservés pour chaque résultat d’outil.",
+  "settings.config.projectDocs.title": "Instructions du projet",
+  "settings.config.projectDocs.description":
+    "Contrôlez la découverte et la taille des fichiers d’instructions ajoutés au contexte.",
+  "settings.config.projectDocLimit.title": "Taille maximale des instructions",
+  "settings.config.projectDocLimit.detail":
+    "Volume maximal lu depuis les fichiers AGENTS.md pour le premier tour.",
+  "settings.config.fallbackFiles.title": "Noms de fichiers de repli",
+  "settings.config.fallbackFiles.detail":
+    "Liste ordonnée, séparée par des virgules, utilisée lorsqu’AGENTS.md est absent.",
+  "settings.config.fallbackFiles.save": "Enregistrer les fichiers de repli",
+  "settings.config.runtime.title": "Exécution et identifiants",
+  "settings.config.runtime.description":
+    "Choisissez les comportements du shell et les magasins utilisés pour les secrets locaux.",
+  "settings.config.loginShell.title": "Autoriser les shells de connexion",
+  "settings.config.loginShell.detail":
+    "Permet aux outils shell d’utiliser le profil de connexion lorsqu’ils le demandent.",
+  "settings.config.cliCredentials.title": "Identifiants Codex CLI",
+  "settings.config.cliCredentials.detail":
+    "Emplacement utilisé pour conserver les identifiants de connexion du CLI.",
+  "settings.config.mcpCredentials.title": "Identifiants OAuth MCP",
+  "settings.config.mcpCredentials.detail":
+    "Emplacement utilisé pour conserver les jetons OAuth des serveurs MCP.",
+  "settings.config.credentials.auto": "Automatique",
+  "settings.config.credentials.file": "Fichier local",
+  "settings.config.credentials.keyring": "Trousseau système",
+  "settings.config.value.automatic": "Automatique (modèle)",
+  "settings.config.advanced.title": "Configuration avancée",
+  "settings.config.advanced.description":
+    "Modifiez directement config.toml pour les options qui ne disposent pas d’un réglage guidé.",
   "settings.config.global": "Configuration globale",
   "settings.config.file": "config.toml",
   "settings.config.preview": "Aperçu navigateur",

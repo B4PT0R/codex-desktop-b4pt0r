@@ -116,17 +116,6 @@
   padding-right: 2px;
 }
 
-.settings-navigation nav section {
-  margin: 0 0 13px;
-}
-
-.settings-navigation nav h2 {
-  margin: 0 8px 5px;
-  color: #666662;
-  font-size: 10px;
-  font-weight: 500;
-}
-
 .settings-navigation nav button {
   display: flex;
   align-items: center;
@@ -137,6 +126,32 @@
   color: #bbb;
   text-align: left;
   font-size: 12px;
+}
+
+.settings-navigation
+  nav
+  .round-icon-button.round-icon-button-labeled {
+  width: 100%;
+  padding: 7px 9px;
+  border-radius: 6px;
+}
+
+.settings-navigation
+  nav
+  .round-icon-button.round-icon-button-labeled
+  .round-icon-button-glyph {
+  width: 14px;
+  height: 14px;
+  margin-left: 0;
+}
+
+.settings-navigation
+  nav
+  .round-icon-button.round-icon-button-labeled
+  .round-icon-button-label {
+  display: flex;
+  flex: 1;
+  align-items: center;
 }
 
 .settings-navigation nav button:hover,
@@ -1749,6 +1764,99 @@
   gap: 32px;
 }
 
+.config-guided-section {
+  display: grid;
+  gap: 10px;
+}
+
+.config-guided-section > header {
+  display: grid;
+  gap: 5px;
+}
+
+.config-guided-section h2,
+.config-guided-section p {
+  margin: 0;
+}
+
+.config-guided-section h2 {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.config-guided-section p {
+  color: #858580;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.config-guided-section > .settings-subsection-heading {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.config-guided-section > .settings-subsection-heading strong {
+  font-size: 12px;
+}
+
+.config-guided-section .settings-field-description strong {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.config-guided-section .settings-fields input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin-left: auto;
+  accent-color: #767670;
+}
+
+.config-guided-text-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 58px;
+  padding: 10px 15px;
+}
+
+.config-guided-text-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 44%;
+  min-width: 202px;
+  max-width: 314px;
+  margin-left: auto;
+}
+
+.config-guided-text-control input {
+  min-width: 0;
+  flex: 1;
+  padding: 7px 9px;
+  border: 1px solid #41413d;
+  border-radius: 7px;
+  color: #d0d0cc;
+  background: #292927;
+  font-size: 11px;
+}
+
+.config-guided-text-control button {
+  display: grid;
+  width: 31px;
+  height: 31px;
+  padding: 0;
+  place-items: center;
+}
+
+.config-guided-text-control svg {
+  width: 13px;
+  height: 13px;
+}
+
+.config-advanced-heading {
+  margin: 0 0 -22px;
+}
+
 .config-document-section {
   display: grid;
   gap: 10px;
@@ -1769,11 +1877,15 @@
 .config-document-section h2 {
   margin: 0;
   color: #d2d2ce;
-  font-size: 13px;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .config-document-section header p {
   margin: 0;
+  color: #858580;
+  font-size: 10px;
+  line-height: 1.5;
 }
 
 .config-document-card {
@@ -1922,6 +2034,9 @@
 
 .config-editor-dialog > p {
   margin: 0;
+  color: #858580;
+  font-size: 10px;
+  line-height: 1.5;
 }
 
 .config-editor-surface {

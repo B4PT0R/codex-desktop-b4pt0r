@@ -11,6 +11,7 @@ import { useI18n } from "../i18n/I18nProvider";
 import { invoke, isDesktopApp } from "../lib/nativeBridge";
 import type { ToolArtifact } from "../types";
 import "../generated-image.css";
+import { RoundIconButton } from "./RoundIcon";
 
 type GeneratedImageArtifact = Extract<
   ToolArtifact,
@@ -113,20 +114,20 @@ export function GeneratedImageWidget({
                   )}
                   <span className="generated-image-actions">
                     {artifact.dataUrl && (
-                      <button
+                      <RoundIconButton
                         aria-label={t("imageWidget.expand")}
+                        icon={Expand}
                         onClick={() => setExpanded(artifact)}
-                      >
-                        <Expand />
-                      </button>
+                        variant="tertiary"
+                      />
                     )}
-                    <button
+                    <RoundIconButton
                       aria-label={t("imageWidget.download")}
                       disabled={saving || (!artifact.dataUrl && !artifact.path)}
+                      icon={Download}
                       onClick={() => void save(artifact)}
-                    >
-                      <Download />
-                    </button>
+                      variant="tertiary"
+                    />
                   </span>
                 </figcaption>
               </figure>
@@ -173,20 +174,20 @@ export function GeneratedImageWidget({
               src={expanded.dataUrl}
             />
             <span>
-              <button
+              <RoundIconButton
                 aria-label={t("imageWidget.download")}
                 disabled={saving}
+                icon={Download}
                 onClick={() => void save(expanded)}
-              >
-                <Download />
-              </button>
-              <button
+                variant="tertiary"
+              />
+              <RoundIconButton
                 autoFocus
                 aria-label={t("imageWidget.close")}
+                icon={X}
                 onClick={() => setExpanded(undefined)}
-              >
-                <X />
-              </button>
+                variant="tertiary"
+              />
             </span>
           </div>,
           document.body,

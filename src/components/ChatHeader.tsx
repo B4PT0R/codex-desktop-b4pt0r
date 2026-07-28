@@ -20,6 +20,7 @@ import { ThreadDeleteDialog } from "./ThreadDeleteDialog";
 import { BackgroundTerminalsLoader } from "./BackgroundTerminalsLoader";
 import { ThreadGoalButton } from "./ThreadGoalButton";
 import { WorkspaceAgentsButton } from "./WorkspaceAgentsButton";
+import { RoundIconButton } from "./RoundIcon";
 
 type ChatHeaderProps = {
   busy: boolean;
@@ -133,9 +134,12 @@ export function ChatHeader({
     <>
       <header>
         {!sidebarOpen && (
-          <button onClick={onOpenSidebar} aria-label={t("chat.sidebar.show")}>
-            <Menu />
-          </button>
+          <RoundIconButton
+            aria-label={t("chat.sidebar.show")}
+            icon={Menu}
+            onClick={onOpenSidebar}
+            variant="tertiary"
+          />
         )}
         {threadId ? (
           <div className="thread-menu" ref={menu}>
@@ -180,22 +184,22 @@ export function ChatHeader({
                           }
                         }}
                       />
-                      <button
+                      <RoundIconButton
                         aria-label={t("common.cancel")}
+                        icon={X}
                         onClick={() => {
                           setName(title);
                           setEditingName(false);
                         }}
-                      >
-                        <X />
-                      </button>
-                      <button
+                        variant="tertiary"
+                      />
+                      <RoundIconButton
                         aria-label={t("chat.actions.saveName")}
                         disabled={!name.trim() || name.trim() === title || saving}
+                        icon={Check}
                         onClick={rename}
-                      >
-                        <Check />
-                      </button>
+                        variant="tertiary"
+                      />
                     </span>
                   </label>
                 ) : (
@@ -203,12 +207,12 @@ export function ChatHeader({
                     <small>{t("chat.actions.name")}</small>
                     <span>
                       <strong title={title}>{title}</strong>
-                      <button
+                      <RoundIconButton
                         aria-label={t("chat.actions.editName")}
+                        icon={Pencil}
                         onClick={() => setEditingName(true)}
-                      >
-                        <Pencil />
-                      </button>
+                        variant="tertiary"
+                      />
                     </span>
                   </div>
                 )}
@@ -309,26 +313,28 @@ export function ChatHeader({
         )}
         <div className="header-actions">
           {demoPlayback && (
-            <button
+            <RoundIconButton
               className="demo-playback-button"
+              icon={
+                demoPlayback.running
+                  ? Square
+                  : demoPlayback.hasPlayed
+                    ? RotateCcw
+                    : Play
+              }
+              label={
+                demoPlayback.running
+                  ? t("demoPlayback.stop")
+                  : demoPlayback.hasPlayed
+                    ? t("demoPlayback.replay")
+                    : t("demoPlayback.play")
+              }
               onClick={
                 demoPlayback.running ? demoPlayback.onStop : demoPlayback.onPlay
               }
-            >
-              {demoPlayback.running ? (
-                <>
-                  <Square /> {t("demoPlayback.stop")}
-                </>
-              ) : demoPlayback.hasPlayed ? (
-                <>
-                  <RotateCcw /> {t("demoPlayback.replay")}
-                </>
-              ) : (
-                <>
-                  <Play /> {t("demoPlayback.play")}
-                </>
-              )}
-            </button>
+              size="medium"
+              variant="secondary"
+            />
           )}
           <BackgroundTerminalsLoader
             busy={busy}

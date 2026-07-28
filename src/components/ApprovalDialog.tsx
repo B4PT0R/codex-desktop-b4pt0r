@@ -2,6 +2,7 @@ import { ShieldCheck } from "lucide-react";
 import type { Approval } from "../types";
 import { useDialogFocus } from "../lib/useDialogFocus";
 import { useI18n } from "../i18n/I18nProvider";
+import { RoundIcon } from "./RoundIcon";
 
 type ApprovalDecision = "accept" | "session" | "decline";
 
@@ -26,9 +27,12 @@ export function ApprovalDialog({ approval, onDecide }: ApprovalDialogProps) {
         onKeyDown={onDialogKeyDown}
         tabIndex={-1}
       >
-        <span className="approval-icon">
-          <ShieldCheck />
-        </span>
+        <RoundIcon
+          className="approval-icon"
+          icon={ShieldCheck}
+          size="large"
+          variant="primary"
+        />
         <h2 id="approval-title">{approval.title}</h2>
         <p>{approval.description}</p>
         {approval.command && <code>{approval.command}</code>}

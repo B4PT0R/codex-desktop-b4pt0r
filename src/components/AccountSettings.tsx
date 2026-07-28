@@ -5,6 +5,7 @@ import { RateLimitResetCard } from "./RateLimitResetCard";
 import { WorkspaceMessages } from "./WorkspaceMessages";
 import { AccountAuthActions } from "./AccountAuthActions";
 import { useI18n } from "../i18n/I18nProvider";
+import { RoundIconButton } from "./RoundIcon";
 import type { MessageKey } from "../i18n/locales/fr";
 
 export function AccountSettings({
@@ -27,20 +28,19 @@ export function AccountSettings({
     <section className="settings-page account-page">
       <header>
         <p>{t("account.description")}</p>
-        <button
+        <RoundIconButton
           className="settings-refresh"
           disabled={controller.loading || rateLimits.loading}
+          icon={RefreshCw}
+          iconClassName={
+            controller.loading || rateLimits.loading ? "spin" : undefined
+          }
+          label={t("account.refresh")}
           onClick={() =>
             void Promise.all([controller.refresh(), rateLimits.refresh()])
           }
-        >
-          <RefreshCw
-            className={
-              controller.loading || rateLimits.loading ? "spin" : undefined
-            }
-          />
-          {t("account.refresh")}
-        </button>
+          variant="tertiary"
+        />
       </header>
       {controller.error && (
         <div className="inventory-message error" role="alert">

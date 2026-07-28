@@ -1,5 +1,5 @@
 import type { ApprovalPolicy, Permission } from "../lib/protocol";
-import type { Model, Quota } from "../types";
+import type { CollaborationMode, Model, Quota } from "../types";
 import type { ThreadTelemetry } from "../lib/sessionTelemetry";
 import { Composer } from "./Composer";
 import { SessionTelemetry } from "./SessionTelemetry";
@@ -7,13 +7,12 @@ import type { AppsController } from "../lib/useApps";
 import type { TurnContextItem } from "../lib/protocol";
 import { useI18n } from "../i18n/I18nProvider";
 import { ModelQuickPicker } from "./ModelQuickPicker";
-import { PermissionQuickPicker } from "./PermissionQuickPicker";
 import type { PermissionProfileSummary } from "../lib/appServerTypes";
 import type { RateLimitResetCreditsSummary } from "../lib/appServerTypes";
 import type { AppServerSkill } from "../lib/appServerTypes";
 import { QuotaQuickPicker } from "./QuotaQuickPicker";
 import { ContextGauge } from "./ContextGauge";
-import { ApprovalQuickPicker } from "./ApprovalQuickPicker";
+import { SecurityQuickPicker } from "./SecurityQuickPicker";
 
 type ChatFooterProps = {
   apps: AppsController;
@@ -24,6 +23,7 @@ type ChatFooterProps = {
   canSteer: boolean;
   cwd: string;
   model: string;
+  collaborationMode: CollaborationMode;
   effort: string;
   models: Model[];
   permission: Permission;
@@ -43,6 +43,7 @@ type ChatFooterProps = {
   telemetry?: ThreadTelemetry;
   onChangeEffort: (effort: string) => void;
   onChangeModel: (model: string) => void;
+  onChangeCollaborationMode: (mode: CollaborationMode) => Promise<boolean>;
   onCompact: () => void;
   onNeedApps: () => void;
   onNeedSkills: () => void;
@@ -66,6 +67,7 @@ export function ChatFooter({
   canSteer,
   cwd,
   model,
+  collaborationMode,
   effort,
   models,
   permission,
@@ -85,6 +87,7 @@ export function ChatFooter({
   telemetry,
   onChangeEffort,
   onChangeModel,
+  onChangeCollaborationMode,
   onCompact,
   onNeedApps,
   onNeedSkills,
@@ -129,21 +132,21 @@ export function ChatFooter({
       </div>
       <div className="footer-settings">
         <ModelQuickPicker
+          collaborationMode={collaborationMode}
           effort={effort}
           model={model}
           models={models}
           onChangeEffort={onChangeEffort}
+          onChangeCollaborationMode={onChangeCollaborationMode}
           onChangeModel={onChangeModel}
         />
-        <PermissionQuickPicker
-          onChange={onChangePermission}
+        <SecurityQuickPicker
+          allowedApprovalPolicies={allowedApprovalPolicies}
+          approvalPolicy={approvalPolicy}
+          onChangeApprovalPolicy={onChangeApprovalPolicy}
+          onChangePermission={onChangePermission}
           permission={permission}
-          profiles={permissionProfiles}
-        />
-        <ApprovalQuickPicker
-          allowed={allowedApprovalPolicies}
-          onChange={onChangeApprovalPolicy}
-          policy={approvalPolicy}
+          permissionProfiles={permissionProfiles}
         />
         <SessionTelemetry reroute={telemetry?.reroute} />
         <div className="footer-metrics">

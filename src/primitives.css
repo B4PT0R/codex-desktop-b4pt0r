@@ -1,0 +1,161 @@
+.round-icon,
+.round-icon-button {
+  display: grid;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.round-icon-button-glyph {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  flex: 0 0 auto;
+  place-items: center;
+}
+
+.round-icon-button.round-icon-button-labeled {
+  display: inline-flex;
+  width: auto;
+  max-width: 100%;
+  align-items: center;
+  padding-right: 8px;
+  border-radius: 999px;
+}
+
+.round-icon-gap-small {
+  gap: 4px;
+}
+
+.round-icon-gap-medium {
+  gap: 6px;
+}
+
+.round-icon-gap-large {
+  gap: 8px;
+}
+
+.round-icon-button-labeled .round-icon-button-glyph {
+  width: var(--round-icon-labeled-glyph-size);
+  height: var(--round-icon-labeled-glyph-size);
+  margin-left: 3px;
+}
+
+.round-icon-button-labeled .round-icon-button-glyph > svg {
+  width: 100%;
+  height: 100%;
+}
+
+.round-icon-button.round-icon-button-label-only {
+  padding-inline: 9px;
+}
+
+.round-icon-button-label {
+  flex: 0 1 auto;
+  overflow: hidden;
+  min-width: 0;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.round-icon-small {
+  --round-icon-size: 22px;
+  --round-icon-labeled-glyph-size: 10px;
+  width: 22px;
+  height: 22px;
+}
+
+.round-icon-medium {
+  --round-icon-size: 28px;
+  --round-icon-labeled-glyph-size: 12px;
+  width: 28px;
+  height: 28px;
+}
+
+.round-icon-large {
+  --round-icon-size: 38px;
+  --round-icon-labeled-glyph-size: 16px;
+  width: 38px;
+  height: 38px;
+}
+
+.round-icon-primary {
+  border: 1px solid #676760;
+  color: #e6e6e2;
+  background: #383834;
+}
+
+.round-icon-secondary {
+  border: 1px solid #41413d;
+  color: #92928d;
+  background: transparent;
+}
+
+.round-icon-tertiary {
+  border: 1px solid transparent;
+  color: #777773;
+  background: transparent;
+}
+
+.round-icon > svg,
+.round-icon-button-glyph > svg {
+  display: block;
+  width: 50%;
+  height: 50%;
+  margin: 0;
+  stroke: currentColor;
+}
+
+.round-icon-button {
+  cursor: pointer;
+}
+
+.round-icon-button.round-icon-primary:hover,
+.round-icon-button.round-icon-primary:focus-visible {
+  border-color: #85857e;
+  background: #484843;
+}
+
+.round-icon-button.round-icon-secondary:hover,
+.round-icon-button.round-icon-secondary:focus-visible {
+  color: #d0d0cc;
+  border-color: #595954;
+  background: #30302d;
+}
+
+.round-icon-button.round-icon-tertiary:hover,
+.round-icon-button.round-icon-tertiary:focus-visible {
+  color: #d0d0cc;
+  background: #30302d;
+}
+
+:root[data-theme="light"] .round-icon-primary {
+  color: #fff;
+  border-color: #55534d;
+  background: #4b4944;
+}
+
+:root[data-theme="light"] .round-icon-secondary {
+  color: #6f6f69;
+  border-color: #d5d5cf;
+}
+
+:root[data-theme="light"] .round-icon-tertiary {
+  color: #77716b;
+}
+
+:root[data-theme="light"] .round-icon-button.round-icon-primary:hover,
+:root[data-theme="light"] .round-icon-button.round-icon-primary:focus-visible {
+  border-color: #6a6861;
+  background: #5b5953;
+}
+
+:root[data-theme="light"] .round-icon-button.round-icon-secondary:hover,
+:root[data-theme="light"] .round-icon-button.round-icon-secondary:focus-visible,
+:root[data-theme="light"] .round-icon-button.round-icon-tertiary:hover,
+:root[data-theme="light"] .round-icon-button.round-icon-tertiary:focus-visible {
+  color: #34332f;
+  background: #efefeb;
+}

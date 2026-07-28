@@ -1,5 +1,6 @@
 import { ArrowLeft, FileText, Search } from "lucide-react";
 import { useI18n } from "../i18n/I18nProvider";
+import { RoundIconButton } from "./RoundIcon";
 import type { FileSearchResult } from "../lib/useFileSearch";
 import type { ComposerMenuSurfaceProps } from "./ComposerMenus";
 
@@ -33,9 +34,14 @@ export function FileSearchMenu({
       aria-label={t("composer.files")}
       onKeyDown={onMenuKeyDown}
     >
-      <button className="composer-menu-back" role="menuitem" onClick={onBack}>
-        <ArrowLeft /> {t("composer.files")}
-      </button>
+      <RoundIconButton
+        className="composer-menu-back"
+        icon={ArrowLeft}
+        label={t("composer.files")}
+        onClick={onBack}
+        role="menuitem"
+        variant="tertiary"
+      />
       <label className="file-search-input">
         <Search />
         <input

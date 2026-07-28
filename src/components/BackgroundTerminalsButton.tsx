@@ -5,6 +5,7 @@ import {
   useBackgroundTerminals,
   type BackgroundTerminal,
 } from "../lib/useBackgroundTerminals";
+import { RoundIconButton } from "./RoundIcon";
 
 type BackgroundTerminalsButtonProps = {
   busy: boolean;
@@ -48,7 +49,7 @@ export function BackgroundTerminalsButton({
   if (controller.terminals.length === 0) return null;
   return (
     <div className="background-terminals" ref={root}>
-      <button
+      <RoundIconButton
         ref={opener}
         className="background-terminals-trigger"
         aria-expanded={open}
@@ -58,11 +59,11 @@ export function BackgroundTerminalsButton({
         title={t("backgroundTerminals.count", {
           count: controller.terminals.length,
         })}
+        icon={Terminal}
+        label={controller.terminals.length}
         onClick={() => setOpen((value) => !value)}
-      >
-        <Terminal />
-        <span>{controller.terminals.length}</span>
-      </button>
+        variant="tertiary"
+      />
       {open && (
         <div
           ref={panel}
@@ -81,13 +82,14 @@ export function BackgroundTerminalsButton({
               <strong>{t("backgroundTerminals.title")}</strong>
               <small>{t("backgroundTerminals.detail")}</small>
             </span>
-            <button
+            <RoundIconButton
               aria-label={t("backgroundTerminals.refresh")}
               disabled={controller.loading}
+              icon={RefreshCw}
+              iconClassName={controller.loading ? "spin" : ""}
               onClick={() => void controller.refresh()}
-            >
-              <RefreshCw className={controller.loading ? "spin" : ""} />
-            </button>
+              variant="tertiary"
+            />
           </header>
           <div className="background-terminal-list">
             {controller.terminals.map((terminal) => (
@@ -161,15 +163,15 @@ function TerminalRow({
           </span>
         </div>
       ) : (
-        <button
+        <RoundIconButton
           className="background-terminal-stop"
           aria-label={t("backgroundTerminals.stopCommand", {
             command: terminal.command,
           })}
+          icon={Square}
           onClick={onRequestStop}
-        >
-          <Square />
-        </button>
+          variant="tertiary"
+        />
       )}
     </article>
   );

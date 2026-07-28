@@ -2,6 +2,7 @@ import { FilePenLine, X } from "lucide-react";
 import { lazy, Suspense, useEffect, useRef } from "react";
 import type { ToolCall } from "../types";
 import { useI18n } from "../i18n/I18nProvider";
+import { RoundIconButton } from "./RoundIcon";
 
 type WorkPanelProps = {
   tool: ToolCall;
@@ -43,9 +44,13 @@ export function WorkPanel({ tool, onClose }: WorkPanelProps) {
           <FilePenLine />
           <strong>{t("work.changes")}</strong>
         </span>
-        <button ref={closeButton} aria-label={t("work.close")} onClick={onClose}>
-          <X />
-        </button>
+        <RoundIconButton
+          ref={closeButton}
+          aria-label={t("work.close")}
+          icon={X}
+          onClick={onClose}
+          variant="tertiary"
+        />
       </header>
       <div className="work-panel-body">
         <div className="work-panel-summary">

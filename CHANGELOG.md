@@ -5,8 +5,24 @@ follows semantic versioning while the public interface is taking shape.
 
 ## Unreleased
 
+### Added
+
+- Guided global Codex settings now cover default model, personality,
+  permissions, approvals, authentication stores, project-document limits,
+  compaction thresholds, and other supported `config.toml` values.
+- The session bar now groups permissions and approval policy in one Security
+  popover, while model, reasoning effort, and Plan mode share the model
+  popover.
+
 ### Changed
 
+- Settings sections now contain persistent global preferences only; current
+  session controls remain next to the composer.
+- A saved global personality remains editable and is applied to future
+  compatible sessions, but is omitted from requests when the selected model
+  explicitly does not support personalities.
+- Reusable round icon controls and light-theme settings surfaces now share a
+  consistent accessible visual treatment.
 - The public README now uses a deterministic English showcase in both light and
   dark themes.
 - Historical interface captures were removed from the current tree in favor of

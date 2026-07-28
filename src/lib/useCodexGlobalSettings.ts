@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ConfigReadResponse } from "./appServerTypes";
 import { appServerRecord, appServerString } from "./appServerValues";
 import { isDesktopApp, request } from "./codex";
+import type { Personality } from "../types";
 import {
   configReadParams,
   fileOpenerConfigWriteParams,
@@ -17,6 +18,20 @@ import {
 } from "./protocol";
 
 export type CodexGlobalSettingsController = {
+  advanced: {
+    approvalPolicy: GlobalApprovalPolicy;
+    allowLoginShell: boolean;
+    cliAuthCredentialsStore: CredentialStore;
+    defaultPermissions: GlobalPermissionProfile;
+    mcpOauthCredentialsStore: CredentialStore;
+    model: string | null;
+    modelAutoCompactTokenLimit: number | null;
+    modelReasoningEffort: string | null;
+    personality: Personality | null;
+    projectDocFallbackFilenames: string[];
+    projectDocMaxBytes: number;
+    toolOutputTokenLimit: number | null;
+  };
   allowed?: WebSearchMode[];
   error?: string;
   loading: boolean;
@@ -31,7 +46,47 @@ export type CodexGlobalSettingsController = {
   setReasoningSummary: (mode: ReasoningSummaryMode) => Promise<boolean>;
   setModelVerbosity: (verbosity: ModelVerbosity) => Promise<boolean>;
   setPlanReasoningEffort: (effort: PlanReasoningEffort) => Promise<boolean>;
+  setAdvanced: (
+    key: AdvancedConfigKey,
+    value: boolean | number | string | string[] | null,
+  ) => Promise<boolean>;
   updating?: WebSearchMode;
+};
+
+export type CredentialStore = "auto" | "file" | "keyring";
+export type GlobalApprovalPolicy =
+  | "untrusted"
+  | "on-request"
+  | "never"
+  | "custom";
+export type GlobalPermissionProfile = string;
+export type AdvancedConfigKey =
+  | "approval_policy"
+  | "allow_login_shell"
+  | "cli_auth_credentials_store"
+  | "default_permissions"
+  | "mcp_oauth_credentials_store"
+  | "model"
+  | "model_auto_compact_token_limit"
+  | "model_reasoning_effort"
+  | "personality"
+  | "project_doc_fallback_filenames"
+  | "project_doc_max_bytes"
+  | "tool_output_token_limit";
+
+const advancedDefaults = {
+  approvalPolicy: "on-request" as GlobalApprovalPolicy,
+  allowLoginShell: true,
+  cliAuthCredentialsStore: "file" as CredentialStore,
+  defaultPermissions: ":workspace" as GlobalPermissionProfile,
+  mcpOauthCredentialsStore: "auto" as CredentialStore,
+  model: null as string | null,
+  modelAutoCompactTokenLimit: null as number | null,
+  modelReasoningEffort: null as string | null,
+  personality: null as Personality | null,
+  projectDocFallbackFilenames: [] as string[],
+  projectDocMaxBytes: 32_768,
+  toolOutputTokenLimit: null as number | null,
 };
 
 export function useCodexGlobalSettings(
@@ -46,6 +101,7 @@ export function useCodexGlobalSettings(
     useState<ModelVerbosity>("medium");
   const [planReasoningEffort, setPlanReasoningEffortState] =
     useState<PlanReasoningEffort>("high");
+  const [advanced, setAdvancedState] = useState(advancedDefaults);
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState<WebSearchMode>();
   const [error, setError] = useState<string>();
@@ -76,6 +132,36 @@ export function useCodexGlobalSettings(
           appServerString(config?.plan_mode_reasoning_effort),
         ),
       );
+      setAdvancedState({
+        approvalPolicy: normalizeGlobalApprovalPolicy(config?.approval_policy),
+        allowLoginShell: config?.allow_login_shell !== false,
+        cliAuthCredentialsStore: normalizeCredentialStore(
+          config?.cli_auth_credentials_store,
+          "file",
+        ),
+        defaultPermissions: normalizeGlobalPermissionProfile(
+          config?.default_permissions,
+        ),
+        mcpOauthCredentialsStore: normalizeCredentialStore(
+          config?.mcp_oauth_credentials_store,
+          "auto",
+        ),
+        model: appServerString(config?.model) ?? null,
+        modelAutoCompactTokenLimit: positiveIntegerOrNull(
+          config?.model_auto_compact_token_limit,
+        ),
+        modelReasoningEffort:
+          appServerString(config?.model_reasoning_effort) ?? null,
+        personality: normalizePersonality(config?.personality),
+        projectDocFallbackFilenames: stringArray(
+          config?.project_doc_fallback_filenames,
+        ),
+        projectDocMaxBytes:
+          positiveIntegerOrNull(config?.project_doc_max_bytes) ?? 32_768,
+        toolOutputTokenLimit: positiveIntegerOrNull(
+          config?.tool_output_token_limit,
+        ),
+      });
       setError(undefined);
     } catch (cause) {
       if (refreshVersion.current === version) setError(errorMessage(cause));
@@ -171,6 +257,23 @@ export function useCodexGlobalSettings(
       ),
     [writeOption],
   );
+  const setAdvanced = useCallback(
+    (
+      key: AdvancedConfigKey,
+      value: boolean | number | string | string[] | null,
+    ) =>
+      writeOption(value, {
+        keyPath: key,
+        value,
+        mergeStrategy: value === null ? "replace" : "upsert",
+      }, () => {
+        setAdvancedState((current) => ({
+          ...current,
+          [advancedStateKey(key)]: value,
+        }));
+      }),
+    [writeOption],
+  );
 
   useEffect(() => {
     if (connected) void refresh();
@@ -181,6 +284,7 @@ export function useCodexGlobalSettings(
   }, [connected, refresh]);
 
   return {
+    advanced,
     allowed,
     error,
     fileOpener,
@@ -194,9 +298,71 @@ export function useCodexGlobalSettings(
     setMode,
     setModelVerbosity,
     setPlanReasoningEffort,
+    setAdvanced,
     setReasoningSummary,
     updating,
   };
+}
+
+function advancedStateKey(key: AdvancedConfigKey) {
+  const keys: Record<AdvancedConfigKey, keyof typeof advancedDefaults> = {
+    approval_policy: "approvalPolicy",
+    allow_login_shell: "allowLoginShell",
+    cli_auth_credentials_store: "cliAuthCredentialsStore",
+    default_permissions: "defaultPermissions",
+    mcp_oauth_credentials_store: "mcpOauthCredentialsStore",
+    model: "model",
+    model_auto_compact_token_limit: "modelAutoCompactTokenLimit",
+    model_reasoning_effort: "modelReasoningEffort",
+    personality: "personality",
+    project_doc_fallback_filenames: "projectDocFallbackFilenames",
+    project_doc_max_bytes: "projectDocMaxBytes",
+    tool_output_token_limit: "toolOutputTokenLimit",
+  };
+  return keys[key];
+}
+
+function normalizePersonality(value: unknown): Personality | null {
+  return value === "pragmatic" || value === "friendly" || value === "none"
+    ? value
+    : null;
+}
+
+function normalizeGlobalApprovalPolicy(value: unknown): GlobalApprovalPolicy {
+  return value === "untrusted" || value === "on-request" || value === "never"
+    ? value
+    : value === undefined
+      ? "on-request"
+      : "custom";
+}
+
+function normalizeGlobalPermissionProfile(
+  value: unknown,
+): GlobalPermissionProfile {
+  return typeof value === "string" && value ? value : ":workspace";
+}
+
+function normalizeCredentialStore(
+  value: unknown,
+  fallback: CredentialStore,
+): CredentialStore {
+  return value === "auto" || value === "file" || value === "keyring"
+    ? value
+    : fallback;
+}
+
+function positiveIntegerOrNull(value: unknown) {
+  return typeof value === "number" &&
+    Number.isInteger(value) &&
+    value > 0
+    ? value
+    : null;
+}
+
+function stringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
 }
 
 export function normalizeWebSearchMode(value?: string): WebSearchMode {

@@ -1,22 +1,27 @@
-import { Brain, Check, ChevronDown, Sparkles } from "lucide-react";
+import { Brain, Check, ChevronDown, ListTodo, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import { reasoningEffortLabel } from "../lib/reasoningEffort";
-import type { Model } from "../types";
+import type { CollaborationMode, Model } from "../types";
+import { RoundIconButton } from "./RoundIcon";
 
 type ModelQuickPickerProps = {
   effort: string;
+  collaborationMode: CollaborationMode;
   model: string;
   models: Model[];
   onChangeEffort: (effort: string) => void;
+  onChangeCollaborationMode: (mode: CollaborationMode) => Promise<boolean>;
   onChangeModel: (model: string) => void;
 };
 
 export function ModelQuickPicker({
   effort,
+  collaborationMode,
   model,
   models,
   onChangeEffort,
+  onChangeCollaborationMode,
   onChangeModel,
 }: ModelQuickPickerProps) {
   const { t } = useI18n();
@@ -115,24 +120,47 @@ export function ModelQuickPicker({
             </div>
             <div aria-label={t("modelPicker.effort")} role="radiogroup">
               {efforts.map((option) => (
-                <button
+                <RoundIconButton
                   aria-checked={option.reasoningEffort === effort}
                   className={
                     option.reasoningEffort === effort ? "selected" : ""
                   }
                   key={option.reasoningEffort}
+                  label={reasoningEffortLabel(option.reasoningEffort, t)}
                   onClick={() => {
                     onChangeEffort(option.reasoningEffort);
                     closePicker();
                   }}
                   role="radio"
+                  size="medium"
                   title={option.description || undefined}
-                  type="button"
-                >
-                  {reasoningEffortLabel(option.reasoningEffort, t)}
-                </button>
+                  variant={
+                    option.reasoningEffort === effort ? "primary" : "secondary"
+                  }
+                />
               ))}
             </div>
+          </div>
+          <div className="model-quick-picker-mode">
+            <div className="model-quick-picker-heading">
+              <ListTodo />
+              <div>
+                <strong>{t("modelPicker.planMode")}</strong>
+                <small>{t("modelPicker.planModeDetail")}</small>
+              </div>
+            </div>
+            <label>
+              <input
+                aria-label={t("modelPicker.planMode")}
+                checked={collaborationMode === "plan"}
+                onChange={() =>
+                  void onChangeCollaborationMode(
+                    collaborationMode === "plan" ? "default" : "plan",
+                  )
+                }
+                type="checkbox"
+              />
+            </label>
           </div>
         </div>
       )}

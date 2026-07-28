@@ -295,10 +295,11 @@ describe("composer", () => {
     renderComposer();
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "/" } });
 
-    expect(screen.getByRole("menuitem", { name: /\/model/ })).toBeEnabled();
+    expect(screen.queryByRole("menuitem", { name: /\/model/ })).toBeNull();
     expect(
-      screen.getByRole("menuitem", { name: /\/permissions/ }),
-    ).toBeEnabled();
+      screen.queryByRole("menuitem", { name: /\/permissions/ }),
+    ).toBeNull();
+    expect(screen.getByRole("menuitem", { name: /\/personality/ })).toBeEnabled();
     expect(screen.getByRole("menuitem", { name: /\/compact/ })).toBeDisabled();
     expect(screen.getByRole("menuitem", { name: /\/stop/ })).toBeDisabled();
   });
@@ -325,7 +326,7 @@ describe("composer", () => {
     expect(props.onSend).toHaveBeenCalledWith("Vérifie aussi les tests", []);
     expect(props.onStop).not.toHaveBeenCalled();
     const stop = screen.getByRole("button", { name: "Arrêter le tour" });
-    expect(stop.querySelector("span")).toBeNull();
+    expect(stop.querySelector(".round-icon-button-label")).toBeNull();
     fireEvent.click(stop);
     expect(props.onStop).toHaveBeenCalledOnce();
   });

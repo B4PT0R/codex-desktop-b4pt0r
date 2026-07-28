@@ -1,6 +1,7 @@
 import { Trash2 } from "lucide-react";
 import { useI18n } from "../i18n/I18nProvider";
 import { useDialogFocus } from "../lib/useDialogFocus";
+import { RoundIcon } from "./RoundIcon";
 
 type ThreadDeleteDialogProps = {
   deleting: boolean;
@@ -33,9 +34,12 @@ export function ThreadDeleteDialog({
         onKeyDown={onDialogKeyDown}
         tabIndex={-1}
       >
-        <span className="thread-delete-icon">
-          <Trash2 />
-        </span>
+        <RoundIcon
+          className="thread-delete-icon"
+          icon={Trash2}
+          size="large"
+          variant="primary"
+        />
         <div>
           <h2 id="thread-delete-title">{t("thread.delete.title")}</h2>
           <p id="thread-delete-description">

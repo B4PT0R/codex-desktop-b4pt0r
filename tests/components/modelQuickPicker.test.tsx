@@ -35,10 +35,12 @@ describe("sélecteur rapide de modèle", () => {
     render(
       <I18nProvider>
         <ModelQuickPicker
+          collaborationMode="default"
           effort="low"
           model="model-a"
           models={models}
           onChangeEffort={onChangeEffort}
+          onChangeCollaborationMode={vi.fn().mockResolvedValue(true)}
           onChangeModel={onChangeModel}
         />
       </I18nProvider>,
@@ -59,5 +61,26 @@ describe("sélecteur rapide de modèle", () => {
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
+  });
+
+  it("regroupe le mode Plan avec les réglages du modèle", () => {
+    const onChangeCollaborationMode = vi.fn().mockResolvedValue(true);
+    render(
+      <I18nProvider>
+        <ModelQuickPicker
+          collaborationMode="default"
+          effort="low"
+          model="model-a"
+          models={models}
+          onChangeCollaborationMode={onChangeCollaborationMode}
+          onChangeEffort={vi.fn()}
+          onChangeModel={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Model A/ }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Mode Plan" }));
+    expect(onChangeCollaborationMode).toHaveBeenCalledWith("plan");
   });
 });

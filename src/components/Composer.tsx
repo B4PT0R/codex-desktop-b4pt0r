@@ -18,6 +18,7 @@ import type { AppInfo, AppServerSkill } from "../lib/appServerTypes";
 import type { TurnContextItem } from "../lib/protocol";
 import { useI18n } from "../i18n/I18nProvider";
 import { useFileSearch, type FileSearchResult } from "../lib/useFileSearch";
+import { RoundIconButton } from "./RoundIcon";
 
 type ComposerProps = {
   busy: boolean;
@@ -361,15 +362,15 @@ export function Composer({
       />
       <div className="composer-actions">
         <div>
-          <button
+          <RoundIconButton
             ref={addButton}
             aria-label={t("composer.context.add")}
             aria-haspopup="menu"
             aria-expanded={menu !== null}
+            icon={Plus}
             onClick={() => setMenu((current) => (current ? null : "add"))}
-          >
-            <Plus />
-          </button>
+            variant="tertiary"
+          />
           <input
             ref={input}
             type="file"
@@ -403,39 +404,40 @@ export function Composer({
               )}
             </span>
           )}
-          <button
+          <RoundIconButton
             className={recording ? "active" : ""}
             aria-label={t("composer.voice")}
             disabled={dictating}
+            icon={AudioWaveform}
             onClick={onToggleVoice}
-          >
-            <AudioWaveform />
-          </button>
-          <button
+            variant="tertiary"
+          />
+          <RoundIconButton
             className={dictating ? "active dictating" : ""}
             aria-label={t("composer.dictation")}
             disabled={recording || dictationProcessing}
+            icon={Mic}
             onClick={onToggleDictation}
-          >
-            <Mic />
-          </button>
+            variant="tertiary"
+          />
           {busy && (
-            <button
+            <RoundIconButton
               className="stop"
               aria-label={t("composer.stop")}
+              icon={Square}
               onClick={onStop}
-            >
-              <Square />
-            </button>
+              variant="primary"
+            />
           )}
-          <button
+          <RoundIconButton
             className="send"
             aria-label={busy ? t("composer.steer") : t("composer.send")}
             disabled={!canSubmit}
+            enabled={canSubmit}
+            icon={ArrowUp}
             onClick={submit}
-          >
-            <ArrowUp />
-          </button>
+            variant="primary"
+          />
         </div>
       </div>
     </div>

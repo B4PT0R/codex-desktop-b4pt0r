@@ -45,7 +45,7 @@ export function useCodexConfig() {
   }, [load]);
 
   const save = useCallback(async () => {
-    if (!document || draft === document.content || saving) return;
+    if (!document || draft === document.content || saving) return false;
     setSaving(true);
     setError(undefined);
     setSaved(false);
@@ -59,8 +59,10 @@ export function useCodexConfig() {
       setDocument(next);
       setDraft(next.content);
       setSaved(true);
+      return true;
     } catch (cause) {
       setError(errorMessage(cause));
+      return false;
     } finally {
       setSaving(false);
     }

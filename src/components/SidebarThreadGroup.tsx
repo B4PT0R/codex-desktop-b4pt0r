@@ -1,6 +1,7 @@
 import { Archive, ChevronRight, Folder, Trash2 } from "lucide-react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { ThreadSummary } from "../types";
+import { RoundIconButton } from "./RoundIcon";
 
 type SidebarThreadGroupProps = {
   expanded: boolean;
@@ -73,22 +74,22 @@ export function SidebarThreadGroup({
                   />
                 )}
               </button>
-              <button
+              <RoundIconButton
                 className="thread-archive"
                 aria-label={`${t("sidebar.archive")} ${label}`}
+                icon={Archive}
                 title={t("sidebar.archiveTitle")}
                 onClick={() => onArchive(thread)}
-              >
-                <Archive />
-              </button>
-              <button
+                variant="tertiary"
+              />
+              <RoundIconButton
                 className="thread-delete"
                 aria-label={`${t("sidebar.delete")} ${label}`}
+                icon={Trash2}
                 title={t("sidebar.deleteTitle")}
                 onClick={() => onDelete(thread)}
-              >
-                <Trash2 />
-              </button>
+                variant="tertiary"
+              />
             </div>
           );
         })}

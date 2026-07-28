@@ -63,6 +63,7 @@ import { commandFromText } from "./lib/commands";
 import type { ThreadTelemetry } from "./lib/sessionTelemetry";
 import type {
   ChatMessage,
+  CollaborationMode,
   Model,
   ThreadSummary,
   ToolCall,
@@ -93,6 +94,7 @@ import { useRealtimeConversation } from "./lib/useRealtimeConversation";
 import { useConversationEventQueue } from "./lib/useConversationEventQueue";
 import { useThreadRuntimeState } from "./lib/useThreadRuntimeState";
 import "./styles.css";
+import "./primitives.css";
 import "./realtime.css";
 import "./activity.css";
 import "./empty.css";
@@ -179,11 +181,9 @@ export default function App() {
     effort,
     model,
     permission,
-    personality,
     setCollaborationMode,
     setEffort,
     setModel,
-    setPersonality,
   } = runtime;
   const dictationSequence = useRef(0);
   const [cwd, setCwd] = useState(
@@ -278,6 +278,11 @@ export default function App() {
     connection.connected,
     configRequirements.allowedWebSearchModes,
   );
+  const personalityForModel =
+    models.find((candidate) => candidate.id === model)?.supportsPersonality ===
+    false
+      ? undefined
+      : (webSearch.advanced.personality ?? undefined);
   const memory = useMemorySettings(connection.connected);
   const remoteControl = useRemoteControl(
     connection.connected,
@@ -471,7 +476,7 @@ export default function App() {
         cwd || undefined,
         model,
         runtime.permissionForStart,
-        personality,
+        personalityForModel,
         runtime.approvalPolicyForStart,
       ),
     );
@@ -503,8 +508,7 @@ export default function App() {
           setSidebar(true);
           return;
         case "plan":
-          setCollaborationMode("plan");
-          setSettings("agent");
+          await changeCollaborationMode("plan");
           return;
         case "compact":
           await threadActions.compact();
@@ -658,7 +662,7 @@ export default function App() {
         "turn/start",
         turnStartParams(id, model, text, context, {
           effort,
-          personality,
+          personality: personalityForModel,
           mode: collaborationMode,
         }),
       );
@@ -687,7 +691,7 @@ export default function App() {
         cwd: cwd || undefined,
         model,
         permission: runtime.permissionForStart,
-        personality,
+        personality: personalityForModel,
         approvalPolicy: runtime.approvalPolicyForStart,
         voice: realtime.voice,
       });
@@ -740,7 +744,6 @@ export default function App() {
         selected?.supportedReasoningEfforts?.[0]?.reasoningEffort ??
         "medium",
     );
-    if (selected?.supportsPersonality === false) setPersonality("none");
   }
   function applyThreadRuntimeSettings(settings: ThreadRuntimeSettings) {
     if (settings.cwd) {
@@ -764,26 +767,29 @@ export default function App() {
       showError(t("app.threadSyncError"), error);
     }
   }
-  async function saveSettings() {
-    if (threadId)
-      try {
-        await request(
-          "thread/settings/update",
-          threadBehaviorUpdateParams(
-            threadId,
-            model,
-            effort,
-            personality,
-            collaborationMode,
-            permission,
-            approvalPolicy,
-          ),
-        );
-      } catch (error) {
-        showError(t("app.saveSettingsError"), error);
-        return;
-      }
-    setSettings(null);
+  async function changeCollaborationMode(nextMode: CollaborationMode) {
+    const previousMode = collaborationMode;
+    setCollaborationMode(nextMode);
+    if (!threadId) return true;
+    try {
+      await request(
+        "thread/settings/update",
+        threadBehaviorUpdateParams(
+          threadId,
+          model,
+          effort,
+          personalityForModel,
+          nextMode,
+          permission,
+          approvalPolicy,
+        ),
+      );
+      return true;
+    } catch (error) {
+      setCollaborationMode(previousMode);
+      showError(t("app.saveSettingsError"), error);
+      return false;
+    }
   }
   async function changePermission(nextPermission: Permission) {
     const previousPermission = permission;
@@ -838,16 +844,10 @@ export default function App() {
         account={account}
         apps={apps}
         capabilities={capabilities}
-        collaborationMode={collaborationMode}
-        approvalPolicy={approvalPolicy}
         configRequirements={configRequirements}
-        effort={effort}
         externalAgentImport={externalAgentImport}
         integrations={integrations}
-        model={model}
         models={models}
-        permission={permission}
-        personality={personality}
         rateLimits={rateLimits}
         realtime={realtime}
         memory={memory}
@@ -866,14 +866,7 @@ export default function App() {
           restarting: connection.restarting,
         }}
         section={settings}
-        onChangeCollaborationMode={setCollaborationMode}
-        onChangeApprovalPolicy={runtime.selectApprovalPolicy}
-        onChangeEffort={setEffort}
-        onChangeModel={changeModel}
-        onChangePermission={runtime.selectPermission}
-        onChangePersonality={setPersonality}
         onClose={() => setSettings(null)}
-        onSave={saveSettings}
         onSelectSection={setSettings}
       />
     );
@@ -976,6 +969,7 @@ export default function App() {
           canSteer={Boolean(threadId && turnId)}
           cwd={cwd}
           model={model}
+          collaborationMode={collaborationMode}
           effort={effort}
           models={models}
           permission={permission}
@@ -1004,6 +998,7 @@ export default function App() {
           onCompact={() => void threadActions.compact()}
           onChangeEffort={setEffort}
           onChangeModel={changeModel}
+          onChangeCollaborationMode={changeCollaborationMode}
           onChangePermission={changePermission}
           onChangeApprovalPolicy={changeApprovalPolicy}
           onConsumeQuotaReset={

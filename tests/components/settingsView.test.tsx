@@ -105,6 +105,20 @@ const realtime = {
   setVoice: vi.fn(),
 };
 const webSearch = {
+  advanced: {
+    approvalPolicy: "on-request" as const,
+    allowLoginShell: true,
+    cliAuthCredentialsStore: "file" as const,
+    defaultPermissions: ":workspace" as const,
+    mcpOauthCredentialsStore: "auto" as const,
+    model: null,
+    modelAutoCompactTokenLimit: null,
+    modelReasoningEffort: null,
+    personality: null,
+    projectDocFallbackFilenames: [],
+    projectDocMaxBytes: 32_768,
+    toolOutputTokenLimit: null,
+  },
   fileOpener: "vscode" as const,
   mode: "cached" as const,
   modelVerbosity: "medium" as const,
@@ -117,6 +131,7 @@ const webSearch = {
   setModelVerbosity: vi.fn().mockResolvedValue(true),
   setPlanReasoningEffort: vi.fn().mockResolvedValue(true),
   setReasoningSummary: vi.fn().mockResolvedValue(true),
+  setAdvanced: vi.fn().mockResolvedValue(true),
 };
 const appServerRestart = {
   available: true,
@@ -192,32 +207,19 @@ function renderSettings(
     appServerRestart,
     apps,
     capabilities,
-    collaborationMode: "default",
-    approvalPolicy: "on-request",
-    effort: "medium",
     externalAgentImport,
     integrations,
-    model: "gpt-a",
     memory,
     remoteControl,
     models: [
       { id: "gpt-a", label: "GPT A" },
       { id: "gpt-b", label: "GPT B" },
     ],
-    permission: ":workspace",
-    personality: "pragmatic",
     rateLimits,
     realtime,
     webSearch,
     section: "general",
-    onChangeCollaborationMode: vi.fn(),
-    onChangeApprovalPolicy: vi.fn(),
-    onChangeEffort: vi.fn(),
-    onChangeModel: vi.fn(),
-    onChangePermission: vi.fn(),
-    onChangePersonality: vi.fn(),
     onClose: vi.fn(),
-    onSave: vi.fn(),
     onSelectSection: vi.fn(),
     ...overrides,
   };
@@ -242,15 +244,15 @@ describe("centre de réglages", () => {
     expect(screen.queryByText("Navigateur Chromium partagé")).toBeNull();
   });
 
-  it("modifie le mode global de recherche web depuis Options", () => {
+  it("modifie le mode global de recherche web depuis Web", () => {
     const setMode = vi.fn().mockResolvedValue(true);
     renderSettings({
-      section: "options",
+      section: "browser",
       webSearch: { ...webSearch, setMode },
     });
 
     expect(
-      screen.getByRole("heading", { name: "Options", level: 1 }),
+      screen.getByRole("heading", { name: "Web", level: 1 }),
     ).toBeVisible();
     const select = screen.getByRole("combobox", { name: "Recherche web" });
     expect(select).toHaveValue("cached");
@@ -260,7 +262,7 @@ describe("centre de réglages", () => {
 
   it("désactive les modes de recherche interdits par la politique", () => {
     renderSettings({
-      section: "options",
+      section: "browser",
       webSearch: {
         ...webSearch,
         allowed: ["cached", "disabled"],
@@ -271,7 +273,7 @@ describe("centre de réglages", () => {
     expect(screen.getByRole("option", { name: "Cache" })).toBeEnabled();
   });
 
-  it("enregistre l’application d’ouverture dans Général et les résumés dans Options", () => {
+  it("enregistre l’application d’ouverture dans Général et les résumés dans Chat", () => {
     const setFileOpener = vi.fn().mockResolvedValue(true);
     const setReasoningSummary = vi.fn().mockResolvedValue(true);
     const controller = {
@@ -288,7 +290,7 @@ describe("centre de réglages", () => {
     expect(setFileOpener).toHaveBeenCalledWith("cursor");
 
     cleanup();
-    renderSettings({ section: "options", webSearch: controller });
+    renderSettings({ section: "chat", webSearch: controller });
     fireEvent.change(
       screen.getByRole("combobox", { name: "Résumés de raisonnement" }),
       { target: { value: "concise" } },
@@ -296,7 +298,7 @@ describe("centre de réglages", () => {
     expect(setReasoningSummary).toHaveBeenCalledWith("concise");
   });
 
-  it("enregistre la verbosité et l’effort du mode Plan dans Agent et modèles", () => {
+  it("enregistre uniquement des valeurs globales dans les réglages Agent", () => {
     const setModelVerbosity = vi.fn().mockResolvedValue(true);
     const setPlanReasoningEffort = vi.fn().mockResolvedValue(true);
     renderSettings({
@@ -309,6 +311,14 @@ describe("centre de réglages", () => {
     });
 
     fireEvent.change(
+      screen.getByRole("combobox", { name: "Modèle" }),
+      { target: { value: "gpt-b" } },
+    );
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "Personnalité" }),
+      { target: { value: "friendly" } },
+    );
+    fireEvent.change(
       screen.getByRole("combobox", { name: "Verbosité des réponses" }),
       { target: { value: "high" } },
     );
@@ -318,6 +328,11 @@ describe("centre de réglages", () => {
     );
     expect(setModelVerbosity).toHaveBeenCalledWith("high");
     expect(setPlanReasoningEffort).toHaveBeenCalledWith("xhigh");
+    expect(webSearch.setAdvanced).toHaveBeenCalledWith("model", "gpt-b");
+    expect(webSearch.setAdvanced).toHaveBeenCalledWith(
+      "personality",
+      "friendly",
+    );
   });
 
   it("contrôle la mémoire locale et garde sa suppression sous confirmation", () => {
@@ -368,16 +383,29 @@ describe("centre de réglages", () => {
       "Ouverture des réglages…",
     );
     expect(
-      await screen.findByRole("heading", { name: "Permissions", level: 1 }),
+      await screen.findByRole("heading", {
+        name: "Permissions par défaut",
+        level: 1,
+      }),
     ).toBeVisible();
   });
 
-  it("expose séparément permissions et politique d’approbation", () => {
+  it("écrit séparément les permissions et approbations globales", () => {
     const props = renderSettings({ section: "permissions" });
     const approvals = screen.getByLabelText("Approbations");
     expect(approvals).toHaveValue("on-request");
     fireEvent.change(approvals, { target: { value: "never" } });
-    expect(props.onChangeApprovalPolicy).toHaveBeenCalledWith("never");
+    expect(props.webSearch.setAdvanced).toHaveBeenCalledWith(
+      "approval_policy",
+      "never",
+    );
+    fireEvent.change(screen.getByLabelText("Profil de permissions"), {
+      target: { value: ":read-only" },
+    });
+    expect(props.webSearch.setAdvanced).toHaveBeenCalledWith(
+      "default_permissions",
+      ":read-only",
+    );
   });
 
   it("expose la navigation cible sans simuler les fonctions futures", async () => {
@@ -461,7 +489,7 @@ describe("centre de réglages", () => {
     });
     renderSettings({ section: "browser" });
     expect(
-      screen.getByRole("heading", { name: "Navigateur web", level: 1 }),
+      screen.getByRole("heading", { name: "Web", level: 1 }),
     ).toBeVisible();
 
     const enabled = await screen.findByRole("checkbox", {
@@ -488,33 +516,13 @@ describe("centre de réglages", () => {
     expect(enabled).toBeChecked();
   });
 
-  it("conserve les réglages fonctionnels du thread", () => {
-    const onChangeModel = vi.fn();
-    const onChangePersonality = vi.fn();
-    const onSave = vi.fn();
+  it("laisse le défaut global de personnalité éditable quel que soit le modèle courant", () => {
     renderSettings({
       section: "agent",
-      onChangeModel,
-      onChangePersonality,
-      onSave,
-    });
-    fireEvent.change(screen.getByLabelText("Personnalité"), {
-      target: { value: "friendly" },
-    });
-    expect(onChangePersonality).toHaveBeenCalledWith("friendly");
-    fireEvent.change(screen.getByLabelText("Modèle"), {
-      target: { value: "gpt-b" },
-    });
-    expect(onChangeModel).toHaveBeenCalledWith("gpt-b");
-    fireEvent.click(
-      screen.getByRole("button", { name: "Appliquer et revenir" }),
-    );
-    expect(onSave).toHaveBeenCalledOnce();
-  });
-
-  it("désactive la personnalité uniquement si le modèle la refuse explicitement", () => {
-    renderSettings({
-      section: "agent",
+      webSearch: {
+        ...webSearch,
+        advanced: { ...webSearch.advanced, model: "gpt-a" },
+      },
       models: [
         {
           id: "gpt-a",
@@ -523,15 +531,19 @@ describe("centre de réglages", () => {
         },
       ],
     });
-    expect(screen.getByLabelText("Personnalité")).toBeDisabled();
-    expect(screen.getByLabelText("Personnalité")).toHaveAttribute(
-      "title",
-      "Le modèle sélectionné ne prend pas en charge les personnalités.",
-    );
+    expect(screen.getByLabelText("Personnalité")).toBeEnabled();
   });
 
   it("édite la configuration globale dans l’aperçu sans quitter les réglages", async () => {
     renderSettings({ section: "config" });
+    expect(
+      screen.getByRole("heading", { name: "Configuration guidée" }),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        "Modifiez directement config.toml pour les options qui ne disposent pas d’un réglage guidé.",
+      ),
+    ).toBeVisible();
     expect(screen.queryByLabelText("Contenu de config.toml")).toBeNull();
     expect(screen.getAllByText("Aperçu navigateur")).toHaveLength(2);
     fireEvent.click(
@@ -553,6 +565,44 @@ describe("centre de réglages", () => {
       screen.getByRole("button", { name: "Fermer l’éditeur" }),
     );
     expect(screen.queryByRole("dialog", { name: "config.toml" })).toBeNull();
+  });
+
+  it("modifie les réglages TOML avancés depuis Config", () => {
+    const props = renderSettings({ section: "config" });
+
+    fireEvent.change(screen.getByLabelText("Seuil de compactage"), {
+      target: { value: "64000" },
+    });
+    fireEvent.change(
+      screen.getByLabelText("Noms de fichiers de repli"),
+      { target: { value: "CLAUDE.md, CONTRIBUTING.md" } },
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Enregistrer les fichiers de repli",
+      }),
+    );
+    fireEvent.click(screen.getByLabelText("Autoriser les shells de connexion"));
+    fireEvent.change(screen.getByLabelText("Identifiants OAuth MCP"), {
+      target: { value: "keyring" },
+    });
+
+    expect(props.webSearch.setAdvanced).toHaveBeenCalledWith(
+      "model_auto_compact_token_limit",
+      64_000,
+    );
+    expect(props.webSearch.setAdvanced).toHaveBeenCalledWith(
+      "project_doc_fallback_filenames",
+      ["CLAUDE.md", "CONTRIBUTING.md"],
+    );
+    expect(props.webSearch.setAdvanced).toHaveBeenCalledWith(
+      "allow_login_shell",
+      false,
+    );
+    expect(props.webSearch.setAdvanced).toHaveBeenCalledWith(
+      "mcp_oauth_credentials_store",
+      "keyring",
+    );
   });
 
   it("édite les instructions personnelles globales dans Config", async () => {
