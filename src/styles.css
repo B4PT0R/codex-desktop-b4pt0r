@@ -834,10 +834,10 @@ header button svg {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.message p {
+.message-content p {
   margin: 0 0 12px;
 }
-.message p:last-child {
+.message-content p:last-child {
   margin-bottom: 0;
 }
 .message.assistant .markdown-paragraph.justified {
@@ -845,30 +845,175 @@ header button svg {
   text-align: justify;
   text-justify: inter-word;
 }
-.message h1,
-.message h2,
-.message h3 {
-  font-size: 16px;
-  margin: 22px 0 8px;
+.message-content h1,
+.message-content h2,
+.message-content h3,
+.message-content h4,
+.message-content h5,
+.message-content h6 {
+  margin: 20px 0 8px;
+  color: #e7e7e3;
+  font-weight: 600;
+  line-height: 1.35;
 }
-.message pre {
+.message-content h1 {
+  font-size: 20px;
+}
+.message-content h2 {
+  font-size: 17px;
+}
+.message-content h3 {
+  font-size: 15px;
+}
+.message-content h4 {
+  font-size: 14px;
+}
+.message-content h5,
+.message-content h6 {
+  color: #c9c9c4;
+  font-size: 13px;
+}
+.message-content > :first-child {
+  margin-top: 0;
+}
+.message-content > :last-child {
+  margin-bottom: 0;
+}
+.message-content ul,
+.message-content ol {
+  margin: 8px 0 12px;
+  padding-left: 24px;
+}
+.message-content ul ul,
+.message-content ul ol,
+.message-content ol ul,
+.message-content ol ol {
+  margin: 4px 0;
+}
+.message-content li {
+  padding-left: 2px;
+}
+.message-content li + li {
+  margin-top: 4px;
+}
+.message-content li > p {
+  margin: 4px 0;
+}
+.message-content .contains-task-list {
+  padding-left: 2px;
+  list-style: none;
+}
+.message-content .task-list-item {
+  padding-left: 0;
+  list-style: none;
+}
+.message-content .task-list-item > input[type="checkbox"] {
+  width: 13px;
+  height: 13px;
+  margin: 0 8px 0 0;
+  accent-color: #8ba9dc;
+  opacity: 1;
+  transform: translateY(2px);
+}
+.message-content blockquote {
+  margin: 14px 0;
+  padding: 2px 0 2px 14px;
+  color: #b6b6b0;
+  border-left: 3px solid #484844;
+}
+.message-content blockquote > :last-child {
+  margin-bottom: 0;
+}
+.message-content hr {
+  height: 1px;
+  margin: 20px 0;
+  border: 0;
+  background: #393936;
+}
+.message-content strong {
+  color: #ecece8;
+  font-weight: 600;
+}
+.message-content del {
+  color: #969690;
+  text-decoration-color: #777771;
+  text-decoration-thickness: 1px;
+}
+.message-content pre {
+  margin: 14px 0;
   background: #111;
   border: 1px solid #30302e;
   padding: 14px;
   border-radius: 8px;
   overflow: auto;
 }
-.message code {
+.message-content code {
   font-family: "DM Mono", monospace;
   font-size: 12px;
 }
-.message :not(pre) > code {
+.message-content :not(pre) > code {
   background: #2c2c29;
   padding: 2px 5px;
   border-radius: 4px;
 }
-.message a {
+.message-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 14px 0;
+  border: 1px solid #383835;
+  border-radius: 10px;
+  background: #20201e;
+}
+.markdown-table-shell {
+  max-width: 100%;
+  margin: 14px 0;
+  overflow-x: auto;
+  border: 1px solid #3a3a37;
+  border-radius: 9px;
+  background: #1c1c1b;
+}
+.markdown-table-shell table {
+  width: 100%;
+  min-width: max-content;
+  border-spacing: 0;
+  border-collapse: separate;
+  color: #d4d4d0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.markdown-table-shell th,
+.markdown-table-shell td {
+  padding: 8px 11px;
+  border-right: 1px solid #343431;
+  border-bottom: 1px solid #343431;
+  text-align: left;
+  vertical-align: top;
+}
+.markdown-table-shell th {
+  color: #e1e1dd;
+  background: #252523;
+  font-weight: 600;
+}
+.markdown-table-shell tbody tr:nth-child(even) td {
+  background: #20201e;
+}
+.markdown-table-shell tr > :last-child {
+  border-right: 0;
+}
+.markdown-table-shell tbody tr:last-child td {
+  border-bottom: 0;
+}
+.message-content a {
   color: #9abdf5;
+  text-decoration-color: #7c9acb99;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+.message-content a:hover {
+  color: #b7d0f8;
+  text-decoration-color: currentColor;
 }
 .empty {
   text-align: center;

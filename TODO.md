@@ -17,7 +17,7 @@ shared Playwright Chromium session.
 
 The repository is public at
 `https://github.com/B4PT0R/codex-desktop-b4pt0r`. The current public release is
-v0.3.6.
+v0.3.7.
 
 ## Current candidate
 
@@ -85,6 +85,9 @@ pointer input; incomplete emphasis, links, fenced code and math remain safe
 while their delimiters are still arriving, and finalization flushes the
 complete source immediately. The renderer reuses stable Markdown component
 types, and the obsolete parallel LaTeX-only streaming parser has been removed.
+Tables, headings, nested and task lists, blockquotes, separators,
+strikethrough, links and inline images now have an explicit responsive
+light/dark presentation instead of inheriting inconsistent browser defaults.
 
 Tool activity now follows a three-state presentation contract: an action is
 open, collapsed on the same fixed one-line header, or hidden in its group
@@ -110,7 +113,7 @@ group component owns only sequencing, history visibility and group lifecycle.
 
 - Installed Codex: `codex-cli 0.145.0`.
 - Official source audit: `1def0a892`, stable and experimental v2 schemas.
-- Frontend/unit/contract: 538 tests across 103 files, including 47 installed
+- Frontend/unit/contract: 540 tests across 103 files, including 47 installed
   App Server contract cases.
 - Electron/Node: 62 tests.
 - Strict TypeScript: passing.
@@ -118,7 +121,7 @@ group component owns only sequencing, history visibility and group lifecycle.
 - Production dependency audit: zero vulnerabilities.
 - Main JS: 564.43 kB, 163.70 kB gzip.
 - Lazy diff viewer: 89.50 kB, 32.89 kB gzip.
-- Lazy Markdown/KaTeX: 436.51 kB, 131.31 kB gzip.
+- Lazy Markdown/KaTeX: 436.81 kB, 131.40 kB gzip.
 - Shared-browser visual pass: light and dark palettes, 1240×820 and 840×620;
   no browser warning, error or horizontal overflow after the Settings
   modularity pass.
@@ -130,8 +133,10 @@ group component owns only sequencing, history visibility and group lifecycle.
   input ran together without browser errors or warnings; real App Server
   tools-only grouping is covered at the reducer and replay boundaries because
   the visual demo intentionally bypasses those events.
-- Reinstalled Debian package: `codex-desktop-linux 0.3.6 amd64`; installed ASAR
-  matches the package build (`e1921320…ac1f654`).
+- Shared-browser Markdown pass: complete light/dark fixture at 1240×820 and
+  840×620; wide tables scroll locally without widening the message or app.
+- Reinstalled Debian package: `codex-desktop-linux 0.3.7 amd64`; installed ASAR
+  matches the package build (`f4e5f436…8bfef51`).
 
 ## Active invariants
 

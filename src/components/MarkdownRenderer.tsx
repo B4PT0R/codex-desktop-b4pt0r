@@ -54,7 +54,9 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({
 const MARKDOWN_COMPONENTS: Components = {
   a: MarkdownAnchor,
   code: MarkdownCode,
+  img: MarkdownImage,
   p: MarkdownParagraph,
+  table: MarkdownTable,
 };
 
 function MarkdownAnchor({
@@ -94,6 +96,23 @@ function MarkdownCode({
   );
 }
 
+function MarkdownImage({
+  alt,
+  loading,
+  node: _,
+  ...props
+}: ComponentPropsWithoutRef<"img"> & ExtraProps) {
+  return (
+    <img
+      {...props}
+      alt={alt ?? ""}
+      decoding="async"
+      loading={loading ?? "lazy"}
+      referrerPolicy="no-referrer"
+    />
+  );
+}
+
 function MarkdownParagraph({
   children,
   node: _,
@@ -107,6 +126,18 @@ function MarkdownParagraph({
     >
       {children}
     </p>
+  );
+}
+
+function MarkdownTable({
+  children,
+  node: _,
+  ...props
+}: ComponentPropsWithoutRef<"table"> & ExtraProps) {
+  return (
+    <div className="markdown-table-shell">
+      <table {...props}>{children}</table>
+    </div>
   );
 }
 

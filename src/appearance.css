@@ -535,6 +535,78 @@
   background: #e7e7e1;
 }
 
+:root[data-theme="light"] .message-content h1,
+:root[data-theme="light"] .message-content h2,
+:root[data-theme="light"] .message-content h3,
+:root[data-theme="light"] .message-content h4 {
+  color: #30302c;
+}
+
+:root[data-theme="light"] .message-content h5,
+:root[data-theme="light"] .message-content h6,
+:root[data-theme="light"] .message-content blockquote {
+  color: #686863;
+}
+
+:root[data-theme="light"] .message-content blockquote {
+  border-color: #c7c7c0;
+}
+
+:root[data-theme="light"] .message-content hr {
+  background: #d6d6d0;
+}
+
+:root[data-theme="light"] .message-content strong {
+  color: #292925;
+}
+
+:root[data-theme="light"] .message-content del {
+  color: #777771;
+  text-decoration-color: #aaa9a2;
+}
+
+:root[data-theme="light"] .message-content img {
+  border-color: #d2d2cc;
+  background: #efefeb;
+}
+
+:root[data-theme="light"] .message-content a {
+  color: #466d9e;
+  text-decoration-color: #6687ae99;
+}
+
+:root[data-theme="light"] .message-content a:hover {
+  color: #2f588a;
+  text-decoration-color: currentColor;
+}
+
+:root[data-theme="light"] .markdown-table-shell {
+  border-color: #d2d2cc;
+  background: #fafaf7;
+}
+
+:root[data-theme="light"] .markdown-table-shell table {
+  color: #464641;
+}
+
+:root[data-theme="light"] .markdown-table-shell th,
+:root[data-theme="light"] .markdown-table-shell td {
+  border-color: #dcdcd6;
+}
+
+:root[data-theme="light"] .markdown-table-shell th {
+  color: #383834;
+  background: #ecece7;
+}
+
+:root[data-theme="light"]
+  .markdown-table-shell
+  tbody
+  tr:nth-child(even)
+  td {
+  background: #f5f5f1;
+}
+
 :root[data-theme="light"] .tool-list > .tool-row,
 :root[data-theme="light"] .signal-body,
 :root[data-theme="light"] .settings-fields > label,

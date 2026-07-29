@@ -36,6 +36,56 @@ describe("rendu du chat", () => {
     ).toBeVisible();
     expect(screen.getByText("cargo test")).toBeVisible();
   });
+  it("encadre les tableaux GFM dans une surface défilable", async () => {
+    const { container } = render(
+      <Markdown>
+        {"| Élément | État |\n|:---|---:|\n| Markdown | Progressif |"}
+      </Markdown>,
+    );
+
+    expect(await screen.findByRole("table")).toBeVisible();
+    expect(
+      container.querySelector(".markdown-table-shell > table"),
+    ).toBe(screen.getByRole("table"));
+    expect(screen.getByRole("columnheader", { name: "Élément" })).toBeVisible();
+    expect(screen.getByRole("cell", { name: "Progressif" })).toBeVisible();
+    expect(screen.getByRole("columnheader", { name: "Élément" })).toHaveStyle({
+      textAlign: "left",
+    });
+    expect(screen.getByRole("columnheader", { name: "État" })).toHaveStyle({
+      textAlign: "right",
+    });
+  });
+  it("rend les éléments GFM structurants avec des attributs sûrs", async () => {
+    const { container } = render(
+      <Markdown>
+        {
+          "#### Détails\n\n> Une citation **importante**.\n\n---\n\n1. Élément ordonné\n   - Élément imbriqué\n\n- [x] Terminé\n- [ ] À faire\n\n~~Obsolète~~\n\n![Aperçu](https://example.com/preview.png)"
+        }
+      </Markdown>,
+    );
+
+    expect(
+      await screen.findByRole("heading", { level: 4, name: "Détails" }),
+    ).toBeVisible();
+    expect(container.querySelector("blockquote")).toHaveTextContent(
+      "Une citation importante.",
+    );
+    expect(screen.getByRole("separator")).toBeVisible();
+    expect(screen.getAllByRole("list")).toHaveLength(3);
+    const taskCheckboxes = screen.getAllByRole("checkbox");
+    expect(taskCheckboxes).toHaveLength(2);
+    expect(taskCheckboxes[0]).toBeChecked();
+    expect(taskCheckboxes[0]).toBeDisabled();
+    expect(taskCheckboxes[1]).not.toBeChecked();
+    expect(taskCheckboxes[1]).toBeDisabled();
+    expect(container.querySelector("del")).toHaveTextContent("Obsolète");
+
+    const image = screen.getByRole("img", { name: "Aperçu" });
+    expect(image).toHaveAttribute("loading", "lazy");
+    expect(image).toHaveAttribute("decoding", "async");
+    expect(image).toHaveAttribute("referrerpolicy", "no-referrer");
+  });
   it("réserve la justification aux paragraphes assez longs", async () => {
     const longParagraph = "Texte suffisamment développé pour la lecture. ".repeat(
       6,

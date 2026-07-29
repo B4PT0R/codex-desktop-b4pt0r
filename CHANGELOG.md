@@ -3,6 +3,17 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.3.7] - 2026-07-29
+
+### Changed
+
+- Markdown tables now use bordered, scrollable surfaces with visible cell
+  separators and preserve GFM column alignment.
+- Headings, nested and task lists, blockquotes, separators, strikethrough,
+  links and inline images now share a complete light/dark chat treatment.
+- Inline Markdown images load lazily without sending the conversation page as
+  their referrer.
+
 ## [0.3.6] - 2026-07-29
 
 ### Changed
@@ -314,6 +325,7 @@ follows semantic versioning while the public interface is taking shape.
 - Native Electron packaging for Debian/Ubuntu.
 - Stable Chromium microphone capture for dictation and Realtime voice.
 
+[0.3.7]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.6...v0.3.7
 [0.3.6]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.3...v0.3.4
