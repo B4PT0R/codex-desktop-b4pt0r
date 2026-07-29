@@ -8,11 +8,13 @@ import {
   Menu,
   nativeImage,
   net,
+  powerMonitor,
   session,
   shell,
   Tray,
 } from "electron";
 import { AppServerTransport } from "./app-server.mjs";
+import { AppServerHealthMonitor } from "./app-server-health.mjs";
 import { readSettings, settingsPath, updateSettings } from "./settings.mjs";
 import { transcribeDictation } from "./transcription.mjs";
 import { SharedBrowserManager, stopManagedChromium } from "./chromium.mjs";
@@ -49,6 +51,7 @@ const isDevelopment = !app.isPackaged;
 let mainWindow;
 let tray;
 let automationScheduler;
+let appServerHealthMonitor;
 
 function send(event, payload) {
   if (!mainWindow?.isDestroyed()) {
@@ -56,7 +59,12 @@ function send(event, payload) {
   }
 }
 
-const appServer = new AppServerTransport(send);
+function sendAppServerEvent(event, payload) {
+  if (event === "app-server-exited") automationScheduler?.notReady();
+  send(event, payload);
+}
+
+const appServer = new AppServerTransport(sendAppServerEvent);
 let sharedBrowser;
 
 function trusted(event) {
@@ -358,6 +366,14 @@ else {
       send,
     });
     automationScheduler.start();
+    appServerHealthMonitor = new AppServerHealthMonitor(appServer);
+    appServerHealthMonitor.start();
+    powerMonitor.on("resume", () =>
+      appServerHealthMonitor?.afterSystemResume(),
+    );
+    powerMonitor.on("unlock-screen", () =>
+      appServerHealthMonitor?.afterSystemResume(),
+    );
     installPermissionPolicy();
     registerIpc();
     createWindow();
@@ -373,6 +389,7 @@ else {
 app.on("before-quit", () => {
   app.isQuitting = true;
   automationScheduler?.stop();
+  appServerHealthMonitor?.stop();
   appServer.stop();
   void stopManagedChromium(sharedBrowser);
 });

@@ -18,7 +18,11 @@ export type AppServerMessage = {
 
 type MessageHandler = (message: AppServerMessage) => void;
 type ConnectionHandler = (connected: boolean, error?: Error) => void;
-type AppServerExit = { code: number | null; message: string | null };
+type AppServerExit = {
+  code: number | null;
+  message: string | null;
+  reason?: "unresponsive";
+};
 
 const messageHandlers = new Set<MessageHandler>();
 const connectionHandlers = new Set<ConnectionHandler>();
@@ -209,10 +213,12 @@ export function parseAppServerPayload(payload: string): object {
 function handleExit(exit: AppServerExit) {
   initialized = false;
   const detail =
-    exit.message ??
-    (exit.code == null
-      ? translate("transport.exitNoCode")
-      : translate("transport.exitCode", { code: exit.code }));
+    exit.reason === "unresponsive"
+      ? translate("transport.unresponsive")
+      : (exit.message ??
+        (exit.code == null
+          ? translate("transport.exitNoCode")
+          : translate("transport.exitCode", { code: exit.code })));
   const error = new Error(translate("transport.exit", { detail }));
   rpc.disconnect(error);
   notifyConnection(false, error);

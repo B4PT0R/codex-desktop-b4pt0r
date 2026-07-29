@@ -10,6 +10,7 @@ export function createMainWindow(BrowserWindow, { hidden, root }) {
     show: !hidden,
     autoHideMenuBar: true,
     webPreferences: {
+      backgroundThrottling: false,
       contextIsolation: true,
       nodeIntegration: false,
       preload: path.join(root, "electron/preload.cjs"),

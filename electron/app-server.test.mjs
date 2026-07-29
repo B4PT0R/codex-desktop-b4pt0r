@@ -1,10 +1,24 @@
 import assert from "node:assert/strict";
+import { EventEmitter } from "node:events";
+import { PassThrough } from "node:stream";
 import test from "node:test";
 import {
+  AppServerTransport,
   appServerArguments,
   environmentForCodex,
   findCodexExecutable,
 } from "./app-server.mjs";
+
+function fakeChild() {
+  const child = new EventEmitter();
+  child.stdin = new PassThrough();
+  child.stdout = new PassThrough();
+  child.stderr = new PassThrough();
+  child.kill = () => {
+    child.killed = true;
+  };
+  return child;
+}
 
 test("disables unsupported native browser surfaces for this App Server", () => {
   assert.deepEqual(
@@ -56,4 +70,58 @@ test("preserves PATH lookup when Codex remains a bare command", () => {
   assert.deepEqual(environmentForCodex("codex", { PATH: "/usr/bin" }), {
     PATH: "/usr/bin",
   });
+});
+
+test("probes App Server through stdio without leaking the response to the renderer", async () => {
+  const child = fakeChild();
+  const events = [];
+  const writes = [];
+  child.stdin.on("data", (chunk) => writes.push(String(chunk)));
+  const transport = new AppServerTransport(
+    (event, payload) => events.push({ event, payload }),
+    {
+      resolveExecutable: async () => "/opt/codex/bin/codex",
+      spawnProcess: () => child,
+    },
+  );
+
+  await transport.start();
+  transport.send(JSON.stringify({ method: "initialized", params: {} }));
+  const probe = transport.probe(100);
+  await new Promise((resolve) => setImmediate(resolve));
+  const request = writes
+    .flatMap((write) => write.trim().split("\n"))
+    .map((line) => JSON.parse(line))
+    .find((message) => String(message.id ?? "").startsWith("desktop-health:"));
+  assert.equal(request.method, "thread/list");
+
+  child.stdout.write(`${JSON.stringify({ id: request.id, result: { data: [] } })}\n`);
+  assert.equal(await probe, "responsive");
+  assert.deepEqual(events, []);
+  transport.stop();
+});
+
+test("reports a confirmed unresponsive transport once before terminating it", async () => {
+  const child = fakeChild();
+  const events = [];
+  const transport = new AppServerTransport(
+    (event, payload) => events.push({ event, payload }),
+    {
+      resolveExecutable: async () => "/opt/codex/bin/codex",
+      spawnProcess: () => child,
+    },
+  );
+
+  await transport.start();
+  transport.send(JSON.stringify({ method: "initialized", params: {} }));
+  assert.equal(await transport.probe(5), "unresponsive");
+  assert.equal(transport.terminateUnresponsive(), true);
+  assert.equal(child.killed, true);
+  assert.deepEqual(events, [
+    {
+      event: "app-server-exited",
+      payload: { code: null, message: null, reason: "unresponsive" },
+    },
+  ]);
+  assert.equal(transport.terminateUnresponsive(), false);
 });

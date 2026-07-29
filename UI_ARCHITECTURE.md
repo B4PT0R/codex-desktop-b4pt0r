@@ -256,6 +256,17 @@ l’application interrompt les exécutions, qui sont marquées en échec au
 redémarrage. Cette frontière permet d’adopter ultérieurement le daemon Unix
 expérimental sans changer le modèle produit.
 
+La disponibilité du processus ne suffit pas à déclarer le transport sain.
+Electron sonde périodiquement le canal stdio JSON-RPC réel, avec un contrôle
+supplémentaire après reprise ou déverrouillage du système. Une défaillance
+confirmée remplace le processus ; le renderer réinstalle alors ses abonnements,
+réhydrate les catalogues et reprend le thread actif. Le scheduler ne réclame
+aucun réveil pendant cette fenêtre et ne reprend qu’une fois son listener de
+livraison réattaché. Comme ce renderer reste propriétaire de la réduction des
+événements, du contrôle distant et des tours planifiés quand la fenêtre est
+cachée dans le tray, Electron désactive explicitement son throttling
+d’arrière-plan.
+
 Les icônes circulaires statiques et interactives utilisent la primitive commune
 `RoundIcon`/`RoundIconButton`. Ses variantes `primary`, `secondary` et
 `tertiary` définissent le niveau d’accent, de fond et de bordure ; les features

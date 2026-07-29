@@ -7,6 +7,7 @@ import {
   AutomationScheduler,
   nextOccurrence,
 } from "./automation-scheduler.mjs";
+import { updateSettings } from "./settings.mjs";
 
 test("calculates interval and weekly occurrences", () => {
   const after = new Date(2026, 6, 29, 9, 30).getTime();
@@ -96,6 +97,36 @@ test("persists, claims and completes a scheduled task", async () => {
   const stored = JSON.parse(await readFile(file, "utf8"));
   assert.equal(stored.version, 1);
   assert.equal(stored.automations[0].unattendedAccess, true);
+});
+
+test("defers due work until App Server is available again", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "codex-automation-"));
+  const file = path.join(directory, "settings.json");
+  const events = [];
+  const scheduler = new AutomationScheduler({
+    file,
+    send: (event, payload) => events.push({ event, payload }),
+  });
+  await scheduler.upsert({
+    name: "Deferred task",
+    prompt: "Run after recovery",
+    enabled: true,
+    schedule: { type: "interval", intervalMinutes: 5 },
+    target: { type: "newThread" },
+  });
+  await updateSettings(file, {
+    automations: (await scheduler.list()).map((item) => ({
+      ...item,
+      nextRunAt: Date.now() - 1,
+    })),
+  });
+
+  scheduler.notReady();
+  assert.equal(events.length, 0);
+  await scheduler.ready();
+  assert.equal(events.length, 1);
+  assert.equal(events[0].event, "automation-run-due");
+  scheduler.stop();
 });
 
 test("keeps an active run attached when its schedule is edited", async () => {

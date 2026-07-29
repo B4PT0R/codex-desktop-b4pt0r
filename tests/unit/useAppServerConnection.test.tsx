@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { listen } from "../../src/lib/nativeBridge";
 import {
   connect,
@@ -43,6 +43,7 @@ function callbacks() {
     onInitialized: vi.fn(),
     onMessage: vi.fn(),
     onNewChat: vi.fn(),
+    onRecovered: vi.fn(),
   };
 }
 
@@ -81,6 +82,10 @@ beforeEach(() => {
       };
     return {};
   });
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe("connexion App Server", () => {
@@ -160,6 +165,58 @@ describe("connexion App Server", () => {
     });
     expect(options.onInitialized).toHaveBeenCalledTimes(2);
     expect(result.current.restartError).toBeUndefined();
+  });
+
+  it("se reconnecte automatiquement puis réhydrate le thread actif", async () => {
+    const options = callbacks();
+    mockedReconnect.mockResolvedValue();
+    const { result, unmount } = renderHook(() =>
+      useAppServerConnection(options),
+    );
+    await waitFor(() => expect(result.current.connected).toBe(true));
+    vi.useFakeTimers();
+
+    act(() => updateConnection?.(false, new Error("stale pipe")));
+    expect(result.current.connected).toBe(false);
+    await act(async () => vi.advanceTimersByTimeAsync(1_000));
+
+    expect(mockedReconnect).toHaveBeenCalledOnce();
+    expect(options.onInitialized).toHaveBeenCalledTimes(2);
+    expect(options.onRecovered).toHaveBeenCalledOnce();
+    expect(result.current.connected).toBe(true);
+    unmount();
+  });
+
+  it("réinstalle ses abonnements après un échec de connexion initial", async () => {
+    const options = callbacks();
+    let attempt = 0;
+    mockedConnect.mockImplementation(async (onMessage, onConnection) => {
+      attempt += 1;
+      if (attempt === 1) {
+        onConnection?.(false, new Error("startup failed"));
+        throw new Error("startup failed");
+      }
+      receiveMessage = onMessage;
+      updateConnection = onConnection;
+      onConnection?.(true);
+      return vi.fn();
+    });
+    vi.useFakeTimers();
+    const { result, unmount } = renderHook(() =>
+      useAppServerConnection(options),
+    );
+
+    await act(async () => vi.advanceTimersByTimeAsync(1_000));
+
+    expect(mockedConnect).toHaveBeenCalledTimes(2);
+    expect(mockedReconnect).not.toHaveBeenCalled();
+    expect(options.onInitialized).toHaveBeenCalledOnce();
+    expect(options.onRecovered).toHaveBeenCalledOnce();
+    expect(result.current.connected).toBe(true);
+
+    act(() => updateConnection?.(false, new Error("later failure")));
+    expect(options.onDisconnected).toHaveBeenCalledTimes(2);
+    unmount();
   });
 
   it("nettoie les abonnements et ignore une initialisation devenue obsolète", async () => {

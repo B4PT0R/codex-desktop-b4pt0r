@@ -1101,5 +1101,7 @@ export const en: Record<MessageKey, string> = {
   "transport.exit": "App Server stopped {detail}.",
   "transport.exitNoCode": "without an exit code",
   "transport.exitCode": "with exit code {code}",
+  "transport.unresponsive":
+    "because the local connection stopped responding; automatic reconnection is in progress",
   "thread.replayedTurnFailed": "This turn ended with an error",
 };

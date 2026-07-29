@@ -3,6 +3,20 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.3.8] - 2026-07-29
+
+### Fixed
+
+- A native App Server health check now detects an unresponsive stdio transport
+  after prolonged idle time or system resume instead of leaving the interface
+  in a false connected state.
+- Confirmed stale transports restart automatically, restore the renderer
+  subscriptions and catalogs, and resume the active conversation.
+- Scheduled work pauses while App Server is unavailable and catches up only
+  after the renderer has reattached its delivery listener.
+- The hidden tray window keeps processing App Server, remote-control and
+  scheduler events instead of being throttled as an ordinary background page.
+
 ## [0.3.7] - 2026-07-29
 
 ### Changed
@@ -325,6 +339,7 @@ follows semantic versioning while the public interface is taking shape.
 - Native Electron packaging for Debian/Ubuntu.
 - Stable Chromium microphone capture for dictation and Realtime voice.
 
+[0.3.8]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.7...v0.3.8
 [0.3.7]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.6...v0.3.7
 [0.3.6]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.4...v0.3.5

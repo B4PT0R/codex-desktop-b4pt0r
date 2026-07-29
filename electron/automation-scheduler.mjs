@@ -33,6 +33,10 @@ export class AutomationScheduler {
     this.#ready = false;
   }
 
+  notReady() {
+    this.#ready = false;
+  }
+
   async ready() {
     this.#ready = true;
     await this.#mutate((items) =>

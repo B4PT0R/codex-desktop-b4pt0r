@@ -69,16 +69,28 @@ export function environmentForCodex(
 export class AppServerTransport {
   #child;
   #initialized = false;
+  #probe;
+  #probeSequence = 0;
   #send;
+  #spawnProcess;
+  #resolveExecutable;
 
-  constructor(send) {
+  constructor(
+    send,
+    {
+      spawnProcess = spawn,
+      resolveExecutable = findCodexExecutable,
+    } = {},
+  ) {
     this.#send = send;
+    this.#spawnProcess = spawnProcess;
+    this.#resolveExecutable = resolveExecutable;
   }
 
   async start() {
     if (this.#child?.stdin.writable) return !this.#initialized;
-    const executable = await findCodexExecutable();
-    const child = spawn(
+    const executable = await this.#resolveExecutable();
+    const child = this.#spawnProcess(
       executable,
       appServerArguments,
       {
@@ -88,7 +100,7 @@ export class AppServerTransport {
     );
     this.#child = child;
     createInterface({ input: child.stdout }).on("line", (line) =>
-      this.#send("app-server-message", line),
+      this.#handleLine(child, line),
     );
     let stderr = "";
     child.stderr.setEncoding("utf8");
@@ -117,10 +129,55 @@ export class AppServerTransport {
     }
   }
 
+  async probe(timeoutMs = 15_000) {
+    const child = this.#child;
+    if (!child?.stdin.writable || !this.#initialized) return "unavailable";
+    if (this.#probe) return this.#probe.promise;
+
+    const id = `desktop-health:${++this.#probeSequence}`;
+    let resolveProbe;
+    const promise = new Promise((resolve) => {
+      resolveProbe = resolve;
+    });
+    const timer = setTimeout(
+      () => this.#settleProbe(id, "unresponsive"),
+      timeoutMs,
+    );
+    timer.unref?.();
+    this.#probe = { id, promise, resolve: resolveProbe, timer };
+    child.stdin.write(
+      `${JSON.stringify({
+        id,
+        method: "thread/list",
+        params: { limit: 1, sortKey: "updated_at" },
+      })}\n`,
+      (error) => {
+        if (error) this.#settleProbe(id, "unresponsive");
+      },
+    );
+    return promise;
+  }
+
+  terminateUnresponsive() {
+    const child = this.#child;
+    if (!child) return false;
+    this.#child = undefined;
+    this.#initialized = false;
+    this.#settleProbe(this.#probe?.id, "unavailable");
+    child.kill();
+    this.#send("app-server-exited", {
+      code: null,
+      message: null,
+      reason: "unresponsive",
+    });
+    return true;
+  }
+
   stop() {
     const child = this.#child;
     this.#child = undefined;
     this.#initialized = false;
+    this.#settleProbe(this.#probe?.id, "unavailable");
     child?.kill();
   }
 
@@ -133,6 +190,31 @@ export class AppServerTransport {
     if (this.#child !== child) return;
     this.#child = undefined;
     this.#initialized = false;
+    this.#settleProbe(this.#probe?.id, "unavailable");
     this.#send("app-server-exited", { code, message });
+  }
+
+  #handleLine(child, line) {
+    if (this.#child !== child) return;
+    try {
+      const message = JSON.parse(line);
+      if (String(message?.id ?? "").startsWith("desktop-health:")) {
+        if (message.id === this.#probe?.id) {
+          this.#settleProbe(this.#probe.id, "responsive");
+        }
+        return;
+      }
+    } catch {
+      // The renderer owns normal protocol validation and its visible warning.
+    }
+    this.#send("app-server-message", line);
+  }
+
+  #settleProbe(id, status) {
+    if (!id || this.#probe?.id !== id) return;
+    const probe = this.#probe;
+    this.#probe = undefined;
+    clearTimeout(probe.timer);
+    probe.resolve(status);
   }
 }

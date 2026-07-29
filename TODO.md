@@ -17,7 +17,7 @@ shared Playwright Chromium session.
 
 The repository is public at
 `https://github.com/B4PT0R/codex-desktop-b4pt0r`. The current public release is
-v0.3.7.
+v0.3.8.
 
 ## Current candidate
 
@@ -57,6 +57,20 @@ Background notifications are now routed by `threadId`. A scheduled run updates
 its thread and sidebar without injecting activity into the conversation
 currently being read. Global notifications and interactive approval requests
 retain their existing behavior.
+
+Long-idle transport recovery is now explicit rather than inferred from the
+child process state:
+
+- Electron probes the initialized App Server over its real stdio JSON-RPC
+  channel every two minutes and shortly after system resume or unlock;
+- two consecutive bounded probe failures are required before replacing the
+  child, avoiding a restart on a transiently busy response;
+- the renderer reconnects with bounded backoff, restores its subscriptions and
+  catalogs, then resumes the active thread;
+- the tray-hidden Electron renderer opts out of background throttling because
+  it owns App Server event reduction, remote control and scheduled turns;
+- the scheduler stops claiming due work as soon as the transport is lost and
+  catches up only after its renderer listener is attached again.
 
 Compatibility remains anchored to installed `codex-cli 0.145.0`. The boundary
 also accepts additive thread section metadata, item timestamps and terminal
@@ -113,13 +127,14 @@ group component owns only sequencing, history visibility and group lifecycle.
 
 - Installed Codex: `codex-cli 0.145.0`.
 - Official source audit: `1def0a892`, stable and experimental v2 schemas.
-- Frontend/unit/contract: 540 tests across 103 files, including 47 installed
+- Frontend/unit/contract: 542 tests across 103 files, including 47 installed
   App Server contract cases.
-- Electron/Node: 62 tests.
+- Electron/Node: 68 tests, including the native hidden-window liveness
+  invariant.
 - Strict TypeScript: passing.
 - Production Vite build: passing.
 - Production dependency audit: zero vulnerabilities.
-- Main JS: 564.43 kB, 163.70 kB gzip.
+- Main JS: 565.48 kB, 164.07 kB gzip.
 - Lazy diff viewer: 89.50 kB, 32.89 kB gzip.
 - Lazy Markdown/KaTeX: 436.81 kB, 131.40 kB gzip.
 - Shared-browser visual pass: light and dark palettes, 1240×820 and 840×620;
@@ -137,6 +152,8 @@ group component owns only sequencing, history visibility and group lifecycle.
   840×620; wide tables scroll locally without widening the message or app.
 - Reinstalled Debian package: `codex-desktop-linux 0.3.7 amd64`; installed ASAR
   matches the package build (`f4e5f436…8bfef51`).
+- Built Debian release candidate: `codex-desktop-linux 0.3.8 amd64`
+  (`sha256:91eaea3a…cdc83cc`); packaged ASAR contains the native health monitor.
 
 ## Active invariants
 
@@ -181,8 +198,9 @@ group component owns only sequencing, history visibility and group lifecycle.
 
 ## Next bounded work
 
-1. Exercise scheduled execution end to end in packaged Electron, including an
-   approval-gated task, hidden-window delivery and App Server restart.
+1. Exercise long-idle and suspend/resume recovery in packaged Electron together
+   with scheduled execution, including an approval-gated task, hidden-window
+   delivery and App Server restart.
 2. Decide whether background task completion merits an OS notification and a
    small activity inbox before adding either surface.
 3. Add `CONTRIBUTING.md`, focused issue/PR templates and a concise public App

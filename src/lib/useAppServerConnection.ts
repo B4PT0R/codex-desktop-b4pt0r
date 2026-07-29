@@ -19,7 +19,10 @@ type Options = {
   onInitialized: (models: Model[], threads: ThreadSummary[]) => void;
   onMessage: (message: AppServerMessage) => void;
   onNewChat: () => void;
+  onRecovered?: () => Promise<unknown>;
 };
+
+const RECONNECT_DELAYS_MS = [1_000, 3_000, 10_000, 30_000] as const;
 
 export function useAppServerConnection(options: Options) {
   const { t } = useI18n();
@@ -31,6 +34,8 @@ export function useAppServerConnection(options: Options) {
   const [reconnecting, setReconnecting] = useState(false);
   const [restartError, setRestartError] = useState<string>();
   const [restarting, setRestarting] = useState(false);
+  const restartingRef = useRef(false);
+  const recoverNow = useRef<() => Promise<boolean>>(async () => false);
 
   async function hydrateCatalogs(shouldApply: () => boolean = () => true) {
     const [models, history] = await Promise.all([
@@ -51,36 +56,112 @@ export function useAppServerConnection(options: Options) {
     let disposed = false;
     let cleanup: (() => void) | undefined;
     let unlistenNewChat: (() => void) | undefined;
+    let reconnectAttempt = 0;
+    let reconnectTimer: number | undefined;
+    let recoveryInFlight = false;
+    let connectionErrorReported = false;
 
-    void connect(
-      (message) => callbacks.current.onMessage(message),
-      (nextConnected, error) => {
-        if (disposed) return;
-        setConnected(nextConnected);
-        if (!nextConnected) callbacks.current.onDisconnected();
-        if (error)
-          callbacks.current.onError(
-            translate.current("app.connectionInterrupted"),
-            error,
-          );
-      },
-    )
-      .then(async (disconnect) => {
-        if (disposed) {
-          disconnect();
-          return;
-        }
-        cleanup = disconnect;
-        if (!isDesktopApp()) return;
+    const clearReconnectTimer = () => {
+      if (reconnectTimer !== undefined) window.clearTimeout(reconnectTimer);
+      reconnectTimer = undefined;
+    };
+
+    const handleMessage = (message: AppServerMessage) =>
+      callbacks.current.onMessage(message);
+
+    const handleConnection = (nextConnected: boolean, error?: Error) => {
+      if (disposed) return;
+      setConnected(nextConnected);
+      if (nextConnected) {
+        clearReconnectTimer();
+        return;
+      }
+      callbacks.current.onDisconnected();
+      if (error && !connectionErrorReported) {
+        connectionErrorReported = true;
+        callbacks.current.onError(
+          translate.current("app.connectionInterrupted"),
+          error,
+        );
+      }
+      scheduleReconnect();
+    };
+
+    const establishConnection = async () => {
+      if (cleanup) {
+        await reconnect();
+        return;
+      }
+      const disconnect = await connect(handleMessage, handleConnection);
+      if (disposed) {
+        disconnect();
+        return;
+      }
+      cleanup = disconnect;
+    };
+
+    const ensureNewChatListener = async () => {
+      if (!isDesktopApp() || unlistenNewChat) return;
+      const unlisten = await listen("new-chat", () =>
+        callbacks.current.onNewChat(),
+      );
+      if (disposed) {
+        unlisten();
+        return;
+      }
+      unlistenNewChat = unlisten;
+    };
+
+    const recover = async () => {
+      if (disposed || recoveryInFlight || restartingRef.current) return false;
+      recoveryInFlight = true;
+      let shouldRetry = false;
+      clearReconnectTimer();
+      setReconnecting(true);
+      try {
+        await establishConnection();
+        if (!disposed) setConnected(true);
+        await ensureNewChatListener();
+        await hydrateCatalogs(() => !disposed);
+        if (!disposed) await callbacks.current.onRecovered?.();
+        reconnectAttempt = 0;
+        connectionErrorReported = false;
+        return true;
+      } catch {
+        reconnectAttempt += 1;
+        shouldRetry = true;
+        return false;
+      } finally {
+        recoveryInFlight = false;
+        if (shouldRetry) scheduleReconnect();
+        if (!disposed) setReconnecting(false);
+      }
+    };
+
+    const scheduleReconnect = () => {
+      if (
+        disposed ||
+        reconnectTimer !== undefined ||
+        recoveryInFlight ||
+        restartingRef.current
+      )
+        return;
+      const delay =
+        RECONNECT_DELAYS_MS[
+          Math.min(reconnectAttempt, RECONNECT_DELAYS_MS.length - 1)
+        ];
+      reconnectTimer = window.setTimeout(() => {
+        reconnectTimer = undefined;
+        void recover();
+      }, delay);
+    };
+    recoverNow.current = recover;
+
+    void establishConnection()
+      .then(async () => {
+        if (!isDesktopApp() || disposed) return;
         try {
-          unlistenNewChat = await listen("new-chat", () =>
-            callbacks.current.onNewChat(),
-          );
-          if (disposed) {
-            unlistenNewChat();
-            unlistenNewChat = undefined;
-            return;
-          }
+          await ensureNewChatListener();
           if (!disposed) await hydrateCatalogs(() => !disposed);
         } catch (error) {
           if (!disposed)
@@ -90,28 +171,24 @@ export function useAppServerConnection(options: Options) {
             );
         }
       })
-      .catch(() => undefined);
+      .catch(() => scheduleReconnect());
 
     return () => {
       disposed = true;
+      clearReconnectTimer();
+      recoverNow.current = async () => false;
       cleanup?.();
       unlistenNewChat?.();
     };
   }, []);
 
   async function reconnectAppServer() {
-    setReconnecting(true);
-    try {
-      await reconnect();
-    } catch {
-      // The connection listener presents the actionable error in the conversation.
-    } finally {
-      setReconnecting(false);
-    }
+    await recoverNow.current();
   }
 
   async function restartCodexAppServer() {
     if (restarting) return false;
+    restartingRef.current = true;
     setRestarting(true);
     setRestartError(undefined);
     try {
@@ -122,6 +199,7 @@ export function useAppServerConnection(options: Options) {
       setRestartError(error instanceof Error ? error.message : String(error));
       return false;
     } finally {
+      restartingRef.current = false;
       setRestarting(false);
     }
   }

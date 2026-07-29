@@ -1133,6 +1133,8 @@ export const fr = {
   "transport.exit": "App Server s’est arrêté {detail}.",
   "transport.exitNoCode": "sans code de sortie",
   "transport.exitCode": "avec le code {code}",
+  "transport.unresponsive":
+    "car la connexion locale ne répondait plus ; reconnexion automatique en cours",
   "thread.replayedTurnFailed": "Ce tour s’est terminé avec une erreur",
 } as const;
 

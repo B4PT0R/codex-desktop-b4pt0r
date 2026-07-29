@@ -283,6 +283,10 @@ export default function App() {
     },
     onMessage: handle,
     onNewChat: newChat,
+    onRecovered: async () => {
+      const activeThreadId = activeThreadRef.current;
+      if (activeThreadId) await threadHistory.resume(activeThreadId);
+    },
   });
   const automations = useAutomations({
     connected: connection.connected,
