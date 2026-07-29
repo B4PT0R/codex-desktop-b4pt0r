@@ -8,6 +8,11 @@ import type {
 } from "../lib/protocol";
 import { useChromium } from "../lib/useChromium";
 import type { CodexGlobalSettingsController } from "../lib/useCodexGlobalSettings";
+import {
+  MAX_VISIBLE_ACTIONS,
+  MIN_VISIBLE_ACTIONS,
+  type ChatPresentationSettingsController,
+} from "../lib/useChatPresentationSettings";
 import type { IntegrationsController } from "../lib/useIntegrations";
 import { useLaunchAtLogin } from "../lib/useLaunchAtLogin";
 
@@ -343,8 +348,10 @@ export function BrowserSettings({
 
 export function ChatSettings({
   globalSettings,
+  presentation,
 }: {
   globalSettings: CodexGlobalSettingsController;
+  presentation: ChatPresentationSettingsController;
 }) {
   const { t } = useI18n();
   return (
@@ -375,7 +382,40 @@ export function ChatSettings({
             ))}
           </select>
         </label>
+        <label>
+          <span className="settings-field-description">
+            <strong>{t("settings.chat.visibleActions.title")}</strong>
+            <small>{t("settings.chat.visibleActions.detail")}</small>
+          </span>
+          <select
+            aria-label={t("settings.chat.visibleActions.title")}
+            disabled={presentation.loading || presentation.saving}
+            value={presentation.maxVisibleActions}
+            onChange={(event) =>
+              void presentation.setMaxVisibleActions(
+                Number(event.target.value),
+              )
+            }
+          >
+            {Array.from(
+              {
+                length:
+                  MAX_VISIBLE_ACTIONS - MIN_VISIBLE_ACTIONS + 1,
+              },
+              (_, index) => MIN_VISIBLE_ACTIONS + index,
+            ).map((count) => (
+              <option key={count} value={count}>
+                {count}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
+      {presentation.error && (
+        <div className="inventory-message error" role="alert">
+          {t("settings.chat.visibleActions.error")} {presentation.error}
+        </div>
+      )}
     </section>
   );
 }

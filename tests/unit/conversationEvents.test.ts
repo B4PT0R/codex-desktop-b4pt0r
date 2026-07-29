@@ -259,6 +259,50 @@ describe("événements de conversation", () => {
     });
   });
 
+  it("sépare deux vagues d’outils lorsqu’un item non-action s’intercale", () => {
+    const firstTool = applyConversationEvent([], {
+      method: "item/started",
+      params: {
+        item: {
+          id: "command-before",
+          type: "commandExecution",
+          command: "npm test",
+          status: "inProgress",
+        },
+      },
+    });
+    const compacting = applyConversationEvent(firstTool, {
+      method: "item/started",
+      params: {
+        item: { id: "compact-between", type: "contextCompaction" },
+      },
+    });
+    const secondTool = applyConversationEvent(compacting, {
+      method: "item/started",
+      params: {
+        item: {
+          id: "command-after",
+          type: "commandExecution",
+          command: "npm run build",
+          status: "inProgress",
+        },
+      },
+    });
+
+    expect(secondTool).toHaveLength(2);
+    expect(secondTool[0].tools?.map(({ id }) => id)).toEqual([
+      "command-before",
+    ]);
+    expect(secondTool[1].signals?.[0]).toMatchObject({
+      id: "compact-between",
+      kind: "compaction",
+    });
+    expect(secondTool[1].tools?.map(({ id }) => id)).toEqual([
+      "command-after",
+    ]);
+    expect(secondTool[1].revealAfter).toBeTypeOf("number");
+  });
+
   it("clôt le groupe d’outils dès que le texte agent reprend", () => {
     const announced = applyConversationEvent([], {
       method: "item/agentMessage/delta",

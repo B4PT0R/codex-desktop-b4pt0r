@@ -22,8 +22,10 @@ import { ScheduledTaskMessage } from "./ScheduledTaskMessage";
 
 type ConversationProps = {
   activity: AgentActivity;
+  backgroundToolIds?: ReadonlySet<string>;
   canLoadOlder?: boolean;
   loadingOlder?: boolean;
+  maxVisibleActions?: number;
   messages: ChatMessage[];
   onLoadOlder?: () => void;
   onReviewDiff?: (tool: ToolCall) => void;
@@ -34,8 +36,10 @@ type ConversationProps = {
 
 export function Conversation({
   activity,
+  backgroundToolIds,
   canLoadOlder = false,
   loadingOlder = false,
+  maxVisibleActions = 3,
   messages,
   cwd,
   fileOpener = "none",
@@ -90,8 +94,13 @@ export function Conversation({
                   <ConversationMessage
                     key={message.id}
                     message={message}
+                    backgroundToolIds={backgroundToolIds}
+                    maxVisibleActions={maxVisibleActions}
                     onReviewDiff={onReviewDiff}
-                    stepClosed={messageIndex < messages.length - 1}
+                    stepClosed={
+                      messageIndex < messages.length - 1 ||
+                      (messageIndex === messages.length - 1 && activity === null)
+                    }
                   />
                 ))
               )}
@@ -107,10 +116,14 @@ export function Conversation({
 
 const ConversationMessage = memo(function ConversationMessage({
   message,
+  backgroundToolIds,
+  maxVisibleActions,
   onReviewDiff,
   stepClosed,
 }: {
   message: ChatMessage;
+  backgroundToolIds?: ReadonlySet<string>;
+  maxVisibleActions: number;
   onReviewDiff?: (tool: ToolCall) => void;
   stepClosed: boolean;
 }) {
@@ -186,6 +199,8 @@ const ConversationMessage = memo(function ConversationMessage({
         )}{" "}
         {message.tools && message.tools.length > 0 && (
           <ToolGroup
+            backgroundToolIds={backgroundToolIds}
+            maxVisibleActions={maxVisibleActions}
             tools={message.tools}
             onReviewDiff={onReviewDiff}
             stepClosed={stepClosed}

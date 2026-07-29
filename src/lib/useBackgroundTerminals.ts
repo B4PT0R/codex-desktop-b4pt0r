@@ -15,6 +15,15 @@ export type BackgroundTerminal = {
   rssKb?: number;
 };
 
+export type BackgroundTerminalsController = {
+  error?: string;
+  loading: boolean;
+  refresh: () => Promise<void>;
+  terminals: BackgroundTerminal[];
+  terminate: (processId: string) => Promise<boolean>;
+  terminating: string[];
+};
+
 type BackgroundTerminalsOptions = {
   busy: boolean;
   connected: boolean;
@@ -31,6 +40,7 @@ export function useBackgroundTerminals({
   const [error, setError] = useState<string>();
   const [terminating, setTerminating] = useState<string[]>([]);
   const refreshVersion = useRef(0);
+  const pendingThreads = useRef(new Set<string>());
   const terminatingProcesses = useRef(new Set<string>());
   const activeThreadId = useRef(threadId);
   activeThreadId.current = threadId;
@@ -43,11 +53,13 @@ export function useBackgroundTerminals({
   }, [threadId]);
 
   const refresh = useCallback(async () => {
-    const version = ++refreshVersion.current;
-    if (!connected || !threadId || busy) {
+    if (!connected || !threadId) {
       if (!threadId) setTerminals([]);
       return;
     }
+    if (pendingThreads.current.has(threadId)) return;
+    const version = ++refreshVersion.current;
+    pendingThreads.current.add(threadId);
     setLoading(true);
     setError(undefined);
     try {
@@ -69,20 +81,28 @@ export function useBackgroundTerminals({
         setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
+      pendingThreads.current.delete(threadId);
       if (version === refreshVersion.current) setLoading(false);
     }
-  }, [busy, connected, threadId]);
+  }, [connected, threadId]);
 
   useEffect(() => {
     void refresh();
-    return () => {
+  }, [busy, refresh]);
+
+  useEffect(
+    () => () => {
       refreshVersion.current += 1;
-    };
-  }, [refresh]);
+    },
+    [],
+  );
 
   useEffect(() => {
-    if (terminals.length === 0 || busy) return;
-    const interval = window.setInterval(() => void refresh(), 5_000);
+    if (!busy && terminals.length === 0) return;
+    const interval = window.setInterval(
+      () => void refresh(),
+      busy ? 1_000 : 5_000,
+    );
     return () => window.clearInterval(interval);
   }, [busy, refresh, terminals.length]);
 
@@ -121,7 +141,14 @@ export function useBackgroundTerminals({
     [refresh, threadId],
   );
 
-  return { error, loading, refresh, terminals, terminate, terminating };
+  return {
+    error,
+    loading,
+    refresh,
+    terminals,
+    terminate,
+    terminating,
+  } satisfies BackgroundTerminalsController;
 }
 
 function terminalPage(value: unknown) {

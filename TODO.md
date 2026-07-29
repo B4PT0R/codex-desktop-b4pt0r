@@ -78,24 +78,49 @@ inventing generic abstractions:
 - scheduler styling is colocated in `automation-settings.css` instead of being
   split across the general Settings and appearance sheets.
 
+Streaming assistant messages now use the complete GFM/KaTeX renderer
+progressively. Token deltas are coalesced to at most one interruptible Markdown
+parse every 50 ms; incomplete emphasis, links, fenced code and math remain
+safe while their delimiters are still arriving, and finalization flushes the
+complete source immediately. The obsolete parallel LaTeX-only streaming parser
+has been removed.
+
+Tool activity now follows a three-state presentation contract: an action is
+open, collapsed on the same fixed one-line header, or hidden in its group
+history. Calls are revealed only after the previous detail panel has finished
+closing; when the configurable one-to-six-row limit is reached, the oldest row
+leaves before the next arrives. The group summary exists from the first call,
+silent agent steps remain aggregated, and text or an intervening non-action
+item closes the prior group before the next visual item appears.
+The App Server background-terminal inventory is refreshed during active turns.
+A matching long-running command keeps its truthful running state and output,
+but yields its expanded card after a short dwell so later Playwright or tool
+calls cannot accumulate invisibly behind it. Mixed groups report completed and
+still-running counts together; detached jobs use a static job icon rather than
+a spinner that suggests the interface is blocked.
+
 ## Verified candidate baseline
 
 - Installed Codex: `codex-cli 0.145.0`.
 - Official source audit: `1def0a892`, stable and experimental v2 schemas.
-- Frontend/unit/contract: 535 tests across 103 files, including 47 installed
+- Frontend/unit/contract: 532 tests across 103 files, including 47 installed
   App Server contract cases.
-- Electron/Node: 61 tests.
+- Electron/Node: 62 tests.
 - Strict TypeScript: passing.
 - Production Vite build: passing.
 - Production dependency audit: zero vulnerabilities.
-- Main JS: 553.87 kB, 160.91 kB gzip.
+- Main JS: 563.75 kB, 163.42 kB gzip.
 - Lazy diff viewer: 89.50 kB, 32.89 kB gzip.
-- Lazy Markdown/KaTeX: 698.90 kB, 208.87 kB gzip.
+- Lazy Markdown/KaTeX: 436.03 kB, 131.06 kB gzip.
 - Shared-browser visual pass: light and dark palettes, 1240×820 and 840×620;
   no browser warning, error or horizontal overflow after the Settings
   modularity pass.
+- Shared-browser action pass: user-approved continuous multi-step wave with
+  seven aggregated calls, saturation, an interleaved compaction boundary and a
+  second group containing a detached development server followed by Playwright
+  calls; the mixed summary and static job state were user-approved.
 - Reinstalled Debian package: `codex-desktop-linux 0.3.5 amd64`; installed ASAR
-  matches the package build (`6e024b21…6f2b6cf`).
+  matches the package build (`617ce76e…9c64e9d`).
 
 ## Active invariants
 

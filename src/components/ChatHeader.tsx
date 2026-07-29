@@ -21,8 +21,10 @@ import { BackgroundTerminalsLoader } from "./BackgroundTerminalsLoader";
 import { ThreadGoalButton } from "./ThreadGoalButton";
 import { WorkspaceAgentsButton } from "./WorkspaceAgentsButton";
 import { RoundIconButton } from "./RoundIcon";
+import type { BackgroundTerminalsController } from "../lib/useBackgroundTerminals";
 
 type ChatHeaderProps = {
+  backgroundTerminals?: BackgroundTerminalsController;
   busy: boolean;
   connected: boolean;
   cwd?: string;
@@ -47,6 +49,7 @@ type ChatHeaderProps = {
 };
 
 export function ChatHeader({
+  backgroundTerminals,
   busy,
   connected,
   cwd = "",
@@ -336,11 +339,12 @@ export function ChatHeader({
               variant="secondary"
             />
           )}
-          <BackgroundTerminalsLoader
-            busy={busy}
-            connected={connected}
-            threadId={threadId}
-          />
+          {backgroundTerminals && (
+            <BackgroundTerminalsLoader
+              controller={backgroundTerminals}
+              threadId={threadId}
+            />
+          )}
           <span className={connected ? "status online" : "status"}>
             {connected
               ? t("chat.connection.connected")

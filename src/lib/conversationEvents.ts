@@ -454,6 +454,23 @@ function appendSignal(
     ];
   }
   const message = messages[index];
+  if (message.tools?.length) {
+    const closed = replaceAt(messages, index, {
+      ...message,
+      streaming: false,
+    });
+    return [
+      ...closed,
+      {
+        id: `signal-${signal.id}`,
+        role: "assistant",
+        content: "",
+        revealAfter:
+          Date.now() + closedStepRevealDelay(message.tools.length),
+        signals: [signal],
+      },
+    ];
+  }
   const signals = message.signals ?? [];
   const previousSignal = signals.at(-1);
   const mergesPreviousReasoning =

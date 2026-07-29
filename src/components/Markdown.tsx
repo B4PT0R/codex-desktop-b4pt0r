@@ -6,13 +6,13 @@ const MarkdownRenderer = lazy(() =>
   })),
 );
 
-const StreamingLatexRenderer = lazy(() =>
+const StreamingMarkdownRenderer = lazy(() =>
   import("./MarkdownRenderer").then((module) => ({
-    default: module.StreamingLatexRenderer,
+    default: module.StreamingMarkdownRenderer,
   })),
 );
 
-/** Keeps streaming Markdown cheap while progressively rendering stable math. */
+/** Coalesces streaming deltas while progressively rendering full Markdown. */
 export function Markdown({
   children,
   streaming = false,
@@ -23,7 +23,7 @@ export function Markdown({
   if (streaming) {
     return (
       <Suspense fallback={<span className="markdown-fallback">{children}</span>}>
-        <StreamingLatexRenderer>{children}</StreamingLatexRenderer>
+        <StreamingMarkdownRenderer>{children}</StreamingMarkdownRenderer>
       </Suspense>
     );
   }

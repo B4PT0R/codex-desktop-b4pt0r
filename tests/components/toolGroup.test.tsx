@@ -9,12 +9,12 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { invoke, openPath, openUrl } from "../../src/lib/nativeBridge";
 import {
+  TOOL_BACKGROUND_DWELL_MS,
   TOOL_COLLAPSE_MS,
   TOOL_COMPLETION_DWELL_MS,
   TOOL_GROUP_COLLAPSE_MS,
-  TOOL_GROUP_DWELL_MS,
+  TOOL_HIDE_MS,
   ToolGroup,
 } from "../../src/components/ToolGroup";
 import { I18nProvider } from "../../src/i18n/I18nProvider";
@@ -22,11 +22,13 @@ import {
   CLOSED_STEP_GROUP_DWELL_MS,
   CLOSED_STEP_TOOL_DWELL_MS,
 } from "../../src/lib/toolActivityTiming";
+import { invoke, openPath, openUrl } from "../../src/lib/nativeBridge";
+import type { ToolCall } from "../../src/types";
 
 vi.mock("../../src/lib/nativeBridge", () => ({
+  invoke: vi.fn(),
   openPath: vi.fn(),
   openUrl: vi.fn(),
-  invoke: vi.fn(),
 }));
 
 afterEach(() => {
@@ -34,424 +36,312 @@ afterEach(() => {
   cleanup();
   localStorage.clear();
   vi.mocked(invoke).mockReset();
-  vi.mocked(openUrl).mockReset();
   vi.mocked(openPath).mockReset();
+  vi.mocked(openUrl).mockReset();
 });
 
+function command(
+  id: string,
+  status: ToolCall["status"] = "running",
+): ToolCall {
+  return {
+    id,
+    kind: "commandExecution",
+    title: `Commande ${id}`,
+    detail: `npm run ${id}`,
+    status,
+  };
+}
+
+function finishLiveAction(stepClosed = false) {
+  act(() => {
+    vi.advanceTimersByTime(
+      (stepClosed ? CLOSED_STEP_TOOL_DWELL_MS : TOOL_COMPLETION_DWELL_MS) +
+        TOOL_COLLAPSE_MS,
+    );
+  });
+}
+
 describe("activité des outils", () => {
-  it("révèle progressivement la sortie, le statut et le diff", () => {
+  it("affiche immédiatement un en-tête de groupe et les détails de l’action active", () => {
     render(
       <ToolGroup
         tools={[
           {
-            id: "command-1",
-            kind: "commandExecution",
-            title: "Commande",
-            detail: "npm test",
-            status: "done",
-            output: "131 tests réussis",
-            exitCode: 0,
-            durationMs: 1200,
-          },
-          {
-            id: "patch-1",
-            kind: "fileChange",
-            title: "Modification de fichiers",
-            detail: "src/App.tsx",
-            status: "done",
-            diff: "+import './tools.css';",
+            ...command("test"),
+            output: "9 tests exécutés…",
           },
         ]}
       />,
     );
 
-    expect(screen.getByText("2 actions effectuées")).toBeVisible();
-    expect(screen.getByText("Terminal 1")).toBeVisible();
-    expect(screen.getByText("Fichiers 1")).toBeVisible();
-    expect(screen.getByText("npm test")).not.toBeVisible();
-    fireEvent.click(screen.getByText("2 actions effectuées"));
-    expect(screen.getAllByLabelText("Terminé")).toHaveLength(2);
-    expect(screen.getByText("Code 0 · 1.2 s")).toBeVisible();
-    fireEvent.click(screen.getByText("npm test"));
-    expect(screen.getByText("131 tests réussis")).toBeVisible();
-    fireEvent.click(screen.getByText("src/App.tsx"));
-    expect(screen.getByText("+import './tools.css';")).toBeVisible();
+    expect(screen.getByText("Action en cours")).toBeVisible();
+    expect(screen.getByText("npm run test")).toBeVisible();
+    expect(screen.getByText("9 tests exécutés…")).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: /Commande test/ }),
+    ).toHaveAttribute("aria-expanded", "true");
   });
 
-  it("ouvre automatiquement une activité en cours et affiche sa progression", () => {
-    render(
+  it("replie uniquement le panneau de détail sans remplacer l’en-tête", () => {
+    vi.useFakeTimers();
+    const running = command("check");
+    const { rerender } = render(<ToolGroup tools={[running]} />);
+    const header = screen.getByRole("button", { name: /Commande check/ });
+
+    rerender(<ToolGroup tools={[{ ...running, status: "done" }]} />);
+    act(() => vi.advanceTimersByTime(TOOL_COMPLETION_DWELL_MS));
+    expect(header.closest(".tool-row")).toHaveClass("closing");
+    expect(screen.getByText("npm run check")).toBeVisible();
+
+    act(() => vi.advanceTimersByTime(TOOL_COLLAPSE_MS));
+    expect(screen.getByRole("button", { name: /Commande check/ })).toBe(header);
+    expect(header.closest(".tool-row")).toHaveClass("collapsed");
+    expect(screen.getByText("npm run check")).not.toBeVisible();
+  });
+
+  it("ne présente l’appel suivant qu’après la fermeture complète du précédent", () => {
+    vi.useFakeTimers();
+    const first = command("first");
+    const second = command("second");
+    const { rerender } = render(<ToolGroup tools={[first, second]} />);
+
+    expect(screen.queryByText("Commande second")).toBeNull();
+    rerender(
       <ToolGroup
         tools={[
-          {
-            id: "mcp-1",
-            kind: "mcpToolCall",
-            title: "Recherche",
-            detail: "MCP · github",
-            status: "running",
-            progress: "Lecture de la page 2",
-          },
+          { ...first, status: "done" },
+          { ...second, status: "done" },
         ]}
       />,
     );
+    act(() => vi.advanceTimersByTime(TOOL_COMPLETION_DWELL_MS));
+    expect(screen.queryByText("Commande second")).toBeNull();
+    expect(screen.getByText("Commande first").closest(".tool-row")).toHaveClass(
+      "closing",
+    );
 
-    expect(screen.queryByText("Travail en cours")).toBeNull();
-    expect(screen.getByLabelText("En cours")).toBeVisible();
-    expect(screen.getByText("Lecture de la page 2")).toBeVisible();
+    act(() => vi.advanceTimersByTime(TOOL_COLLAPSE_MS));
+    expect(screen.getByText("Commande second")).toBeVisible();
+    expect(screen.getByText("Commande first").closest(".tool-row")).toHaveClass(
+      "collapsed",
+    );
   });
 
-  it("ouvre un diff persistant depuis ses détails", () => {
-    const onReviewDiff = vi.fn();
-    const tool = {
-      id: "patch-1",
-      kind: "fileChange" as const,
-      title: "Modification de fichiers",
-      detail: "src/App.tsx",
-      status: "done" as const,
-      diff: "+nouvelle ligne",
+  it("laisse une commande en arrière-plan rendre la main aux appels suivants", () => {
+    vi.useFakeTimers();
+    const server = {
+      ...command("dev-server"),
+      output: "Local: http://127.0.0.1:1420/",
     };
-    render(<ToolGroup tools={[tool]} onReviewDiff={onReviewDiff} />);
-    fireEvent.click(screen.getByText("1 action effectuée"));
-    fireEvent.click(screen.getByText("src/App.tsx"));
-    fireEvent.click(
-      screen.getByRole("button", { name: "Revoir dans le panneau" }),
-    );
-    expect(onReviewDiff).toHaveBeenCalledWith(tool);
-  });
-
-  it("condense uniquement les longues séries terminées", () => {
-    render(
+    const browser: ToolCall = {
+      id: "browser",
+      kind: "mcpToolCall",
+      title: "Navigation Playwright",
+      detail: "Ouvrir la preview",
+      status: "running",
+    };
+    const { rerender } = render(
       <ToolGroup
-        tools={Array.from({ length: 6 }, (_, index) => ({
-          id: `command-${index}`,
-          kind: "commandExecution" as const,
-          title: `Commande ${index + 1}`,
-          detail: `commande-${index + 1}`,
-          status: "done" as const,
-        }))}
+        backgroundToolIds={new Set(["dev-server"])}
+        stepClosed={false}
+        tools={[server, browser]}
       />,
     );
-    fireEvent.click(screen.getByText("6 actions effectuées"));
+
+    expect(screen.queryByText("Navigation Playwright")).toBeNull();
+    act(() => vi.advanceTimersByTime(TOOL_BACKGROUND_DWELL_MS));
+    expect(
+      screen.getByText("Commande dev-server").closest(".tool-row"),
+    ).toHaveClass("closing");
+    expect(screen.queryByText("Navigation Playwright")).toBeNull();
+    act(() => vi.advanceTimersByTime(TOOL_COLLAPSE_MS));
+
+    expect(screen.getByText("Navigation Playwright")).toBeVisible();
+    const backgroundStatus = screen.getByLabelText("En arrière-plan");
+    expect(backgroundStatus).toBeVisible();
+    expect(backgroundStatus.querySelector(".spin")).toBeNull();
+    expect(
+      backgroundStatus.querySelector(".lucide-briefcase-business"),
+    ).not.toBeNull();
+
+    rerender(
+      <ToolGroup
+        backgroundToolIds={new Set(["dev-server"])}
+        stepClosed
+        tools={[server, { ...browser, status: "done" }]}
+      />,
+    );
+    finishLiveAction(true);
+    act(() => vi.advanceTimersByTime(CLOSED_STEP_GROUP_DWELL_MS));
+    act(() => vi.advanceTimersByTime(TOOL_GROUP_COLLAPSE_MS));
+    const groupSummary = screen.getByRole("button", {
+      name: /1 action effectuée · 1 encore en cours/,
+    });
+    expect(groupSummary).toHaveAttribute("aria-expanded", "false");
+    expect(groupSummary.querySelector(".spin")).toBeNull();
+    expect(
+      groupSummary.querySelector(".lucide-briefcase-business"),
+    ).not.toBeNull();
+  });
+
+  it("fait sortir l’action la plus ancienne avant un appel excédentaire", () => {
+    vi.useFakeTimers();
+    const first = command("one");
+    const { rerender } = render(
+      <ToolGroup maxVisibleActions={2} tools={[first]} />,
+    );
+    rerender(
+      <ToolGroup
+        maxVisibleActions={2}
+        tools={[{ ...first, status: "done" }]}
+      />,
+    );
+    finishLiveAction();
+
+    const second = command("two", "done");
+    rerender(
+      <ToolGroup
+        maxVisibleActions={2}
+        tools={[{ ...first, status: "done" }, second]}
+      />,
+    );
+    finishLiveAction();
+
+    const third = command("three", "done");
+    rerender(
+      <ToolGroup
+        maxVisibleActions={2}
+        tools={[{ ...first, status: "done" }, second, third]}
+      />,
+    );
+    expect(screen.queryByText("Commande three")).toBeNull();
+    expect(screen.getByText("Commande one").closest(".tool-row")).toHaveClass(
+      "hiding",
+    );
+
+    act(() => vi.advanceTimersByTime(TOOL_HIDE_MS - 1));
+    expect(screen.queryByText("Commande three")).toBeNull();
+    act(() => vi.advanceTimersByTime(1));
+    expect(screen.queryByText("Commande one")).toBeNull();
+    expect(screen.getByText("Commande three")).toBeVisible();
+  });
+
+  it("conserve les dernières actions repliées tant que le step reste actif", () => {
+    vi.useFakeTimers();
+    const running = command("active");
+    const { rerender } = render(
+      <ToolGroup stepClosed={false} tools={[running]} />,
+    );
+    rerender(
+      <ToolGroup
+        stepClosed={false}
+        tools={[{ ...running, status: "done" }]}
+      />,
+    );
+    finishLiveAction();
+    act(() =>
+      vi.advanceTimersByTime(
+        CLOSED_STEP_GROUP_DWELL_MS + TOOL_GROUP_COLLAPSE_MS + 2_000,
+      ),
+    );
+
+    expect(screen.getByText("Commande active")).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: /1 action effectuée/ }),
+    ).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("ferme le groupe seulement après la clôture du step", () => {
+    vi.useFakeTimers();
+    const running = command("closed");
+    const { rerender } = render(
+      <ToolGroup stepClosed={false} tools={[running]} />,
+    );
+    rerender(
+      <ToolGroup
+        stepClosed={false}
+        tools={[{ ...running, status: "done" }]}
+      />,
+    );
+    finishLiveAction();
+    rerender(
+      <ToolGroup
+        stepClosed
+        tools={[{ ...running, status: "done" }]}
+      />,
+    );
+    act(() => vi.advanceTimersByTime(CLOSED_STEP_GROUP_DWELL_MS));
+    expect(screen.getByText("Commande closed")).toBeVisible();
+    act(() => vi.advanceTimersByTime(TOOL_GROUP_COLLAPSE_MS));
+
+    expect(screen.getByText("Commande closed")).not.toBeVisible();
+    expect(
+      screen.getByRole("button", { name: /1 action effectuée/ }),
+    ).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("permet de revoir l’historique et un diff après fermeture", () => {
+    const onReviewDiff = vi.fn();
+    const tools = Array.from({ length: 5 }, (_, index) => ({
+      ...command(String(index + 1), "done"),
+      ...(index === 4 ? { diff: "+ rendu stable" } : {}),
+    }));
+    render(
+      <ToolGroup
+        maxVisibleActions={2}
+        onReviewDiff={onReviewDiff}
+        tools={tools}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /5 actions effectuées/ }));
     expect(screen.queryByText("Commande 1")).toBeNull();
-    expect(screen.getByText("Commande 4")).toBeVisible();
     fireEvent.click(
       screen.getByRole("button", { name: "Afficher 3 actions précédentes" }),
     );
     expect(screen.getByText("Commande 1")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Réduire l’activité" }));
-    expect(screen.queryByText("Commande 1")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Commande 5/ }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Revoir dans le panneau" }),
+    );
+    expect(onReviewDiff).toHaveBeenCalledWith(tools[4]);
   });
 
-  it("retire du DOM les anciennes actions quand une longue série se termine", () => {
-    vi.useFakeTimers();
-    const tools = Array.from({ length: 6 }, (_, index) => ({
-      id: `command-${index}`,
-      kind: "commandExecution" as const,
-      title: `Commande ${index + 1}`,
-      detail: `commande-${index + 1}`,
-      status: "running" as const,
-    }));
-    const { rerender } = render(<ToolGroup tools={tools} />);
-    expect(screen.getByText("Commande 1")).toBeVisible();
-
-    rerender(
-      <ToolGroup
-        stepClosed
-        tools={tools.map((tool) => ({ ...tool, status: "done" as const }))}
-      />,
-    );
-    for (const _tool of tools) {
-      act(() => {
-        vi.advanceTimersByTime(
-          CLOSED_STEP_TOOL_DWELL_MS + TOOL_COLLAPSE_MS,
-        );
-      });
-    }
-    act(() => {
-      vi.advanceTimersByTime(
-        CLOSED_STEP_GROUP_DWELL_MS + TOOL_GROUP_COLLAPSE_MS,
-      );
-    });
-    expect(screen.queryByText("Commande 1")).toBeNull();
-    fireEvent.click(screen.getByText("6 actions effectuées"));
-    expect(screen.getByText("Commande 4")).toBeVisible();
-  });
-
-  it("présente les outils d’un step un par un après leur repli", () => {
-    vi.useFakeTimers();
-    const tools = [
-      {
-        id: "command-1",
-        kind: "commandExecution" as const,
-        title: "Première commande",
-        detail: "npm test",
-        status: "running" as const,
-      },
-      {
-        id: "command-2",
-        kind: "commandExecution" as const,
-        title: "Commande suivante",
-        detail: "npm run build",
-        status: "running" as const,
-      },
-    ];
-    const { rerender } = render(<ToolGroup tools={tools} />);
-
-    expect(screen.getByText("Première commande")).toBeVisible();
-    expect(screen.queryByText("Commande suivante")).toBeNull();
-
-    rerender(
-      <ToolGroup
-        tools={tools.map((tool) => ({ ...tool, status: "done" as const }))}
-      />,
-    );
-    act(() => {
-      vi.advanceTimersByTime(TOOL_COMPLETION_DWELL_MS - 1);
-    });
-    expect(screen.queryByText("Commande suivante")).toBeNull();
-
-    act(() => {
-      vi.advanceTimersByTime(1);
-    });
-    expect(screen.getByText("Commande suivante")).toBeVisible();
-    expect(
-      screen.getByText("Première commande").closest(".tool-row"),
-    ).toHaveClass("collapsing");
-
-    act(() => {
-      vi.advanceTimersByTime(TOOL_COLLAPSE_MS);
-    });
-    expect(
-      screen.getByText("Première commande").closest(".tool-row"),
-    ).toHaveClass("compact");
-
-    act(() => {
-      vi.advanceTimersByTime(
-        TOOL_COMPLETION_DWELL_MS - TOOL_COLLAPSE_MS,
-      );
-    });
-    expect(
-      screen.getByText("Commande suivante").closest(".tool-row"),
-    ).toHaveClass("collapsing");
-    expect(
-      screen.getByText("Première commande").closest(".tool-row"),
-    ).toHaveClass("compact");
-  });
-
-  it("garde un groupe à action unique replié quand le step suivant commence", () => {
-    vi.useFakeTimers();
-    const runningTool = {
-      id: "command-1",
-      kind: "commandExecution" as const,
-      title: "Commande unique",
-      detail: "npm test",
-      status: "running" as const,
-    };
-    const { rerender } = render(<ToolGroup tools={[runningTool]} />);
-
-    rerender(
-      <ToolGroup tools={[{ ...runningTool, status: "done" as const }]} />,
-    );
-    act(() => {
-      vi.advanceTimersByTime(
-        TOOL_COMPLETION_DWELL_MS + TOOL_COLLAPSE_MS,
-      );
-    });
-    act(() => {
-      vi.advanceTimersByTime(
-        TOOL_GROUP_DWELL_MS + TOOL_GROUP_COLLAPSE_MS,
-      );
-    });
-    expect(screen.getByText("1 action effectuée")).toBeVisible();
-
-    rerender(
-      <ToolGroup
-        stepClosed
-        tools={[{ ...runningTool, status: "done" as const }]}
-      />,
-    );
-    act(() => {
-      vi.advanceTimersByTime(
-        CLOSED_STEP_GROUP_DWELL_MS + TOOL_GROUP_COLLAPSE_MS,
-      );
-    });
-    expect(screen.getByText("1 action effectuée")).toBeVisible();
-    expect(screen.getByText("Commande unique")).not.toBeVisible();
-  });
-
-  it("replie durablement une action isolée terminée en erreur", () => {
-    vi.useFakeTimers();
-    const runningTool = {
-      id: "command-error",
-      kind: "commandExecution" as const,
-      title: "Commande en erreur",
-      detail: "npm run missing",
-      status: "running" as const,
-      output: "script missing",
-    };
-    const { rerender } = render(<ToolGroup tools={[runningTool]} />);
-
-    rerender(
-      <ToolGroup
-        tools={[{ ...runningTool, status: "error" as const }]}
-      />,
-    );
-    expect(screen.getByText("script missing")).toBeVisible();
-    act(() => {
-      vi.advanceTimersByTime(
-        TOOL_COMPLETION_DWELL_MS + TOOL_COLLAPSE_MS,
-      );
-    });
-    act(() => {
-      vi.advanceTimersByTime(
-        TOOL_GROUP_DWELL_MS + TOOL_GROUP_COLLAPSE_MS,
-      );
-    });
-    expect(screen.getByText("1 action, dont une en erreur")).toBeVisible();
-    expect(screen.getByText("Commande en erreur")).not.toBeVisible();
-
-    rerender(
-      <ToolGroup
-        stepClosed
-        tools={[
-          {
-            ...runningTool,
-            status: "error" as const,
-            progress: "Diagnostic final",
-          },
-        ]}
-      />,
-    );
-    act(() => {
-      vi.advanceTimersByTime(
-        CLOSED_STEP_GROUP_DWELL_MS + TOOL_GROUP_COLLAPSE_MS,
-      );
-    });
-    expect(screen.getByText("1 action, dont une en erreur")).toBeVisible();
-    expect(screen.getByText("Commande en erreur")).not.toBeVisible();
-  });
-
-  it("rattrape un appel réussi ajouté après le repli du précédent", () => {
-    vi.useFakeTimers();
-    const first = {
-      id: "command-first",
-      kind: "commandExecution" as const,
-      title: "Première action",
-      detail: "npm test",
-      status: "running" as const,
-    };
-    const { rerender } = render(<ToolGroup tools={[first]} />);
-    rerender(
-      <ToolGroup tools={[{ ...first, status: "done" as const }]} />,
-    );
-    act(() => {
-      vi.advanceTimersByTime(
-        TOOL_COMPLETION_DWELL_MS + TOOL_COLLAPSE_MS,
-      );
-    });
-    expect(
-      screen.getByText("Première action").closest(".tool-row"),
-    ).toHaveClass("compact");
-
-    const late = {
-      id: "command-late",
-      kind: "commandExecution" as const,
-      title: "Action arrivée tardivement",
-      detail: "npm run check",
-      status: "done" as const,
-    };
-    rerender(
-      <ToolGroup
-        tools={[{ ...first, status: "done" as const }, late]}
-      />,
-    );
-    expect(screen.getByText("Action arrivée tardivement")).toBeVisible();
-
-    act(() => {
-      vi.advanceTimersByTime(
-        TOOL_COMPLETION_DWELL_MS + TOOL_COLLAPSE_MS,
-      );
-    });
-    act(() => {
-      vi.advanceTimersByTime(
-        TOOL_GROUP_DWELL_MS + TOOL_GROUP_COLLAPSE_MS,
-      );
-    });
-    expect(screen.getByText("2 actions effectuées")).toBeVisible();
-    expect(screen.getByText("Première action")).not.toBeVisible();
-    expect(screen.getByText("Action arrivée tardivement")).not.toBeVisible();
-  });
-
-  it("masque la vague précédente lorsqu’un step silencieux rouvre le groupe", () => {
-    vi.useFakeTimers();
-    const first = {
-      id: "command-first-wave",
-      kind: "commandExecution" as const,
-      title: "Action du step précédent",
-      detail: "npm test",
-      status: "running" as const,
-    };
-    const { rerender } = render(<ToolGroup tools={[first]} />);
-    rerender(
-      <ToolGroup tools={[{ ...first, status: "done" as const }]} />,
-    );
-    act(() => {
-      vi.advanceTimersByTime(
-        TOOL_COMPLETION_DWELL_MS + TOOL_COLLAPSE_MS,
-      );
-    });
-    act(() => {
-      vi.advanceTimersByTime(
-        TOOL_GROUP_DWELL_MS + TOOL_GROUP_COLLAPSE_MS,
-      );
-    });
-    expect(screen.getByText("1 action effectuée")).toBeVisible();
-
-    const next = {
-      id: "command-next-wave",
-      kind: "commandExecution" as const,
-      title: "Action du step silencieux",
-      detail: "npm run check",
-      status: "running" as const,
-    };
-    rerender(
-      <ToolGroup
-        tools={[{ ...first, status: "done" as const }, next]}
-      />,
-    );
-
-    expect(screen.getByText("Action du step silencieux")).toBeVisible();
-    expect(screen.queryByText("Action du step précédent")).toBeNull();
-
-    rerender(
-      <ToolGroup
-        tools={[
-          { ...first, status: "done" as const },
-          { ...next, status: "done" as const },
-        ]}
-      />,
-    );
-    act(() => {
-      vi.advanceTimersByTime(
-        TOOL_COMPLETION_DWELL_MS + TOOL_COLLAPSE_MS,
-      );
-    });
-    act(() => {
-      vi.advanceTimersByTime(
-        TOOL_GROUP_DWELL_MS + TOOL_GROUP_COLLAPSE_MS,
-      );
-    });
-    fireEvent.click(screen.getByText("2 actions effectuées"));
-    expect(screen.getByText("Action du step précédent")).toBeVisible();
-    expect(screen.getByText("Action du step silencieux")).toBeVisible();
-  });
-
-  it("révèle les résultats web dans le détail de leur action", async () => {
-    vi.mocked(invoke).mockResolvedValue(undefined);
+  it("garde les erreurs repliables et identifiables", () => {
     render(
       <ToolGroup
         tools={[
           {
-            id: "web-1",
+            ...command("missing", "error"),
+            output: "script missing",
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByText("1 action, dont une en erreur")).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /1 action, dont une en erreur/,
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Commande missing/,
+      }),
+    );
+    expect(screen.getByText("script missing")).toBeVisible();
+    expect(screen.getByLabelText("Échec")).toBeVisible();
+  });
+
+  it("ouvre un résultat web et propose le navigateur système en repli", async () => {
+    vi.mocked(invoke).mockRejectedValueOnce(new Error("Chromium unavailable"));
+    vi.mocked(openUrl).mockResolvedValueOnce(undefined);
+    render(
+      <ToolGroup
+        tools={[
+          {
+            id: "web",
             kind: "webSearch",
             title: "Recherche web",
             detail: "Codex docs",
@@ -461,55 +351,17 @@ describe("activité des outils", () => {
                 type: "webResult",
                 title: "Documentation Codex",
                 url: "https://developers.openai.com/codex/",
-                snippet: "Documentation officielle",
               },
             ],
           },
         ]}
       />,
     );
-
-    fireEvent.click(screen.getByText("1 action effectuée"));
-    expect(screen.getByText("Documentation Codex")).not.toBeVisible();
-    fireEvent.click(screen.getByText("Codex docs"));
+    fireEvent.click(screen.getByRole("button", { name: /1 action effectuée/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Recherche web/ }));
     fireEvent.click(
       screen.getByRole("button", { name: /Documentation Codex/ }),
     );
-    await waitFor(() =>
-      expect(invoke).toHaveBeenCalledWith("open_chromium_target", {
-        target: "https://developers.openai.com/codex/",
-      }),
-    );
-    expect(openUrl).not.toHaveBeenCalled();
-  });
-
-  it("rend l’échec d’ouverture d’un résultat récupérable", async () => {
-    vi.mocked(invoke).mockRejectedValueOnce(new Error("Chromium unavailable"));
-    vi.mocked(openUrl).mockResolvedValueOnce(undefined);
-    render(
-      <ToolGroup
-        tools={[
-          {
-            id: "web-1",
-            kind: "webSearch",
-            title: "Recherche web",
-            detail: "Résultat",
-            status: "done",
-            artifacts: [
-              {
-                type: "webResult",
-                title: "Résultat officiel",
-                url: "https://example.com/",
-              },
-            ],
-          },
-        ]}
-      />,
-    );
-
-    fireEvent.click(screen.getByText("1 action effectuée"));
-    fireEvent.click(screen.getByText("Résultat"));
-    fireEvent.click(screen.getByRole("button", { name: /Résultat officiel/ }));
     expect(
       await screen.findByText("Impossible d’ouvrir ce résultat"),
     ).toHaveAttribute("role", "alert");
@@ -517,45 +369,10 @@ describe("activité des outils", () => {
       screen.getByRole("button", { name: "Ouvrir avec le navigateur système" }),
     );
     await waitFor(() =>
-      expect(openUrl).toHaveBeenCalledWith("https://example.com/"),
+      expect(openUrl).toHaveBeenCalledWith(
+        "https://developers.openai.com/codex/",
+      ),
     );
-  });
-
-  it("rend aussi visible l’échec du navigateur système", async () => {
-    vi.mocked(invoke).mockRejectedValueOnce(new Error("Chromium unavailable"));
-    vi.mocked(openUrl).mockRejectedValueOnce(new Error("No default browser"));
-    render(
-      <ToolGroup
-        tools={[
-          {
-            id: "web-1",
-            kind: "webSearch",
-            title: "Recherche web",
-            detail: "Résultat",
-            status: "done",
-            artifacts: [
-              {
-                type: "webResult",
-                title: "Résultat officiel",
-                url: "https://example.com/",
-              },
-            ],
-          },
-        ]}
-      />,
-    );
-
-    fireEvent.click(screen.getByText("1 action effectuée"));
-    fireEvent.click(screen.getByText("Résultat"));
-    fireEvent.click(screen.getByRole("button", { name: /Résultat officiel/ }));
-    fireEvent.click(
-      await screen.findByRole("button", {
-        name: "Ouvrir avec le navigateur système",
-      }),
-    );
-    expect(
-      await screen.findByText("L’ouverture avec l’application système a échoué"),
-    ).toHaveAttribute("role", "alert");
   });
 
   it("traduit le résumé et les détails en anglais", () => {
@@ -565,11 +382,7 @@ describe("activité des outils", () => {
         <ToolGroup
           tools={[
             {
-              id: "command-1",
-              kind: "commandExecution",
-              title: "Command",
-              detail: "npm test",
-              status: "done",
+              ...command("test", "done"),
               output: "ok",
               exitCode: 0,
             },
@@ -579,9 +392,9 @@ describe("activité des outils", () => {
     );
 
     expect(screen.getByText("1 action completed")).toBeVisible();
-    fireEvent.click(screen.getByText("1 action completed"));
-    expect(screen.getByLabelText("Completed")).toBeVisible();
-    fireEvent.click(screen.getByText("npm test"));
+    fireEvent.click(screen.getByRole("button", { name: /1 action completed/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Commande test/ }));
+    expect(screen.getByText("Input")).toBeVisible();
     expect(screen.getByText("Output")).toBeVisible();
     expect(screen.getByText("Exit code 0")).toBeVisible();
   });

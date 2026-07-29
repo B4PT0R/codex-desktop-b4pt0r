@@ -3,6 +3,26 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## Unreleased
+
+### Changed
+
+- Assistant messages now render GFM Markdown and stable LaTeX progressively
+  while streaming instead of switching from mostly raw text only at
+  completion.
+- Rapid deltas are coalesced into interruptible render updates to keep the
+  conversation fluid, and the redundant streaming-only KaTeX path has been
+  removed.
+- Tool activity now forms a continuous visual wave: a stable group summary is
+  present from the first call, action headers stay fixed while their details
+  collapse, and excess older rows leave before new calls appear.
+- Silent agent steps keep using the same activity group, while intervening
+  non-action items and assistant text create deliberate group boundaries.
+- Settings > Chat can retain from one to six recent action rows per group.
+- Long-running commands reported by App Server as background terminals now
+  collapse without waiting for process exit, so later browser and tool calls
+  remain synchronized with their actual execution.
+
 ## [0.3.5] - 2026-07-29
 
 ### Added

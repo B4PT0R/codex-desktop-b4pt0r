@@ -107,6 +107,15 @@ export const fr = {
   "activity.waiting": "En attente de confirmation…",
   "activity.listening": "Écoute…",
   "tool.group.running": "Travail en cours",
+  "tool.group.runningOne": "Action en cours",
+  "tool.group.runningMany": "{count} actions en cours",
+  "tool.group.progressOneOne": "1 action effectuée · 1 encore en cours",
+  "tool.group.progressOneMany":
+    "1 action effectuée · {running} encore en cours",
+  "tool.group.progressManyOne":
+    "{completed} actions effectuées · 1 encore en cours",
+  "tool.group.progressManyMany":
+    "{completed} actions effectuées · {running} encore en cours",
   "tool.group.failedOne": "1 action, dont une en erreur",
   "tool.group.failedMany": "{count} actions, dont une en erreur",
   "tool.group.doneOne": "1 action effectuée",
@@ -121,10 +130,12 @@ export const fr = {
   "tool.kind.media": "Médias",
   "tool.kind.other": "Autres",
   "tool.status.running": "En cours",
+  "tool.status.background": "En arrière-plan",
   "tool.status.error": "Échec",
   "tool.status.done": "Terminé",
   "tool.metric.exitCode": "Code {code}",
   "tool.details.output": "Sortie",
+  "tool.details.input": "Entrée",
   "tool.details.changes": "Modifications",
   "tool.details.review": "Revoir dans le panneau",
   "tool.command": "Commande",
@@ -721,6 +732,11 @@ export const fr = {
   "settings.reasoningSummary.concise": "Concis",
   "settings.reasoningSummary.detailed": "Détaillés",
   "settings.reasoningSummary.none": "Masqués",
+  "settings.chat.visibleActions.title": "Actions visibles par groupe",
+  "settings.chat.visibleActions.detail":
+    "Nombre maximal d’actions récentes conservées sous le résumé d’activité.",
+  "settings.chat.visibleActions.error":
+    "Impossible d’enregistrer la limite des actions visibles :",
   "settings.persistence.error":
     "Impossible d’enregistrer les préférences de l’application :",
   "settings.startup.title": "Lancer Codex à la connexion",

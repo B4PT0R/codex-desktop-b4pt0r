@@ -141,6 +141,12 @@ const webSearch = {
   setReasoningSummary: vi.fn().mockResolvedValue(true),
   setAdvanced: vi.fn().mockResolvedValue(true),
 };
+const chatPresentation = {
+  loading: false,
+  maxVisibleActions: 3,
+  saving: false,
+  setMaxVisibleActions: vi.fn().mockResolvedValue(true),
+};
 const appServerRestart = {
   available: true,
   restart: vi.fn().mockResolvedValue(true),
@@ -216,6 +222,7 @@ function renderSettings(
     apps,
     automations,
     capabilities,
+    chatPresentation,
     externalAgentImport,
     integrations,
     memory,
@@ -404,6 +411,7 @@ describe("centre de réglages", () => {
   it("enregistre l’application d’ouverture dans Général et les résumés dans Chat", () => {
     const setFileOpener = vi.fn().mockResolvedValue(true);
     const setReasoningSummary = vi.fn().mockResolvedValue(true);
+    const setMaxVisibleActions = vi.fn().mockResolvedValue(true);
     const controller = {
       ...webSearch,
       setFileOpener,
@@ -418,12 +426,26 @@ describe("centre de réglages", () => {
     expect(setFileOpener).toHaveBeenCalledWith("cursor");
 
     cleanup();
-    renderSettings({ section: "chat", webSearch: controller });
+    renderSettings({
+      chatPresentation: {
+        ...chatPresentation,
+        setMaxVisibleActions,
+      },
+      section: "chat",
+      webSearch: controller,
+    });
     fireEvent.change(
       screen.getByRole("combobox", { name: "Résumés de raisonnement" }),
       { target: { value: "concise" } },
     );
     expect(setReasoningSummary).toHaveBeenCalledWith("concise");
+    fireEvent.change(
+      screen.getByRole("combobox", {
+        name: "Actions visibles par groupe",
+      }),
+      { target: { value: "5" } },
+    );
+    expect(setMaxVisibleActions).toHaveBeenCalledWith(5);
   });
 
   it("enregistre uniquement des valeurs globales dans les réglages Agent", () => {

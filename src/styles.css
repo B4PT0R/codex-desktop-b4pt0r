@@ -775,17 +775,6 @@ header button svg {
   color: #999993;
   font-size: 9px;
 }
-.streaming-latex {
-  white-space: pre-wrap;
-}
-.streaming-math-display {
-  display: block;
-  max-width: 100%;
-  margin: 1em 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  text-align: center;
-}
 .message-content .katex {
   font-size: 1.04em;
 }

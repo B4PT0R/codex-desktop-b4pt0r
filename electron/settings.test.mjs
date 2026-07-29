@@ -69,6 +69,19 @@ test("validates the persisted interface scale", async () => {
   );
 });
 
+test("validates the persisted visible actions limit", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "codex-settings-"));
+  const file = path.join(directory, "settings.json");
+  const updated = await updateSettings(file, {
+    maxVisibleActionsPerGroup: 4,
+  });
+  assert.equal(updated.maxVisibleActionsPerGroup, 4);
+  await assert.rejects(
+    updateSettings(file, { maxVisibleActionsPerGroup: 7 }),
+    /Unsupported visible actions limit/,
+  );
+});
+
 test("validates the persisted shared browser state", async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "codex-settings-"));
   const file = path.join(directory, "settings.json");

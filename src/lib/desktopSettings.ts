@@ -8,6 +8,7 @@ export type DesktopSettings = {
   theme?: "system" | "dark" | "light";
   fontSize?: "small" | "default" | "large";
   interfaceScale?: number;
+  maxVisibleActionsPerGroup?: number;
   realtimeVoice?: string;
   sidebarWidth?: number;
 };
@@ -20,6 +21,7 @@ export type DesktopSettingsPatch = Partial<
     | "theme"
     | "fontSize"
     | "interfaceScale"
+    | "maxVisibleActionsPerGroup"
     | "realtimeVoice"
     | "sidebarWidth"
   >
@@ -30,6 +32,7 @@ const legacyWorkspaceKey = "codex-desktop.cwd";
 const browserAppearanceKey = "codex-desktop.appearance";
 const browserVoiceKey = "codex-desktop.realtimeVoice";
 const browserSidebarWidthKey = "codex-desktop.sidebarWidth";
+const browserMaxVisibleActionsKey = "codex-desktop.maxVisibleActionsPerGroup";
 let loadPromise: Promise<DesktopSettings> | undefined;
 let writeQueue: Promise<DesktopSettings> = Promise.resolve({ version: 1 });
 
@@ -87,6 +90,9 @@ function browserSettings(): DesktopSettings {
       ? { realtimeVoice: localStorage.getItem(browserVoiceKey) ?? undefined }
       : {}),
     ...parseBrowserSidebarWidth(localStorage.getItem(browserSidebarWidthKey)),
+    ...parseBrowserMaxVisibleActions(
+      localStorage.getItem(browserMaxVisibleActionsKey),
+    ),
   };
 }
 
@@ -110,6 +116,12 @@ function writeBrowserSettings(settings: DesktopSettings) {
     localStorage.setItem(
       browserSidebarWidthKey,
       String(settings.sidebarWidth),
+    );
+  }
+  if (settings.maxVisibleActionsPerGroup) {
+    localStorage.setItem(
+      browserMaxVisibleActionsKey,
+      String(settings.maxVisibleActionsPerGroup),
     );
   }
 }
@@ -156,6 +168,26 @@ function validatePatch(patch: DesktopSettingsPatch) {
   ) {
     throw new Error("Unsupported sidebar width");
   }
+  if (
+    patch.maxVisibleActionsPerGroup !== undefined &&
+    (!Number.isInteger(patch.maxVisibleActionsPerGroup) ||
+      patch.maxVisibleActionsPerGroup < 1 ||
+      patch.maxVisibleActionsPerGroup > 6)
+  ) {
+    throw new Error("Unsupported visible actions limit");
+  }
+}
+
+function parseBrowserMaxVisibleActions(
+  value: string | null,
+): Pick<DesktopSettings, "maxVisibleActionsPerGroup"> {
+  if (!value) return {};
+  const maxVisibleActionsPerGroup = Number(value);
+  return Number.isInteger(maxVisibleActionsPerGroup) &&
+    maxVisibleActionsPerGroup >= 1 &&
+    maxVisibleActionsPerGroup <= 6
+    ? { maxVisibleActionsPerGroup }
+    : {};
 }
 
 function parseBrowserSidebarWidth(

@@ -3,7 +3,7 @@
   min-width: 0;
   width: 100%;
   grid-template-columns: minmax(0, 1fr);
-  gap: 6px;
+  gap: 3px;
   margin: 10px 0 0;
 }
 
@@ -12,16 +12,21 @@
   align-items: center;
   gap: 7px;
   min-width: 0;
+  width: 100%;
   padding: 3px 2px;
+  border-radius: 5px;
+  background: transparent;
   color: #888883;
   font-size: 10px;
   font-weight: 500;
-  list-style: none;
+  text-align: left;
   cursor: pointer;
 }
 
-.tool-group-summary::-webkit-details-marker {
-  display: none;
+.tool-group-summary:hover,
+.tool-group-summary:focus-visible {
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  color: #a2a29d;
 }
 
 .tool-group-summary .tool-icon,
@@ -59,22 +64,42 @@
 }
 
 .tool-group-chevron {
-  transition: transform 0.2s;
+  transition: transform 200ms ease;
 }
 
-.tool-group[open] .tool-group-chevron {
+.tool-group.open .tool-group-chevron,
+.tool-group.closing .tool-group-chevron {
   transform: rotate(180deg);
 }
 
-.tool-group.complete > .tool-list {
-  margin-top: 3px;
+.tool-list-shell {
+  display: grid;
+  min-width: 0;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  overflow: hidden;
+  transition:
+    grid-template-rows 280ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 180ms ease-out;
 }
 
-.tool-group.settling > .tool-list {
-  overflow: hidden;
-  transform-origin: top;
-  animation: tool-group-collapse 280ms cubic-bezier(0.4, 0, 0.2, 1)
-    forwards;
+.tool-list-shell > .tool-list {
+  min-height: 0;
+}
+
+.tool-group.closing .tool-list-shell,
+.tool-group.closed .tool-list-shell {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+.tool-group.closed .tool-list-shell {
+  visibility: hidden;
+}
+
+.tool-list-shell[hidden],
+.tool-details-shell[hidden] {
+  display: none;
 }
 
 .tool-list {
@@ -88,12 +113,8 @@
 }
 
 .tool-list > .tool-row {
-  padding: 5px 8px;
+  padding: 0 8px;
   border-bottom: 1px solid #292926;
-}
-
-.tool-list > details.tool-row {
-  display: block;
 }
 
 .tool-list > .tool-row:last-child {
@@ -101,148 +122,98 @@
 }
 
 .tool-row {
-  display: flex;
+  display: block;
   min-width: 0;
-  gap: 8px;
+  overflow: hidden;
   color: #888;
 }
 
-.tool-row > svg,
-.tool-row > summary > svg:first-child {
+.tool-row-header {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 30px;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.tool-row-header:hover,
+.tool-row-header:focus-visible {
+  background: transparent;
+  color: #9b9b96;
+}
+
+.tool-row-header > svg:first-child {
   width: 14px;
+  height: 14px;
   flex: 0 0 auto;
 }
 
-.tool-row strong {
+.tool-row-header strong {
   display: block;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
   color: #b3b3ae;
   font-size: 11px;
   font-weight: 500;
-}
-
-.tool-row code {
-  display: block;
-  margin-top: 2px;
-  font-size: 10px;
-}
-
-.tool-row > summary {
-  display: flex;
-  min-width: 0;
-  width: 100%;
-  align-items: flex-start;
-  gap: 8px;
-  list-style: none;
-  cursor: pointer;
-}
-
-.tool-row > summary::-webkit-details-marker {
-  display: none;
-}
-
-.tool-row-copy {
-  min-width: 0;
-  flex: 1;
-}
-
-.tool-row-copy code {
-  overflow-wrap: anywhere;
-}
-
-.tool-row-copy small {
-  display: block;
-  margin-top: 4px;
-  color: #777772;
-  font-size: 10px;
-}
-
-.tool-row.compact > summary,
-.tool-row.compact {
-  align-items: center;
-}
-
-.tool-row.compact .tool-row-copy {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  overflow: hidden;
   white-space: nowrap;
-}
-
-.tool-row.compact .tool-row-copy strong,
-.tool-row.compact .tool-row-copy small {
-  flex: 0 0 auto;
-  white-space: nowrap;
-}
-
-.tool-row.compact .tool-row-copy strong {
-  max-width: 42%;
-  overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.tool-row.compact .tool-row-copy code {
+.tool-details-shell {
+  display: grid;
   min-width: 0;
-  flex: 0 1 auto;
-  margin-top: 0;
+  grid-template-rows: 1fr;
+  opacity: 1;
   overflow: hidden;
-  text-overflow: ellipsis;
-  overflow-wrap: normal;
-  white-space: nowrap;
+  transition:
+    grid-template-rows 260ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 180ms ease-out;
 }
 
-.tool-row.compact .tool-row-copy small {
-  display: inline;
-  margin-top: 0;
+.tool-details-shell > .tool-details {
+  min-height: 0;
 }
 
-.tool-row.collapsing {
-  overflow: hidden;
-  transform-origin: top;
-  animation: tool-row-collapse 260ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+.tool-row.closing .tool-details-shell,
+.tool-row.collapsed .tool-details-shell {
+  grid-template-rows: 0fr;
+  opacity: 0;
 }
 
-.tool-row.collapsing .tool-details {
-  animation: tool-details-fade 180ms ease-out forwards;
+.tool-row.collapsed .tool-details-shell {
+  visibility: hidden;
 }
 
-@keyframes tool-row-collapse {
+.tool-row.hiding {
+  animation: tool-row-hide 180ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes tool-row-hide {
   from {
-    max-height: 360px;
+    max-height: 36px;
     opacity: 1;
   }
 
   to {
-    max-height: 35px;
-    opacity: 1;
-  }
-}
-
-@keyframes tool-details-fade {
-  to {
+    max-height: 0;
+    border-color: transparent;
     opacity: 0;
-    transform: translateY(-2px);
-  }
-}
-
-@keyframes tool-group-collapse {
-  from {
-    max-height: 720px;
-    opacity: 1;
-    transform: scaleY(1);
-  }
-
-  to {
-    max-height: 28px;
-    opacity: 1;
-    transform: scaleY(0.98);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tool-group.settling > .tool-list,
-  .tool-row.collapsing,
-  .tool-row.collapsing .tool-details {
+  .tool-list-shell,
+  .tool-details-shell {
+    transition-duration: 1ms;
+  }
+
+  .tool-row.hiding {
     animation-duration: 1ms;
   }
 }
@@ -276,8 +247,8 @@
 
 .tool-row-chevron {
   width: 13px !important;
-  margin-left: auto;
-  transition: transform 0.2s;
+  flex: 0 0 auto;
+  transition: transform 200ms ease;
 }
 
 .tool-history-toggle {
@@ -293,7 +264,8 @@
   color: #b2b2ad;
 }
 
-.tool-row[open] .tool-row-chevron {
+.tool-row.open .tool-row-chevron,
+.tool-row.closing .tool-row-chevron {
   transform: rotate(180deg);
 }
 
@@ -301,7 +273,7 @@
   display: grid;
   min-width: 0;
   gap: 6px;
-  margin: 6px 0 2px 22px;
+  margin: 2px 0 7px 22px;
 }
 
 .tool-details section > span {

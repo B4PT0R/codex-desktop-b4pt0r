@@ -88,6 +88,20 @@ Responsabilités :
 App Server : `turn/*`, `item/*`, `review/start`, demandes serveur, warnings,
 compaction, collaboration et outils MCP.
 
+Une vague d’outils conserve un en-tête de groupe stable dès le premier appel.
+Chaque action n’a que trois états visuels : ouverte, repliée sur le même en-tête
+monoligne, ou masquée dans l’historique du groupe. La fermeture anime uniquement
+le panneau de détail ; l’appel suivant attend la fin de cette animation. Quand
+la limite globale réglée dans Chat serait dépassée, l’action visible la plus
+ancienne disparaît avant l’arrivée de la suivante. Des steps agentiques
+silencieux restent agrégés ; un item non-action ou du nouveau texte crée une
+frontière. Le groupe entier ne se replie qu’une fois toutes ses actions résolues
+et cette frontière atteinte, ou le tour terminé.
+Une commande identifiée par `thread/backgroundTerminals/list` constitue
+l’exception : son processus reste réellement actif et continue d’alimenter ses
+détails, mais sa carte se replie après un court délai et ne retient pas les
+appels suivants. Son statut reste « en arrière-plan » jusqu’à sa terminaison.
+
 ### 4. Compositeur et barre de session
 
 Responsabilités :

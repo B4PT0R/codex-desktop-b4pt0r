@@ -2,24 +2,21 @@ import { RefreshCw, Square, Terminal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import {
-  useBackgroundTerminals,
   type BackgroundTerminal,
+  type BackgroundTerminalsController,
 } from "../lib/useBackgroundTerminals";
 import { RoundIconButton } from "./RoundIcon";
 
 type BackgroundTerminalsButtonProps = {
-  busy: boolean;
-  connected: boolean;
+  controller: BackgroundTerminalsController;
   threadId?: string;
 };
 
 export function BackgroundTerminalsButton({
-  busy,
-  connected,
+  controller,
   threadId,
 }: BackgroundTerminalsButtonProps) {
   const { t } = useI18n();
-  const controller = useBackgroundTerminals({ busy, connected, threadId });
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState<string>();
   const root = useRef<HTMLDivElement>(null);

@@ -1,8 +1,10 @@
-import katex from "katex";
 import {
   isValidElement,
   memo,
-  useMemo,
+  startTransition,
+  useEffect,
+  useRef,
+  useState,
   type ReactNode,
 } from "react";
 import ReactMarkdown from "react-markdown";
@@ -11,12 +13,17 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import "katex/dist/katex.min.css";
 import { normalizeLatexDelimiters } from "../lib/normalizeLatexDelimiters";
-import { splitStableStreamingLatex } from "../lib/streamingLatex";
 import { classifyMarkdownLink } from "../lib/linkRouting";
 import { openMarkdownLink } from "../lib/markdownLinks";
 import { useMarkdownLinkRouting } from "./MarkdownLinkContext";
 
-export function MarkdownRenderer({ children }: { children: string }) {
+const STREAMING_RENDER_INTERVAL_MS = 50;
+
+export const MarkdownRenderer = memo(function MarkdownRenderer({
+  children,
+}: {
+  children: string;
+}) {
   const routing = useMarkdownLinkRouting();
   return (
     <ReactMarkdown
@@ -73,7 +80,7 @@ export function MarkdownRenderer({ children }: { children: string }) {
       {normalizeLatexDelimiters(children)}
     </ReactMarkdown>
   );
-}
+});
 
 function markdownTextLength(node: ReactNode): number {
   if (typeof node === "string" || typeof node === "number") {
@@ -92,46 +99,58 @@ function markdownTextLength(node: ReactNode): number {
   return 0;
 }
 
-export function StreamingLatexRenderer({ children }: { children: string }) {
-  return (
-    <span className="streaming-latex">
-      {splitStableStreamingLatex(children).map((segment, index) =>
-        segment.kind === "text" ? (
-          <span key={index}>{segment.value}</span>
-        ) : (
-          <StableStreamingMath
-            display={segment.display}
-            key={index}
-            value={segment.value}
-          />
-        ),
-      )}
-    </span>
-  );
-}
+export const StreamingMarkdownRenderer = memo(
+  function StreamingMarkdownRenderer({ children }: { children: string }) {
+    const source = useThrottledMarkdown(children);
+    return <MarkdownRenderer>{source}</MarkdownRenderer>;
+  },
+);
 
-const StableStreamingMath = memo(function StableStreamingMath({
-  display,
-  value,
-}: {
-  display: boolean;
-  value: string;
-}) {
-  const html = useMemo(
-    () =>
-      katex.renderToString(value, {
-        displayMode: display,
-        errorColor: "#c77777",
-        strict: false,
-        throwOnError: false,
-        trust: false,
-      }),
-    [display, value],
+/**
+ * Keeps rapid token deltas from reparsing the complete Markdown tree more than
+ * once per visual frame budget. The latest source is never dropped, and the
+ * non-streaming renderer receives the final value immediately on completion.
+ */
+function useThrottledMarkdown(source: string) {
+  const [rendered, setRendered] = useState(source);
+  const latest = useRef(source);
+  const lastRenderAt = useRef(Date.now());
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => {
+    if (latest.current === source) return;
+    latest.current = source;
+    const elapsed = Date.now() - lastRenderAt.current;
+
+    const commit = () => {
+      timer.current = undefined;
+      lastRenderAt.current = Date.now();
+      startTransition(() => {
+        setRendered((current) =>
+          current === latest.current ? current : latest.current,
+        );
+      });
+    };
+
+    if (elapsed >= STREAMING_RENDER_INTERVAL_MS) {
+      if (timer.current) clearTimeout(timer.current);
+      commit();
+      return;
+    }
+    if (!timer.current) {
+      timer.current = setTimeout(
+        commit,
+        STREAMING_RENDER_INTERVAL_MS - elapsed,
+      );
+    }
+  }, [source]);
+
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
   );
-  return (
-    <span
-      className={display ? "streaming-math-display" : undefined}
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
-  );
-});
+
+  return rendered;
+}

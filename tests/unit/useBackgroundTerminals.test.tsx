@@ -69,9 +69,21 @@ describe("terminaux en arrière-plan", () => {
     expect(result.current.terminals).toEqual([]);
   });
 
-  it("attend la fin du tour avant de charger", async () => {
-    requestMock.mockResolvedValue({ data: [], nextCursor: null });
-    const { rerender } = renderHook(
+  it("détecte les terminaux pendant un tour actif", async () => {
+    requestMock
+      .mockResolvedValueOnce({ data: [], nextCursor: null })
+      .mockResolvedValueOnce({
+        data: [
+          {
+            itemId: "dev-server",
+            processId: "7",
+            command: "npm run dev",
+            cwd: "/work/app",
+          },
+        ],
+        nextCursor: null,
+      });
+    const { result, rerender } = renderHook(
       ({ busy }) =>
         useBackgroundTerminals({
           busy,
@@ -80,10 +92,10 @@ describe("terminaux en arrière-plan", () => {
         }),
       { initialProps: { busy: true } },
     );
-    expect(requestMock).not.toHaveBeenCalled();
-
-    rerender({ busy: false });
     await waitFor(() => expect(requestMock).toHaveBeenCalledOnce());
+    rerender({ busy: false });
+    await waitFor(() => expect(result.current.terminals).toHaveLength(1));
+    expect(result.current.terminals[0].itemId).toBe("dev-server");
   });
 
   it("n’envoie pas deux arrêts concurrents pour le même processus", async () => {

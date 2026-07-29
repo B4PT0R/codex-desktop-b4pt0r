@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import type { BackgroundTerminalsController } from "../lib/useBackgroundTerminals";
 
 const BackgroundTerminalsButton = lazy(() =>
   import("./BackgroundTerminalsButton").then((module) => ({
@@ -7,8 +8,7 @@ const BackgroundTerminalsButton = lazy(() =>
 );
 
 export function BackgroundTerminalsLoader(props: {
-  busy: boolean;
-  connected: boolean;
+  controller: BackgroundTerminalsController;
   threadId?: string;
 }) {
   if (!props.threadId) return null;

@@ -5,26 +5,24 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { I18nProvider } from "../../src/i18n/I18nProvider";
 
 const terminate = vi.hoisted(() => vi.fn());
-vi.mock("../../src/lib/useBackgroundTerminals", () => ({
-  useBackgroundTerminals: () => ({
-    error: undefined,
-    loading: false,
-    refresh: vi.fn(),
-    terminals: [
-      {
-        itemId: "item-1",
-        processId: "42",
-        command: "python3 -m http.server",
-        cwd: "/work/app",
-        osPid: 1234,
-        cpuPercent: 1.25,
-        rssKb: 20_480,
-      },
-    ],
-    terminate,
-    terminating: [],
-  }),
-}));
+const controller = {
+  error: undefined,
+  loading: false,
+  refresh: vi.fn(),
+  terminals: [
+    {
+      itemId: "item-1",
+      processId: "42",
+      command: "python3 -m http.server",
+      cwd: "/work/app",
+      osPid: 1234,
+      cpuPercent: 1.25,
+      rssKb: 20_480,
+    },
+  ],
+  terminate,
+  terminating: [],
+};
 
 import { BackgroundTerminalsButton } from "../../src/components/BackgroundTerminalsButton";
 
@@ -40,8 +38,7 @@ describe("indicateur de terminaux en arrière-plan", () => {
     render(
       <I18nProvider>
         <BackgroundTerminalsButton
-          busy={false}
-          connected={true}
+          controller={controller}
           threadId="thread-1"
         />
       </I18nProvider>,
@@ -70,8 +67,7 @@ describe("indicateur de terminaux en arrière-plan", () => {
     render(
       <I18nProvider>
         <BackgroundTerminalsButton
-          busy={false}
-          connected={true}
+          controller={controller}
           threadId="thread-1"
         />
       </I18nProvider>,

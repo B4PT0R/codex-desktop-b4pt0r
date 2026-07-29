@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { openDialog as open } from "./lib/nativeBridge";
 import { ApprovalDialog } from "./components/ApprovalDialog";
 import { ArchiveNotice } from "./components/ArchiveNotice";
@@ -79,6 +79,8 @@ import { useExternalAgentImport } from "./lib/useExternalAgentImport";
 import { useRealtimeSettings } from "./lib/useRealtimeSettings";
 import { useCodexDefaults } from "./lib/useCodexDefaults";
 import { useCodexGlobalSettings } from "./lib/useCodexGlobalSettings";
+import { useChatPresentationSettings } from "./lib/useChatPresentationSettings";
+import { useBackgroundTerminals } from "./lib/useBackgroundTerminals";
 import { useMemorySettings } from "./lib/useMemorySettings";
 import { useRemoteControl } from "./lib/useRemoteControl";
 import { ThreadTurnCoordinator } from "./lib/threadTurnCoordinator";
@@ -300,6 +302,22 @@ export default function App() {
   const webSearch = useCodexGlobalSettings(
     connection.connected,
     configRequirements.allowedWebSearchModes,
+  );
+  const chatPresentation = useChatPresentationSettings();
+  const backgroundTerminals = useBackgroundTerminals({
+    busy,
+    connected: connection.connected,
+    threadId,
+  });
+  const backgroundToolIds = useMemo(
+    () => {
+      const ids = new Set(
+        backgroundTerminals.terminals.map((terminal) => terminal.itemId),
+      );
+      if (isDemoPreview()) ids.add("demo-live-dev-server");
+      return ids;
+    },
+    [backgroundTerminals.terminals],
   );
   const personalityForModel =
     models.find((candidate) => candidate.id === model)?.supportsPersonality ===
@@ -903,6 +921,7 @@ export default function App() {
         remoteControl={remoteControl}
         currentThreadId={threadId}
         currentWorkspace={cwd || undefined}
+        chatPresentation={chatPresentation}
         webSearch={webSearch}
         appServerRestart={{
           available:
@@ -968,6 +987,7 @@ export default function App() {
       />
       <main>
         <ChatHeader
+          backgroundTerminals={backgroundTerminals}
           busy={busy}
           connected={connection.connected}
           cwd={cwd}
@@ -998,10 +1018,12 @@ export default function App() {
         />
         <Conversation
           activity={activity}
+          backgroundToolIds={backgroundToolIds}
           canLoadOlder={threadHistory.canLoadOlder}
           cwd={cwd}
           fileOpener={webSearch.fileOpener}
           loadingOlder={threadHistory.loadingOlder}
+          maxVisibleActions={chatPresentation.maxVisibleActions}
           messages={messages}
           onLinkError={(error) => showError(t("link.openError"), error)}
           onLoadOlder={threadHistory.loadOlder}

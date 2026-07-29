@@ -1,4 +1,5 @@
 import {
+  BriefcaseBusiness,
   Check,
   ChevronDown,
   CircleAlert,
@@ -18,230 +19,316 @@ import {
   useRef,
   useState,
 } from "react";
-import type { ToolCall } from "../types";
 import { useI18n } from "../i18n/I18nProvider";
 import {
   CLOSED_STEP_GROUP_DWELL_MS,
   CLOSED_STEP_TOOL_DWELL_MS,
+  TOOL_BACKGROUND_DWELL_MS,
   TOOL_COLLAPSE_MS,
   TOOL_COMPLETION_DWELL_MS,
   TOOL_GROUP_COLLAPSE_MS,
   TOOL_GROUP_DWELL_MS,
+  TOOL_HIDE_MS,
 } from "../lib/toolActivityTiming";
+import type { ToolCall } from "../types";
 import { ToolArtifacts } from "./ToolArtifacts";
 
 type ToolGroupProps = {
-  tools: ToolCall[];
+  backgroundToolIds?: ReadonlySet<string>;
+  maxVisibleActions?: number;
   onReviewDiff?: (tool: ToolCall) => void;
+  /** True once later chat content is ready or the owning turn has ended. */
   stepClosed?: boolean;
+  tools: ToolCall[];
 };
 
+type GroupPhase = "open" | "closing" | "closed";
+type ToolPhase = "open" | "closing" | "collapsed";
+
 export {
+  TOOL_BACKGROUND_DWELL_MS,
   TOOL_COMPLETION_DWELL_MS,
   TOOL_COLLAPSE_MS,
   TOOL_GROUP_DWELL_MS,
   TOOL_GROUP_COLLAPSE_MS,
+  TOOL_HIDE_MS,
 } from "../lib/toolActivityTiming";
 
 export const ToolGroup = memo(function ToolGroup({
-  tools,
+  backgroundToolIds = EMPTY_TOOL_IDS,
+  maxVisibleActions = 3,
   onReviewDiff,
-  stepClosed = false,
+  stepClosed,
+  tools,
 }: ToolGroupProps) {
   const { t } = useI18n();
-  const running = tools.some((tool) => tool.status === "running");
-  const failed = tools.some((tool) => tool.status === "error");
   const count = tools.length;
-  const liveSequence = useRef(running);
+  const runningCount = tools.filter(
+    (tool) => tool.status === "running",
+  ).length;
+  const resolvedCount = count - runningCount;
+  const failed = tools.some((tool) => tool.status === "error");
+  const allResolved = count > 0 && resolvedCount === count;
+  const yieldedCount = tools.filter(
+    (tool) => tool.status === "running" && backgroundToolIds.has(tool.id),
+  ).length;
+  const allVisuallySettled =
+    count > 0 && resolvedCount + yieldedCount === count;
+  const closeRequested = stepClosed ?? allResolved;
+  const liveSequence = useRef(runningCount > 0);
+  const previousCount = useRef(count);
+  const manuallyOpened = useRef(false);
   const [presentedCount, setPresentedCount] = useState(
-    running ? Math.min(1, count) : count,
+    runningCount > 0 ? Math.min(1, count) : count,
   );
-  const [compactedCount, setCompactedCount] = useState(running ? 0 : count);
-  const [activeWaveStart, setActiveWaveStart] = useState(0);
-  const observedCount = useRef(count);
-  const presentationPending = liveSequence.current && presentedCount < count;
-  const presentationSettling =
-    liveSequence.current && compactedCount < presentedCount;
-  const active = running || presentationPending || presentationSettling;
-  const canCondense = count > 4;
-  const [phase, setPhase] = useState<"active" | "settling" | "complete">(
-    active ? "active" : "complete",
+  const [collapsedThrough, setCollapsedThrough] = useState(
+    runningCount > 0 ? 0 : count,
   );
-  const [showAll, setShowAll] = useState(!canCondense || active || failed);
-  const manuallyExpanded = useRef(false);
-  const hasRun = useRef(running);
-  const hasCompleted = useRef(!active);
-  const hiddenCount = showAll ? 0 : count - 3;
-  const presentedTools = liveSequence.current
-    ? tools.slice(0, presentedCount)
-    : tools;
-  const currentWaveTools =
-    phase !== "complete" && activeWaveStart > 0
-      ? presentedTools.slice(activeWaveStart)
-      : presentedTools;
-  const visibleTools = showAll
-    ? currentWaveTools
-    : currentWaveTools.slice(-3);
-  const summary = failed
-    ? t(count === 1 ? "tool.group.failedOne" : "tool.group.failedMany", {
-        count,
-      })
-    : t(count === 1 ? "tool.group.doneOne" : "tool.group.doneMany", {
-        count,
-      });
+  const [hiddenBefore, setHiddenBefore] = useState(() =>
+    Math.max(0, count - maxVisibleActions),
+  );
+  const [hidingIndex, setHidingIndex] = useState<number | undefined>(
+    undefined,
+  );
+  const [showHistory, setShowHistory] = useState(false);
+  const [groupPhase, setGroupPhase] = useState<GroupPhase>(
+    closeRequested && allResolved ? "closed" : "open",
+  );
+  const presentationActive =
+    hidingIndex !== undefined ||
+    presentedCount < count ||
+    collapsedThrough < presentedCount;
+  const canAutomaticallyClose =
+    closeRequested && allVisuallySettled && !presentationActive;
+
+  useLayoutEffect(() => {
+    const previous = previousCount.current;
+    previousCount.current = count;
+    if (count <= previous) return;
+
+    liveSequence.current = true;
+    manuallyOpened.current = false;
+    setShowHistory(false);
+    setGroupPhase("open");
+  }, [count]);
 
   useEffect(() => {
-    if (active) {
-      manuallyExpanded.current = false;
-      setShowAll(true);
-    } else if (canCondense && !manuallyExpanded.current) {
-      setShowAll(false);
-    }
-  }, [active, canCondense, failed]);
+    const minimumHidden = Math.max(0, presentedCount - maxVisibleActions);
+    setHiddenBefore((current) => Math.max(current, minimumHidden));
+  }, [maxVisibleActions, presentedCount]);
 
   useEffect(() => {
-    if (active) {
-      hasRun.current = true;
-      hasCompleted.current = false;
-      setPhase("active");
+    if (
+      !liveSequence.current ||
+      presentedCount >= count ||
+      collapsedThrough < presentedCount ||
+      hidingIndex !== undefined
+    ) {
       return;
     }
-    if (!hasRun.current) {
-      hasCompleted.current = true;
-      setPhase("complete");
+
+    const visibleCount = presentedCount - hiddenBefore;
+    if (visibleCount < maxVisibleActions) {
+      setPresentedCount((current) => Math.min(current + 1, count));
       return;
     }
-    if (hasCompleted.current) {
-      setPhase("complete");
+
+    setHidingIndex(hiddenBefore);
+  }, [
+    collapsedThrough,
+    count,
+    hiddenBefore,
+    hidingIndex,
+    maxVisibleActions,
+    presentedCount,
+  ]);
+
+  useEffect(() => {
+    if (hidingIndex === undefined) return;
+    const timer = window.setTimeout(() => {
+      setHiddenBefore((current) => current + 1);
+      setHidingIndex(undefined);
+      setPresentedCount((current) => Math.min(current + 1, count));
+    }, TOOL_HIDE_MS);
+    return () => window.clearTimeout(timer);
+  }, [count, hidingIndex]);
+
+  useEffect(() => {
+    if (!canAutomaticallyClose) {
+      if (groupPhase !== "open") setGroupPhase("open");
+      return;
+    }
+    if (
+      groupPhase !== "open" ||
+      manuallyOpened.current
+    ) {
       return;
     }
     const dwell = stepClosed
       ? CLOSED_STEP_GROUP_DWELL_MS
       : TOOL_GROUP_DWELL_MS;
-    const settlingTimer = window.setTimeout(
-      () => setPhase("settling"),
-      dwell,
-    );
-    const completeTimer = window.setTimeout(
-      () => {
-        hasCompleted.current = true;
-        setPhase("complete");
-      },
-      dwell + TOOL_GROUP_COLLAPSE_MS,
-    );
-    return () => {
-      window.clearTimeout(settlingTimer);
-      window.clearTimeout(completeTimer);
-    };
-  }, [active, stepClosed]);
-
-  useLayoutEffect(() => {
-    const previousCount = observedCount.current;
-    observedCount.current = count;
-    if (count <= previousCount || !hasCompleted.current) return;
-
-    // A call arriving after the whole group folded belongs to a new silent
-    // agent step. Keep the shared group, but do not reopen completed cards from
-    // the previous step while presenting the new wave.
-    liveSequence.current = true;
-    hasCompleted.current = false;
-    setActiveWaveStart(previousCount);
-    setPresentedCount(Math.min(previousCount + 1, count));
-    setCompactedCount(previousCount);
-    setPhase("active");
-    setShowAll(true);
-  }, [count]);
-
-  const presentNextTool = useCallback(() => {
-    setPresentedCount((current) => Math.min(current + 1, count));
-  }, [count]);
+    const timer = window.setTimeout(() => setGroupPhase("closing"), dwell);
+    return () => window.clearTimeout(timer);
+  }, [canAutomaticallyClose, groupPhase, stepClosed]);
 
   useEffect(() => {
-    if (
-      liveSequence.current &&
-      presentedCount < count &&
-      compactedCount >= presentedCount
-    ) {
-      presentNextTool();
-    }
-  }, [compactedCount, count, presentNextTool, presentedCount]);
-
-  const toolList = (
-    <div className="tool-list">
-      {hiddenCount > 0 && (
-        <button
-          className="tool-history-toggle"
-          onClick={() => {
-            manuallyExpanded.current = true;
-            setShowAll(true);
-          }}
-        >
-          {t(
-            hiddenCount === 1
-              ? "tool.group.previousOne"
-              : "tool.group.previousMany",
-            { count: hiddenCount },
-          )}
-        </button>
-      )}
-      {visibleTools.map((tool, index) => (
-        <ToolRow
-          key={tool.id}
-          tool={tool}
-          onReviewDiff={onReviewDiff}
-          forceReplay={liveSequence.current && presentedCount > 1}
-          onCollapseStarted={
-            index === visibleTools.length - 1 && presentationPending
-              ? presentNextTool
-              : undefined
-          }
-          onCompacted={
-            liveSequence.current
-              ? () =>
-                  setCompactedCount((current) =>
-                    Math.min(current + 1, count),
-                  )
-              : undefined
-          }
-          stepClosed={stepClosed}
-        />
-      ))}
-      {canCondense && showAll && !active && !failed && (
-        <button
-          className="tool-history-toggle"
-          onClick={() => {
-            manuallyExpanded.current = false;
-            setShowAll(false);
-          }}
-        >
-          {t("tool.group.collapse")}
-        </button>
-      )}
-    </div>
-  );
-
-  if (phase !== "complete") {
-    return (
-      <section className={`tool-group ${phase} ${failed ? "failed" : ""}`}>
-        {toolList}
-      </section>
+    if (groupPhase !== "closing") return;
+    const timer = window.setTimeout(
+      () => setGroupPhase("closed"),
+      TOOL_GROUP_COLLAPSE_MS,
     );
-  }
+    return () => window.clearTimeout(timer);
+  }, [groupPhase]);
+
+  const handleCollapsed = useCallback((index: number) => {
+    setCollapsedThrough((current) => Math.max(current, index + 1));
+  }, []);
+
+  const firstVisible = showHistory ? 0 : hiddenBefore;
+  const visibleTools = tools
+    .slice(firstVisible, presentedCount)
+    .map((tool, offset) => ({
+      index: firstVisible + offset,
+      tool,
+    }));
+  const hiddenCount = showHistory ? 0 : hiddenBefore;
+  const summary = groupSummary({
+    allResolved,
+    count,
+    failed,
+    resolvedCount,
+    runningCount,
+    t,
+  });
+  const groupExpanded = groupPhase !== "closed";
 
   return (
-    <details className={`tool-group complete${failed ? " failed" : ""}`}>
-      <summary className="tool-group-summary">
+    <section className={`tool-group ${groupPhase}${failed ? " failed" : ""}`}>
+      <button
+        aria-expanded={groupExpanded}
+        className="tool-group-summary"
+        onClick={() => {
+          if (!allResolved || presentationActive) return;
+          if (groupPhase === "closed") {
+            manuallyOpened.current = true;
+            setGroupPhase("open");
+            return;
+          }
+          if (manuallyOpened.current && groupPhase === "open") {
+            manuallyOpened.current = false;
+            setGroupPhase("closing");
+          }
+        }}
+        type="button"
+      >
         <span className="tool-icon">
-          {failed ? <CircleAlert /> : <Check />}
+          {runningCount > yieldedCount || presentationActive ? (
+            <LoaderCircle className="spin" />
+          ) : yieldedCount > 0 ? (
+            <BriefcaseBusiness />
+          ) : failed ? (
+            <CircleAlert />
+          ) : (
+            <Check />
+          )}
         </span>
         <span>{summary}</span>
         <ToolKindSummary tools={tools} />
         <ChevronDown className="tool-group-chevron" />
-      </summary>
-      {toolList}
-    </details>
+      </button>
+      <div
+        aria-hidden={!groupExpanded}
+        className="tool-list-shell"
+        hidden={!groupExpanded}
+        inert={!groupExpanded}
+      >
+        <div className="tool-list">
+          {hiddenCount > 0 && (
+            <button
+              className="tool-history-toggle"
+              onClick={() => setShowHistory(true)}
+              type="button"
+            >
+              {t(
+                hiddenCount === 1
+                  ? "tool.group.previousOne"
+                  : "tool.group.previousMany",
+                { count: hiddenCount },
+              )}
+            </button>
+          )}
+          {visibleTools.map(({ index, tool }) => (
+            <ToolRow
+              animateCompleted={liveSequence.current}
+              className={index === hidingIndex ? "hiding" : undefined}
+              index={index}
+              key={tool.id}
+              onCollapsed={handleCollapsed}
+              onReviewDiff={onReviewDiff}
+              stepClosed={Boolean(stepClosed)}
+              tool={tool}
+              yieldRunning={
+                tool.status === "running" && backgroundToolIds.has(tool.id)
+              }
+            />
+          ))}
+          {showHistory && hiddenBefore > 0 && (
+            <button
+              className="tool-history-toggle"
+              onClick={() => setShowHistory(false)}
+              type="button"
+            >
+              {t("tool.group.collapse")}
+            </button>
+          )}
+        </div>
+      </div>
+    </section>
   );
 });
+
+const EMPTY_TOOL_IDS = new Set<string>();
+
+function groupSummary({
+  allResolved,
+  count,
+  failed,
+  resolvedCount,
+  runningCount,
+  t,
+}: {
+  allResolved: boolean;
+  count: number;
+  failed: boolean;
+  resolvedCount: number;
+  runningCount: number;
+  t: ReturnType<typeof useI18n>["t"];
+}) {
+  if (resolvedCount === 0) {
+    return t("tool.group.runningOne");
+  }
+  if (resolvedCount > 0 && runningCount > 0) {
+    const key =
+      resolvedCount === 1
+        ? runningCount === 1
+          ? "tool.group.progressOneOne"
+          : "tool.group.progressOneMany"
+        : runningCount === 1
+          ? "tool.group.progressManyOne"
+          : "tool.group.progressManyMany";
+    return t(key, { completed: resolvedCount, running: runningCount });
+  }
+  if (allResolved && failed) {
+    return t(
+      count === 1 ? "tool.group.failedOne" : "tool.group.failedMany",
+      { count },
+    );
+  }
+  return t(
+    resolvedCount === 1 ? "tool.group.doneOne" : "tool.group.doneMany",
+    { count: resolvedCount },
+  );
+}
 
 function ToolKindSummary({ tools }: { tools: ToolCall[] }) {
   const { t } = useI18n();
@@ -298,131 +385,177 @@ function ToolKindSummary({ tools }: { tools: ToolCall[] }) {
   );
 }
 
-function ToolRow({
-  tool,
+const ToolRow = memo(function ToolRow({
+  animateCompleted,
+  className,
+  index,
+  onCollapsed,
   onReviewDiff,
-  forceReplay = false,
-  onCollapseStarted,
-  onCompacted,
-  stepClosed = false,
-}: Omit<ToolGroupProps, "tools"> & {
-  forceReplay?: boolean;
-  onCollapseStarted?: () => void;
-  onCompacted?: () => void;
+  stepClosed,
+  tool,
+  yieldRunning,
+}: {
+  animateCompleted: boolean;
+  className?: string;
+  index: number;
+  onCollapsed: (index: number) => void;
+  onReviewDiff?: (tool: ToolCall) => void;
+  stepClosed: boolean;
   tool: ToolCall;
+  yieldRunning: boolean;
 }) {
-  const hasDetails = Boolean(
-    tool.output ||
-      tool.diff ||
-      tool.progress ||
-      tool.artifacts?.some((artifact) => artifact.type !== "generatedImage"),
+  const wasPresentedLive = useRef(
+    tool.status === "running" || animateCompleted,
   );
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [phase, setPhase] = useState<"full" | "collapsing" | "compact">(
-    tool.status !== "running" && !forceReplay ? "compact" : "full",
+  const hasCollapsed = useRef(!wasPresentedLive.current);
+  const closingStartedAt = useRef<number | undefined>(undefined);
+  const manualTimer = useRef<number | undefined>(undefined);
+  const [phase, setPhase] = useState<ToolPhase>(
+    wasPresentedLive.current ? "open" : "collapsed",
   );
-  const hasRun = useRef(tool.status === "running" || forceReplay);
-  const hasCompacted = useRef(
-    tool.status !== "running" && !forceReplay,
-  );
-  const onCollapseStartedRef = useRef(onCollapseStarted);
-  const onCompactedRef = useRef(onCompacted);
-  const detailsRef = useRef<HTMLDetailsElement>(null);
-  useEffect(() => {
-    onCollapseStartedRef.current = onCollapseStarted;
-    onCompactedRef.current = onCompacted;
-  }, [onCollapseStarted, onCompacted]);
+
   useEffect(() => {
     if (tool.status === "running") {
-      hasRun.current = true;
-      hasCompacted.current = false;
-      setPhase("full");
-      if (hasDetails) setDetailsOpen(true);
-      return;
+      wasPresentedLive.current = true;
+      if (hasCollapsed.current) return;
+      if (!yieldRunning) {
+        closingStartedAt.current = undefined;
+        setPhase("open");
+        return;
+      }
+      if (closingStartedAt.current !== undefined) {
+        const remaining = Math.max(
+          0,
+          closingStartedAt.current + TOOL_COLLAPSE_MS - Date.now(),
+        );
+        const timer = window.setTimeout(() => {
+          hasCollapsed.current = true;
+          setPhase("collapsed");
+          onCollapsed(index);
+        }, remaining);
+        return () => window.clearTimeout(timer);
+      }
+      const closingTimer = window.setTimeout(() => {
+        closingStartedAt.current = Date.now();
+        setPhase("closing");
+      }, TOOL_BACKGROUND_DWELL_MS);
+      const collapsedTimer = window.setTimeout(() => {
+        hasCollapsed.current = true;
+        setPhase("collapsed");
+        onCollapsed(index);
+      }, TOOL_BACKGROUND_DWELL_MS + TOOL_COLLAPSE_MS);
+      return () => {
+        window.clearTimeout(closingTimer);
+        window.clearTimeout(collapsedTimer);
+      };
     }
-    if (!hasRun.current) {
-      hasCompacted.current = true;
-      setPhase("compact");
-      return;
+    if (closingStartedAt.current !== undefined && !hasCollapsed.current) {
+      const remaining = Math.max(
+        0,
+        closingStartedAt.current + TOOL_COLLAPSE_MS - Date.now(),
+      );
+      const timer = window.setTimeout(() => {
+        hasCollapsed.current = true;
+        setPhase("collapsed");
+        onCollapsed(index);
+      }, remaining);
+      return () => window.clearTimeout(timer);
     }
-    if (hasCompacted.current) {
-      setPhase("compact");
+    closingStartedAt.current = undefined;
+    if (!wasPresentedLive.current || hasCollapsed.current) {
+      setPhase("collapsed");
       return;
     }
     const dwell = stepClosed
       ? CLOSED_STEP_TOOL_DWELL_MS
       : TOOL_COMPLETION_DWELL_MS;
-    const collapsingTimer = window.setTimeout(() => {
-      setPhase("collapsing");
-      onCollapseStartedRef.current?.();
-    }, dwell);
-    const compactTimer = window.setTimeout(() => {
-      hasCompacted.current = true;
-      setDetailsOpen(false);
-      setPhase("compact");
-      onCompactedRef.current?.();
+    const closingTimer = window.setTimeout(
+      () => setPhase("closing"),
+      dwell,
+    );
+    const collapsedTimer = window.setTimeout(() => {
+      hasCollapsed.current = true;
+      setPhase("collapsed");
+      onCollapsed(index);
     }, dwell + TOOL_COLLAPSE_MS);
     return () => {
-      window.clearTimeout(collapsingTimer);
-      window.clearTimeout(compactTimer);
+      window.clearTimeout(closingTimer);
+      window.clearTimeout(collapsedTimer);
     };
-  }, [hasDetails, stepClosed, tool.status]);
-  const content = (
-    <>
-      <ToolIcon kind={tool.kind} />
-      <div className="tool-row-copy">
+  }, [index, onCollapsed, stepClosed, tool.status, yieldRunning]);
+
+  useEffect(
+    () => () => {
+      if (manualTimer.current) window.clearTimeout(manualTimer.current);
+    },
+    [],
+  );
+
+  const expanded = phase !== "collapsed";
+  return (
+    <article
+      className={`tool-row ${tool.status} ${phase}${className ? ` ${className}` : ""}`}
+    >
+      <button
+        aria-expanded={expanded}
+        className="tool-row-header"
+        onClick={() => {
+          if (tool.status === "running" && !yieldRunning) return;
+          if (phase === "collapsed") {
+            setPhase("open");
+            return;
+          }
+          if (phase === "open" && hasCollapsed.current) {
+            setPhase("closing");
+            manualTimer.current = window.setTimeout(() => {
+              setPhase("collapsed");
+              manualTimer.current = undefined;
+            }, TOOL_COLLAPSE_MS);
+          }
+        }}
+        type="button"
+      >
+        <ToolIcon kind={tool.kind} />
         <strong>{tool.title}</strong>
-        <code>{tool.detail}</code>
-        {tool.progress && <small>{tool.progress}</small>}
         <ToolMetrics tool={tool} />
+        <ToolStatus background={yieldRunning} status={tool.status} />
+        <ChevronDown className="tool-row-chevron" />
+      </button>
+      <div
+        aria-hidden={!expanded}
+        className="tool-details-shell"
+        hidden={!expanded}
+      >
+        <ToolDetails tool={tool} onReviewDiff={onReviewDiff} />
       </div>
-      <ToolStatus status={tool.status} />
-      {hasDetails && <ChevronDown className="tool-row-chevron" />}
-    </>
+    </article>
   );
+});
 
-  return hasDetails ? (
-    <details
-      ref={detailsRef}
-      className={`tool-row ${tool.status} ${phase}`}
-      open={detailsOpen}
-      onToggle={(event) => {
-        const open = event.currentTarget.open;
-        setDetailsOpen(open);
-        if (open)
-          detailsRef.current?.scrollIntoView?.({
-            behavior: "smooth",
-            block: "nearest",
-          });
-      }}
-    >
-      <summary>{content}</summary>
-      <ToolDetails tool={tool} onReviewDiff={onReviewDiff} />
-    </details>
-  ) : (
-    <div
-      className={`tool-row ${tool.status} ${phase}`}
-    >
-      {content}
-    </div>
-  );
-}
-
-function ToolStatus({ status }: { status: ToolCall["status"] }) {
+function ToolStatus({
+  background,
+  status,
+}: {
+  background: boolean;
+  status: ToolCall["status"];
+}) {
   const { t } = useI18n();
-  const label =
-    status === "running"
+  const label = background
+    ? t("tool.status.background")
+    : status === "running"
       ? t("tool.status.running")
       : status === "error"
         ? t("tool.status.error")
         : t("tool.status.done");
   return (
     <span
-      className={`tool-row-status ${status}`}
       aria-label={label}
+      className={`tool-row-status ${status}`}
       title={label}
     >
-      {status === "running" ? (
+      {background ? (
+        <BriefcaseBusiness />
+      ) : status === "running" ? (
         <LoaderCircle className="spin" />
       ) : status === "error" ? (
         <CircleAlert />
@@ -462,16 +595,24 @@ function ToolMetrics({ tool }: { tool: ToolCall }) {
 }
 
 function ToolDetails({
-  tool,
   onReviewDiff,
-}: Omit<ToolGroupProps, "tools"> & { tool: ToolCall }) {
+  tool,
+}: {
+  onReviewDiff?: (tool: ToolCall) => void;
+  tool: ToolCall;
+}) {
   const { t } = useI18n();
+  const output = tool.output ?? tool.progress;
   return (
     <div className="tool-details">
-      {tool.output && (
+      <section>
+        <span>{t("tool.details.input")}</span>
+        <pre>{tool.detail}</pre>
+      </section>
+      {output && (
         <section>
           <span>{t("tool.details.output")}</span>
-          <pre>{tool.output}</pre>
+          <pre>{output}</pre>
         </section>
       )}
       {tool.diff && (

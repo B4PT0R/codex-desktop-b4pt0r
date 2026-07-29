@@ -153,15 +153,26 @@ export function buildDemoPlaybackFrames(): DemoPlaybackFrame[] {
   cursor = appendStreamingText(
     frames,
     cursor,
-    "Je vais parcourir le renderer, mettre à jour le plan puis exécuter les vérifications nécessaires.\n\n",
+    "Je vais vérifier le renderer puis faire circuler une série d’actions assez longue pour éprouver les transitions.\n\n",
     90,
     "talking",
   );
   push(900, updatePlan(1), "working");
+  // Three calls belong to the same agentic step. The UI deliberately presents
+  // their details one after another even when App Server announces them close
+  // together.
   push(700, addTool(commandTool("running")), "working");
-  push(250, addTool(fileTool("running")), "working");
+  push(180, addTool(fileTool("running")), "working");
+  push(180, addTool(browserTool("running")), "working");
   push(
-    1_800,
+    650,
+    updateTool("demo-live-command", {
+      output: "rendering.test.tsx\nToolGroup.test.tsx\n",
+    }),
+    "working",
+  );
+  push(
+    850,
     updateTool("demo-live-command", {
       status: "done",
       output: "9 tests réussis",
@@ -171,47 +182,103 @@ export function buildDemoPlaybackFrames(): DemoPlaybackFrame[] {
     "working",
   );
   push(
-    700,
+    1_700,
     updateTool("demo-live-file", { status: "done", durationMs: 1_721 }),
-    "talking",
-  );
-  push(1_600, appendAssistantStep("demo-live-assistant-2"), "talking");
-
-  cursor = appendStreamingText(
-    frames,
-    cursor,
-    "Les deux premières actions sont terminées. Je relis leurs résultats avant de lancer les vérifications finales.\n\n",
-    85,
-    "talking",
-  );
-  push(700, updatePlan(2), "working");
-  push(650, addTool(reviewTool("running")), "working");
-  push(220, addTool(browserTool("running")), "working");
-  push(
-    1_650,
-    updateTool("demo-live-review", {
-      status: "done",
-      output: "Aucune régression détectée",
-      durationMs: 1_534,
-    }),
     "working",
   );
   push(
-    620,
+    1_700,
     updateTool("demo-live-browser", {
       status: "done",
-      output: "Aucune erreur console",
+      output: "Mise en page stable à 1240 × 820",
       durationMs: 1_988,
     }),
-    "talking",
+    "working",
+  );
+
+  // Further silent agentic steps keep feeding the same group: no assistant
+  // prose and no non-action item has created a visual boundary.
+  push(700, updatePlan(2), "working");
+  push(1_100, addTool(schemaTool("running")), "working");
+  push(
+    1_450,
+    updateTool("demo-live-schema", {
+      status: "done",
+      output: "Schéma compatible",
+      durationMs: 1_364,
+    }),
+    "working",
+  );
+  push(1_550, addTool(lintTool("running")), "working");
+  push(
+    1_450,
+    updateTool("demo-live-lint", {
+      status: "done",
+      output: "0 erreur TypeScript",
+      durationMs: 1_402,
+    }),
+    "working",
+  );
+  push(1_550, addTool(packageTool("running")), "working");
+  push(
+    1_450,
+    updateTool("demo-live-package", {
+      status: "done",
+      output: "Bundle Electron prêt",
+      durationMs: 1_411,
+    }),
+    "working",
+  );
+  push(1_550, addTool(auditTool("running")), "working");
+  push(
+    1_450,
+    updateTool("demo-live-audit", {
+      status: "done",
+      output: "0 vulnérabilité",
+      durationMs: 1_395,
+    }),
+    "working",
+  );
+
+  // This completed signal is a real non-action boundary. It closes the first
+  // seven-call group before the next calls form a fresh group underneath.
+  push(1_650, appendCompactionStep, "compacting");
+  push(4_700, completeCompaction, "working");
+  push(900, addTool(devServerTool("running")), "working");
+  push(
+    650,
+    updateTool("demo-live-dev-server", {
+      output: "Local: http://127.0.0.1:1420/\nready in 412 ms",
+    }),
+    "working",
+  );
+  push(500, addTool(finalBrowserTool("running")), "working");
+  push(
+    1_500,
+    updateTool("demo-live-browser-final", {
+      status: "done",
+      output: "Preview ouverte",
+      durationMs: 1_468,
+    }),
+    "working",
+  );
+  push(1_650, addTool(browserInspectTool("running")), "working");
+  push(
+    1_500,
+    updateTool("demo-live-browser-inspect", {
+      status: "done",
+      output: "Aucune erreur console, scroll ancré",
+      durationMs: 1_432,
+    }),
+    "working",
   );
   push(1_600, updatePlan(3), "talking");
-  push(300, appendAssistantStep("demo-live-assistant-3"), "talking");
+  push(300, appendAssistantStep("demo-live-assistant-final"), "talking");
 
   cursor = appendStreamingText(
     frames,
     cursor,
-    "Le flux reste lisible entre les étapes. Le Markdown final affiche une formule inline $E = mc^2$ et chaque série d’actions reste dans son propre groupe.",
+    "La vague reste continue : les sept premières actions demeurent agrégées malgré les steps silencieux, la compaction crée une frontière nette, puis le serveur de preview cède la place aux deux contrôles Playwright sans attendre de s’arrêter. Le Markdown reste rendu pendant le flux, avec $E = mc^2$.",
     85,
     "talking",
   );
@@ -343,12 +410,12 @@ function fileTool(status: ToolCall["status"]): ToolCall {
   };
 }
 
-function reviewTool(status: ToolCall["status"]): ToolCall {
+function devServerTool(status: ToolCall["status"]): ToolCall {
   return {
-    id: "demo-live-review",
+    id: "demo-live-dev-server",
     kind: "commandExecution",
-    title: "Tests ciblés",
-    detail: "npm test -- ToolGroup Conversation",
+    title: "Serveur de preview",
+    detail: "npm run dev",
     status,
   };
 }
@@ -361,6 +428,110 @@ function browserTool(status: ToolCall["status"]): ToolCall {
     detail: "Playwright · conversation",
     status,
   };
+}
+
+function schemaTool(status: ToolCall["status"]): ToolCall {
+  return {
+    id: "demo-live-schema",
+    kind: "commandExecution",
+    title: "Contrat App Server",
+    detail: "npm run test:contract",
+    status,
+  };
+}
+
+function lintTool(status: ToolCall["status"]): ToolCall {
+  return {
+    id: "demo-live-lint",
+    kind: "commandExecution",
+    title: "Vérification TypeScript",
+    detail: "npm run check",
+    status,
+  };
+}
+
+function packageTool(status: ToolCall["status"]): ToolCall {
+  return {
+    id: "demo-live-package",
+    kind: "commandExecution",
+    title: "Construction Electron",
+    detail: "npm run build",
+    status,
+  };
+}
+
+function auditTool(status: ToolCall["status"]): ToolCall {
+  return {
+    id: "demo-live-audit",
+    kind: "commandExecution",
+    title: "Audit des dépendances",
+    detail: "npm audit",
+    status,
+  };
+}
+
+function finalBrowserTool(status: ToolCall["status"]): ToolCall {
+  return {
+    id: "demo-live-browser-final",
+    kind: "mcpToolCall",
+    title: "Contrôle du scroll",
+    detail: "Playwright · ancrage bas",
+    status,
+  };
+}
+
+function browserInspectTool(status: ToolCall["status"]): ToolCall {
+  return {
+    id: "demo-live-browser-inspect",
+    kind: "mcpToolCall",
+    title: "Inspection Playwright",
+    detail: "Playwright · console et mise en page",
+    status,
+  };
+}
+
+function appendCompactionStep(messages: ChatMessage[]): ChatMessage[] {
+  const previousTools = messages.at(-1)?.tools?.length ?? 1;
+  return [
+    ...messages.map((message) =>
+      message.role === "assistant" && message.streaming
+        ? { ...message, streaming: false }
+        : message,
+    ),
+    {
+      id: "demo-live-compaction",
+      role: "assistant",
+      content: "",
+      revealAfter: Date.now() + closedStepRevealDelay(previousTools),
+      signals: [
+        {
+          id: "demo-live-compaction-signal",
+          kind: "compaction",
+          title: "Compaction du contexte",
+          status: "running",
+        },
+      ],
+    },
+  ];
+}
+
+function completeCompaction(messages: ChatMessage[]): ChatMessage[] {
+  return messages.map((message) =>
+    message.id === "demo-live-compaction"
+      ? {
+          ...message,
+          signals: message.signals?.map((signal) =>
+            signal.kind === "compaction"
+              ? {
+                  ...signal,
+                  title: "Contexte compacté",
+                  status: "done" as const,
+                }
+              : signal,
+          ),
+        }
+      : message,
+  );
 }
 
 function addTool(tool: ToolCall) {

@@ -9,6 +9,7 @@ import type { AppsController } from "../lib/useApps";
 import type { AutomationsController } from "../lib/automations";
 import type { CapabilityCatalog } from "../lib/useCapabilityCatalog";
 import type { CodexGlobalSettingsController } from "../lib/useCodexGlobalSettings";
+import type { ChatPresentationSettingsController } from "../lib/useChatPresentationSettings";
 import type { ConfigRequirements } from "../lib/useConfigRequirements";
 import type { ExternalAgentImportController } from "../lib/useExternalAgentImport";
 import type { IntegrationsController } from "../lib/useIntegrations";
@@ -40,6 +41,7 @@ export type SettingsViewProps = {
   account: AccountController;
   apps: AppsController;
   capabilities: CapabilityCatalog;
+  chatPresentation: ChatPresentationSettingsController;
   configRequirements?: ConfigRequirements & {
     error?: string;
     loading?: boolean;
@@ -108,7 +110,12 @@ function SettingsSection(props: SettingsViewProps) {
         />
       );
     case "chat":
-      return <ChatSettings globalSettings={props.webSearch} />;
+      return (
+        <ChatSettings
+          globalSettings={props.webSearch}
+          presentation={props.chatPresentation}
+        />
+      );
     case "memory":
       return <MemorySettings controller={props.memory} />;
     case "remoteControl":

@@ -83,6 +83,14 @@ function validatePatch(patch) {
     throw new Error("Unsupported sidebar width");
   }
   if (
+    patch.maxVisibleActionsPerGroup !== undefined &&
+    (!Number.isInteger(patch.maxVisibleActionsPerGroup) ||
+      patch.maxVisibleActionsPerGroup < 1 ||
+      patch.maxVisibleActionsPerGroup > 6)
+  ) {
+    throw new Error("Unsupported visible actions limit");
+  }
+  if (
     patch.sharedBrowserEnabled !== undefined &&
     typeof patch.sharedBrowserEnabled !== "boolean"
   ) {

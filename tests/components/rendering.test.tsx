@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { afterEach } from "vitest";
 import { Markdown } from "../../src/components/Markdown";
@@ -54,12 +60,28 @@ describe("rendu du chat", () => {
     );
     open.mockRestore();
   });
-  it("diffère l’analyse Markdown pendant le streaming", async () => {
+  it("rend progressivement le Markdown pendant le streaming", async () => {
     const { rerender } = render(
       <Markdown streaming>{"## Résultat partiel"}</Markdown>,
     );
-    expect(screen.queryByRole("heading")).toBeNull();
-    expect(screen.getByText("## Résultat partiel")).toBeVisible();
+    expect(
+      await screen.findByRole("heading", { name: "Résultat partiel" }),
+    ).toBeVisible();
+
+    rerender(
+      <Markdown streaming>
+        {"## Résultat partiel\n\n- élément **important**\n- deuxième élément"}
+      </Markdown>,
+    );
+    expect(await screen.findByText("important")).toHaveStyle({
+      fontWeight: "bold",
+    });
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+
+    rerender(<Markdown streaming>{"```ts\nconst answer = 42"}</Markdown>);
+    expect(await screen.findByText("const answer = 42")).toHaveClass(
+      "language-ts",
+    );
 
     rerender(<Markdown>{"## Résultat final"}</Markdown>);
     expect(
@@ -79,11 +101,13 @@ describe("rendu du chat", () => {
 
     rerender(
       <Markdown streaming>
-        {"Énergie $E=mc^2$, puis bloc complet $$\\frac{a}{b}$$"}
+        {"Énergie $E=mc^2$, puis bloc complet :\n\n$$\\frac{a}{b}$$"}
       </Markdown>,
     );
-    expect(container.querySelectorAll(".katex")).toHaveLength(2);
-    expect(container.querySelector(".streaming-math-display")).toBeVisible();
+    await waitFor(() =>
+      expect(container.querySelectorAll(".katex")).toHaveLength(2),
+    );
+    expect(container.querySelector(".katex-display")).toBeVisible();
   });
   it("rend les syntaxes LaTeX inline et bloc avec KaTeX", async () => {
     const { container } = render(
@@ -136,6 +160,7 @@ describe("rendu du chat", () => {
     const summary = screen.getByText("1 action effectuée");
     expect(summary).toBeVisible();
     fireEvent.click(summary);
+    fireEvent.click(screen.getByRole("button", { name: /Commande/ }));
     expect(screen.getByText("cargo test")).toBeVisible();
   });
   it("affiche un plan structuré hors des outils", () => {

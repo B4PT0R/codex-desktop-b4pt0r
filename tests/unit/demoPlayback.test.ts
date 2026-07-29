@@ -16,17 +16,23 @@ describe("scénario de streaming de démonstration", () => {
       (message) => message.role === "assistant",
     );
     expect(assistants).toHaveLength(3);
-    expect(assistants.every((message) => message.streaming === false)).toBe(
-      true,
-    );
-    expect(assistants[1].content).toContain("premières actions");
-    expect(assistants[2].content).toContain("Le flux reste lisible");
-    expect(assistants[0].tools).toHaveLength(2);
-    expect(assistants[1].tools).toHaveLength(2);
+    expect(assistants.every((message) => message.streaming !== true)).toBe(true);
+    expect(assistants[1].signals?.[0]).toMatchObject({
+      kind: "compaction",
+      status: "done",
+    });
+    expect(assistants[2].content).toContain("La vague reste continue");
+    expect(assistants[0].tools).toHaveLength(7);
+    expect(assistants[1].tools).toHaveLength(3);
     expect(
       assistants
         .flatMap((message) => message.tools ?? [])
-        .every((tool) => tool.status === "done"),
+        .every(
+          (tool) =>
+            tool.status === "done" ||
+            (tool.id === "demo-live-dev-server" &&
+              tool.status === "running"),
+        ),
     ).toBe(true);
     const plan = assistants
       .flatMap((message) => message.signals ?? [])

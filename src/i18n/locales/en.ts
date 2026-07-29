@@ -103,6 +103,15 @@ export const en: Record<MessageKey, string> = {
   "activity.waiting": "Waiting for confirmation…",
   "activity.listening": "Listening…",
   "tool.group.running": "Work in progress",
+  "tool.group.runningOne": "Action in progress",
+  "tool.group.runningMany": "{count} actions in progress",
+  "tool.group.progressOneOne": "1 action completed · 1 still running",
+  "tool.group.progressOneMany":
+    "1 action completed · {running} still running",
+  "tool.group.progressManyOne":
+    "{completed} actions completed · 1 still running",
+  "tool.group.progressManyMany":
+    "{completed} actions completed · {running} still running",
   "tool.group.failedOne": "1 action, with an error",
   "tool.group.failedMany": "{count} actions, with an error",
   "tool.group.doneOne": "1 action completed",
@@ -117,10 +126,12 @@ export const en: Record<MessageKey, string> = {
   "tool.kind.media": "Media",
   "tool.kind.other": "Other",
   "tool.status.running": "Running",
+  "tool.status.background": "Running in background",
   "tool.status.error": "Failed",
   "tool.status.done": "Completed",
   "tool.metric.exitCode": "Exit code {code}",
   "tool.details.output": "Output",
+  "tool.details.input": "Input",
   "tool.details.changes": "Changes",
   "tool.details.review": "Review in panel",
   "tool.command": "Command",
@@ -701,6 +712,11 @@ export const en: Record<MessageKey, string> = {
   "settings.reasoningSummary.concise": "Concise",
   "settings.reasoningSummary.detailed": "Detailed",
   "settings.reasoningSummary.none": "Hidden",
+  "settings.chat.visibleActions.title": "Visible actions per group",
+  "settings.chat.visibleActions.detail":
+    "Maximum number of recent actions kept below the activity summary.",
+  "settings.chat.visibleActions.error":
+    "Unable to save the visible actions limit:",
   "settings.persistence.error": "Unable to save app preferences:",
   "settings.startup.title": "Launch Codex at login",
   "settings.startup.detail":

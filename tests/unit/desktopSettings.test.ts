@@ -25,6 +25,7 @@ describe("préférences desktop", () => {
       lastWorkspace: "/work/app",
       theme: "light",
       fontSize: "large",
+      maxVisibleActionsPerGroup: 4,
       realtimeVoice: "juniper",
       sidebarWidth: 320,
     });
@@ -35,6 +36,7 @@ describe("préférences desktop", () => {
       lastWorkspace: "/work/app",
       theme: "light",
       fontSize: "large",
+      maxVisibleActionsPerGroup: 4,
       realtimeVoice: "juniper",
       sidebarWidth: 320,
     });
