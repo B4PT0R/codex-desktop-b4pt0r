@@ -3,6 +3,21 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.3.5] - 2026-07-29
+
+### Added
+
+- The repository is now explicitly distributed under the MIT License.
+
+### Changed
+
+- Settings navigation, global sections, agent defaults, permissions and
+  scheduled-task editing now have focused component owners instead of sharing
+  one large view module.
+- Scheduled-task styles are colocated with the feature while preserving the
+  established light and dark appearance at desktop and narrow window sizes.
+- Installation examples now point to the current package version.
+
 ## [0.3.4] - 2026-07-29
 
 ### Added
@@ -272,6 +287,8 @@ follows semantic versioning while the public interface is taking shape.
 - Native Electron packaging for Debian/Ubuntu.
 - Stable Chromium microphone capture for dictation and Realtime voice.
 
+[0.3.5]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.4...v0.3.5
+[0.3.4]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.0...v0.3.1

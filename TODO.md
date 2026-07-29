@@ -17,7 +17,7 @@ shared Playwright Chromium session.
 
 The repository is public at
 `https://github.com/B4PT0R/codex-desktop-b4pt0r`. The current public release is
-v0.3.4.
+v0.3.5.
 
 ## Current candidate
 
@@ -67,6 +67,17 @@ The new Settings UI reuses the established cards, round controls, compact
 typography, focus treatment and light/dark palettes. It has no horizontal
 overflow at 1240×820 or 840×620.
 
+A maintenance pass has reduced the main Settings concentration without
+inventing generic abstractions:
+
+- `SettingsView` now owns only focus, navigation and section routing;
+- General/Web/Chat, Agent/Permissions and Advanced settings have focused
+  section modules with narrow controller props;
+- scheduled-task listing and editing are separate components, and changing the
+  edited task cannot retain stale form state;
+- scheduler styling is colocated in `automation-settings.css` instead of being
+  split across the general Settings and appearance sheets.
+
 ## Verified candidate baseline
 
 - Installed Codex: `codex-cli 0.145.0`.
@@ -81,9 +92,10 @@ overflow at 1240×820 or 840×620.
 - Lazy diff viewer: 89.50 kB, 32.89 kB gzip.
 - Lazy Markdown/KaTeX: 698.90 kB, 208.87 kB gzip.
 - Shared-browser visual pass: light and dark palettes, 1240×820 and 840×620;
-  no browser warning or error.
-- Reinstalled Debian package: `codex-desktop-linux 0.3.4 amd64`; installed ASAR
-  matches the package build (`263069eb…638a75f`).
+  no browser warning, error or horizontal overflow after the Settings
+  modularity pass.
+- Reinstalled Debian package: `codex-desktop-linux 0.3.5 amd64`; installed ASAR
+  matches the package build (`6e024b21…6f2b6cf`).
 
 ## Active invariants
 

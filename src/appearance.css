@@ -155,28 +155,11 @@
 :root[data-theme="light"] .settings-search input,
 :root[data-theme="light"] .settings-fields select,
 :root[data-theme="light"] .settings-fields select option,
-:root[data-theme="light"] .automation-editor input,
-:root[data-theme="light"] .automation-editor textarea,
-:root[data-theme="light"] .automation-editor select,
-:root[data-theme="light"] .automation-editor select option,
 :root[data-theme="light"] .config-guided-text-control input,
 :root[data-theme="light"] .user-input-freeform {
   color: var(--reader-ink);
   border-color: #d5d5cf;
   background: #f7f7f4;
-}
-
-:root[data-theme="light"] .automation-unattended {
-  border-color: #dfc8ba;
-  background: #fbf3ee;
-}
-
-:root[data-theme="light"] .automation-unattended strong {
-  color: #8c5039;
-}
-
-:root[data-theme="light"] .automation-unattended small {
-  color: #79665c;
 }
 
 :root[data-theme="light"] .config-guided-text-control button {
@@ -386,38 +369,6 @@
 
 :root[data-theme="light"] .security-quick-picker-section-heading strong {
   color: var(--reader-ink);
-}
-
-:root[data-theme="light"] .automation-row + .automation-row {
-  border-top-color: #deded7;
-}
-
-:root[data-theme="light"] .automation-state {
-  background: #f5f5f1;
-  border-color: #deded7;
-}
-
-:root[data-theme="light"] .automation-editor footer {
-  background: #fafaf7;
-  border-top-color: #e2e2dc;
-}
-
-:root[data-theme="light"] .automation-main:hover,
-:root[data-theme="light"] .automation-main:focus-visible {
-  background: transparent;
-  color: var(--reader-ink);
-}
-
-:root[data-theme="light"] .automation-delete-confirm .danger {
-  border-color: #dfc2bf;
-  color: #a55757;
-}
-
-:root[data-theme="light"] .automation-delete-confirm .danger:hover,
-:root[data-theme="light"] .automation-delete-confirm .danger:focus-visible {
-  border-color: #d4aaa6;
-  color: #914848;
-  background: #f0e1df;
 }
 
 :root[data-theme="light"]

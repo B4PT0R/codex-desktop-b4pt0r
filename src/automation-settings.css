@@ -1,0 +1,304 @@
+.automations-settings > header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.automations-settings > header p {
+  max-width: 620px;
+}
+
+.automation-list {
+  overflow: hidden;
+  padding: 0;
+}
+
+.automation-row {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  min-height: 58px;
+  padding: 8px 10px;
+}
+
+.automation-row + .automation-row {
+  border-top: 1px solid #33332f;
+}
+
+.automation-state {
+  align-items: center;
+  background: #252522;
+  border: 1px solid #383834;
+  border-radius: 50%;
+  box-sizing: border-box;
+  color: #858580;
+  display: flex;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.automation-state svg {
+  height: 15px;
+  width: 15px;
+}
+
+.automation-state.succeeded {
+  color: #8aac66;
+}
+
+.automation-state.failed {
+  color: #e68a86;
+}
+
+.automation-main {
+  align-items: flex-start;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 3px 0;
+  text-align: left;
+}
+
+.automation-main:hover,
+.automation-main:focus-visible {
+  background: transparent;
+  color: inherit;
+}
+
+.automation-main strong,
+.automation-main small,
+.automation-main em {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.automation-main strong {
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.automation-main small {
+  color: #858580;
+  font-size: 10px;
+  line-height: 14px;
+}
+
+.automation-main em {
+  color: #e68a86;
+  font-size: 10px;
+  font-style: normal;
+}
+
+.automation-actions {
+  align-items: center;
+  display: flex;
+  gap: 3px;
+}
+
+.automation-delete-confirm {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+.automation-delete-confirm span {
+  color: var(--text-muted);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.automation-delete-confirm .danger {
+  border-color: #664743;
+  color: #e68a86;
+}
+
+.automation-delete-confirm .danger:hover,
+.automation-delete-confirm .danger:focus-visible {
+  background: #3c2927;
+  border-color: #855a55;
+  color: #f09b96;
+}
+
+.automation-editor {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 14px;
+}
+
+.automation-editor > label,
+.automation-editor-grid > label {
+  display: grid;
+  gap: 5px;
+}
+
+.automation-editor label > span {
+  color: #858580;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.automation-editor input,
+.automation-editor textarea,
+.automation-editor select {
+  background: #292927;
+  border: 1px solid #41413d;
+  border-radius: 7px;
+  box-sizing: border-box;
+  color: #d0d0cc;
+  font: inherit;
+  font-size: 11px;
+  outline: none;
+  padding: 7px 9px;
+  width: 100%;
+}
+
+.automation-editor input:focus-visible,
+.automation-editor textarea:focus-visible,
+.automation-editor select:focus-visible {
+  border-color: #676760;
+  box-shadow: 0 0 0 2px #67676026;
+}
+
+.automation-editor textarea {
+  line-height: 1.45;
+  min-height: 84px;
+  resize: vertical;
+}
+
+.automation-editor select {
+  padding-right: 28px;
+}
+
+.automation-editor-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.automation-unattended {
+  align-items: start;
+  background: #28211e;
+  border: 1px solid #5a463d;
+  border-radius: 8px;
+  display: grid;
+  gap: 9px;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 10px;
+}
+
+.automation-unattended > input {
+  accent-color: #b56e52;
+  height: 14px;
+  margin: 1px 0 0;
+  width: 14px;
+}
+
+.automation-unattended > span {
+  display: grid;
+  gap: 3px;
+}
+
+.automation-unattended strong {
+  color: #d1a187;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.automation-unattended small {
+  color: #9a7e70;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.automation-editor footer {
+  align-items: center;
+  background: #1d1d1b;
+  border-top: 1px solid #343431;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin: 2px -14px -14px;
+  padding: 10px 14px 11px;
+  width: auto;
+}
+
+.automation-editor footer .round-icon-button-label {
+  font-size: 10px;
+  line-height: 1;
+}
+
+:root[data-theme="light"] .automation-editor input,
+:root[data-theme="light"] .automation-editor textarea,
+:root[data-theme="light"] .automation-editor select,
+:root[data-theme="light"] .automation-editor select option {
+  background: #f7f7f4;
+  border-color: #d5d5cf;
+  color: var(--reader-ink);
+}
+
+:root[data-theme="light"] .automation-unattended {
+  background: #fbf3ee;
+  border-color: #dfc8ba;
+}
+
+:root[data-theme="light"] .automation-unattended strong {
+  color: #8c5039;
+}
+
+:root[data-theme="light"] .automation-unattended small {
+  color: #79665c;
+}
+
+:root[data-theme="light"] .automation-row + .automation-row {
+  border-top-color: #deded7;
+}
+
+:root[data-theme="light"] .automation-state {
+  background: #f5f5f1;
+  border-color: #deded7;
+}
+
+:root[data-theme="light"] .automation-editor footer {
+  background: #fafaf7;
+  border-top-color: #e2e2dc;
+}
+
+:root[data-theme="light"] .automation-main:hover,
+:root[data-theme="light"] .automation-main:focus-visible {
+  background: transparent;
+  color: var(--reader-ink);
+}
+
+:root[data-theme="light"] .automation-delete-confirm .danger {
+  border-color: #dfc2bf;
+  color: #a55757;
+}
+
+:root[data-theme="light"] .automation-delete-confirm .danger:hover,
+:root[data-theme="light"] .automation-delete-confirm .danger:focus-visible {
+  background: #f0e1df;
+  border-color: #d4aaa6;
+  color: #914848;
+}
+
+@media (max-width: 840px) {
+  .automation-editor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .automation-row {
+    grid-template-columns: 24px minmax(0, 1fr);
+  }
+
+  .automation-actions {
+    grid-column: 2;
+  }
+}

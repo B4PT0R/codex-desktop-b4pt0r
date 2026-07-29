@@ -106,6 +106,7 @@ import "./signals.css";
 import "./tools.css";
 import "./telemetry.css";
 import "./settings.css";
+import "./automation-settings.css";
 import "./composer-menus.css";
 import "./work-panel.css";
 import "./appearance.css";
