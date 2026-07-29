@@ -9,6 +9,9 @@ follows semantic versioning while the public interface is taking shape.
 
 - App Server and the app-owned Playwright MCP client now receive the actual
   desktop package version instead of stale independently hard-coded versions.
+- Production packages no longer include Electron-layer test sources, and their
+  renderer, favicon and bundled-skill inventory is protected by a manifest
+  contract.
 
 ### Fixed
 

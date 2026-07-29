@@ -34,8 +34,10 @@
     "artifactName": "codex-desktop-linux_${version}_${arch}.${ext}",
     "files": [
       "dist/index.html",
+      "dist/favicon.svg",
       "dist/assets/**/*",
       "electron/**/*",
+      "!electron/**/*.test.mjs",
       "package.json"
     ],
     "extraResources": [

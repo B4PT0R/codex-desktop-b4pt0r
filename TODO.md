@@ -148,16 +148,25 @@ the inventory and telemetry are unchanged. This avoids periodic app-wide
 rerenders and invalidating stable tool-group props during unrelated streaming;
 an explicit user refresh still exposes its loading state.
 
+The production file manifest now includes the favicon referenced by the built
+HTML, excludes Electron test sources and has a native contract covering the
+renderer, main entry point and external bundled-skill mapping. This keeps
+development-only code out of the ASAR and makes a missing runtime resource fail
+before release packaging.
+
 ## Verified candidate baseline
 
 - Installed Codex: `codex-cli 0.145.0`.
 - Official source audit: `1def0a892`, stable and experimental v2 schemas.
 - Frontend/unit/contract: 545 tests across 103 files, including 47 installed
   App Server contract cases.
-- Electron/Node: 69 tests, including the native hidden-window liveness
+- Electron/Node: 71 tests, including the native hidden-window liveness
   invariant.
 - Strict TypeScript: passing.
 - Production Vite build: passing.
+- Electron directory packaging: passing; inspected ASAR contains the renderer,
+  favicon, main and preload with zero native test sources, while the shared
+  browser skill remains an external resource.
 - Production dependency audit: zero vulnerabilities.
 - Main JS: 565.86 kB, 164.19 kB gzip.
 - Lazy diff viewer: 89.50 kB, 32.89 kB gzip.
