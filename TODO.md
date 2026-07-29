@@ -137,6 +137,11 @@ version into App Server's `initialize.clientInfo`, while Electron passes
 `app.getVersion()` to the app-owned Playwright MCP client. Stale hard-coded
 client versions have been removed and both paths are covered by focused tests.
 
+The shared Config and global AGENTS.md editor now follows the same modal focus
+contract as approvals and native prompts: keyboard traversal stays inside the
+open editor, Escape retains unsaved-change protection, and closing restores the
+settings card that opened it.
+
 ## Verified candidate baseline
 
 - Installed Codex: `codex-cli 0.145.0`.

@@ -693,21 +693,32 @@ describe("centre de réglages", () => {
     ).toBeVisible();
     expect(screen.queryByLabelText("Contenu de config.toml")).toBeNull();
     expect(screen.getAllByText("Aperçu navigateur")).toHaveLength(2);
-    fireEvent.click(
-      screen.getByRole("button", { name: /config\.toml.*Modifier/ }),
-    );
+    const opener = screen.getByRole("button", {
+      name: /config\.toml.*Modifier/,
+    });
+    opener.focus();
+    fireEvent.click(opener);
     expect(screen.getByRole("dialog", { name: "config.toml" })).toBeVisible();
     const editor = await screen.findByLabelText("Contenu de config.toml");
-    expect((editor as HTMLTextAreaElement).value).toContain(
-      'model = "gpt-5.4"',
-    );
+    await waitFor(() => expect(editor).toHaveFocus());
+    const close = screen.getByRole("button", { name: "Fermer l’éditeur" });
+    const save = screen.getByRole("button", { name: "Enregistrer" });
     fireEvent.change(editor, {
       target: { value: 'model = "gpt-5.6"\n' },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+    save.focus();
+    fireEvent.keyDown(save, { key: "Tab" });
+    expect(close).toHaveFocus();
+    fireEvent.keyDown(close, { key: "Tab", shiftKey: true });
+    expect(save).toHaveFocus();
+    expect((editor as HTMLTextAreaElement).value).toContain(
+      'model = "gpt-5.6"',
+    );
+    fireEvent.click(save);
     expect(await screen.findByText("Configuration enregistrée.")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Fermer l’éditeur" }));
+    fireEvent.click(close);
     expect(screen.queryByRole("dialog", { name: "config.toml" })).toBeNull();
+    await waitFor(() => expect(opener).toHaveFocus());
   });
 
   it("modifie les réglages TOML avancés depuis Config", () => {

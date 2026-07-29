@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import { useI18n } from "../i18n/I18nProvider";
+import { useDialogFocus } from "../lib/useDialogFocus";
 import { RoundIconButton } from "./RoundIcon";
 
 type ConfigDocumentEditorProps = {
@@ -56,8 +57,12 @@ export function ConfigDocumentEditor({
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [confirmingClose, setConfirmingClose] = useState(false);
-  const trigger = useRef<HTMLButtonElement>(null);
   const editor = useRef<HTMLTextAreaElement>(null);
+  const { dialogRef, onDialogKeyDown } = useDialogFocus<HTMLElement>({
+    active: open,
+    initialFocusSelector: "[data-config-editor]",
+    onEscape: requestClose,
+  });
 
   function requestClose() {
     if (dirty) {
@@ -87,7 +92,6 @@ export function ConfigDocumentEditor({
         <span className="scope-badge">{t("settings.config.global")}</span>
       </header>
       <button
-        ref={trigger}
         className="settings-card config-document-card"
         aria-haspopup="dialog"
         aria-expanded={open}
@@ -113,15 +117,16 @@ export function ConfigDocumentEditor({
           }}
         >
           <section
+            ref={dialogRef}
             className="config-editor-dialog"
             role="dialog"
             aria-modal="true"
             aria-label={title}
             onKeyDown={(event) => {
-              if (event.key === "Escape") {
-                event.preventDefault();
+              onDialogKeyDown(event);
+              if (event.defaultPrevented) {
                 event.stopPropagation();
-                requestClose();
+                return;
               }
               if (
                 (event.ctrlKey || event.metaKey) &&
@@ -155,6 +160,7 @@ export function ConfigDocumentEditor({
               ) : (
                 <textarea
                   ref={editor}
+                  data-config-editor
                   aria-label={editorLabel}
                   value={draft}
                   disabled={saving}

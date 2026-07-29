@@ -10,18 +10,21 @@ const focusableSelector = [
 ].join(",");
 
 type DialogFocusOptions = {
+  active?: boolean;
   initialFocusSelector?: string;
   onEscape?: () => void;
 };
 
 /** Establishes modal focus, traps keyboard traversal, and restores the opener. */
 export function useDialogFocus<T extends HTMLElement = HTMLDivElement>({
+  active = true,
   initialFocusSelector,
   onEscape,
 }: DialogFocusOptions = {}) {
   const dialogRef = useRef<T>(null);
 
   useEffect(() => {
+    if (!active) return;
     const previousFocus =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
@@ -34,7 +37,7 @@ export function useDialogFocus<T extends HTMLElement = HTMLDivElement>({
     initialFocus?.focus();
 
     return () => previousFocus?.focus();
-  }, [initialFocusSelector]);
+  }, [active, initialFocusSelector]);
 
   function onDialogKeyDown(event: KeyboardEvent<T>) {
     if (event.key === "Escape" && onEscape) {

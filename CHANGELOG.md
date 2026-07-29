@@ -14,6 +14,8 @@ follows semantic versioning while the public interface is taking shape.
 
 - Disconnecting while the scheduled-task listener is still attaching no longer
   re-arms native delivery after the listener has already been removed.
+- The global Config and AGENTS.md editors now keep keyboard focus inside their
+  modal and return it to the settings card when closed.
 
 ## [0.3.8] - 2026-07-29
 
