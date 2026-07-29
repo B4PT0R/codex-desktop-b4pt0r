@@ -70,6 +70,8 @@ test("reconnects once when Playwright expires the app-owned MCP session", async 
   });
 
   assert.equal(result.content[0].text, "opened");
+  assert.equal(calls[0].message.params.clientInfo.version, "test");
+  assert.equal(calls[3].message.params.clientInfo.version, "test");
   assert.deepEqual(
     timeline,
     [

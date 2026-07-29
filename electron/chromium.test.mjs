@@ -2,9 +2,22 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   isOwnedSharedBrowserProcess,
+  SharedBrowserManager,
   sharedBrowserEndpoint,
   sharedBrowserPaths,
 } from "./chromium.mjs";
+
+test("requires release metadata for the app-owned MCP client", () => {
+  assert.throws(
+    () =>
+      new SharedBrowserManager({
+        clientVersion: "",
+        home: "/home/alice",
+        root: "/app",
+      }),
+    /client version is required/,
+  );
+});
 
 test("keeps the Playwright browser and profile in app-owned user data", () => {
   assert.deepEqual(sharedBrowserPaths("/home/alice"), {

@@ -2,11 +2,21 @@ import { describe, expect, it, vi } from "vitest";
 import { JsonRpcClient } from "../../src/lib/jsonRpc";
 import { translate } from "../../src/i18n/translate";
 import {
+  appServerClientInfo,
   isReusableInitialization,
   parseAppServerPayload,
 } from "../../src/lib/codex";
+import packageMetadata from "../../package.json";
 
 describe("client JSON-RPC", () => {
+  it("annonce à App Server la version du paquet construit", () => {
+    expect(appServerClientInfo()).toEqual({
+      name: "codex-desktop-linux",
+      title: "Codex Desktop Linux",
+      version: packageMetadata.version,
+    });
+  });
+
   it("résout une réponse et réserve un identifiant par requête", async () => {
     const send = vi.fn(async () => undefined);
     const client = new JsonRpcClient(send, undefined, "session-a");

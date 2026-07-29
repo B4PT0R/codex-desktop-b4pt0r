@@ -141,11 +141,7 @@ async function initializeConnection() {
   if (needsInitialization) {
     try {
       await rpc.request("initialize", {
-        clientInfo: {
-          name: "codex-desktop-linux",
-          title: "Codex Desktop Linux",
-          version: "0.3.0",
-        },
+        clientInfo: appServerClientInfo(),
         capabilities: { experimentalApi: true },
       });
     } catch (error) {
@@ -160,6 +156,14 @@ async function initializeConnection() {
   }
   initialized = true;
   notifyConnection(true);
+}
+
+export function appServerClientInfo(version = __APP_VERSION__) {
+  return {
+    name: "codex-desktop-linux",
+    title: "Codex Desktop Linux",
+    version,
+  };
 }
 
 export function isReusableInitialization(error: unknown) {

@@ -132,18 +132,23 @@ Codex versions, Linux environment, reproducible evidence and explicit
 redaction; protocol and UI contributions are routed back to the durable
 repository contracts instead of duplicating them.
 
+Release identity now has one source of truth. Vite injects the `package.json`
+version into App Server's `initialize.clientInfo`, while Electron passes
+`app.getVersion()` to the app-owned Playwright MCP client. Stale hard-coded
+client versions have been removed and both paths are covered by focused tests.
+
 ## Verified candidate baseline
 
 - Installed Codex: `codex-cli 0.145.0`.
 - Official source audit: `1def0a892`, stable and experimental v2 schemas.
-- Frontend/unit/contract: 543 tests across 103 files, including 47 installed
+- Frontend/unit/contract: 544 tests across 103 files, including 47 installed
   App Server contract cases.
-- Electron/Node: 68 tests, including the native hidden-window liveness
+- Electron/Node: 69 tests, including the native hidden-window liveness
   invariant.
 - Strict TypeScript: passing.
 - Production Vite build: passing.
 - Production dependency audit: zero vulnerabilities.
-- Main JS: 565.52 kB, 164.07 kB gzip.
+- Main JS: 565.54 kB, 164.07 kB gzip.
 - Lazy diff viewer: 89.50 kB, 32.89 kB gzip.
 - Lazy Markdown/KaTeX: 436.81 kB, 131.40 kB gzip.
 - Shared-browser visual pass: light and dark palettes, 1240×820 and 840×620;
@@ -159,10 +164,9 @@ repository contracts instead of duplicating them.
   the visual demo intentionally bypasses those events.
 - Shared-browser Markdown pass: complete light/dark fixture at 1240×820 and
   840×620; wide tables scroll locally without widening the message or app.
-- Reinstalled Debian package: `codex-desktop-linux 0.3.7 amd64`; installed ASAR
-  matches the package build (`f4e5f436…8bfef51`).
-- Built Debian release candidate: `codex-desktop-linux 0.3.8 amd64`
-  (`sha256:91eaea3a…cdc83cc`); packaged ASAR contains the native health monitor.
+- Installed Debian release: `codex-desktop-linux 0.3.8 amd64`
+  (`sha256:91eaea3a…cdc83cc`); its packaged ASAR contains the native health
+  monitor.
 
 ## Active invariants
 

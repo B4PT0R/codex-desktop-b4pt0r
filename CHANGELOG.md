@@ -5,6 +5,11 @@ follows semantic versioning while the public interface is taking shape.
 
 ## Unreleased
 
+### Changed
+
+- App Server and the app-owned Playwright MCP client now receive the actual
+  desktop package version instead of stale independently hard-coded versions.
+
 ### Fixed
 
 - Disconnecting while the scheduled-task listener is still attaching no longer

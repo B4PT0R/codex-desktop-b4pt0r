@@ -358,6 +358,7 @@ else {
   });
   app.whenReady().then(() => {
     sharedBrowser = new SharedBrowserManager({
+      clientVersion: app.getVersion(),
       home: app.getPath("home"),
       root,
     });

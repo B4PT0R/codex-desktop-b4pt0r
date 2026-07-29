@@ -29,6 +29,7 @@ export const sharedBrowserEndpoint = MCP_URL;
 export class SharedBrowserManager {
   #artifacts;
   #client;
+  #clientVersion;
   #environment;
   #home;
   #installLog = "";
@@ -39,12 +40,17 @@ export class SharedBrowserManager {
   #spawn;
 
   constructor({
+    clientVersion,
     home,
     root,
     environment = process.env,
     processExecutable = process.execPath,
     spawnProcess = spawn,
   }) {
+    if (typeof clientVersion !== "string" || !clientVersion.trim()) {
+      throw new Error("Shared browser client version is required");
+    }
+    this.#clientVersion = clientVersion;
     this.#home = home;
     this.#root = root;
     this.#environment = environment;
@@ -270,7 +276,7 @@ export class SharedBrowserManager {
 
   async #connectClient() {
     if (this.#client) return this.#client;
-    const client = new PlaywrightMcpClient(MCP_URL, "0.3.3");
+    const client = new PlaywrightMcpClient(MCP_URL, this.#clientVersion);
     await client.connect();
     this.#client = client;
     return client;
