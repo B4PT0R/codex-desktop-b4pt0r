@@ -95,4 +95,42 @@ describe("objectif persistant du thread", () => {
     mutation.resolve({ goal: { ...goal, status: "paused" } });
     await act(() => first);
   });
+
+  it("isole une mutation tardive du thread suivant", async () => {
+    const oldMutation = deferred<{ goal: typeof goal }>();
+    const nextGoal = {
+      ...goal,
+      threadId: "thread-2",
+      objective: "Continuer ailleurs",
+    };
+    requestMock
+      .mockResolvedValueOnce({ goal })
+      .mockReturnValueOnce(oldMutation.promise)
+      .mockResolvedValueOnce({ goal: nextGoal })
+      .mockResolvedValueOnce({
+        goal: { ...nextGoal, status: "paused" },
+      });
+    const { result, rerender } = renderHook(
+      ({ threadId }) => useThreadGoal(true, threadId),
+      { initialProps: { threadId: "thread-1" } },
+    );
+    await waitFor(() => expect(result.current.goal).toEqual(goal));
+
+    let first!: Promise<boolean>;
+    act(() => {
+      first = result.current.setPaused(true);
+    });
+    expect(result.current.saving).toBe(true);
+
+    rerender({ threadId: "thread-2" });
+    await waitFor(() => expect(result.current.goal).toEqual(nextGoal));
+    expect(result.current.saving).toBe(false);
+    await act(() => result.current.setPaused(true));
+    expect(result.current.goal).toEqual({ ...nextGoal, status: "paused" });
+
+    oldMutation.resolve({ goal: { ...goal, status: "paused" } });
+    await expect(first).resolves.toBe(false);
+    expect(result.current.goal).toEqual({ ...nextGoal, status: "paused" });
+    expect(result.current.saving).toBe(false);
+  });
 });

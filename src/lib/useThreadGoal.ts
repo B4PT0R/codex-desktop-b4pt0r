@@ -18,6 +18,7 @@ export function useThreadGoal(connected: boolean, threadId?: string) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
   const generation = useRef(0);
+  const mutationGeneration = useRef(0);
   const mutationInFlight = useRef(false);
   const activeThread = useRef(threadId);
   activeThread.current = threadId;
@@ -53,6 +54,12 @@ export function useThreadGoal(connected: boolean, threadId?: string) {
     };
   }, [refresh]);
 
+  useEffect(() => {
+    mutationGeneration.current += 1;
+    mutationInFlight.current = false;
+    setSaving(false);
+  }, [threadId]);
+
   useEffect(
     () =>
       subscribeAppServerMessages((message) => {
@@ -71,22 +78,33 @@ export function useThreadGoal(connected: boolean, threadId?: string) {
     async (method: string, params: unknown) => {
       if (!threadId || mutationInFlight.current) return false;
       const target = threadId;
+      const version = ++mutationGeneration.current;
       mutationInFlight.current = true;
       setSaving(true);
       setError(undefined);
       try {
         const response = await request<ThreadGoalSetResponse>(method, params);
-        if (activeThread.current !== target) return false;
+        if (
+          activeThread.current !== target ||
+          mutationGeneration.current !== version
+        )
+          return false;
         const nextGoal = normalizeGoal(response.goal);
         if (!nextGoal) throw new Error("Invalid thread goal returned by App Server");
         setGoal(nextGoal);
         return true;
       } catch (cause) {
-        if (activeThread.current === target) setError(errorMessage(cause));
+        if (
+          activeThread.current === target &&
+          mutationGeneration.current === version
+        )
+          setError(errorMessage(cause));
         return false;
       } finally {
-        mutationInFlight.current = false;
-        if (activeThread.current === target) setSaving(false);
+        if (mutationGeneration.current === version) {
+          mutationInFlight.current = false;
+          if (activeThread.current === target) setSaving(false);
+        }
       }
     },
     [threadId],
@@ -115,20 +133,31 @@ export function useThreadGoal(connected: boolean, threadId?: string) {
   const clear = useCallback(async () => {
     if (!threadId || mutationInFlight.current) return false;
     const target = threadId;
+    const version = ++mutationGeneration.current;
     mutationInFlight.current = true;
     setSaving(true);
     setError(undefined);
     try {
       await request("thread/goal/clear", threadGoalClearParams(threadId));
-      if (activeThread.current !== target) return false;
+      if (
+        activeThread.current !== target ||
+        mutationGeneration.current !== version
+      )
+        return false;
       setGoal(null);
       return true;
     } catch (cause) {
-      if (activeThread.current === target) setError(errorMessage(cause));
+      if (
+        activeThread.current === target &&
+        mutationGeneration.current === version
+      )
+        setError(errorMessage(cause));
       return false;
     } finally {
-      mutationInFlight.current = false;
-      if (activeThread.current === target) setSaving(false);
+      if (mutationGeneration.current === version) {
+        mutationInFlight.current = false;
+        if (activeThread.current === target) setSaving(false);
+      }
     }
   }, [threadId]);
 

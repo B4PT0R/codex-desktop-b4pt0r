@@ -23,6 +23,8 @@ follows semantic versioning while the public interface is taking shape.
   rerenders while an agent turn is streaming.
 - The native App Server boundary now rejects malformed, batched or multiline
   renderer commands before any bytes reach the NDJSON transport.
+- A delayed goal update from a previously selected thread can no longer block,
+  overwrite or unlock goal controls in the current thread.
 
 ## [0.3.8] - 2026-07-29
 
