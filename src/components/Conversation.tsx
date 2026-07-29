@@ -18,6 +18,7 @@ import { GeneratedImageWidget } from "./GeneratedImageWidget";
 import { MarkdownLinkProvider } from "./MarkdownLinkContext";
 import type { FileOpener } from "../lib/protocol";
 import { MemoryCitations } from "./MemoryCitations";
+import { ScheduledTaskMessage } from "./ScheduledTaskMessage";
 
 type ConversationProps = {
   activity: AgentActivity;
@@ -147,7 +148,9 @@ const ConversationMessage = memo(function ConversationMessage({
   if (!revealed) return null;
 
   return (
-    <article className={`message ${message.role}`}>
+    <article
+      className={`message ${message.role}${message.modality ? ` modality-${message.modality}` : ""}`}
+    >
       <div className="message-content">
         {message.attachments?.map((attachment) => (
           <span className="file-chip" key={attachment}>
@@ -170,6 +173,8 @@ const ConversationMessage = memo(function ConversationMessage({
           <RealtimeVoiceMessage message={message} />
         ) : message.modality === "realtimeText" ? (
           <RealtimeTextMessage message={message} />
+        ) : message.modality === "scheduledTask" ? (
+          <ScheduledTaskMessage message={message} />
         ) : (
           <Markdown streaming={message.streaming}>{message.content}</Markdown>
         )}

@@ -8,8 +8,7 @@ export const fr = {
   "webSearch.cached.detail":
     "Résultats préindexés, avec une exposition réduite au web direct.",
   "webSearch.indexed": "Indexée",
-  "webSearch.indexed.detail":
-    "Accès externe filtré par l’index de recherche.",
+  "webSearch.indexed.detail": "Accès externe filtré par l’index de recherche.",
   "webSearch.live": "En direct",
   "webSearch.live.detail": "Recherche les informations les plus récentes.",
   "webSearch.disabled": "Désactivée",
@@ -163,7 +162,8 @@ export const fr = {
   "imageWidget.close": "Fermer l’aperçu",
   "imageWidget.download": "Enregistrer l’image",
   "imageWidget.downloadError": "Impossible d’enregistrer cette image.",
-  "tool.artifact.systemError": "L’ouverture avec l’application système a échoué",
+  "tool.artifact.systemError":
+    "L’ouverture avec l’application système a échoué",
   "tool.generic": "Outil",
   "tool.patch.preparing": "Préparation des changements",
   "tool.patch.files": "{count} fichiers",
@@ -281,7 +281,8 @@ export const fr = {
     "Chromium indisponible : connexion ouverte dans le navigateur système.",
   "integrations.auth.success": "Serveur MCP connecté avec succès.",
   "integrations.auth.invalidUrl": "URL d’autorisation invalide",
-  "integrations.auth.startError": "Impossible de démarrer la connexion : {detail}",
+  "integrations.auth.startError":
+    "Impossible de démarrer la connexion : {detail}",
   "integrations.auth.completeError": "Échec de la connexion MCP : {detail}",
   "integrations.auth.unknownError": "erreur inconnue",
   "integrations.nativeOnly":
@@ -293,7 +294,8 @@ export const fr = {
   "integrations.hooks.empty": "Aucun hook actif pour ce projet.",
   "integrations.hooks.details": "Détails",
   "integrations.hooks.errorOne": "1 erreur empêche de charger les hooks.",
-  "integrations.hooks.errorMany": "{count} erreurs empêchent de charger les hooks.",
+  "integrations.hooks.errorMany":
+    "{count} erreurs empêchent de charger les hooks.",
   "integrations.hooks.handler.command": "Commande",
   "integrations.hooks.handler.prompt": "Prompt",
   "integrations.hooks.handler.agent": "Agent",
@@ -540,6 +542,7 @@ export const fr = {
   "settings.section.chat": "Chat",
   "settings.section.memory": "Mémoire",
   "settings.section.remoteControl": "Contrôle à distance",
+  "settings.section.automations": "Tâches planifiées",
   "settings.section.agent": "Agent",
   "settings.section.appearance": "Apparence",
   "settings.section.voice": "Voix",
@@ -552,6 +555,56 @@ export const fr = {
   "settings.section.advanced": "Avancé",
   "settings.general.description":
     "Préférences générales de l’application Linux.",
+  "automations.description":
+    "Exécute une consigne à une date précise ou selon une cadence récurrente. L’application doit rester active dans la zone de notification et la machine éveillée.",
+  "automations.create": "Créer une tâche",
+  "automations.loading": "Chargement des tâches planifiées…",
+  "automations.empty": "Aucune tâche planifiée",
+  "automations.error": "Impossible d’exécuter la tâche planifiée",
+  "automations.name": "Nom",
+  "automations.prompt": "Tâche à réaliser",
+  "automations.workspace": "Workspace",
+  "automations.frequency": "Fréquence",
+  "automations.once": "Une seule fois",
+  "automations.interval": "Intervalle",
+  "automations.daily": "Tous les jours",
+  "automations.weekdays": "Du lundi au vendredi",
+  "automations.weekly": "Chaque semaine",
+  "automations.intervalMinutes": "Minutes (minimum 5)",
+  "automations.date": "Date et heure",
+  "automations.time": "Heure",
+  "automations.weekday": "Jour",
+  "automations.target": "Conversation",
+  "automations.existingThread": "Thread existant",
+  "automations.newThread": "Nouveau thread persistant",
+  "automations.ephemeralThread": "Nouveau thread éphémère",
+  "automations.unattended": "Exécution sans surveillance",
+  "automations.unattendedShort": "Full access, sans approbation",
+  "automations.unattendedDetail":
+    "Accorde Full access et Never ask pendant le réveil. La tâche peut modifier le système et accéder au réseau sans confirmation.",
+  "automations.save": "Enregistrer",
+  "automations.saving": "Enregistrement…",
+  "automations.runNow": "Exécuter maintenant",
+  "automations.pause": "Mettre en pause",
+  "automations.resume": "Réactiver",
+  "automations.delete": "Supprimer",
+  "automations.confirmDelete": "Supprimer cette tâche planifiée ?",
+  "automations.interrupted":
+    "L’exécution précédente a été interrompue avec l’application",
+  "automations.paused": "En pause",
+  "automations.completed": "Exécution unique terminée",
+  "automations.next": "Prochaine exécution : {date}",
+  "automations.everyMinutes": "Toutes les {count} minutes",
+  "automations.onceAt": "Une fois, le {date}",
+  "automations.atTime": "À {time}",
+  "automations.day.0": "Dimanche",
+  "automations.day.1": "Lundi",
+  "automations.day.2": "Mardi",
+  "automations.day.3": "Mercredi",
+  "automations.day.4": "Jeudi",
+  "automations.day.5": "Vendredi",
+  "automations.day.6": "Samedi",
+  "conversation.scheduledTask": "Réveil planifié",
   "settings.browser.description":
     "Préférences globales de recherche web et du navigateur partagé.",
   "settings.browser.enabledTitle": "Activer le navigateur partagé",
@@ -731,8 +784,7 @@ export const fr = {
   "modelPicker.effort": "Raisonnement",
   "modelPicker.effortDetail": "Profondeur et temps accordés à la réflexion",
   "modelPicker.planMode": "Mode Plan",
-  "modelPicker.planModeDetail":
-    "Prépare et maintient un plan avant d’agir",
+  "modelPicker.planModeDetail": "Prépare et maintient un plan avant d’agir",
   "permissionPicker.title": "Niveau de permission",
   "permissionPicker.detail": "Accès accordé à Codex pour cette conversation",
   "permissionPicker.readOnlyDetail": "Lire les fichiers sans les modifier",
@@ -784,8 +836,7 @@ export const fr = {
   "settings.config.guided.title": "Configuration guidée",
   "settings.config.guided.description":
     "Réglez les options avancées dont le nom, l’unité ou les valeurs attendues sont difficiles à deviner.",
-  "settings.config.guided.error":
-    "Impossible de modifier la configuration :",
+  "settings.config.guided.error": "Impossible de modifier la configuration :",
   "settings.config.defaults.title":
     "Valeurs par défaut des nouvelles conversations",
   "settings.config.defaults.description":
@@ -863,8 +914,7 @@ export const fr = {
   "settings.globalAgents.editor": "Contenu du AGENTS.md global",
   "settings.globalAgents.placeholder":
     "Ajoutez ici vos préférences et règles personnelles durables…",
-  "settings.globalAgents.error":
-    "Impossible d’enregistrer le AGENTS.md global",
+  "settings.globalAgents.error": "Impossible d’enregistrer le AGENTS.md global",
   "settings.globalAgents.saved": "AGENTS.md global enregistré.",
   "settings.globalAgents.restart":
     "Codex charge ces instructions au démarrage d’une session. Rechargez les conversations déjà ouvertes pour appliquer les changements.",
@@ -877,12 +927,12 @@ export const fr = {
     "Redémarre le backend Codex puis restaure la conversation courante.",
   "settings.appServerRestart.action": "Redémarrer",
   "settings.appServerRestart.running": "Redémarrage…",
-  "settings.appServerRestart.error":
-    "Le redémarrage d’App Server a échoué.",
+  "settings.appServerRestart.error": "Le redémarrage d’App Server a échoué.",
   "settings.appearance.description":
     "Une interface calme et lisible adaptée au bureau Linux.",
   "settings.appearance.theme": "Thème",
-  "settings.appearance.themeDetail": "Suit le système, ou force le mode sombre ou clair.",
+  "settings.appearance.themeDetail":
+    "Suit le système, ou force le mode sombre ou clair.",
   "settings.appearance.system": "Système",
   "settings.appearance.dark": "Sombre",
   "settings.appearance.light": "Clair",
@@ -1010,7 +1060,8 @@ export const fr = {
   "goal.open": "Ouvrir l’objectif autonome",
   "goal.create": "Définir un objectif autonome",
   "goal.title": "Objectif autonome",
-  "goal.description": "Conserve le cap et la progression entre plusieurs tours.",
+  "goal.description":
+    "Conserve le cap et la progression entre plusieurs tours.",
   "goal.objective": "Objectif",
   "goal.objectivePlaceholder": "Décrivez précisément le résultat à atteindre…",
   "goal.tokenBudget": "Budget de tokens (facultatif)",
@@ -1048,6 +1099,14 @@ export const fr = {
   "agents.discardConfirm": "Abandonner les modifications non enregistrées ?",
   "agents.discard": "Abandonner",
   "currentTime.error": "Impossible de transmettre l’heure locale à App Server",
+  "schedulerTool.error": "Impossible de piloter les tâches planifiées",
+  "schedulerTool.delete.title": "Supprimer cette tâche planifiée ?",
+  "schedulerTool.delete.description":
+    "Codex demande la suppression définitive de « {name} ».",
+  "schedulerTool.delete.warning":
+    "Cette action supprime la programmation et ne peut pas être annulée.",
+  "schedulerTool.delete.confirm": "Supprimer",
+  "schedulerTool.delete.deleting": "Suppression…",
   "transport.sendError": "Impossible d’envoyer la requête {method}",
   "transport.appServerError": "Erreur App Server",
   "transport.connectError": "Impossible de se connecter à App Server",
@@ -1058,6 +1117,7 @@ export const fr = {
   "transport.exit": "App Server s’est arrêté {detail}.",
   "transport.exitNoCode": "sans code de sortie",
   "transport.exitCode": "avec le code {code}",
+  "thread.replayedTurnFailed": "Ce tour s’est terminé avec une erreur",
 } as const;
 
 export type MessageKey = keyof typeof fr;

@@ -96,11 +96,22 @@ export type AppServerThreadItem = {
   text?: string;
   content?: AppServerInput[];
   summary?: string[];
+  startedAtMs?: number;
+  completedAtMs?: number;
 };
 
 export type AppServerTurn = {
   id?: string;
   items?: AppServerThreadItem[];
+  status?: "completed" | "inProgress" | "failed" | "interrupted";
+  error?: {
+    message?: string;
+    codexErrorInfo?: string | null;
+    additionalDetails?: string | null;
+  } | null;
+  startedAt?: number | null;
+  completedAt?: number | null;
+  durationMs?: number | null;
 };
 
 export type AppServerThread = {
@@ -111,6 +122,7 @@ export type AppServerThread = {
   cwd?: string;
   status?: { type?: string; activeFlags?: string[] };
   turns?: AppServerTurn[];
+  section?: { id: string; name: string } | null;
 };
 
 export type TurnsPage = {
@@ -282,10 +294,7 @@ export type GetAccountTokenUsageResponse = {
 };
 
 export type RemoteControlConnectionStatus =
-  | "disabled"
-  | "connecting"
-  | "connected"
-  | "errored";
+  "disabled" | "connecting" | "connected" | "errored";
 
 export type RemoteControlStatus = {
   status: RemoteControlConnectionStatus;

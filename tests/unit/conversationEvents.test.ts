@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyConversationEvent } from "../../src/lib/conversationEvents";
 import type { ChatMessage } from "../../src/types";
+import { scheduledTaskPrompt } from "../../src/lib/scheduledTaskMessage";
 
 const assistantMessage: ChatMessage = {
   id: "answer",
@@ -9,6 +10,35 @@ const assistantMessage: ChatMessage = {
 };
 
 describe("événements de conversation", () => {
+  it("identifie un réveil planifié sans dupliquer les messages utilisateur", () => {
+    const event = {
+      method: "item/started",
+      params: {
+        item: {
+          id: "scheduled-1",
+          type: "userMessage",
+          content: [
+            {
+              type: "text",
+              text: scheduledTaskPrompt("Veille", "Inspecte le dépôt"),
+            },
+          ],
+        },
+      },
+    };
+    const started = applyConversationEvent([], event);
+    expect(started).toEqual([
+      {
+        id: "scheduled-1",
+        role: "user",
+        modality: "scheduledTask",
+        title: "Veille",
+        content: "Inspecte le dépôt",
+      },
+    ]);
+    expect(applyConversationEvent(started, event)).toEqual(started);
+  });
+
   it("conserve les citations mémoire structurées d’un message finalisé", () => {
     const updated = applyConversationEvent([], {
       method: "item/completed",

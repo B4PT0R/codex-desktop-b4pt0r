@@ -6,20 +6,19 @@ import type {
   RealtimeVoice,
 } from "./appServerTypes";
 import type { ExternalAgentMigrationItem } from "./appServerTypes";
+import { schedulerDynamicTools } from "./schedulerTools";
+import { scheduledTaskPrompt } from "./scheduledTaskMessage";
+export { scheduledTaskPrompt } from "./scheduledTaskMessage";
 
 export type Permission = string;
 export type ApprovalPolicy = "untrusted" | "on-request" | "never";
 export type WebSearchMode = "disabled" | "cached" | "indexed" | "live";
 export type ReasoningSummaryMode = "auto" | "concise" | "detailed" | "none";
-export type FileOpener = "vscode" | "vscode-insiders" | "windsurf" | "cursor" | "none";
+export type FileOpener =
+  "vscode" | "vscode-insiders" | "windsurf" | "cursor" | "none";
 export type ModelVerbosity = "low" | "medium" | "high";
 export type PlanReasoningEffort =
-  | "none"
-  | "minimal"
-  | "low"
-  | "medium"
-  | "high"
-  | "xhigh";
+  "none" | "minimal" | "low" | "medium" | "high" | "xhigh";
 export type TurnContextItem =
   | { type: "localImage"; path: string }
   | { type: "mention"; name: string; path: string }
@@ -38,6 +37,7 @@ export function threadStartParams(
     ...(permission ? { permissions: permission } : {}),
     ...(approvalPolicy ? { approvalPolicy } : {}),
     ...(personality ? { personality } : {}),
+    dynamicTools: schedulerDynamicTools(),
   };
 }
 export function realtimeThreadForkParams(
@@ -64,17 +64,52 @@ export function realtimeEphemeralThreadStartParams(
   personality?: Personality,
   approvalPolicy?: ApprovalPolicy,
 ) {
+  const { dynamicTools: _dynamicTools, ...params } = threadStartParams(
+    cwd,
+    model,
+    permission,
+    personality,
+    approvalPolicy,
+  );
   return {
-    ...threadStartParams(
-      cwd,
-      model,
-      permission,
-      personality,
-      approvalPolicy,
-    ),
+    ...params,
     ephemeral: true,
   };
 }
+export function automationThreadStartParams(cwd?: string, ephemeral = false) {
+  return {
+    ...(cwd ? { cwd } : {}),
+    ...(ephemeral ? { ephemeral: true } : {}),
+  };
+}
+export function automationThreadResumeParams(threadId: string) {
+  return { threadId, excludeTurns: true };
+}
+export function automationTurnStartParams(
+  threadId: string,
+  name: string,
+  prompt: string,
+  unattendedAccess = false,
+) {
+  return {
+    threadId,
+    input: [{ type: "text", text: scheduledTaskPrompt(name, prompt) }],
+    ...(unattendedAccess
+      ? {
+          permissions: ":danger-full-access",
+          approvalPolicy: "never",
+        }
+      : {}),
+  };
+}
+export function automationThreadSecurityRestoreParams(
+  threadId: string,
+  permission: Permission,
+  approvalPolicy: ApprovalPolicy,
+) {
+  return { threadId, permissions: permission, approvalPolicy };
+}
+
 export function configReadParams(cwd?: string) {
   return { cwd: cwd ?? null, includeLayers: false };
 }
@@ -176,9 +211,7 @@ export function turnStartParams(
     input,
     model,
     effort: behavior?.effort,
-    ...(behavior?.personality
-      ? { personality: behavior.personality }
-      : {}),
+    ...(behavior?.personality ? { personality: behavior.personality } : {}),
     collaborationMode,
   };
 }

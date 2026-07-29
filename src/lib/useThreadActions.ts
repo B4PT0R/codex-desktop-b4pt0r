@@ -11,6 +11,7 @@ import {
 } from "./protocol";
 import type { ThreadSummary } from "../types";
 import { useI18n } from "../i18n/I18nProvider";
+import type { ThreadTurnCoordinator } from "./threadTurnCoordinator";
 
 export type ArchivedThread = {
   thread: ThreadSummary;
@@ -26,6 +27,7 @@ type Options = {
   onActiveThreadRemoved: () => void;
   onError: (title: string, error: unknown) => void;
   onForked: (threadId: string) => Promise<unknown>;
+  turnCoordinator: ThreadTurnCoordinator;
 };
 
 export function useThreadActions({
@@ -37,6 +39,7 @@ export function useThreadActions({
   onActiveThreadRemoved,
   onError,
   onForked,
+  turnCoordinator,
 }: Options) {
   const { t } = useI18n();
   const [archivedThreads, setArchivedThreads] = useState<ArchivedThread[]>([]);
@@ -124,9 +127,13 @@ export function useThreadActions({
     if (!activeThreadId || busy) return false;
     setBusy(true);
     try {
-      await request(
-        "thread/compact/start",
-        threadCompactParams(activeThreadId),
+      await turnCoordinator.runWhenIdle(
+        activeThreadId,
+        () =>
+          request(
+            "thread/compact/start",
+            threadCompactParams(activeThreadId),
+          ),
       );
       return true;
     } catch (error) {

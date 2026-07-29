@@ -152,9 +152,10 @@ Le centre utilise une navigation interne durable :
 5. **Permissions par défaut** — profils, approbations et exigences administrées ;
 6. **Configuration** — champs TOML globaux guidés, éditeur brut et instructions personnelles ;
 7. **Intégrations** — MCP, apps/connecteurs, plugins, skills et hooks ;
-8. **Compte et utilisation** — connexion, quotas, consommation et messages ;
-9. **Avancé** — fonctions expérimentales, import d’autres agents, contrôle distant,
-   diagnostics et feedback.
+8. **Tâches planifiées** — réveils locaux, cible de conversation, pause et exécution immédiate ;
+9. **Compte et utilisation** — connexion, quotas, consommation et messages ;
+10. **Avancé** — fonctions expérimentales, import d’autres agents, contrôle distant,
+    diagnostics et feedback.
 
 État actuel : les inventaires stables `skills/list`, `mcpServerStatus/list` et
 `hooks/list` sont branchés, ainsi que l’activation des skills et la connexion OAuth
@@ -197,6 +198,46 @@ globales. Le mode Plan est une section du sélecteur de modèle ; permissions et
 approbations sont regroupées dans Security ; la personnalité reste un défaut
 global dans Agent.
 
+Les tâches planifiées sont une capacité native du client, pas une API App
+Server inventée. Electron persiste et réclame les échéances récurrentes ou
+datées une seule fois, puis le contrôleur renderer démarre ou reprend un thread
+et lance un tour ordinaire. La cible peut être le thread existant choisi, un
+nouveau thread persistant visible dans la navigation, ou un nouveau thread
+éphémère adapté aux tâches dont seul l’effet compte. Une échéance unique se
+désactive atomiquement dès sa réclamation pour ne jamais être rejouée après un
+redémarrage.
+
+Un coordinateur commun réserve les opérations qui produisent un tour. Un réveil
+ciblant un thread actif attend sa prochaine frontière inactive ; plusieurs
+réveils du même thread restent ordonnés, tandis que des threads différents
+travaillent en parallèle. Le prompt planifié porte une enveloppe stable
+`Codex Desktop Scheduler` : le modèle comprend qu’il ne s’agit pas d’un
+steering utilisateur et le fil la restitue, y compris au replay, dans une carte
+de réveil identifiable.
+
+Par défaut, la tâche conserve les permissions et approbations ordinaires. Le
+formulaire propose séparément une exécution sans surveillance, volontairement
+alarmante : Full access et Never ask ne sont alors appliqués qu’au réveil, puis
+les réglages effectifs capturés avant le tour sont restaurés avant de libérer la
+file du thread. Cet opt-in dangereux ne doit jamais devenir le défaut.
+
+Les nouveaux threads textuels déclarent en outre un namespace App Server
+`scheduler` via `dynamicTools`. L’agent peut ainsi utiliser le même contrôleur
+borné pour lister, créer, modifier, activer, désactiver ou lancer une tâche sans
+plugin ni accès arbitraire aux réglages natifs. La suppression suspend la
+réponse `item/tool/call` jusqu’à confirmation dans un dialogue destructif. App
+Server restaure les définitions avec le rollout au `thread/resume`; la version
+0.145 ne permet pas de les greffer rétroactivement aux anciens threads. Les
+forks Realtime et les threads d’exécution planifiée n’enregistrent pas ces
+outils, afin de garder leurs responsabilités fermées.
+
+Les événements de ce travail restent routés par `threadId` : ils mettent à jour
+la navigation sans polluer la conversation consultée. La fermeture de la fenêtre
+conserve le renderer et App Server en tâche de fond ; quitter réellement
+l’application interrompt les exécutions, qui sont marquées en échec au
+redémarrage. Cette frontière permet d’adopter ultérieurement le daemon Unix
+expérimental sans changer le modèle produit.
+
 Les icônes circulaires statiques et interactives utilisent la primitive commune
 `RoundIcon`/`RoundIconButton`. Ses variantes `primary`, `secondary` et
 `tertiary` définissent le niveau d’accent, de fond et de bordure ; les features
@@ -211,20 +252,20 @@ les identifiants Bedrock externes restent administrés hors de l’application.
 
 ## Carte des capacités
 
-| Domaine App Server                | Surface principale                      | Traitement UI                           |
-| --------------------------------- | --------------------------------------- | --------------------------------------- |
-| Threads et tours                  | Navigation, en-tête, conversation       | Produit principal                       |
-| Modèles et collaboration          | Barre de session, réglages              | Contrôles fréquents + détail            |
-| Permissions et approbations       | Barre de session, réglages, dialogue    | Choix explicites et sûrs                |
-| Outils, commandes et fichiers     | Conversation, panneau contextuel        | Résumé inline, détail persistant        |
-| Revue                             | Carte de changement, panneau contextuel | Flux guidé, pas un réglage              |
-| MCP, apps, plugins, skills, hooks | Réglages Intégrations, mentions         | Catalogue et état de connexion          |
-| Compte, quotas, usage, messages   | Réglages Compte, indicateurs discrets   | Global, jamais mélangé au contexte      |
-| Realtime                          | Compositeur et conversation             | Action directe, parole streamée dans le message vocal principal |
-| Configuration                     | Réglages globaux par domaine, éditeur TOML borné | Guidage courant + échappatoire avancée |
-| Expérimental et import            | Réglages Avancé                         | Isolé et clairement signalé             |
-| FS, process, exec, ressources MCP | Infrastructure/panneaux                 | Pas de console RPC générique            |
-| Warnings, diagnostics, feedback   | Conversation ou Avancé selon portée     | Actionnable, dédupliqué                 |
+| Domaine App Server                | Surface principale                               | Traitement UI                                                   |
+| --------------------------------- | ------------------------------------------------ | --------------------------------------------------------------- |
+| Threads et tours                  | Navigation, en-tête, conversation                | Produit principal                                               |
+| Modèles et collaboration          | Barre de session, réglages                       | Contrôles fréquents + détail                                    |
+| Permissions et approbations       | Barre de session, réglages, dialogue             | Choix explicites et sûrs                                        |
+| Outils, commandes et fichiers     | Conversation, panneau contextuel                 | Résumé inline, détail persistant                                |
+| Revue                             | Carte de changement, panneau contextuel          | Flux guidé, pas un réglage                                      |
+| MCP, apps, plugins, skills, hooks | Réglages Intégrations, mentions                  | Catalogue et état de connexion                                  |
+| Compte, quotas, usage, messages   | Réglages Compte, indicateurs discrets            | Global, jamais mélangé au contexte                              |
+| Realtime                          | Compositeur et conversation                      | Action directe, parole streamée dans le message vocal principal |
+| Configuration                     | Réglages globaux par domaine, éditeur TOML borné | Guidage courant + échappatoire avancée                          |
+| Expérimental et import            | Réglages Avancé                                  | Isolé et clairement signalé                                     |
+| FS, process, exec, ressources MCP | Infrastructure/panneaux                          | Pas de console RPC générique                                    |
+| Warnings, diagnostics, feedback   | Conversation ou Avancé selon portée              | Actionnable, dédupliqué                                         |
 
 Les workflows navigateur ne chargent pas une seconde WebView générale dans le
 shell Electron. L’application embarque des versions épinglées de

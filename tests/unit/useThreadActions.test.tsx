@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { request } from "../../src/lib/codex";
 import { useThreadActions } from "../../src/lib/useThreadActions";
 import type { ThreadSummary } from "../../src/types";
+import { ThreadTurnCoordinator } from "../../src/lib/threadTurnCoordinator";
 
 vi.mock("../../src/lib/codex", () => ({ request: vi.fn() }));
 const localeState = vi.hoisted(() => ({ current: "fr" as "fr" | "en" }));
@@ -40,6 +41,7 @@ function useHarness() {
     threads,
     setBusy,
     setThreads,
+    turnCoordinator: new ThreadTurnCoordinator(),
     ...callbacks,
   });
   return { actions, busy, ...callbacks, threads };

@@ -71,6 +71,14 @@ const apps = {
   loading: false,
   refresh: vi.fn(),
 };
+const automations = {
+  automations: [],
+  loading: false,
+  deleteAutomation: vi.fn().mockResolvedValue(true),
+  refresh: vi.fn().mockResolvedValue(undefined),
+  runNow: vi.fn().mockResolvedValue(true),
+  save: vi.fn().mockResolvedValue(undefined),
+};
 const rateLimits = {
   consumeReset: vi.fn(),
   consuming: false,
@@ -206,6 +214,7 @@ function renderSettings(
     account,
     appServerRestart,
     apps,
+    automations,
     capabilities,
     externalAgentImport,
     integrations,
@@ -233,13 +242,132 @@ function renderSettings(
 }
 
 describe("centre de réglages", () => {
+  it("confirme la suppression d’une tâche planifiée", async () => {
+    const deleteAutomation = vi.fn().mockResolvedValue(true);
+    renderSettings({
+      automations: {
+        ...automations,
+        deleteAutomation,
+        automations: [
+          {
+            id: "automation-1",
+            name: "Revue quotidienne",
+            prompt: "Inspecte les changements récents",
+            cwd: "/project",
+            enabled: true,
+            schedule: {
+              type: "weekly" as const,
+              time: "09:00",
+              days: [0, 1, 2, 3, 4, 5, 6],
+            },
+            target: { type: "newThread" as const },
+            nextRunAt: Date.now() + 60_000,
+          },
+        ],
+      },
+      section: "automations",
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Supprimer" }));
+    expect(deleteAutomation).not.toHaveBeenCalled();
+    expect(
+      screen.getByText("Supprimer cette tâche planifiée ?"),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Supprimer" }));
+
+    await waitFor(() =>
+      expect(deleteAutomation).toHaveBeenCalledWith("automation-1"),
+    );
+  });
+
+  it("crée une tâche planifiée dans une nouvelle conversation", async () => {
+    const save = vi.fn().mockResolvedValue({ id: "automation-1" });
+    renderSettings({
+      automations: { ...automations, save },
+      currentThreadId: "thread-1",
+      currentWorkspace: "/project",
+      section: "automations",
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Créer une tâche" }));
+    fireEvent.change(screen.getByLabelText("Nom"), {
+      target: { value: "Revue quotidienne" },
+    });
+    fireEvent.change(screen.getByLabelText("Tâche à réaliser"), {
+      target: { value: "Inspecte les changements récents" },
+    });
+    fireEvent.change(screen.getByLabelText("Fréquence"), {
+      target: { value: "daily" },
+    });
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: /Exécution sans surveillance/,
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+
+    await waitFor(() =>
+      expect(save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: "Revue quotidienne",
+          prompt: "Inspecte les changements récents",
+          cwd: "/project",
+          unattendedAccess: true,
+          schedule: {
+            type: "weekly",
+            time: "09:00",
+            days: [0, 1, 2, 3, 4, 5, 6],
+          },
+          target: { type: "newThread" },
+        }),
+      ),
+    );
+  });
+
+  it("programme un réveil unique dans un thread éphémère", async () => {
+    const save = vi.fn().mockResolvedValue({ id: "automation-1" });
+    renderSettings({
+      automations: { ...automations, save },
+      currentWorkspace: "/project",
+      section: "automations",
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Créer une tâche" }));
+    fireEvent.change(screen.getByLabelText("Nom"), {
+      target: { value: "Contrôle ponctuel" },
+    });
+    fireEvent.change(screen.getByLabelText("Tâche à réaliser"), {
+      target: { value: "Vérifie le déploiement" },
+    });
+    fireEvent.change(screen.getByLabelText("Fréquence"), {
+      target: { value: "once" },
+    });
+    fireEvent.change(screen.getByLabelText("Date et heure"), {
+      target: { value: "2099-08-04T14:30" },
+    });
+    fireEvent.change(screen.getByLabelText("Conversation"), {
+      target: { value: "ephemeralThread" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+
+    await waitFor(() =>
+      expect(save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          schedule: {
+            type: "once",
+            at: new Date("2099-08-04T14:30").getTime(),
+          },
+          target: { type: "ephemeralThread" },
+        }),
+      ),
+    );
+  });
+
   it("propose le redémarrage global d’App Server dans Général", () => {
     const restart = vi.fn().mockResolvedValue(true);
     renderSettings({ appServerRestart: { ...appServerRestart, restart } });
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Redémarrer" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Redémarrer" }));
     expect(restart).toHaveBeenCalledOnce();
     expect(screen.queryByText("Navigateur Chromium partagé")).toBeNull();
   });
@@ -310,14 +438,12 @@ describe("centre de réglages", () => {
       },
     });
 
-    fireEvent.change(
-      screen.getByRole("combobox", { name: "Modèle" }),
-      { target: { value: "gpt-b" } },
-    );
-    fireEvent.change(
-      screen.getByRole("combobox", { name: "Personnalité" }),
-      { target: { value: "friendly" } },
-    );
+    fireEvent.change(screen.getByRole("combobox", { name: "Modèle" }), {
+      target: { value: "gpt-b" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Personnalité" }), {
+      target: { value: "friendly" },
+    });
     fireEvent.change(
       screen.getByRole("combobox", { name: "Verbosité des réponses" }),
       { target: { value: "high" } },
@@ -343,7 +469,9 @@ describe("centre de réglages", () => {
       memory: { ...memory, setEnabled, reset },
     });
 
-    fireEvent.click(screen.getByRole("checkbox", { name: "Activer la mémoire" }));
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Activer la mémoire" }),
+    );
     expect(setEnabled).toHaveBeenCalledWith(true);
     fireEvent.click(screen.getByRole("button", { name: "Réinitialiser" }));
     expect(reset).not.toHaveBeenCalled();
@@ -372,9 +500,7 @@ describe("centre de réglages", () => {
     );
     expect(revokeClient).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Révoquer" }));
-    await waitFor(() =>
-      expect(revokeClient).toHaveBeenCalledWith("client-1"),
-    );
+    await waitFor(() => expect(revokeClient).toHaveBeenCalledWith("client-1"));
   });
 
   it("charge la vue secondaire avant de restituer la section demandée", async () => {
@@ -497,11 +623,12 @@ describe("centre de réglages", () => {
     });
     await waitFor(() => expect(enabled).toBeEnabled());
     fireEvent.click(enabled);
-    expect(invoke).not.toHaveBeenCalledWith("install_chromium", expect.anything());
+    expect(invoke).not.toHaveBeenCalledWith(
+      "install_chromium",
+      expect.anything(),
+    );
     expect(
-      await screen.findByText(
-        /Télécharger le Chromium Playwright privé/,
-      ),
+      await screen.findByText(/Télécharger le Chromium Playwright privé/),
     ).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Confirmer" }));
     await waitFor(() =>
@@ -510,9 +637,7 @@ describe("centre de réglages", () => {
       }),
     );
     await waitFor(() => expect(integrations.reloadMcp).toHaveBeenCalled());
-    expect(
-      await screen.findByText("Prêt · partagé avec Codex"),
-    ).toBeVisible();
+    expect(await screen.findByText("Prêt · partagé avec Codex")).toBeVisible();
     expect(enabled).toBeChecked();
   });
 
@@ -549,9 +674,7 @@ describe("centre de réglages", () => {
     fireEvent.click(
       screen.getByRole("button", { name: /config\.toml.*Modifier/ }),
     );
-    expect(
-      screen.getByRole("dialog", { name: "config.toml" }),
-    ).toBeVisible();
+    expect(screen.getByRole("dialog", { name: "config.toml" })).toBeVisible();
     const editor = await screen.findByLabelText("Contenu de config.toml");
     expect((editor as HTMLTextAreaElement).value).toContain(
       'model = "gpt-5.4"',
@@ -561,9 +684,7 @@ describe("centre de réglages", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
     expect(await screen.findByText("Configuration enregistrée.")).toBeVisible();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Fermer l’éditeur" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Fermer l’éditeur" }));
     expect(screen.queryByRole("dialog", { name: "config.toml" })).toBeNull();
   });
 
@@ -573,10 +694,9 @@ describe("centre de réglages", () => {
     fireEvent.change(screen.getByLabelText("Seuil de compactage"), {
       target: { value: "64000" },
     });
-    fireEvent.change(
-      screen.getByLabelText("Noms de fichiers de repli"),
-      { target: { value: "CLAUDE.md, CONTRIBUTING.md" } },
-    );
+    fireEvent.change(screen.getByLabelText("Noms de fichiers de repli"), {
+      target: { value: "CLAUDE.md, CONTRIBUTING.md" },
+    });
     fireEvent.click(
       screen.getByRole("button", {
         name: "Enregistrer les fichiers de repli",
@@ -610,9 +730,7 @@ describe("centre de réglages", () => {
     fireEvent.click(
       screen.getByRole("button", { name: /AGENTS\.md.*Modifier/ }),
     );
-    const editor = await screen.findByLabelText(
-      "Contenu du AGENTS.md global",
-    );
+    const editor = await screen.findByLabelText("Contenu du AGENTS.md global");
     expect((editor as HTMLTextAreaElement).value).toContain(
       "Personal Codex defaults",
     );
@@ -631,7 +749,7 @@ describe("centre de réglages", () => {
       screen.getByRole("button", { name: /config\.toml.*Modifier/ }),
     );
     const editor = await screen.findByLabelText("Contenu de config.toml");
-    fireEvent.change(editor, { target: { value: "model = \"changed\"\n" } });
+    fireEvent.change(editor, { target: { value: 'model = "changed"\n' } });
     fireEvent.keyDown(editor, { key: "Escape" });
 
     expect(props.onClose).not.toHaveBeenCalled();

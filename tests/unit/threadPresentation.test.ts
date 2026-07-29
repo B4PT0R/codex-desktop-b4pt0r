@@ -3,6 +3,7 @@ import {
   messagesFromThread,
   messagesFromTurnsNewestFirst,
 } from "../../src/lib/threadPresentation";
+import { scheduledTaskPrompt } from "../../src/lib/scheduledTaskMessage";
 
 describe("reprise de conversation", () => {
   it("restaure le texte, les pièces jointes, les outils et le raisonnement", () => {
@@ -92,6 +93,72 @@ describe("reprise de conversation", () => {
 
   it("retourne une conversation vide pour un thread sans tours", () => {
     expect(messagesFromThread({ id: "thread-1" })).toEqual([]);
+  });
+
+  it("restaure un réveil planifié comme une modalité distincte", () => {
+    expect(
+      messagesFromThread({
+        id: "thread-1",
+        turns: [
+          {
+            items: [
+              {
+                id: "scheduled-1",
+                type: "userMessage",
+                content: [
+                  {
+                    type: "text",
+                    text: scheduledTaskPrompt(
+                      "Veille",
+                      "Inspecte les nouveautés",
+                    ),
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      }),
+    ).toEqual([
+      {
+        id: "scheduled-1",
+        role: "user",
+        modality: "scheduledTask",
+        title: "Veille",
+        content: "Inspecte les nouveautés",
+      },
+    ]);
+  });
+
+  it("restaure une erreur terminale et la durée calculée d’une action", () => {
+    const messages = messagesFromThread({
+      id: "thread-1",
+      turns: [
+        {
+          id: "turn-1",
+          status: "failed",
+          error: { message: "Le modèle est temporairement indisponible." },
+          items: [
+            {
+              id: "command-1",
+              type: "commandExecution",
+              command: "git status",
+              status: "completed",
+              exitCode: 0,
+              startedAtMs: 1_000,
+              completedAtMs: 2_750,
+            },
+          ],
+        },
+      ],
+    });
+    expect(messages[0].tools?.[0]).toMatchObject({ durationMs: 1_750 });
+    expect(messages[1]).toMatchObject({
+      id: "turn-error-turn-1",
+      modality: "applicationError",
+      title: "Ce tour s’est terminé avec une erreur",
+      content: "Le modèle est temporairement indisponible.",
+    });
   });
 
   it("restaure l’identité vocale depuis l’identifiant persistant", () => {

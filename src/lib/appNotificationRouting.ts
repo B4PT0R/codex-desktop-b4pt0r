@@ -44,6 +44,7 @@ export type AppNotificationRouting = {
   startsTurn: boolean;
   telemetry?: TelemetryNotification;
   thread?: ThreadNotification;
+  threadId?: string;
   turnId?: string;
 };
 
@@ -61,17 +62,18 @@ export function routeAppNotification(
   const item = appServerRecord(params?.item);
   const activity = activityFromEvent(method, appServerString(item?.type));
   const terminalError = method === "error" && params?.willRetry !== true;
+  const threadId = appServerString(params?.threadId);
   const result: AppNotificationRouting = {
     clearsActivity: terminalError,
     completesTurn: method === "turn/completed" || terminalError,
     conversationEvent: !method.startsWith("thread/realtime/"),
     startsTurn: method === "turn/started",
     ...(activity !== undefined ? { activity } : {}),
+    ...(threadId ? { threadId } : {}),
   };
 
   if (method === "turn/started") {
     result.turnId = appServerString(appServerRecord(params?.turn)?.id);
-    const threadId = appServerString(params?.threadId);
     if (threadId) result.telemetry = { type: "clearReroute", threadId };
     return result;
   }
@@ -116,10 +118,7 @@ export function routeAppNotification(
     if (threadId) {
       result.thread = {
         type: method.slice("thread/".length) as
-          | "archived"
-          | "unarchived"
-          | "closed"
-          | "deleted",
+          "archived" | "unarchived" | "closed" | "deleted",
         threadId,
       };
     }

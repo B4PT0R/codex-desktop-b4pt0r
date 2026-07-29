@@ -1,218 +1,147 @@
 # Codex Desktop Linux — Handoff
 
-Last updated: 2026-07-28
+Last updated: 2026-07-29
 
-Read `AGENTS.md` before contributing. This file records only the current
-baseline, active objective and next useful work. Durable UI decisions belong in
-`UI_ARCHITECTURE.md`; protocol coverage belongs in
-`APP_SERVER_COVERAGE.md`; completed release detail belongs in
-`CHANGELOG.md` and Git history.
+Read `AGENTS.md` before contributing. Durable protocol and UI decisions belong
+in `APP_SERVER_COVERAGE.md` and `UI_ARCHITECTURE.md`; release history belongs in
+`CHANGELOG.md` and Git.
 
-## Product state
+## Current baseline
 
 Codex Desktop Linux is a functional independent Electron client for the
-official `codex app-server`. It is designed as the Linux Codex application its
-contributors want to use every day:
-
-- expose the useful depth of App Server through a polished desktop workflow;
-- provide substantially better ergonomics than the CLI for long interactive
-  sessions;
-- keep ordinary work, session control and global Codex configuration inside one
-  coherent application;
-- remain familiar to Codex users without copying the official desktop app or
-  implying that this is an OpenAI release.
-
-The daily workflow is covered end to end: conversations and replay, streaming,
-reasoning, plans, tools, approvals, diffs, files, images, Markdown/LaTeX,
-permissions, models, quotas, goals, dictation, Realtime voice, settings,
-`config.toml`, `AGENTS.md`, Apps, skills, MCP, hooks, memory, account and a
+official `codex app-server`. The daily workflow covers conversations and
+replay, streaming, reasoning, plans, tools, approvals, diffs, files, images,
+Markdown/LaTeX, permissions, models, quotas, goals, dictation, Realtime voice,
+global configuration, skills, Apps, MCP, hooks, memory, remote control and the
 shared Playwright Chromium session.
 
-Further App Server coverage must solve a concrete user workflow. Endpoint count
-is not a product goal.
+The repository is public at
+`https://github.com/B4PT0R/codex-desktop-b4pt0r`. The current public release is
+v0.3.4.
 
-## Active objective
+## Current candidate
 
-Maintain **v0.3.3** as the current public release and enforce a strict settings
-scope boundary. Settings sections own only persistent global preferences.
-Model, effort and Plan mode share the model popover; permissions and approvals
-share the Security popover in the main session bar. Config keeps guided uncommon TOML fields and
-the bounded raw editor instead of becoming the owner of every global setting.
+The client now owns scheduled tasks without inventing an App Server automation
+API:
 
-The completed release contains:
+- Electron persists at most 100 validated schedules atomically in
+  `~/.codex/codex-desktop-linux.json`;
+- interval, daily, weekday, weekly and one-time local schedules can target the
+  selected existing thread, a new persistent thread or a new ephemeral thread;
+- due runs start or resume an ordinary thread and submit an ordinary Codex
+  turn, preserving normal permissions and approval behavior;
+- tasks can be edited, paused, run immediately and deleted with confirmation
+  from a dedicated global Settings section; a one-time wake disables itself
+  atomically when claimed;
+- the scheduler claims work before dispatch and records running, success,
+  failure, interruption, last thread and next occurrence;
+- scheduling, App Server execution and transport ownership remain separate so
+  the experimental Unix daemon can replace process ownership later without
+  changing the product surface.
+- new ordinary threads expose the native scheduler to the agent through App
+  Server's experimental `dynamicTools` contract: list, create, update,
+  enable/disable and run-now are bounded operations, while deletion waits for
+  explicit desktop confirmation. App Server restores the tools on resume.
+- turn-producing work is serialized per target thread. A wake-up aimed at a
+  busy thread waits for the active user, review or compaction turn to finish;
+  different threads continue in parallel, and security restoration completes
+  before the next queued wake-up starts.
+- scheduled prompts carry a persistent Codex Desktop Scheduler envelope and
+  replay as a distinct wake-up card instead of looking like user steering.
+- each task may explicitly opt into unattended execution. This uses Full access
+  with Never ask for the scheduled turn, visibly warns in Settings, and
+  restores the thread's previous permission and approval settings before its
+  queue is released.
 
-- present each workspace as a compact collapsible group with its thread count;
-- automatically open the workspace containing the active thread;
-- keep a single workspace expanded during ordinary navigation;
-- expose every matching group while global thread search is active;
-- preserve archive, delete, running/error states and keyboard accessibility;
-- validate the hierarchy at 1240×820 and 840×620 in the shared browser.
+Background notifications are now routed by `threadId`. A scheduled run updates
+its thread and sidebar without injecting activity into the conversation
+currently being read. Global notifications and interactive approval requests
+retain their existing behavior.
 
-The same candidate also simplifies context-compaction activity: the turn-level
-spinner remains the sole active progress indicator, while the conversation
-retains only a quiet, non-expandable completion marker.
+Compatibility remains anchored to installed `codex-cli 0.145.0`. The boundary
+also accepts additive thread section metadata, item timestamps and terminal
+turn errors already visible in official Codex `main` at `1def0a892`, but emits
+no unpublished section or automation request.
 
-The empty conversation now establishes a real flex-height owner for its welcome
-composition. Its visible logo-and-copy group remains exactly centered in the
-usable chat viewport at both reference sizes instead of relying on a
-content-sized percentage height. The large light-theme mark uses a softer dark
-anthracite shared consistently with the navigation mark. That warm anthracite
-is now the light theme's common reader ink for primary prose, headings, inputs
-and active controls; secondary and semantic colors remain distinct.
-
-The browser preview passes at both reference sizes, the full verification
-matrix is green, and the signed-off Debian package is installed locally and
-published on GitHub. The repository is public at
-`https://github.com/B4PT0R/codex-desktop-b4pt0r`; no active blocker is known.
-
-The public README uses a deterministic English-only `demo=readme` fixture.
-`screenshots/` intentionally retains only the current light and dark showcase;
-older visual checkpoints remain recoverable from Git history.
-
-The settings-scope and guided Config lot has focused component and controller
-regression coverage and was visually reviewed at 1240×820 and 840×620.
-Agent and Permission defaults write the corresponding global TOML values;
-the global personality default remains editable independently of the current
-model capability and takes effect on subsequent compatible sessions;
-Config retains
-only uncommon guided fields, the raw editor and global instructions. Web
-combines global search behavior with the shared browser lifecycle, while
-Chat owns reasoning summaries and future global feedback-detail preferences.
-The ambiguous Options section has been removed. The narrow layout preserves
-readable labels, usable controls and horizontal containment.
-Light-theme cards, select menus, text inputs and the raw editor use the light
-palette explicitly; technical descriptions are consistently set at 10px/15px
-while the dark theme retains its existing surfaces. The browser console reported
-no warnings or errors during this review.
-
-Dictation insertions are acknowledged by the composer as soon as they are
-applied. A consumed transcript cannot be replayed if the composer remounts
-while the resulting message creates or updates a thread.
-
-The native shared-browser client keeps the app-owned MCP event channel open
-through a persistent Node HTTP stream for the application lifetime. It also
-recognizes an expired session, performs one
-fresh handshake and retries the requested navigation once. Ordinary links
-therefore remain independent from an active agent MCP session without closing
-Chromium after navigation or hiding unrelated Playwright failures.
-The event stream is attached immediately after initialization, before the
-initialized notification, because Playwright MCP gates backend creation on that
-transport. The client answers Playwright's JSON-RPC heartbeat requests from the
-stream; otherwise the server closes the backend and browser after its
-five-second ping timeout. Native
-shutdown signals the server child synchronously before awaiting graceful
-cleanup; startup may remove a stale PID only after verifying the current user,
-Playwright CLI, fixed port and app-owned browser profile.
+The new Settings UI reuses the established cards, round controls, compact
+typography, focus treatment and light/dark palettes. It has no horizontal
+overflow at 1240×820 or 840×620.
 
 ## Verified candidate baseline
 
 - Installed Codex: `codex-cli 0.145.0`.
-- App Server schema audit: stable and experimental v2 schemas, official source
-  checkout `0dfa778dae6a`.
-- Client protocol inventory: 63 product request methods, 55 interpreted
-  notification methods and 6 handled server requests.
-- Frontend/unit/contract: 499 tests across 95 files, including 45 installed
+- Official source audit: `1def0a892`, stable and experimental v2 schemas.
+- Frontend/unit/contract: 535 tests across 103 files, including 47 installed
   App Server contract cases.
-- Electron/Node: 55 tests.
+- Electron/Node: 61 tests.
 - Strict TypeScript: passing.
 - Production Vite build: passing.
 - Production dependency audit: zero vulnerabilities.
-- Main JS: 527.30 kB, 153.07 kB gzip.
+- Main JS: 553.87 kB, 160.91 kB gzip.
 - Lazy diff viewer: 89.50 kB, 32.89 kB gzip.
 - Lazy Markdown/KaTeX: 698.90 kB, 208.87 kB gzip.
-
-Current release artifact:
-
-- package: `dist/codex-desktop-linux_0.3.3_amd64.deb`;
-- size: 108,455,612 bytes;
-- package SHA-256:
-  `287bd56f953349758730b0396818ee97c9d27aef1f9dcdd3814606e383c07156`;
-- packaged ASAR SHA-256:
-  `95e2fca734fce64b21c54f8aa1b8b1d386a92e66ec36e171dac3c516f7b613a0`.
-
-`dpkg-query` reports `codex-desktop-linux 0.3.3 amd64 install ok installed`;
-the installed ASAR matches the packaged hash and the shared-browser skill
-resources are present outside the ASAR.
+- Shared-browser visual pass: light and dark palettes, 1240×820 and 840×620;
+  no browser warning or error.
+- Reinstalled Debian package: `codex-desktop-linux 0.3.4 amd64`; installed ASAR
+  matches the package build (`263069eb…638a75f`).
 
 ## Active invariants
 
 - Electron is the only production shell. Do not restore Tauri.
-- The installed App Server and its generated schema are the protocol source of
-  truth. Normalize compatibility at the boundary; do not guess from model names
-  or scatter version checks through components.
-- Persist client preferences atomically in
-  `~/.codex/codex-desktop-linux.json`. Keep official Codex configuration in
-  `config.toml`.
-- Effective server state initializes session widgets. UI fallbacks must never
-  overwrite hydrated permissions, approvals, model, effort, personality,
-  collaboration mode or workspace.
-- Browser automation owns a separate open-source Chromium instance. Do not
-  embed a general-purpose browser WebView or assume a system Chromium exists.
-- The app-owned Playwright and MCP versions must remain matched. Activation may
-  download their Chromium; it must never invoke a distribution package manager.
-- `use-shared-browser` is scoped to this client’s App Server process. Do not
-  copy it into user or workspace skill directories.
-- Only explicit structured `skill` inputs receive a visual skill marker.
-  App Server exposes no reliable lifecycle event for implicit invocation, so do
-  not infer one from reasoning, command text or filesystem reads.
+- The installed App Server schema is the wire source of truth. Future-source
+  observations may inform additive parsing, never unsupported requests.
+- Persist client preferences atomically in the versioned desktop settings
+  file. Keep official Codex configuration in `config.toml`.
+- Server-hydrated thread state wins over UI defaults.
 - Realtime uses ephemeral voice threads and injects finalized utterances into
-  the persistent parent in order. Keep late-event filtering and centralized
-  teardown inside `useRealtimeConversation`.
-- Dictation remains a separate Chromium WebM/Opus capture and Codex OAuth
-  transcription flow; it must not depend on Python or distribution-specific
-  audio packages.
-- Filesystem and configuration actions use narrow native IPC boundaries with
-  validation, size limits, stale-write protection and atomic replacement.
-- Tool, reasoning and plan activity stays progressively disclosed. Do not let
-  technical UI dominate the conversation.
-- Preserve French/English locale parity and usable light/dark hover, focus,
-  disabled and error states.
+  the persistent parent in order.
+- Shared browser automation owns an app-managed open-source Chromium and
+  packaged Playwright/MCP pair; never assume a system Chromium.
+- Filesystem, configuration and scheduler IPC remain narrow, validated and
+  secret-free.
+- Preserve French/English key parity and accessible light/dark hover, focus,
+  disabled, destructive and error states.
 
 ## Known limitations
 
-- Linux/Ubuntu is the only packaged environment validated regularly.
-- The `.deb` still needs a clean second-machine or VM install/upgrade/uninstall
-  pass.
-- `App.tsx` coordinates substantial application state. Extract only cohesive
-  owners during bounded changes; do not perform a speculative rewrite.
-- App Server notification payload parsing now belongs to the pure,
-  exhaustively typed `appNotificationRouting` boundary. Keep page orchestration
-  focused on applying its product-level thread, telemetry and lifecycle effects.
-- `useThreadRuntimeState` owns model behavior and the provenance of permission
-  and approval values. Display fallbacks remain implicit; only server-hydrated
-  or user-selected access settings become explicit thread-start overrides.
-- Remote-control client inventories are generation-guarded independently from
-  status reads. A late device-list response cannot repopulate a disabled,
-  disconnected or superseded environment.
-- App Server currently preserves injected Realtime context but does not project
-  standalone injected voice items back into ordinary visual replay.
-- Effective personality is accepted by start/update requests but is not always
-  returned by current start/resume responses.
-- The development dependency tree inherits advisories through
-  `electron-builder`; production dependencies have no reported vulnerability.
-- The lazy Markdown/KaTeX chunk is large but is not a release blocker.
+- Scheduled tasks require the app to remain running in the tray and the machine
+  to be awake. The current scheduler does not wake a suspended or powered-off
+  machine and does not replay a burst of missed intervals.
+- Per-thread serialization covers all turn starts owned by this desktop
+  process. A different App Server client can still race in the narrow interval
+  between an idle observation and `turn/start`, because 0.145 exposes no
+  conditional start-if-idle request.
+- Quitting or restarting the app interrupts an active scheduled run; it is
+  marked failed on reconnect. Closing only the window preserves the hidden
+  renderer and App Server.
+- There is no public App Server automation CRUD/run API in 0.145 or the audited
+  official checkout. The Unix daemon/socket remains experimental and is not yet
+  the production transport.
+- App Server 0.145 only accepts client-owned dynamic tools at `thread/start`.
+  Threads created before v0.3.4 remain usable but need a new fork or
+  conversation before the agent can control scheduled tasks from chat.
+- Linux/Ubuntu is the only packaged environment validated regularly; the `.deb`
+  still needs a clean second-machine or VM lifecycle pass.
+- App Server preserves injected Realtime context but does not project
+  standalone injected voice items into ordinary visual replay.
+- The lazy Markdown/KaTeX chunk remains large but is not a release blocker.
 
-## Post-v0.3.3 priorities
+## Next bounded work
 
-Choose one bounded lot at a time:
-
-1. Continue stale-response review when extending mutation-heavy settings
-   controllers; current thread history, catalogues, integrations, account,
-   memory and remote-control hydration paths are generation-guarded.
-2. Add `CONTRIBUTING.md`, focused issue/PR templates and a concise public App
+1. Exercise scheduled execution end to end in packaged Electron, including an
+   approval-gated task, hidden-window delivery and App Server restart.
+2. Decide whether background task completion merits an OS notification and a
+   small activity inbox before adding either surface.
+3. Add `CONTRIBUTING.md`, focused issue/PR templates and a concise public App
    Server compatibility guide.
-3. Add user-controlled diagnostic export with redaction and preview.
-4. Define an explicit, non-silent update and rollback strategy.
-5. Validate Debian-family packaging on additional machines before considering
-   Fedora packaging.
+4. Add user-controlled diagnostic export with redaction and preview.
+5. Define an explicit, non-silent update and rollback strategy.
 
 Defer generic RPC/filesystem consoles, unstable plugin-marketplace production
 support and Git/worktree management without a stable App Server product
 contract.
 
 ## Verification
-
-Use Node 24:
 
 ```bash
 npm run check
@@ -222,23 +151,9 @@ npm run build
 npm audit --omit=dev
 ```
 
-For protocol changes:
-
-```bash
-npm run test:contract
-codex app-server generate-json-schema --out /tmp/codex-schema --experimental
-```
-
-For packaging or native behavior:
-
-```bash
-npm run electron:dev
-npm run electron:deb
-```
-
-For meaningful UI work, validate the browser preview through the shared
-Playwright MCP session at 1240×820 and 840×620. Inspect accessibility and
-browser logs, wait at least 0.5 seconds after transitions, and replace affected
-curated screenshots under `screenshots/`.
+For protocol changes, also run `npm run test:contract` against the installed
+binary. For packaging or native lifecycle work, use `npm run electron:dev` and
+`npm run electron:deb`. Meaningful UI work must be checked through the shared
+Playwright session at 1240×820 and 840×620.
 
 No active blocker is known.

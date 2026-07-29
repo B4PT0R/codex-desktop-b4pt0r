@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   Bot,
   Brain,
+  CalendarClock,
   Boxes,
   FlaskConical,
   FileCog,
@@ -64,6 +65,8 @@ import { MemorySettings } from "./MemorySettings";
 import type { RemoteControlController } from "../lib/useRemoteControl";
 import { RemoteControlSettings } from "./RemoteControlSettings";
 import { RoundIconButton } from "./RoundIcon";
+import type { AutomationsController } from "../lib/automations";
+import { AutomationSettings } from "./AutomationSettings";
 
 export type SettingsViewProps = {
   account: AccountController;
@@ -80,6 +83,9 @@ export type SettingsViewProps = {
   realtime: RealtimeSettingsController;
   memory: MemorySettingsController;
   remoteControl: RemoteControlController;
+  automations: AutomationsController;
+  currentThreadId?: string;
+  currentWorkspace?: string;
   webSearch: CodexGlobalSettingsController;
   appServerRestart: {
     available: boolean;
@@ -98,6 +104,7 @@ const icons: Record<SettingsSectionId, ComponentType> = {
   chat: MessageSquare,
   memory: Brain,
   remoteControl: RadioTower,
+  automations: CalendarClock,
   agent: Bot,
   appearance: Palette,
   voice: Mic,
@@ -226,6 +233,14 @@ function SettingsSection(props: SettingsViewProps) {
     return <MemorySettings controller={props.memory} />;
   if (props.section === "remoteControl")
     return <RemoteControlSettings controller={props.remoteControl} />;
+  if (props.section === "automations")
+    return (
+      <AutomationSettings
+        controller={props.automations}
+        currentThreadId={props.currentThreadId}
+        currentWorkspace={props.currentWorkspace}
+      />
+    );
   if (props.section === "agent") return <AgentSettings {...props} />;
   if (props.section === "appearance") return <AppearanceSettings />;
   if (props.section === "voice")
@@ -491,9 +506,12 @@ function BrowserSettings({
               <>
                 <strong>{t("settings.chromium.ready")}</strong>
                 <small>
-                  {[chromium.status.version, chromium.status.mcpVersion
-                    ? `MCP ${chromium.status.mcpVersion}`
-                    : undefined]
+                  {[
+                    chromium.status.version,
+                    chromium.status.mcpVersion
+                      ? `MCP ${chromium.status.mcpVersion}`
+                      : undefined,
+                  ]
                     .filter(Boolean)
                     .join(" · ")}
                 </small>
@@ -705,10 +723,7 @@ function AgentSettings(props: SettingsViewProps) {
           value={defaults.personality ?? ""}
           disabled={props.webSearch.loading}
           onChange={(value) =>
-            void props.webSearch.setAdvanced(
-              "personality",
-              value || null,
-            )
+            void props.webSearch.setAdvanced("personality", value || null)
           }
         >
           <option value="">{t("settings.global.automatic")}</option>
@@ -801,7 +816,8 @@ function PermissionSettings(props: SettingsViewProps) {
         >
           {!knownPermission && (
             <option value={defaults.defaultPermissions}>
-              {t("settings.config.value.custom")} — {defaults.defaultPermissions}
+              {t("settings.config.value.custom")} —{" "}
+              {defaults.defaultPermissions}
             </option>
           )}
           {props.capabilities.permissionProfiles.data.map((profile) => (
@@ -901,6 +917,7 @@ const plannedSections: Record<
     | "chat"
     | "memory"
     | "remoteControl"
+    | "automations"
     | "agent"
     | "appearance"
     | "voice"

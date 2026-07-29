@@ -49,7 +49,11 @@ export type ChatMessage = {
   revealAfter?: number;
   role: "user" | "assistant";
   /** Distinguishes assistant and client-owned presentation surfaces. */
-  modality?: "realtimeVoice" | "realtimeText" | "applicationError";
+  modality?:
+    | "realtimeVoice"
+    | "realtimeText"
+    | "applicationError"
+    | "scheduledTask";
   /** Client-owned heading for an application error card. */
   title?: string;
   content: string;
@@ -102,4 +106,5 @@ export type ThreadSummary = {
   cwd?: string;
   status?: ThreadStatus;
   searchSnippet?: string;
+  section?: { id: string; name: string };
 };

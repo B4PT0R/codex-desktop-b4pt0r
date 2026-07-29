@@ -63,6 +63,11 @@ family while remaining free to refine its own interaction design.
   `AGENTS.md` through guarded, conflict-aware editors.
 - Reload the current thread or restart App Server when a configuration change
   cannot apply live.
+- Create recurring or one-time scheduled tasks for an existing, new, or
+  ephemeral thread, and let Codex manage them from chat through a bounded
+  App Server tool with confirmation for deletion. Busy target threads queue
+  wake-ups instead of confusing them with steering; an explicit unattended
+  option can temporarily use Full access with no approval prompts.
 
 ### Voice and dictation
 

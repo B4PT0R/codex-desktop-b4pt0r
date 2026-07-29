@@ -15,10 +15,7 @@ import {
 import { AppServerTransport } from "./app-server.mjs";
 import { readSettings, settingsPath, updateSettings } from "./settings.mjs";
 import { transcribeDictation } from "./transcription.mjs";
-import {
-  SharedBrowserManager,
-  stopManagedChromium,
-} from "./chromium.mjs";
+import { SharedBrowserManager, stopManagedChromium } from "./chromium.mjs";
 import { openFileReference } from "./file-reference.mjs";
 import { createMainWindow } from "./window.mjs";
 import {
@@ -45,11 +42,13 @@ import {
   setLaunchAtLogin,
 } from "./autostart.mjs";
 import { bundledSkillsRoot } from "./bundled-skills.mjs";
+import { AutomationScheduler } from "./automation-scheduler.mjs";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const isDevelopment = !app.isPackaged;
 let mainWindow;
 let tray;
+let automationScheduler;
 
 function send(event, payload) {
   if (!mainWindow?.isDestroyed()) {
@@ -100,10 +99,7 @@ function registerIpc() {
   });
   ipcMain.handle("desktop:update_desktop_settings", (event, args) => {
     trusted(event);
-    return updateSettings(
-      settingsPath(app.getPath("home")),
-      args?.patch ?? {},
-    );
+    return updateSettings(settingsPath(app.getPath("home")), args?.patch ?? {});
   });
   ipcMain.handle("desktop:read_codex_config", (event) => {
     trusted(event);
@@ -131,9 +127,7 @@ function registerIpc() {
   });
   ipcMain.handle("desktop:read_global_agents", (event) => {
     trusted(event);
-    return readGlobalAgents(
-      globalAgentsPath(app.getPath("home"), process.env),
-    );
+    return readGlobalAgents(globalAgentsPath(app.getPath("home"), process.env));
   });
   ipcMain.handle("desktop:write_global_agents", (event, args) => {
     trusted(event);
@@ -221,6 +215,30 @@ function registerIpc() {
     trusted(event);
     return sharedBrowser.cancelInstall();
   });
+  ipcMain.handle("desktop:automation_list", (event) => {
+    trusted(event);
+    return automationScheduler.list();
+  });
+  ipcMain.handle("desktop:automation_upsert", (event, args) => {
+    trusted(event);
+    return automationScheduler.upsert(args?.automation);
+  });
+  ipcMain.handle("desktop:automation_delete", (event, args) => {
+    trusted(event);
+    return automationScheduler.remove(args?.id);
+  });
+  ipcMain.handle("desktop:automation_run_now", (event, args) => {
+    trusted(event);
+    return automationScheduler.runNow(args?.id);
+  });
+  ipcMain.handle("desktop:automation_complete", (event, args) => {
+    trusted(event);
+    return automationScheduler.complete(args);
+  });
+  ipcMain.handle("desktop:automation_ready", (event) => {
+    trusted(event);
+    return automationScheduler.ready();
+  });
   ipcMain.handle("desktop:open-dialog", async (event, options) => {
     trusted(event);
     const properties = [
@@ -229,7 +247,7 @@ function registerIpc() {
     ];
     const result = await dialog.showOpenDialog(mainWindow, { properties });
     if (result.canceled) return null;
-    return options?.multiple ? result.filePaths : result.filePaths[0] ?? null;
+    return options?.multiple ? result.filePaths : (result.filePaths[0] ?? null);
   });
   ipcMain.handle("desktop:open-path", async (event, target) => {
     trusted(event);
@@ -251,8 +269,8 @@ function installPermissionPolicy() {
   const isTrusted = (webContents) =>
     Boolean(
       mainWindow &&
-        !mainWindow.isDestroyed() &&
-        webContents === mainWindow.webContents,
+      !mainWindow.isDestroyed() &&
+      webContents === mainWindow.webContents,
     );
   session.defaultSession.setPermissionCheckHandler(
     (webContents, permission, _origin, details) =>
@@ -335,6 +353,11 @@ else {
       home: app.getPath("home"),
       root,
     });
+    automationScheduler = new AutomationScheduler({
+      file: settingsPath(app.getPath("home")),
+      send,
+    });
+    automationScheduler.start();
     installPermissionPolicy();
     registerIpc();
     createWindow();
@@ -349,6 +372,7 @@ else {
 
 app.on("before-quit", () => {
   app.isQuitting = true;
+  automationScheduler?.stop();
   appServer.stop();
   void stopManagedChromium(sharedBrowser);
 });

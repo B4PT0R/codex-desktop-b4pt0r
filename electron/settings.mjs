@@ -88,4 +88,12 @@ function validatePatch(patch) {
   ) {
     throw new Error("Unsupported shared browser setting");
   }
+  if (
+    patch.automations !== undefined &&
+    (!Array.isArray(patch.automations) ||
+      patch.automations.length > 100 ||
+      JSON.stringify(patch.automations).length > 2_000_000)
+  ) {
+    throw new Error("Unsupported scheduled tasks setting");
+  }
 }

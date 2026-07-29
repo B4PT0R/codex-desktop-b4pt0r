@@ -13,6 +13,7 @@ import {
 import type { AgentSignal, ChatMessage, ToolCall } from "../types";
 import { defaultTranslate, type Translate } from "../i18n/translate";
 import { closedStepRevealDelay } from "./toolActivityTiming";
+import { scheduledTaskFromPrompt } from "./scheduledTaskMessage";
 
 type EventParams = Record<string, unknown>;
 type AppServerItem = Record<string, unknown> & { id?: string; type?: string };
@@ -82,10 +83,24 @@ export function applyConversationEvent(
     case "item/started":
       return startItem(messages, item, t);
     case "item/completed":
-      return completeItem(messages, item, t);
+      return completeItem(messages, withCompletionTiming(item, params), t);
     default:
       return messages;
   }
+}
+
+function withCompletionTiming(
+  item: AppServerItem | undefined,
+  params: EventParams | undefined,
+) {
+  if (!item || typeof item.durationMs === "number") return item;
+  const startedAtMs = numberValue(params?.startedAtMs);
+  const completedAtMs = numberValue(params?.completedAtMs);
+  if (startedAtMs === undefined || completedAtMs === undefined) return item;
+  return {
+    ...item,
+    durationMs: Math.max(0, completedAtMs - startedAtMs),
+  };
 }
 
 function appendAgentMessageDelta(
@@ -96,8 +111,7 @@ function appendAgentMessageDelta(
   const index = itemId
     ? findLastIndex(
         messages,
-        (message) =>
-          message.id === itemId || message.sourceItemId === itemId,
+        (message) => message.id === itemId || message.sourceItemId === itemId,
       )
     : -1;
   if (index < 0) {
@@ -125,8 +139,7 @@ function appendAgentMessageDelta(
           itemId ?? message.id,
         )}`,
         sourceItemId: itemId ?? message.sourceItemId ?? message.id,
-        revealAfter:
-          Date.now() + closedStepRevealDelay(message.tools.length),
+        revealAfter: Date.now() + closedStepRevealDelay(message.tools.length),
         role: "assistant",
         content: delta,
         streaming: true,
@@ -180,6 +193,23 @@ function startItem(
   item: AppServerItem | undefined,
   t: Translate,
 ): ChatMessage[] {
+  const scheduledTask = scheduledTaskFromItem(item);
+  if (
+    scheduledTask &&
+    item?.id &&
+    !messages.some((message) => message.id === item.id)
+  ) {
+    return [
+      ...messages,
+      {
+        id: item.id,
+        role: "user",
+        modality: "scheduledTask",
+        title: scheduledTask.name,
+        content: scheduledTask.prompt,
+      },
+    ];
+  }
   const tool = toolFromItem(item, t);
   const signal = signalFromItem(item, t);
   let next = messages;
@@ -227,6 +257,21 @@ function startItem(
   return signal ? appendSignal(next, signal) : next;
 }
 
+function scheduledTaskFromItem(item: AppServerItem | undefined) {
+  if (item?.type !== "userMessage" || !Array.isArray(item.content)) {
+    return undefined;
+  }
+  const text = item.content
+    .flatMap((entry) => {
+      const value = record(entry);
+      return value?.type === "text" && typeof value.text === "string"
+        ? [value.text]
+        : [];
+    })
+    .join("\n");
+  return scheduledTaskFromPrompt(text);
+}
+
 function completeItem(
   messages: ChatMessage[],
   item: AppServerItem | undefined,
@@ -234,15 +279,13 @@ function completeItem(
 ): ChatMessage[] {
   if (!item?.id) return messages;
   const completedTool = toolFromItem(item, t);
-  const index = findLastIndex(
-    messages,
-    (message) =>
-      Boolean(
-        message.id === item.id ||
-          message.sourceItemId === item.id ||
-          message.tools?.some((tool) => tool.id === item.id) ||
-          message.signals?.some((signal) => signal.id === item.id),
-      ),
+  const index = findLastIndex(messages, (message) =>
+    Boolean(
+      message.id === item.id ||
+      message.sourceItemId === item.id ||
+      message.tools?.some((tool) => tool.id === item.id) ||
+      message.signals?.some((signal) => signal.id === item.id),
+    ),
   );
   let next = messages;
   if (index >= 0) {
@@ -330,8 +373,7 @@ function boundedLine(value: unknown) {
 
 function countMessageSegments(messages: ChatMessage[], itemId: string) {
   return messages.filter(
-    (message) =>
-      message.id === itemId || message.sourceItemId === itemId,
+    (message) => message.id === itemId || message.sourceItemId === itemId,
   ).length;
 }
 
@@ -416,10 +458,9 @@ function appendSignal(
   const previousSignal = signals.at(-1);
   const mergesPreviousReasoning =
     signal.kind === "reasoning" && previousSignal?.kind === "reasoning";
-  const nextSignal =
-    mergesPreviousReasoning
-      ? mergeReasoningSignals(previousSignal, signal)
-      : signal;
+  const nextSignal = mergesPreviousReasoning
+    ? mergeReasoningSignals(previousSignal, signal)
+    : signal;
   return replaceAt(messages, index, {
     ...message,
     signals: [
@@ -467,4 +508,10 @@ function appServerItem(value: unknown): AppServerItem | undefined {
 
 function stringValue(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
+}
+
+function numberValue(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : undefined;
 }

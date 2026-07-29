@@ -5,6 +5,10 @@ import { join } from "node:path";
 import Ajv from "ajv";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
+  automationThreadResumeParams,
+  automationThreadSecurityRestoreParams,
+  automationThreadStartParams,
+  automationTurnStartParams,
   accountReadParams,
   appsListParams,
   backgroundTerminalsListParams,
@@ -69,6 +73,7 @@ import {
 } from "../../src/lib/protocol";
 import { userInputResponse } from "../../src/lib/userInput";
 import { mcpElicitationResponse } from "../../src/lib/mcpElicitation";
+import { dynamicToolSuccess } from "../../src/lib/schedulerTools";
 let directory = "";
 const validators = new Map<string, ReturnType<Ajv["compile"]>>();
 beforeAll(() => {
@@ -101,16 +106,52 @@ function schema(name: string): Record<string, unknown> {
   const schemaPath = existsSync(v2Path)
     ? v2Path
     : join(directory, `${name}.json`);
-  return JSON.parse(readFileSync(schemaPath, "utf8")) as Record<string, unknown>;
+  return JSON.parse(readFileSync(schemaPath, "utf8")) as Record<
+    string,
+    unknown
+  >;
 }
 describe("contrat Codex installé", () => {
+  it("accepte les threads et tours utilisés par les tâches planifiées", () => {
+    validates("ThreadStartParams", automationThreadStartParams("/tmp/project"));
+    validates(
+      "ThreadStartParams",
+      automationThreadStartParams("/tmp/project", true),
+    );
+    validates(
+      "ThreadResumeParams",
+      automationThreadResumeParams("01900000-0000-7000-8000-000000000000"),
+    );
+    validates(
+      "TurnStartParams",
+      automationTurnStartParams(
+        "01900000-0000-7000-8000-000000000000",
+        "Repository review",
+        "Inspect the repository",
+      ),
+    );
+    validates(
+      "TurnStartParams",
+      automationTurnStartParams(
+        "01900000-0000-7000-8000-000000000000",
+        "Unattended review",
+        "Inspect the repository",
+        true,
+      ),
+    );
+    validates(
+      "ThreadSettingsUpdateParams",
+      automationThreadSecurityRestoreParams(
+        "01900000-0000-7000-8000-000000000000",
+        ":workspace",
+        "on-request",
+      ),
+    );
+  });
   it("accepte la lecture de la configuration Codex effective", () =>
     validates("ConfigReadParams", configReadParams("/tmp/project")));
   it("accepte l'écriture du mode global de recherche web", () =>
-    validates(
-      "ConfigValueWriteParams",
-      webSearchConfigWriteParams("cached"),
-    ));
+    validates("ConfigValueWriteParams", webSearchConfigWriteParams("cached")));
   it("accepte l’écriture ciblée des options Codex globales", () => {
     validates("ConfigValueWriteParams", fileOpenerConfigWriteParams("cursor"));
     validates(
@@ -138,10 +179,7 @@ describe("contrat Codex installé", () => {
     expect(schema("MemoryResetResponse")).toBeDefined();
   });
   it("accepte le cycle de vie complet du contrôle à distance", () => {
-    validates(
-      "NullableRemoteControlEnableParams",
-      remoteControlEnableParams(),
-    );
+    validates("NullableRemoteControlEnableParams", remoteControlEnableParams());
     validates(
       "NullableRemoteControlDisableParams",
       remoteControlDisableParams(),
@@ -189,6 +227,13 @@ describe("contrat Codex installé", () => {
       "ThreadStartParams",
       threadStartParams("/tmp/project", "gpt-5.4", ":workspace"),
     ));
+  it("accepte les outils dynamiques du scheduler et leur réponse", () => {
+    validates(
+      "ThreadStartParams",
+      threadStartParams("/tmp/project", "gpt-5.4", ":workspace"),
+    );
+    validates("DynamicToolCallResponse", dynamicToolSuccess({ queued: true }));
+  });
   it("laisse Codex choisir le profil par défaut d'un nouveau thread", () =>
     validates(
       "ThreadStartParams",
@@ -282,10 +327,7 @@ describe("contrat Codex installé", () => {
       "ThreadGoalSetParams",
       threadGoalSaveParams("thr_1", "Livrer une interface stable", 50_000),
     );
-    validates(
-      "ThreadGoalSetParams",
-      threadGoalStatusParams("thr_1", "paused"),
-    );
+    validates("ThreadGoalSetParams", threadGoalStatusParams("thr_1", "paused"));
   });
   it("accepte la recherche globale de conversations", () =>
     validates("ThreadSearchParams", threadSearchParams("navigation")));

@@ -3,6 +3,7 @@ import { applyConversationEvent } from "./conversationEvents";
 import type { ChatMessage } from "../types";
 import { defaultTranslate, type Translate } from "../i18n/translate";
 import { isRealtimeVoiceItemId } from "./realtimeTranscript";
+import { scheduledTaskFromPrompt } from "./scheduledTaskMessage";
 
 /** Rebuilds the visible conversation from persisted App Server thread items. */
 export function messagesFromThread(
@@ -42,12 +43,19 @@ function messagesFromTurns(
         const skills = content.flatMap((entry) =>
           entry.type === "skill" && entry.name ? [{ name: entry.name }] : [],
         );
+        const scheduledTask = scheduledTaskFromPrompt(text);
         messages = [
           ...messages,
           {
             id: item.id,
             role: "user",
-            content: text,
+            content: scheduledTask?.prompt ?? text,
+            ...(scheduledTask
+              ? {
+                  modality: "scheduledTask" as const,
+                  title: scheduledTask.name,
+                }
+              : {}),
             ...(attachments.length > 0 ? { attachments } : {}),
             ...(skills.length > 0 ? { skills } : {}),
           },
@@ -75,9 +83,28 @@ function messagesFromTurns(
       );
       messages = applyConversationEvent(
         messages,
-        { method: "item/completed", params: { item } },
+        {
+          method: "item/completed",
+          params: {
+            item,
+            startedAtMs: item.startedAtMs,
+            completedAtMs: item.completedAtMs,
+          },
+        },
         t,
       );
+    }
+    if (turn.status === "failed" && turn.error?.message) {
+      messages = [
+        ...messages,
+        {
+          id: `turn-error-${turn.id ?? crypto.randomUUID()}`,
+          role: "assistant",
+          modality: "applicationError",
+          title: t("thread.replayedTurnFailed"),
+          content: turn.error.message,
+        },
+      ];
     }
   }
   return messages;

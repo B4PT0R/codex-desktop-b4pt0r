@@ -6,6 +6,7 @@ export type SettingsSectionId =
   | "chat"
   | "memory"
   | "remoteControl"
+  | "automations"
   | "agent"
   | "appearance"
   | "voice"
@@ -64,6 +65,13 @@ const settingsSectionDefinitions: SettingsSectionDefinition[] = [
     labelKey: "settings.section.remoteControl",
     keywords:
       "remote control distance appareil device pairing association chatgpt relay relais",
+    available: true,
+  },
+  {
+    id: "automations",
+    labelKey: "settings.section.automations",
+    keywords:
+      "scheduled tasks automations automatisations planifiées récurrentes reminders rappels",
     available: true,
   },
   {

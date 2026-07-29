@@ -13,6 +13,7 @@ describe("routeAppNotification", () => {
       completesTurn: false,
       conversationEvent: true,
       startsTurn: true,
+      threadId: "thread-1",
       telemetry: { type: "clearReroute", threadId: "thread-1" },
       turnId: "turn-1",
     });

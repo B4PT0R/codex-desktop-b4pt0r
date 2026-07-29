@@ -24,17 +24,26 @@ const allowedCommands = new Set([
   "install_chromium",
   "disable_chromium",
   "cancel_chromium_install",
+  "automation_list",
+  "automation_upsert",
+  "automation_delete",
+  "automation_run_now",
+  "automation_complete",
+  "automation_ready",
 ]);
 const allowedEvents = new Set([
   "app-server-message",
   "app-server-exited",
   "new-chat",
+  "automation-run-due",
 ]);
 
 contextBridge.exposeInMainWorld("electronDesktop", {
   invoke(command, args) {
     if (!allowedCommands.has(command)) {
-      return Promise.reject(new Error(`Unsupported desktop command: ${command}`));
+      return Promise.reject(
+        new Error(`Unsupported desktop command: ${command}`),
+      );
     }
     return ipcRenderer.invoke(`desktop:${command}`, args ?? {});
   },

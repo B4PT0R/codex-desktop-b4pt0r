@@ -7,6 +7,7 @@ import { ChatHeader } from "./components/ChatHeader";
 import { Conversation } from "./components/Conversation";
 import { SettingsLoader } from "./components/SettingsLoader";
 import { ShellCommandDialog } from "./components/ShellCommandDialog";
+import { SchedulerToolConfirmationDialog } from "./components/SchedulerToolConfirmationDialog";
 import { Sidebar } from "./components/Sidebar";
 import { UserInputDialog } from "./components/UserInputDialog";
 import { McpElicitationLoader } from "./components/McpElicitationLoader";
@@ -53,6 +54,8 @@ import { useIntegrations } from "./lib/useIntegrations";
 import { useCapabilityCatalog } from "./lib/useCapabilityCatalog";
 import { useAccount } from "./lib/useAccount";
 import { useApps } from "./lib/useApps";
+import { useAutomations } from "./lib/useAutomations";
+import { useSchedulerTools } from "./lib/useSchedulerTools";
 import { useRateLimits } from "./lib/useRateLimits";
 import {
   removeDeletedThread,
@@ -78,6 +81,7 @@ import { useCodexDefaults } from "./lib/useCodexDefaults";
 import { useCodexGlobalSettings } from "./lib/useCodexGlobalSettings";
 import { useMemorySettings } from "./lib/useMemorySettings";
 import { useRemoteControl } from "./lib/useRemoteControl";
+import { ThreadTurnCoordinator } from "./lib/threadTurnCoordinator";
 import {
   threadRuntimeSettings,
   type ThreadRuntimeSettings,
@@ -167,6 +171,7 @@ export default function App() {
     [settings, setSettings] = useState<SettingsSectionId | null>(null),
     [appsEnabled, setAppsEnabled] = useState(false),
     [workPanel, setWorkPanel] = useState<ToolCall>();
+  const [turnCoordinator] = useState(() => new ThreadTurnCoordinator());
   const runtime = useThreadRuntimeState({
     model: fallbackModels[0].id,
     effort: "medium",
@@ -268,10 +273,27 @@ export default function App() {
             "medium",
         );
       }
+      for (const thread of history) {
+        turnCoordinator.observeStatus(thread.id, thread.status);
+      }
       setThreads(history);
     },
     onMessage: handle,
     onNewChat: newChat,
+  });
+  const automations = useAutomations({
+    connected: connection.connected,
+    onError: (error) => showError(t("automations.error"), error),
+    onThreadCreated: (thread) =>
+      setThreads((items) => [
+        thread,
+        ...items.filter((item) => item.id !== thread.id),
+      ]),
+    turnCoordinator,
+  });
+  const schedulerTools = useSchedulerTools({
+    automations,
+    onError: (error) => showError(t("schedulerTool.error"), error),
   });
   const configRequirements = useConfigRequirements(connection.connected);
   const webSearch = useCodexGlobalSettings(
@@ -325,6 +347,7 @@ export default function App() {
     onActiveThreadRemoved: newChat,
     onError: showError,
     onForked: threadHistory.resume,
+    turnCoordinator,
   });
   const shellCommand = useShellCommand({
     busy,
@@ -389,12 +412,19 @@ export default function App() {
   }
   function handle(msg: AppServerMessage) {
     const routed = routeAppNotification(msg);
-    if (routed.activity !== undefined) setActivity(routed.activity);
+    turnCoordinator.handleMessage(msg);
+    automations.handleMessage(msg);
+    const affectsActiveThread =
+      !routed.threadId || routed.threadId === activeThreadRef.current;
+    if (affectsActiveThread && routed.activity !== undefined)
+      setActivity(routed.activity);
+    if (schedulerTools.handleMessage(msg)) return;
     if (interactiveRequests.handleMessage(msg)) return;
-    if (routed.conversationEvent) enqueueConversationEvent(msg);
-    if (routed.startsTurn) setTurnId(routed.turnId);
-    if (routed.completesTurn) setBusy(false);
-    if (routed.clearsActivity) setActivity(null);
+    if (affectsActiveThread && routed.conversationEvent)
+      enqueueConversationEvent(msg);
+    if (affectsActiveThread && routed.startsTurn) setTurnId(routed.turnId);
+    if (affectsActiveThread && routed.completesTurn) setBusy(false);
+    if (affectsActiveThread && routed.clearsActivity) setActivity(null);
 
     const threadEvent = routed.thread;
     if (threadEvent) {
@@ -420,9 +450,7 @@ export default function App() {
       ) {
         applyThreadRuntimeSettings(threadEvent.settings);
       } else if (threadEvent.type === "archived") {
-        setThreads((items) =>
-          removeThread(items, threadEvent.threadId),
-        );
+        setThreads((items) => removeThread(items, threadEvent.threadId));
         threadSearch.remove(threadEvent.threadId);
         if (activeThreadRef.current === threadEvent.threadId) newChat();
       } else if (threadEvent.type === "unarchived") {
@@ -483,6 +511,7 @@ export default function App() {
     const id = r.thread.id as string;
     const runtimeSettings = threadRuntimeSettings(r);
     const resolvedCwd = runtimeSettings.cwd ?? cwd;
+    turnCoordinator.observeStatus(id, threadSummary(r.thread).status ?? "idle");
     applyThreadRuntimeSettings(runtimeSettings);
     setThreadId(id);
     setThreads((x) => [{ id, name: t("app.newChat"), cwd: resolvedCwd }, ...x]);
@@ -536,11 +565,13 @@ export default function App() {
           }
           setBusy(true);
           try {
-            await request("review/start", {
-              threadId,
-              delivery: "inline",
-              target: { type: "uncommittedChanges" },
-            });
+            await turnCoordinator.runWhenIdle(threadId, () =>
+              request("review/start", {
+                threadId,
+                delivery: "inline",
+                target: { type: "uncommittedChanges" },
+              }),
+            );
           } catch (error) {
             setBusy(false);
             showError(t("app.reviewUnavailable"), error);
@@ -658,13 +689,24 @@ export default function App() {
     }
     try {
       const id = threadId ?? (await createThread());
-      await request(
-        "turn/start",
-        turnStartParams(id, model, text, context, {
-          effort,
-          personality: personalityForModel,
-          mode: collaborationMode,
-        }),
+      turnCoordinator.observeStatus(
+        id,
+        busy
+          ? "active"
+          : (threads.find((thread) => thread.id === id)?.status ?? "idle"),
+      );
+      await turnCoordinator.runWhenIdle(
+        id,
+        () =>
+          request<{ turn: { id: string } }>(
+            "turn/start",
+            turnStartParams(id, model, text, context, {
+              effort,
+              personality: personalityForModel,
+              mode: collaborationMode,
+            }),
+          ),
+        (result) => result.turn.id,
       );
     } catch (e) {
       setMessages((x) => [
@@ -848,6 +890,7 @@ export default function App() {
       <SettingsLoader
         account={account}
         apps={apps}
+        automations={automations}
         capabilities={capabilities}
         configRequirements={configRequirements}
         externalAgentImport={externalAgentImport}
@@ -857,6 +900,8 @@ export default function App() {
         realtime={realtime}
         memory={memory}
         remoteControl={remoteControl}
+        currentThreadId={threadId}
+        currentWorkspace={cwd || undefined}
         webSearch={webSearch}
         appServerRestart={{
           available:
@@ -895,7 +940,9 @@ export default function App() {
         }}
         onDelete={async (thread) => {
           if (isDemoPreview()) {
-            setThreads((items) => items.filter((item) => item.id !== thread.id));
+            setThreads((items) =>
+              items.filter((item) => item.id !== thread.id),
+            );
             return true;
           }
           const deleted = await threadActions.deleteThread(thread.id);
@@ -961,15 +1008,9 @@ export default function App() {
         />
         <ChatFooter
           apps={apps}
-          skills={
-            isDemoPreview() ? demoSkills : integrations.skills.data
-          }
-          skillsError={
-            isDemoPreview() ? undefined : integrations.skills.error
-          }
-          skillsLoading={
-            isDemoPreview() ? false : integrations.skills.loading
-          }
+          skills={isDemoPreview() ? demoSkills : integrations.skills.data}
+          skillsError={isDemoPreview() ? undefined : integrations.skills.error}
+          skillsLoading={isDemoPreview() ? false : integrations.skills.loading}
           busy={busy}
           canSteer={Boolean(threadId && turnId)}
           cwd={cwd}
@@ -1032,6 +1073,14 @@ export default function App() {
         />
       )}
       {shellCommand.pending && <ShellCommandDialog controller={shellCommand} />}
+      {schedulerTools.confirmation && (
+        <SchedulerToolConfirmationDialog
+          confirmation={schedulerTools.confirmation}
+          submitting={schedulerTools.submitting}
+          onCancel={() => void schedulerTools.cancelDelete()}
+          onConfirm={() => void schedulerTools.confirmDelete()}
+        />
+      )}
       {interactiveRequests.userInput && (
         <UserInputDialog
           request={interactiveRequests.userInput}

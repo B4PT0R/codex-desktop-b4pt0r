@@ -3,6 +3,38 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.3.4] - 2026-07-29
+
+### Added
+
+- App-resident scheduled tasks for one-time, interval, daily, weekday and
+  weekly wake-ups targeting an existing, new persistent or new ephemeral
+  conversation.
+- A bounded App Server dynamic-tool namespace lets Codex list, create, update,
+  pause, resume and run scheduled tasks from chat; deletion remains explicitly
+  confirmed in the desktop interface.
+- Optional unattended execution can apply Full access with Never ask for one
+  scheduled run, with a clear warning and authoritative restoration of the
+  thread's previous security settings afterward.
+
+### Changed
+
+- Scheduled turns carry a persistent scheduler envelope and render as distinct
+  wake-up cards in live chat and replay.
+- App-owned user turns, reviews, compactions and scheduled work are serialized
+  per target thread, while work in different conversations remains parallel.
+- Background notifications update their owning thread without leaking activity
+  into the conversation currently being viewed.
+
+### Fixed
+
+- A wake-up targeting an active conversation waits instead of being interpreted
+  by App Server as steering for the current turn.
+- Security restoration now waits for the authoritative
+  `thread/settings/updated` notification before another queued turn can start.
+- Running scheduled tasks cannot be deleted mid-execution, and the agent-facing
+  interval schema now matches the native five-minute to seven-day limits.
+
 ## [0.3.3] - 2026-07-28
 
 ### Added

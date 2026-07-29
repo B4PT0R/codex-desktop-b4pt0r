@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  automationThreadResumeParams,
+  automationThreadSecurityRestoreParams,
+  automationThreadStartParams,
+  automationTurnStartParams,
   backgroundTerminalsListParams,
   backgroundTerminalTerminateParams,
   fuzzyFileSearchSessionStartParams,
@@ -40,8 +44,51 @@ import {
   threadTurnsListParams,
   turnStartParams,
   turnSteerParams,
+  scheduledTaskPrompt,
 } from "../../src/lib/protocol";
 describe("constructeurs JSON-RPC", () => {
+  it("construit une exécution planifiée sans figer les réglages globaux", () => {
+    expect(automationThreadStartParams("/project")).toEqual({
+      cwd: "/project",
+    });
+    expect(automationThreadStartParams()).toEqual({});
+    expect(automationThreadStartParams("/project", true)).toEqual({
+      cwd: "/project",
+      ephemeral: true,
+    });
+    expect(automationThreadResumeParams("thread-1")).toEqual({
+      threadId: "thread-1",
+      excludeTurns: true,
+    });
+    expect(
+      automationTurnStartParams("thread-1", "Veille", "Inspecte le dépôt"),
+    ).toEqual({
+      threadId: "thread-1",
+      input: [
+        {
+          type: "text",
+          text: scheduledTaskPrompt("Veille", "Inspecte le dépôt"),
+        },
+      ],
+    });
+    expect(
+      automationTurnStartParams("thread-1", "Veille", "Inspecte", true),
+    ).toMatchObject({
+      permissions: ":danger-full-access",
+      approvalPolicy: "never",
+    });
+    expect(
+      automationThreadSecurityRestoreParams(
+        "thread-1",
+        ":workspace",
+        "on-request",
+      ),
+    ).toEqual({
+      threadId: "thread-1",
+      permissions: ":workspace",
+      approvalPolicy: "on-request",
+    });
+  });
   it("lit la configuration effective du workspace", () => {
     expect(configReadParams("/tmp/project")).toEqual({
       cwd: "/tmp/project",
@@ -153,6 +200,16 @@ describe("constructeurs JSON-RPC", () => {
         threadStartParams("/tmp/project", "gpt-test", permission).permissions,
       ).toBe(permission),
   );
+  it("expose les outils du scheduler aux nouveaux threads ordinaires", () => {
+    expect(
+      threadStartParams("/tmp/project", "gpt-test", ":workspace").dynamicTools,
+    ).toEqual([
+      expect.objectContaining({
+        type: "namespace",
+        name: "scheduler",
+      }),
+    ]);
+  });
   it("laisse App Server choisir le profil sans sélection explicite", () =>
     expect(
       threadStartParams("/tmp/project", "gpt-test", undefined),
@@ -194,20 +251,20 @@ describe("constructeurs JSON-RPC", () => {
       approvalPolicy: "never",
     }));
   it("isole les changements rapides de permission et d’approbation", () => {
-    expect(
-      threadPermissionUpdateParams("thr", ":danger-full-access"),
-    ).toEqual({
+    expect(threadPermissionUpdateParams("thr", ":danger-full-access")).toEqual({
       threadId: "thr",
       permissions: ":danger-full-access",
     });
-    expect(threadPermissionUpdateParams("thr", ":danger-full-access")).not
-      .toHaveProperty("approvalPolicy");
+    expect(
+      threadPermissionUpdateParams("thr", ":danger-full-access"),
+    ).not.toHaveProperty("approvalPolicy");
     expect(threadApprovalPolicyUpdateParams("thr", "never")).toEqual({
       threadId: "thr",
       approvalPolicy: "never",
     });
-    expect(threadApprovalPolicyUpdateParams("thr", "never")).not
-      .toHaveProperty("permissions");
+    expect(threadApprovalPolicyUpdateParams("thr", "never")).not.toHaveProperty(
+      "permissions",
+    );
   });
   it("laisse App Server choisir le cwd par défaut", () =>
     expect(
@@ -364,21 +421,13 @@ describe("constructeurs JSON-RPC", () => {
     });
     expect(dictation).not.toHaveProperty("voice");
     expect(
-      realtimeStartParams(
-        "thr",
-        { type: "webrtc", sdp: "v=0" },
-        "maple",
-      ).transport,
+      realtimeStartParams("thr", { type: "webrtc", sdp: "v=0" }, "maple")
+        .transport,
     ).toEqual({ type: "webrtc", sdp: "v=0" });
   });
   it("isole les conversations vocales dans un fork éphémère du parent", () => {
     expect(
-      realtimeThreadForkParams(
-        "parent",
-        "/work",
-        "gpt-5.4",
-        ":workspace",
-      ),
+      realtimeThreadForkParams("parent", "/work", "gpt-5.4", ":workspace"),
     ).toMatchObject({
       threadId: "parent",
       cwd: "/work",
@@ -405,6 +454,13 @@ describe("constructeurs JSON-RPC", () => {
       approvalPolicy: "on-request",
       ephemeral: true,
     });
+    expect(
+      realtimeEphemeralThreadStartParams(
+        "/work",
+        "gpt-5.4",
+        ":workspace",
+      ),
+    ).not.toHaveProperty("dynamicTools");
   });
   it("construit les items de transcript à injecter dans le thread principal", () => {
     expect(

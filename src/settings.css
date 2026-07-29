@@ -128,9 +128,7 @@
   font-size: 12px;
 }
 
-.settings-navigation
-  nav
-  .round-icon-button.round-icon-button-labeled {
+.settings-navigation nav .round-icon-button.round-icon-button-labeled {
   width: 100%;
   padding: 7px 9px;
   border-radius: 6px;
@@ -341,6 +339,257 @@
 .settings-subsection-heading small {
   color: #858580;
   font-size: 10px;
+}
+
+.automations-settings > header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.automations-settings > header p {
+  max-width: 620px;
+}
+
+.automation-list {
+  overflow: hidden;
+  padding: 0;
+}
+
+.automation-row {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  min-height: 58px;
+  padding: 8px 10px;
+}
+
+.automation-row + .automation-row {
+  border-top: 1px solid #33332f;
+}
+
+.automation-state {
+  align-items: center;
+  background: #252522;
+  border: 1px solid #383834;
+  border-radius: 50%;
+  box-sizing: border-box;
+  color: #858580;
+  display: flex;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.automation-state svg {
+  height: 15px;
+  width: 15px;
+}
+
+.automation-state.succeeded {
+  color: #8aac66;
+}
+
+.automation-state.failed {
+  color: #e68a86;
+}
+
+.automation-main {
+  align-items: flex-start;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 3px 0;
+  text-align: left;
+}
+
+.automation-main:hover,
+.automation-main:focus-visible {
+  background: transparent;
+  color: inherit;
+}
+
+.automation-main strong,
+.automation-main small,
+.automation-main em {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.automation-main strong {
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.automation-main small {
+  color: #858580;
+  font-size: 10px;
+  line-height: 14px;
+}
+
+.automation-main em {
+  color: #e68a86;
+  font-size: 10px;
+  font-style: normal;
+}
+
+.automation-actions {
+  align-items: center;
+  display: flex;
+  gap: 3px;
+}
+
+.automation-delete-confirm {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+.automation-delete-confirm span {
+  color: var(--text-muted);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.automation-delete-confirm .danger {
+  border-color: #664743;
+  color: #e68a86;
+}
+
+.automation-delete-confirm .danger:hover,
+.automation-delete-confirm .danger:focus-visible {
+  background: #3c2927;
+  border-color: #855a55;
+  color: #f09b96;
+}
+
+.automation-editor {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 14px;
+}
+
+.automation-editor > label,
+.automation-editor-grid > label {
+  display: grid;
+  gap: 5px;
+}
+
+.automation-editor label > span {
+  color: #858580;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.automation-editor input,
+.automation-editor textarea,
+.automation-editor select {
+  box-sizing: border-box;
+  border: 1px solid #41413d;
+  border-radius: 7px;
+  color: #d0d0cc;
+  background: #292927;
+  font: inherit;
+  font-size: 11px;
+  outline: none;
+  padding: 7px 9px;
+  width: 100%;
+}
+
+.automation-editor input:focus-visible,
+.automation-editor textarea:focus-visible,
+.automation-editor select:focus-visible {
+  border-color: #676760;
+  box-shadow: 0 0 0 2px #67676026;
+}
+
+.automation-editor textarea {
+  line-height: 1.45;
+  min-height: 84px;
+  resize: vertical;
+}
+
+.automation-editor select {
+  padding-right: 28px;
+}
+
+.automation-editor-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.automation-unattended {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid #5a463d;
+  border-radius: 8px;
+  background: #28211e;
+}
+
+.automation-unattended > input {
+  width: 14px;
+  height: 14px;
+  margin: 1px 0 0;
+  accent-color: #b56e52;
+}
+
+.automation-unattended > span {
+  display: grid;
+  gap: 3px;
+}
+
+.automation-unattended strong {
+  color: #d1a187;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.automation-unattended small {
+  color: #9a7e70;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.automation-editor footer {
+  align-items: center;
+  background: #1d1d1b;
+  border-top: 1px solid #343431;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin: 2px -14px -14px;
+  padding: 10px 14px 11px;
+  width: auto;
+}
+
+.automation-editor footer .round-icon-button-label {
+  font-size: 10px;
+  line-height: 1;
+}
+
+@media (max-width: 840px) {
+  .automation-editor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .automation-row {
+    grid-template-columns: 24px minmax(0, 1fr);
+  }
+
+  .automation-actions {
+    grid-column: 2;
+  }
 }
 
 .memory-settings-fields input[type="checkbox"] {
