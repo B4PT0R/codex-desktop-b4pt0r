@@ -17,7 +17,7 @@ shared Playwright Chromium session.
 
 The repository is public at
 `https://github.com/B4PT0R/codex-desktop-b4pt0r`. The current public release is
-v0.3.8.
+v0.3.9.
 
 ## Current candidate
 
@@ -52,6 +52,9 @@ API:
   with Never ask for the scheduled turn, visibly warns in Settings, and
   restores the thread's previous permission and approval settings before its
   queue is released.
+- unattended security restoration accepts either the authoritative settings
+  notification or a post-update thread read. This covers App Server's
+  documented no-op behavior without reporting a false 15-second timeout.
 
 Background notifications are now routed by `threadId`. A scheduled run updates
 its thread and sidebar without injecting activity into the conversation
@@ -168,7 +171,7 @@ release the current thread's own mutation lock.
 
 - Installed Codex: `codex-cli 0.145.0`.
 - Official source audit: `1def0a892`, stable and experimental v2 schemas.
-- Frontend/unit/contract: 546 tests across 103 files, including 47 installed
+- Frontend/unit/contract: 548 tests across 103 files, including 47 installed
   App Server contract cases.
 - Electron/Node: 72 tests, including the native hidden-window liveness
   invariant.
@@ -178,7 +181,7 @@ release the current thread's own mutation lock.
   favicon, main and preload with zero native test sources, while the shared
   browser skill remains an external resource.
 - Production dependency audit: zero vulnerabilities.
-- Main JS: 566.05 kB, 164.26 kB gzip.
+- Main JS: 566.18 kB, 164.30 kB gzip.
 - Lazy diff viewer: 89.50 kB, 32.89 kB gzip.
 - Lazy Markdown/KaTeX: 436.81 kB, 131.40 kB gzip.
 - Shared-browser visual pass: light and dark palettes, 1240×820 and 840×620;
@@ -194,9 +197,9 @@ release the current thread's own mutation lock.
   the visual demo intentionally bypasses those events.
 - Shared-browser Markdown pass: complete light/dark fixture at 1240×820 and
   840×620; wide tables scroll locally without widening the message or app.
-- Installed Debian release: `codex-desktop-linux 0.3.8 amd64`
-  (`sha256:91eaea3a…cdc83cc`); its packaged ASAR contains the native health
-  monitor.
+- Built Debian release: `codex-desktop-linux 0.3.9 amd64`
+  (`sha256:ba8a0ef6…25c4a3a0`); its packaged ASAR passes the production
+  runtime inventory contract.
 
 ## Active invariants
 

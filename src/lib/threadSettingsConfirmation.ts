@@ -6,6 +6,7 @@ type SecuritySettings = Required<
 
 type PendingConfirmation = {
   expected: SecuritySettings;
+  confirmed: boolean;
   resolve: () => void;
   reject: (error: Error) => void;
   timeout: ReturnType<typeof setTimeout>;
@@ -14,11 +15,12 @@ type PendingConfirmation = {
 const DEFAULT_TIMEOUT_MS = 15_000;
 
 /**
- * Waits for App Server's authoritative settings notification after an update.
+ * Confirms effective App Server settings after an update.
  *
- * `thread/settings/update` only acknowledges that the update was queued. A
- * dependent turn must not start until `thread/settings/updated` confirms the
- * effective values.
+ * `thread/settings/update` only acknowledges that the update was queued, and
+ * no notification is emitted when it is a no-op. A dependent turn must not
+ * start until either `thread/settings/updated` or an authoritative read
+ * confirms the effective values.
  */
 export class ThreadSettingsConfirmation {
   readonly #pending = new Map<string, PendingConfirmation>();
@@ -27,6 +29,7 @@ export class ThreadSettingsConfirmation {
     threadId: string,
     expected: SecuritySettings,
     update: () => Promise<unknown>,
+    verify?: () => Promise<ThreadRuntimeSettings>,
     timeoutMs = DEFAULT_TIMEOUT_MS,
   ) {
     if (this.#pending.has(threadId)) {
@@ -36,6 +39,7 @@ export class ThreadSettingsConfirmation {
     const confirmed = new Promise<void>((resolve, reject) => {
       pending = {
         expected,
+        confirmed: false,
         resolve,
         reject,
         timeout: setTimeout(() => {
@@ -48,6 +52,16 @@ export class ThreadSettingsConfirmation {
     });
     try {
       await update();
+      // App Server deliberately omits `thread/settings/updated` when an update
+      // is a no-op. Re-read the effective state so that an already-restored
+      // thread does not become a false timeout.
+      if (!pending!.confirmed && verify) {
+        try {
+          this.observe(threadId, await verify());
+        } catch {
+          // A later notification can still authoritatively confirm the update.
+        }
+      }
       await confirmed;
     } catch (error) {
       this.#remove(threadId, pending!);
@@ -64,6 +78,7 @@ export class ThreadSettingsConfirmation {
     ) {
       return false;
     }
+    pending.confirmed = true;
     this.#remove(threadId, pending);
     pending.resolve();
     return true;

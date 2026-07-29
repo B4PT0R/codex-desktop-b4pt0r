@@ -271,7 +271,8 @@ describe("tâches planifiées", () => {
     );
   });
 
-  it("restaure la sécurité après une exécution sans surveillance", async () => {
+  it("confirme une restauration sans changement par relecture du thread", async () => {
+    let resumeCount = 0;
     let due:
       ((event: { payload: Record<string, unknown> }) => void) | undefined;
     mocks.listen.mockImplementation(async (_event, handler) => {
@@ -284,6 +285,7 @@ describe("tâches planifiées", () => {
     });
     mocks.request.mockImplementation(async (method) => {
       if (method === "thread/resume") {
+        resumeCount += 1;
         return {
           thread: {
             id: "thread-secure",
@@ -354,22 +356,7 @@ describe("tâches planifiées", () => {
         approvalPolicy: "on-request",
       }),
     );
-    expect(mocks.invoke).not.toHaveBeenCalledWith(
-      "automation_complete",
-      expect.objectContaining({ id: "automation-secure" }),
-    );
-    act(() => {
-      result.current.handleMessage({
-        method: "thread/settings/updated",
-        params: {
-          threadId: "thread-secure",
-          threadSettings: {
-            activePermissionProfile: { id: ":workspace" },
-            approvalPolicy: "on-request",
-          },
-        },
-      });
-    });
+    await waitFor(() => expect(resumeCount).toBe(2));
     await waitFor(() =>
       expect(mocks.invoke).toHaveBeenCalledWith(
         "automation_complete",

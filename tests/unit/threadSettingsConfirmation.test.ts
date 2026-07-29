@@ -58,4 +58,50 @@ describe("confirmation des réglages de thread", () => {
     ).toBe(true);
     await pending;
   });
+
+  it("accepte une mise à jour sans changement après relecture de l’état effectif", async () => {
+    const confirmation = new ThreadSettingsConfirmation();
+    const verify = vi.fn(async () => ({
+      permission: ":workspace" as const,
+      approvalPolicy: "on-request" as const,
+    }));
+
+    await confirmation.updateAndWait(
+      "thread-1",
+      { permission: ":workspace", approvalPolicy: "on-request" },
+      async () => undefined,
+      verify,
+    );
+
+    expect(verify).toHaveBeenCalledOnce();
+  });
+
+  it("continue d’attendre si la relecture ne confirme pas la restauration", async () => {
+    const confirmation = new ThreadSettingsConfirmation();
+    let completed = false;
+    const pending = confirmation
+      .updateAndWait(
+        "thread-1",
+        { permission: ":workspace", approvalPolicy: "on-request" },
+        async () => undefined,
+        async () => ({
+          permission: ":danger-full-access",
+          approvalPolicy: "never",
+        }),
+      )
+      .then(() => {
+        completed = true;
+      });
+
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(completed).toBe(false);
+    expect(
+      confirmation.observe("thread-1", {
+        permission: ":workspace",
+        approvalPolicy: "on-request",
+      }),
+    ).toBe(true);
+    await pending;
+  });
 });

@@ -373,6 +373,13 @@ async function restoreThreadSecurity(
           approvalPolicy,
         ),
       ),
+    async () =>
+      threadRuntimeSettings(
+        await request<ThreadRuntimeResponse>(
+          "thread/resume",
+          automationThreadResumeParams(threadId),
+        ),
+      ),
   );
 }
 

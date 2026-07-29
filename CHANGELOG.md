@@ -3,7 +3,7 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
-## Unreleased
+## [0.3.9] - 2026-07-29
 
 ### Changed
 
@@ -12,6 +12,8 @@ follows semantic versioning while the public interface is taking shape.
 - Production packages no longer include Electron-layer test sources, and their
   renderer, favicon and bundled-skill inventory is protected by a manifest
   contract.
+- Public contribution templates now collect actionable environment, protocol
+  and validation details without duplicating the contributor guide.
 
 ### Fixed
 
@@ -25,6 +27,8 @@ follows semantic versioning while the public interface is taking shape.
   renderer commands before any bytes reach the NDJSON transport.
 - A delayed goal update from a previously selected thread can no longer block,
   overwrite or unlock goal controls in the current thread.
+- Unattended scheduled tasks now confirm a no-op security restoration by
+  reading the effective thread settings instead of reporting a false timeout.
 
 ## [0.3.8] - 2026-07-29
 
@@ -362,6 +366,7 @@ follows semantic versioning while the public interface is taking shape.
 - Native Electron packaging for Debian/Ubuntu.
 - Stable Chromium microphone capture for dictation and Realtime voice.
 
+[0.3.9]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.8...v0.3.9
 [0.3.8]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.7...v0.3.8
 [0.3.7]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.6...v0.3.7
 [0.3.6]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.5...v0.3.6
