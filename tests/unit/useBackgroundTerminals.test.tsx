@@ -98,6 +98,45 @@ describe("terminaux en arrière-plan", () => {
     expect(result.current.terminals[0].itemId).toBe("dev-server");
   });
 
+  it("préserve le snapshot lors d’un rafraîchissement inchangé", async () => {
+    const initial = deferred<{
+      data: Array<Record<string, string | number>>;
+      nextCursor: null;
+    }>();
+    const snapshot = {
+      data: [
+        {
+          itemId: "dev-server",
+          processId: "7",
+          command: "npm run dev",
+          cwd: "/work/app",
+          osPid: 1234,
+          cpuPercent: 1.25,
+          rssKb: 20_480,
+        },
+      ],
+      nextCursor: null,
+    };
+    requestMock
+      .mockReturnValueOnce(initial.promise)
+      .mockResolvedValue(snapshot);
+    const { result } = renderHook(() =>
+      useBackgroundTerminals({
+        busy: true,
+        connected: true,
+        threadId: "thread-1",
+      }),
+    );
+    expect(result.current.loading).toBe(false);
+    initial.resolve(snapshot);
+    await waitFor(() => expect(result.current.terminals).toHaveLength(1));
+    const first = result.current.terminals;
+
+    await act(() => result.current.refresh());
+
+    expect(result.current.terminals).toBe(first);
+  });
+
   it("n’envoie pas deux arrêts concurrents pour le même processus", async () => {
     const termination = deferred<{ terminated: boolean }>();
     requestMock

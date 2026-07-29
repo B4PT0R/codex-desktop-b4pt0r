@@ -55,7 +55,7 @@ export function useBackgroundTerminals({
     terminatingProcesses.current.clear();
   }, [connected, threadId]);
 
-  const refresh = useCallback(async () => {
+  const refreshTerminals = useCallback(async (showLoading: boolean) => {
     if (!connected || !threadId) {
       if (!threadId) setTerminals([]);
       return;
@@ -63,7 +63,7 @@ export function useBackgroundTerminals({
     if (pendingRequests.current.has(threadId)) return;
     const version = ++refreshVersion.current;
     pendingRequests.current.set(threadId, version);
-    setLoading(true);
+    if (showLoading) setLoading(true);
     setError(undefined);
     try {
       const items: BackgroundTerminal[] = [];
@@ -78,7 +78,11 @@ export function useBackgroundTerminals({
         cursor = normalized.nextCursor;
         if (!cursor) break;
       }
-      if (version === refreshVersion.current) setTerminals(items);
+      if (version === refreshVersion.current) {
+        setTerminals((current) =>
+          sameTerminalSnapshots(current, items) ? current : items,
+        );
+      }
     } catch (cause) {
       if (version === refreshVersion.current) {
         setError(cause instanceof Error ? cause.message : String(cause));
@@ -87,13 +91,18 @@ export function useBackgroundTerminals({
       if (pendingRequests.current.get(threadId) === version) {
         pendingRequests.current.delete(threadId);
       }
-      if (version === refreshVersion.current) setLoading(false);
+      if (showLoading && version === refreshVersion.current) setLoading(false);
     }
   }, [connected, threadId]);
 
+  const refresh = useCallback(
+    () => refreshTerminals(true),
+    [refreshTerminals],
+  );
+
   useEffect(() => {
-    void refresh();
-  }, [busy, refresh]);
+    void refreshTerminals(false);
+  }, [busy, refreshTerminals]);
 
   useEffect(
     () => () => {
@@ -105,11 +114,11 @@ export function useBackgroundTerminals({
   useEffect(() => {
     if (!busy && terminals.length === 0) return;
     const interval = window.setInterval(
-      () => void refresh(),
+      () => void refreshTerminals(false),
       busy ? 1_000 : 5_000,
     );
     return () => window.clearInterval(interval);
-  }, [busy, refresh, terminals.length]);
+  }, [busy, refreshTerminals, terminals.length]);
 
   const terminate = useCallback(
     async (processId: string) => {
@@ -209,4 +218,25 @@ function finiteNonNegativeNumber(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) && value >= 0
     ? value
     : undefined;
+}
+
+function sameTerminalSnapshots(
+  current: BackgroundTerminal[],
+  next: BackgroundTerminal[],
+) {
+  return (
+    current.length === next.length &&
+    current.every((terminal, index) => {
+      const candidate = next[index];
+      return (
+        terminal.itemId === candidate.itemId &&
+        terminal.processId === candidate.processId &&
+        terminal.command === candidate.command &&
+        terminal.cwd === candidate.cwd &&
+        terminal.osPid === candidate.osPid &&
+        terminal.cpuPercent === candidate.cpuPercent &&
+        terminal.rssKb === candidate.rssKb
+      );
+    })
+  );
 }

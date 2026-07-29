@@ -16,6 +16,8 @@ follows semantic versioning while the public interface is taking shape.
   re-arms native delivery after the listener has already been removed.
 - The global Config and AGENTS.md editors now keep keyboard focus inside their
   modal and return it to the settings card when closed.
+- Unchanged background-terminal polls no longer trigger conversation-wide
+  rerenders while an agent turn is streaming.
 
 ## [0.3.8] - 2026-07-29
 

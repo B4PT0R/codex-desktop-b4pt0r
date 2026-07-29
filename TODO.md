@@ -142,18 +142,24 @@ contract as approvals and native prompts: keyboard traversal stays inside the
 open editor, Escape retains unsaved-change protection, and closing restores the
 settings card that opened it.
 
+Background-terminal discovery remains frequent during active turns, but its
+automatic polls are now silent and retain the previous snapshot identity when
+the inventory and telemetry are unchanged. This avoids periodic app-wide
+rerenders and invalidating stable tool-group props during unrelated streaming;
+an explicit user refresh still exposes its loading state.
+
 ## Verified candidate baseline
 
 - Installed Codex: `codex-cli 0.145.0`.
 - Official source audit: `1def0a892`, stable and experimental v2 schemas.
-- Frontend/unit/contract: 544 tests across 103 files, including 47 installed
+- Frontend/unit/contract: 545 tests across 103 files, including 47 installed
   App Server contract cases.
 - Electron/Node: 69 tests, including the native hidden-window liveness
   invariant.
 - Strict TypeScript: passing.
 - Production Vite build: passing.
 - Production dependency audit: zero vulnerabilities.
-- Main JS: 565.54 kB, 164.07 kB gzip.
+- Main JS: 565.86 kB, 164.19 kB gzip.
 - Lazy diff viewer: 89.50 kB, 32.89 kB gzip.
 - Lazy Markdown/KaTeX: 436.81 kB, 131.40 kB gzip.
 - Shared-browser visual pass: light and dark palettes, 1240×820 and 840×620;
