@@ -72,6 +72,35 @@ test("preserves PATH lookup when Codex remains a bare command", () => {
   });
 });
 
+test("writes exactly one JSON object per renderer command", async () => {
+  const child = fakeChild();
+  const writes = [];
+  child.stdin.on("data", (chunk) => writes.push(String(chunk)));
+  const transport = new AppServerTransport(() => undefined, {
+    resolveExecutable: async () => "/opt/codex/bin/codex",
+    spawnProcess: () => child,
+  });
+  await transport.start();
+
+  transport.send('{"id":"one","method":"thread/list"}');
+  for (const invalid of [
+    '{"method":"thread/list"}\n{"method":"turn/start"}',
+    "null",
+    "[]",
+    "not-json",
+  ]) {
+    assert.throws(
+      () => transport.send(invalid),
+      /Invalid App Server message/,
+    );
+  }
+
+  assert.deepEqual(writes, [
+    '{"id":"one","method":"thread/list"}\n',
+  ]);
+  transport.stop();
+});
+
 test("probes App Server through stdio without leaking the response to the renderer", async () => {
   const child = fakeChild();
   const events = [];

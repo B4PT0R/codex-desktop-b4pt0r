@@ -117,16 +117,12 @@ export class AppServerTransport {
   }
 
   send(message) {
+    const parsed = parseOutboundMessage(message);
     if (!this.#child?.stdin.writable) {
       throw new Error("app-server non démarré");
     }
     this.#child.stdin.write(`${message}\n`);
-    try {
-      const parsed = JSON.parse(message);
-      if (parsed?.method === "initialized") this.#initialized = true;
-    } catch {
-      // App Server will report malformed protocol input itself.
-    }
+    if (parsed.method === "initialized") this.#initialized = true;
   }
 
   async probe(timeoutMs = 15_000) {
@@ -217,4 +213,20 @@ export class AppServerTransport {
     clearTimeout(probe.timer);
     probe.resolve(status);
   }
+}
+
+function parseOutboundMessage(message) {
+  if (typeof message !== "string" || /[\r\n]/.test(message)) {
+    throw new Error("Invalid App Server message");
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(message);
+  } catch {
+    throw new Error("Invalid App Server message");
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("Invalid App Server message");
+  }
+  return parsed;
 }

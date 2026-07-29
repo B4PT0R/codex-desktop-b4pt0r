@@ -21,6 +21,8 @@ follows semantic versioning while the public interface is taking shape.
   modal and return it to the settings card when closed.
 - Unchanged background-terminal polls no longer trigger conversation-wide
   rerenders while an agent turn is streaming.
+- The native App Server boundary now rejects malformed, batched or multiline
+  renderer commands before any bytes reach the NDJSON transport.
 
 ## [0.3.8] - 2026-07-29
 

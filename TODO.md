@@ -154,13 +154,18 @@ renderer, main entry point and external bundled-skill mapping. This keeps
 development-only code out of the ASAR and makes a missing runtime resource fail
 before release packaging.
 
+The native App Server writer now accepts exactly one single-line JSON object per
+renderer command. Malformed values, arrays and embedded NDJSON lines are
+rejected before stdin, so the narrow preload command cannot be used to smuggle
+multiple protocol messages through one IPC invocation.
+
 ## Verified candidate baseline
 
 - Installed Codex: `codex-cli 0.145.0`.
 - Official source audit: `1def0a892`, stable and experimental v2 schemas.
 - Frontend/unit/contract: 545 tests across 103 files, including 47 installed
   App Server contract cases.
-- Electron/Node: 71 tests, including the native hidden-window liveness
+- Electron/Node: 72 tests, including the native hidden-window liveness
   invariant.
 - Strict TypeScript: passing.
 - Production Vite build: passing.
