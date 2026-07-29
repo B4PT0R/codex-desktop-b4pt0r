@@ -1,0 +1,71 @@
+name: Bug report
+description: Report a reproducible problem in Codex Desktop Linux
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a problem. Never include auth
+        tokens, private conversation content, or unredacted diagnostics.
+  - type: input
+    id: app-version
+    attributes:
+      label: App version
+      description: Shown in the package name or GitHub release.
+      placeholder: 0.3.8
+    validations:
+      required: true
+  - type: input
+    id: codex-version
+    attributes:
+      label: Codex CLI version
+      description: Output of `codex --version`.
+      placeholder: codex-cli 0.145.0
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Linux environment
+      description: Distribution, version, desktop session, architecture, and install method.
+      placeholder: Ubuntu 24.04, GNOME Wayland, amd64, GitHub .deb
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Use a minimal workspace or sanitized example when possible.
+      placeholder: |
+        1. Open…
+        2. Select…
+        3. Observe…
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include exact visible errors and whether recovery was possible.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized evidence
+      description: Screenshots or relevant logs with paths, prompts, identities, and tokens removed.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for the same problem.
+          required: true
+        - label: I removed secrets and private conversation or workspace content.
+          required: true

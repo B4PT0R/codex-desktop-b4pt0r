@@ -1,0 +1,44 @@
+name: Feature request
+description: Propose a focused improvement to the Linux desktop workflow
+title: "[Feature] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Describe the workflow friction rather than only the desired control.
+    validations:
+      required: true
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Current workflow
+      description: Explain how the task is handled today in this app, the CLI, or another Codex surface.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed experience
+      description: Keep the common path simple and identify advanced or dangerous behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: backend
+    attributes:
+      label: App Server evidence
+      description: If relevant, cite the method, notification, generated schema, or capability that supports the proposal.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and scope
+      description: Note existing workarounds and what should deliberately remain out of scope.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and the current TODO.
+          required: true
+        - label: This request is for the independent Linux client, not the official OpenAI desktop app.
+          required: true

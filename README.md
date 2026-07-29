@@ -222,7 +222,7 @@ the checkout, ask the agent to inspect the current handoff and App Server
 schema, implement one bounded change, run the relevant checks, and leave the
 project ready for the next person.
 
-Start with:
+Start with the [contribution guide](CONTRIBUTING.md), then use:
 
 - [AGENTS.md](AGENTS.md) — contributor contract and definition of done;
 - [TODO.md](TODO.md) — current baseline and prioritized work;

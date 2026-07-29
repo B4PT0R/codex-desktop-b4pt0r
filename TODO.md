@@ -123,6 +123,12 @@ a spinner that suggests the interface is blocked.
 The action row and its detail rendering now live in a focused component; the
 group component owns only sequencing, history visibility and group lifecycle.
 
+Public contribution intake now has a concise `CONTRIBUTING.md`, structured bug
+and feature forms, and a pull-request checklist. Reports request the App and
+Codex versions, Linux environment, reproducible evidence and explicit
+redaction; protocol and UI contributions are routed back to the durable
+repository contracts instead of duplicating them.
+
 ## Verified candidate baseline
 
 - Installed Codex: `codex-cli 0.145.0`.
@@ -203,8 +209,8 @@ group component owns only sequencing, history visibility and group lifecycle.
    delivery and App Server restart.
 2. Decide whether background task completion merits an OS notification and a
    small activity inbox before adding either surface.
-3. Add `CONTRIBUTING.md`, focused issue/PR templates and a concise public App
-   Server compatibility guide.
+3. Add a concise public App Server compatibility guide and security-reporting
+   policy.
 4. Add user-controlled diagnostic export with redaction and preview.
 5. Define an explicit, non-silent update and rollback strategy.
 
