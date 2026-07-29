@@ -42,9 +42,14 @@ export function applyConversationEvent(
         messages,
         stringValue(params?.itemId),
         stringValue(params?.delta) ?? "",
+        t,
       );
     case "item/reasoning/summaryPartAdded":
-      return appendReasoningSeparator(messages, stringValue(params?.itemId));
+      return appendReasoningSeparator(
+        messages,
+        stringValue(params?.itemId),
+        t,
+      );
     case "item/commandExecution/outputDelta":
       return updateTool(messages, stringValue(params?.itemId), (tool) => ({
         ...tool,
@@ -156,21 +161,30 @@ function appendAgentMessageDelta(
 function appendReasoningSeparator(
   messages: ChatMessage[],
   itemId: string | undefined,
+  t: Translate,
 ) {
-  return appendReasoningDelta(messages, itemId, "\n\n", true);
+  return appendReasoningDelta(messages, itemId, "\n\n", t, true);
 }
 
 function appendReasoningDelta(
   messages: ChatMessage[],
   itemId: string | undefined,
   delta: string,
+  t: Translate,
   onlyAfterContent = false,
 ): ChatMessage[] {
   if (!itemId || !delta) return messages;
   const index = findLastIndex(messages, (message) =>
     Boolean(message.signals?.some((signal) => signal.id === itemId)),
   );
-  if (index < 0) return messages;
+  if (index < 0) {
+    if (onlyAfterContent || !delta.trim()) return messages;
+    const signal = signalFromItem(
+      { id: itemId, type: "reasoning", summary: [delta] },
+      t,
+    );
+    return signal ? appendSignal(messages, signal) : messages;
+  }
   const message = messages[index];
   return replaceAt(messages, index, {
     ...message,
@@ -237,6 +251,7 @@ function startItem(
       });
       return signal ? appendSignal(next, signal) : next;
     }
+    next = trimTrailingEmptyAssistantMessages(next);
     const last = next.at(-1);
     next =
       last?.role === "assistant"
@@ -331,6 +346,7 @@ function completeItem(
   }
   if (
     item.type === "agentMessage" &&
+    stringValue(item.text)?.trim() &&
     !next.some((message) => message.id === item.id)
   ) {
     next = [
@@ -343,7 +359,31 @@ function completeItem(
       },
     ];
   }
+  if (index < 0 && item.type === "reasoning") {
+    const signal = signalFromItem(item, t);
+    if (signal) return appendSignal(next, completedSignal(signal, item, t));
+  }
   return next;
+}
+
+function trimTrailingEmptyAssistantMessages(messages: ChatMessage[]) {
+  let end = messages.length;
+  while (end > 0 && isEmptyAssistantMessage(messages[end - 1])) end -= 1;
+  return end === messages.length ? messages : messages.slice(0, end);
+}
+
+function isEmptyAssistantMessage(message: ChatMessage) {
+  return (
+    message.role === "assistant" &&
+    message.content.trim() === "" &&
+    !message.modality &&
+    !message.title &&
+    !message.tools?.length &&
+    !message.signals?.length &&
+    !message.attachments?.length &&
+    !message.skills?.length &&
+    !message.memoryCitations?.length
+  );
 }
 
 function memoryCitations(value: unknown): ChatMessage["memoryCitations"] {

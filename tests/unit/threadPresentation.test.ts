@@ -95,6 +95,38 @@ describe("reprise de conversation", () => {
     expect(messagesFromThread({ id: "thread-1" })).toEqual([]);
   });
 
+  it("ignore les messages agent vides entre deux outils au replay", () => {
+    const messages = messagesFromThread({
+      id: "thread-1",
+      turns: [
+        {
+          items: [
+            {
+              id: "command-1",
+              type: "commandExecution",
+              command: "npm run dev",
+              status: "completed",
+            },
+            { id: "empty-step", type: "agentMessage", text: "  " },
+            {
+              id: "browser-1",
+              type: "mcpToolCall",
+              server: "playwright",
+              tool: "browser_navigate",
+              status: "completed",
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0].tools?.map(({ id }) => id)).toEqual([
+      "command-1",
+      "browser-1",
+    ]);
+  });
+
   it("restaure un réveil planifié comme une modalité distincte", () => {
     expect(
       messagesFromThread({

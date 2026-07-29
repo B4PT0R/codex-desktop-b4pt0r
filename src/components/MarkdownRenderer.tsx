@@ -1,4 +1,5 @@
 import {
+  type ComponentPropsWithoutRef,
   isValidElement,
   memo,
   startTransition,
@@ -7,7 +8,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, {
+  type Components,
+  type ExtraProps,
+} from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -17,14 +21,13 @@ import { classifyMarkdownLink } from "../lib/linkRouting";
 import { openMarkdownLink } from "../lib/markdownLinks";
 import { useMarkdownLinkRouting } from "./MarkdownLinkContext";
 
-const STREAMING_RENDER_INTERVAL_MS = 50;
+export const STREAMING_MARKDOWN_INTERVAL_MS = 32;
 
 export const MarkdownRenderer = memo(function MarkdownRenderer({
   children,
 }: {
   children: string;
 }) {
-  const routing = useMarkdownLinkRouting();
   return (
     <ReactMarkdown
       remarkPlugins={[
@@ -41,46 +44,71 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({
           },
         ],
       ]}
-      components={{
-        a: ({ children: content, href, node: _, ...props }) => {
-          const target = classifyMarkdownLink(href ?? "");
-          return (
-            <a
-              {...props}
-              href={href}
-              rel={target.kind === "web" ? "noreferrer" : undefined}
-              onClick={(event) => {
-                if (target.kind === "anchor") return;
-                event.preventDefault();
-                void openMarkdownLink(href ?? "", routing).catch(routing.onError);
-              }}
-            >
-              {content}
-            </a>
-          );
-        },
-        code: ({ children: content, className, node: _, ...props }) => (
-          <code className={className} {...props}>
-            {content}
-          </code>
-        ),
-        p: ({ children: content, node: _, ...props }) => {
-          const justify = markdownTextLength(content) >= 180;
-          return (
-            <p
-              className={`markdown-paragraph${justify ? " justified" : ""}`}
-              {...props}
-            >
-              {content}
-            </p>
-          );
-        },
-      }}
+      components={MARKDOWN_COMPONENTS}
     >
       {normalizeLatexDelimiters(children)}
     </ReactMarkdown>
   );
 });
+
+const MARKDOWN_COMPONENTS: Components = {
+  a: MarkdownAnchor,
+  code: MarkdownCode,
+  p: MarkdownParagraph,
+};
+
+function MarkdownAnchor({
+  children,
+  href,
+  node: _,
+  ...props
+}: ComponentPropsWithoutRef<"a"> & ExtraProps) {
+  const routing = useMarkdownLinkRouting();
+  const target = classifyMarkdownLink(href ?? "");
+  return (
+    <a
+      {...props}
+      href={href}
+      rel={target.kind === "web" ? "noreferrer" : undefined}
+      onClick={(event) => {
+        if (target.kind === "anchor") return;
+        event.preventDefault();
+        void openMarkdownLink(href ?? "", routing).catch(routing.onError);
+      }}
+    >
+      {children}
+    </a>
+  );
+}
+
+function MarkdownCode({
+  children,
+  className,
+  node: _,
+  ...props
+}: ComponentPropsWithoutRef<"code"> & ExtraProps) {
+  return (
+    <code className={className} {...props}>
+      {children}
+    </code>
+  );
+}
+
+function MarkdownParagraph({
+  children,
+  node: _,
+  ...props
+}: ComponentPropsWithoutRef<"p"> & ExtraProps) {
+  const justify = markdownTextLength(children) >= 180;
+  return (
+    <p
+      className={`markdown-paragraph${justify ? " justified" : ""}`}
+      {...props}
+    >
+      {children}
+    </p>
+  );
+}
 
 function markdownTextLength(node: ReactNode): number {
   if (typeof node === "string" || typeof node === "number") {
@@ -115,7 +143,7 @@ function useThrottledMarkdown(source: string) {
   const [rendered, setRendered] = useState(source);
   const latest = useRef(source);
   const lastRenderAt = useRef(Date.now());
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const cancelPending = useRef<(() => void) | undefined>(undefined);
 
   useEffect(() => {
     if (latest.current === source) return;
@@ -123,7 +151,7 @@ function useThrottledMarkdown(source: string) {
     const elapsed = Date.now() - lastRenderAt.current;
 
     const commit = () => {
-      timer.current = undefined;
+      cancelPending.current = undefined;
       lastRenderAt.current = Date.now();
       startTransition(() => {
         setRendered((current) =>
@@ -132,25 +160,68 @@ function useThrottledMarkdown(source: string) {
       });
     };
 
-    if (elapsed >= STREAMING_RENDER_INTERVAL_MS) {
-      if (timer.current) clearTimeout(timer.current);
-      commit();
+    if (elapsed >= STREAMING_MARKDOWN_INTERVAL_MS) {
+      cancelPending.current?.();
+      cancelPending.current = scheduleMarkdownCommit(commit, 0);
       return;
     }
-    if (!timer.current) {
-      timer.current = setTimeout(
-        commit,
-        STREAMING_RENDER_INTERVAL_MS - elapsed,
-      );
-    }
+    cancelPending.current ??= scheduleMarkdownCommit(
+      commit,
+      STREAMING_MARKDOWN_INTERVAL_MS - elapsed,
+    );
   }, [source]);
 
   useEffect(
     () => () => {
-      if (timer.current) clearTimeout(timer.current);
+      cancelPending.current?.();
     },
     [],
   );
 
   return rendered;
+}
+
+type BrowserTaskScheduler = {
+  postTask: (
+    callback: () => void,
+    options: {
+      delay: number;
+      priority: "user-visible";
+      signal: AbortSignal;
+    },
+  ) => Promise<unknown>;
+};
+
+/**
+ * Chromium's scheduler lets keyboard and pointer input run ahead of Markdown
+ * parsing. Tests and browsers without the API retain the same timer semantics.
+ */
+function scheduleMarkdownCommit(callback: () => void, delay: number) {
+  const scheduler = (
+    window as typeof window & { scheduler?: BrowserTaskScheduler }
+  ).scheduler;
+  if (scheduler?.postTask) {
+    const controller = new AbortController();
+    let fallbackTimer: number | undefined;
+    void scheduler
+      .postTask(callback, {
+        delay,
+        priority: "user-visible",
+        signal: controller.signal,
+      })
+      .catch((error: unknown) => {
+        const aborted =
+          error instanceof DOMException && error.name === "AbortError";
+        if (!aborted && !controller.signal.aborted) {
+          fallbackTimer = window.setTimeout(callback, 0);
+        }
+      });
+    return () => {
+      controller.abort();
+      if (fallbackTimer !== undefined) window.clearTimeout(fallbackTimer);
+    };
+  }
+
+  const timer = window.setTimeout(callback, delay);
+  return () => window.clearTimeout(timer);
 }

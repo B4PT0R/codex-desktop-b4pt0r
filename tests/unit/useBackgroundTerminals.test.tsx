@@ -133,4 +133,57 @@ describe("terminaux en arrière-plan", () => {
     termination.resolve({ terminated: true });
     await act(() => first);
   });
+
+  it("ignore une liste tardive après déconnexion et repart proprement", async () => {
+    const stale = deferred<{
+      data: Array<Record<string, string>>;
+      nextCursor: null;
+    }>();
+    requestMock
+      .mockReturnValueOnce(stale.promise)
+      .mockResolvedValueOnce({
+        data: [
+          {
+            itemId: "fresh-server",
+            processId: "8",
+            command: "npm run preview",
+            cwd: "/work/fresh",
+          },
+        ],
+        nextCursor: null,
+      });
+    const { result, rerender } = renderHook(
+      ({ connected }) =>
+        useBackgroundTerminals({
+          busy: false,
+          connected,
+          threadId: "thread-1",
+        }),
+      { initialProps: { connected: true } },
+    );
+    await waitFor(() => expect(requestMock).toHaveBeenCalledOnce());
+
+    rerender({ connected: false });
+    expect(result.current.terminals).toEqual([]);
+    rerender({ connected: true });
+    await waitFor(() =>
+      expect(result.current.terminals[0]?.itemId).toBe("fresh-server"),
+    );
+
+    stale.resolve({
+      data: [
+        {
+          itemId: "stale-server",
+          processId: "7",
+          command: "npm run old",
+          cwd: "/work/old",
+        },
+      ],
+      nextCursor: null,
+    });
+    await act(async () => {
+      await stale.promise;
+    });
+    expect(result.current.terminals[0]?.itemId).toBe("fresh-server");
+  });
 });

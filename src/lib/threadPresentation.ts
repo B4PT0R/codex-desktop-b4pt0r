@@ -63,12 +63,14 @@ function messagesFromTurns(
         continue;
       }
       if (item.type === "agentMessage") {
+        const text = item.text ?? "";
+        if (!text.trim()) continue;
         messages = [
           ...messages,
           {
             id: item.id,
             role: "assistant",
-            content: item.text ?? "",
+            content: text,
             ...(isRealtimeVoiceItemId(item.id)
               ? { modality: "realtimeVoice" as const }
               : {}),

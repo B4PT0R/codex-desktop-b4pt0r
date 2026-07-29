@@ -97,6 +97,10 @@ ancienne disparaît avant l’arrivée de la suivante. Des steps agentiques
 silencieux restent agrégés ; un item non-action ou du nouveau texte crée une
 frontière. Le groupe entier ne se replie qu’une fois toutes ses actions résolues
 et cette frontière atteinte, ou le tour terminé.
+Un `agentMessage` vide ne constitue jamais une frontière : ces placeholders
+sont éliminés au live et au replay avant l’agrégation de l’appel suivant.
+Il en va de même pour un item de raisonnement sans résumé ; si un résumé
+apparaît plus tard, son premier delta visible crée alors la frontière.
 Une commande identifiée par `thread/backgroundTerminals/list` constitue
 l’exception : son processus reste réellement actif et continue d’alimenter ses
 détails, mais sa carte se replie après un court délai et ne retient pas les

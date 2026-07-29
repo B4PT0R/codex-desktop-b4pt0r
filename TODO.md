@@ -17,7 +17,7 @@ shared Playwright Chromium session.
 
 The repository is public at
 `https://github.com/B4PT0R/codex-desktop-b4pt0r`. The current public release is
-v0.3.5.
+v0.3.6.
 
 ## Current candidate
 
@@ -80,10 +80,11 @@ inventing generic abstractions:
 
 Streaming assistant messages now use the complete GFM/KaTeX renderer
 progressively. Token deltas are coalesced to at most one interruptible Markdown
-parse every 50 ms; incomplete emphasis, links, fenced code and math remain
-safe while their delimiters are still arriving, and finalization flushes the
-complete source immediately. The obsolete parallel LaTeX-only streaming parser
-has been removed.
+parse every 32 ms. Chromium schedules those parses below pending keyboard and
+pointer input; incomplete emphasis, links, fenced code and math remain safe
+while their delimiters are still arriving, and finalization flushes the
+complete source immediately. The renderer reuses stable Markdown component
+types, and the obsolete parallel LaTeX-only streaming parser has been removed.
 
 Tool activity now follows a three-state presentation contract: an action is
 open, collapsed on the same fixed one-line header, or hidden in its group
@@ -91,27 +92,33 @@ history. Calls are revealed only after the previous detail panel has finished
 closing; when the configurable one-to-six-row limit is reached, the oldest row
 leaves before the next arrives. The group summary exists from the first call,
 silent agent steps remain aggregated, and text or an intervening non-action
-item closes the prior group before the next visual item appears.
+item closes the prior group before the next visual item appears. Empty
+agent-message and zero-summary reasoning placeholders are discarded live and
+during replay, so they cannot split tools-only steps into consecutive
+one-action groups. A delayed reasoning summary becomes a boundary only when
+its first visible delta arrives.
 The App Server background-terminal inventory is refreshed during active turns.
 A matching long-running command keeps its truthful running state and output,
 but yields its expanded card after a short dwell so later Playwright or tool
 calls cannot accumulate invisibly behind it. Mixed groups report completed and
 still-running counts together; detached jobs use a static job icon rather than
 a spinner that suggests the interface is blocked.
+The action row and its detail rendering now live in a focused component; the
+group component owns only sequencing, history visibility and group lifecycle.
 
 ## Verified candidate baseline
 
 - Installed Codex: `codex-cli 0.145.0`.
 - Official source audit: `1def0a892`, stable and experimental v2 schemas.
-- Frontend/unit/contract: 532 tests across 103 files, including 47 installed
+- Frontend/unit/contract: 538 tests across 103 files, including 47 installed
   App Server contract cases.
 - Electron/Node: 62 tests.
 - Strict TypeScript: passing.
 - Production Vite build: passing.
 - Production dependency audit: zero vulnerabilities.
-- Main JS: 563.75 kB, 163.42 kB gzip.
+- Main JS: 564.43 kB, 163.70 kB gzip.
 - Lazy diff viewer: 89.50 kB, 32.89 kB gzip.
-- Lazy Markdown/KaTeX: 436.03 kB, 131.06 kB gzip.
+- Lazy Markdown/KaTeX: 436.51 kB, 131.31 kB gzip.
 - Shared-browser visual pass: light and dark palettes, 1240×820 and 840×620;
   no browser warning, error or horizontal overflow after the Settings
   modularity pass.
@@ -119,8 +126,12 @@ a spinner that suggests the interface is blocked.
   seven aggregated calls, saturation, an interleaved compaction boundary and a
   second group containing a detached development server followed by Playwright
   calls; the mixed summary and static job state were user-approved.
-- Reinstalled Debian package: `codex-desktop-linux 0.3.5 amd64`; installed ASAR
-  matches the package build (`617ce76e…9c64e9d`).
+- Shared-browser streaming pass: progressive Markdown and sequential composer
+  input ran together without browser errors or warnings; real App Server
+  tools-only grouping is covered at the reducer and replay boundaries because
+  the visual demo intentionally bypasses those events.
+- Reinstalled Debian package: `codex-desktop-linux 0.3.6 amd64`; installed ASAR
+  matches the package build (`e1921320…ac1f654`).
 
 ## Active invariants
 

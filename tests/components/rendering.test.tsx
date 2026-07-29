@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -10,10 +11,17 @@ import {
 import { describe, expect, it, vi } from "vitest";
 import { afterEach } from "vitest";
 import { Markdown } from "../../src/components/Markdown";
+import {
+  STREAMING_MARKDOWN_INTERVAL_MS,
+  StreamingMarkdownRenderer,
+} from "../../src/components/MarkdownRenderer";
 import { ToolGroup } from "../../src/components/ToolGroup";
 import { SignalCards } from "../../src/components/SignalCards";
 import { MarkdownLinkProvider } from "../../src/components/MarkdownLinkContext";
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 describe("rendu du chat", () => {
   it("rend le Markdown GFM", async () => {
     render(
@@ -87,6 +95,31 @@ describe("rendu du chat", () => {
     expect(
       await screen.findByRole("heading", { name: "Résultat final" }),
     ).toBeVisible();
+  });
+  it("regroupe les deltas rapides sans dépasser 32 ms entre deux rendus", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-29T00:00:00Z"));
+    const { rerender } = render(
+      <StreamingMarkdownRenderer>premier</StreamingMarkdownRenderer>,
+    );
+
+    rerender(
+      <StreamingMarkdownRenderer>deuxième</StreamingMarkdownRenderer>,
+    );
+    act(() => vi.advanceTimersByTime(STREAMING_MARKDOWN_INTERVAL_MS / 2));
+    rerender(
+      <StreamingMarkdownRenderer>troisième</StreamingMarkdownRenderer>,
+    );
+
+    act(() =>
+      vi.advanceTimersByTime(STREAMING_MARKDOWN_INTERVAL_MS / 2 - 1),
+    );
+    expect(screen.getByText("premier")).toBeVisible();
+
+    act(() => vi.advanceTimersByTime(1));
+    expect(screen.getByText("troisième")).toBeVisible();
+    expect(screen.queryByText("deuxième")).toBeNull();
+    expect(STREAMING_MARKDOWN_INTERVAL_MS).toBe(32);
   });
   it("rend les formules fermées pendant le stream sans interpréter la fin incomplète", async () => {
     const { container, rerender } = render(

@@ -550,6 +550,88 @@ describe("événements de conversation", () => {
     ).toEqual([{ id: "answer", role: "assistant", content: "Terminé" }]);
   });
 
+  it("agrège les outils de steps silencieux malgré un message agent vide", () => {
+    const first = applyConversationEvent([], {
+      method: "item/started",
+      params: {
+        item: {
+          id: "command-1",
+          type: "commandExecution",
+          command: "npm run dev",
+          status: "inProgress",
+        },
+      },
+    });
+    const emptyStep = applyConversationEvent(first, {
+      method: "item/completed",
+      params: {
+        item: { id: "empty-step", type: "agentMessage", text: "" },
+      },
+    });
+    const second = applyConversationEvent(
+      [
+        ...emptyStep,
+        { id: "legacy-empty", role: "assistant", content: "   " },
+      ],
+      {
+        method: "item/started",
+        params: {
+          item: {
+            id: "browser-1",
+            type: "mcpToolCall",
+            server: "playwright",
+            tool: "browser_navigate",
+            status: "inProgress",
+          },
+        },
+      },
+    );
+
+    expect(second).toHaveLength(1);
+    expect(second[0].tools?.map(({ id }) => id)).toEqual([
+      "command-1",
+      "browser-1",
+    ]);
+  });
+
+  it("agrège les outils séparés uniquement par un raisonnement invisible", () => {
+    const first = applyConversationEvent([], {
+      method: "item/started",
+      params: {
+        item: {
+          id: "command-1",
+          type: "commandExecution",
+          command: "git status",
+          status: "inProgress",
+        },
+      },
+    });
+    const hiddenReasoning = applyConversationEvent(first, {
+      method: "item/started",
+      params: {
+        item: { id: "reasoning-empty", type: "reasoning", summary: [] },
+      },
+    });
+    const second = applyConversationEvent(hiddenReasoning, {
+      method: "item/started",
+      params: {
+        item: {
+          id: "command-2",
+          type: "commandExecution",
+          command: "git diff --check",
+          status: "inProgress",
+        },
+      },
+    });
+
+    expect(hiddenReasoning).toBe(first);
+    expect(second).toHaveLength(1);
+    expect(second[0].tools?.map(({ id }) => id)).toEqual([
+      "command-1",
+      "command-2",
+    ]);
+  });
+
   it("termine un hook dans sa carte initiale même après un nouveau message", () => {
     const started = applyConversationEvent([], {
       method: "hook/started",

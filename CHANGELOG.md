@@ -3,7 +3,7 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
-## Unreleased
+## [0.3.6] - 2026-07-29
 
 ### Changed
 
@@ -13,11 +13,18 @@ follows semantic versioning while the public interface is taking shape.
 - Rapid deltas are coalesced into interruptible render updates to keep the
   conversation fluid, and the redundant streaming-only KaTeX path has been
   removed.
+- Progressive Markdown now refreshes at roughly 30 frames per second and uses
+  Chromium's input-aware task scheduler, preserving keyboard responsiveness
+  while the agent streams.
 - Tool activity now forms a continuous visual wave: a stable group summary is
   present from the first call, action headers stay fixed while their details
   collapse, and excess older rows leave before new calls appear.
 - Silent agent steps keep using the same activity group, while intervening
   non-action items and assistant text create deliberate group boundaries.
+- Empty agent-message and reasoning placeholders emitted between tool-only
+  steps no longer create invisible boundaries or duplicate one-action groups,
+  including after thread replay. A reasoning boundary is created only when a
+  visible summary actually arrives.
 - Settings > Chat can retain from one to six recent action rows per group.
 - Long-running commands reported by App Server as background terminals now
   collapse without waiting for process exit, so later browser and tool calls
@@ -307,6 +314,7 @@ follows semantic versioning while the public interface is taking shape.
 - Native Electron packaging for Debian/Ubuntu.
 - Stable Chromium microphone capture for dictation and Realtime voice.
 
+[0.3.6]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.2...v0.3.3

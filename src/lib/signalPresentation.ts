@@ -22,14 +22,17 @@ export function signalFromItem(
   if (!value || !id || !type || !itemSignals.has(type)) return undefined;
 
   switch (type) {
-    case "reasoning":
+    case "reasoning": {
+      const detail = stringArray(value?.summary)?.join("\n") ?? "";
+      if (!detail.trim()) return undefined;
       return {
         id,
         kind: "reasoning",
         title: t("signal.reasoning"),
-        detail: stringArray(value?.summary)?.join("\n") ?? "",
+        detail,
         status: "running",
       };
+    }
     case "plan":
       return {
         id,

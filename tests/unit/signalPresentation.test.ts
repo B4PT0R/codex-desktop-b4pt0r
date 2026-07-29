@@ -38,6 +38,12 @@ describe("signaux agent", () => {
     expect(signalFromItem({ id: "1", type })).toBeUndefined(),
   );
 
+  it("ignore un raisonnement sans résumé visible", () => {
+    expect(
+      signalFromItem({ id: "reasoning-empty", type: "reasoning", summary: [] }),
+    ).toBeUndefined();
+  });
+
   it("présente les plans structurés", () =>
     expect(
       signalFromNotification({

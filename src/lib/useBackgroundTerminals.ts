@@ -40,26 +40,29 @@ export function useBackgroundTerminals({
   const [error, setError] = useState<string>();
   const [terminating, setTerminating] = useState<string[]>([]);
   const refreshVersion = useRef(0);
-  const pendingThreads = useRef(new Set<string>());
+  const pendingRequests = useRef(new Map<string, number>());
   const terminatingProcesses = useRef(new Set<string>());
   const activeThreadId = useRef(threadId);
   activeThreadId.current = threadId;
 
   useEffect(() => {
+    refreshVersion.current += 1;
+    pendingRequests.current.clear();
     setTerminals([]);
     setError(undefined);
+    setLoading(false);
     setTerminating([]);
     terminatingProcesses.current.clear();
-  }, [threadId]);
+  }, [connected, threadId]);
 
   const refresh = useCallback(async () => {
     if (!connected || !threadId) {
       if (!threadId) setTerminals([]);
       return;
     }
-    if (pendingThreads.current.has(threadId)) return;
+    if (pendingRequests.current.has(threadId)) return;
     const version = ++refreshVersion.current;
-    pendingThreads.current.add(threadId);
+    pendingRequests.current.set(threadId, version);
     setLoading(true);
     setError(undefined);
     try {
@@ -81,7 +84,9 @@ export function useBackgroundTerminals({
         setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
-      pendingThreads.current.delete(threadId);
+      if (pendingRequests.current.get(threadId) === version) {
+        pendingRequests.current.delete(threadId);
+      }
       if (version === refreshVersion.current) setLoading(false);
     }
   }, [connected, threadId]);
