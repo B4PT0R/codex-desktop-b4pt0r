@@ -11,6 +11,14 @@ const mocks = vi.hoisted(() => ({
   request: vi.fn(),
 }));
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((next) => {
+    resolve = next;
+  });
+  return { promise, resolve };
+}
+
 vi.mock("../../src/lib/nativeBridge", () => ({
   invoke: mocks.invoke,
   isDesktopApp: () => true,
@@ -23,6 +31,37 @@ vi.mock("../../src/lib/codex", () => ({
 afterEach(() => vi.clearAllMocks());
 
 describe("tâches planifiées", () => {
+  it("n’arme pas le scheduler si la connexion disparaît avant le listener", async () => {
+    const registration = deferred<() => void>();
+    const cleanup = vi.fn();
+    mocks.listen.mockReturnValue(registration.promise);
+    mocks.invoke.mockResolvedValue([]);
+    const turnCoordinator = new ThreadTurnCoordinator();
+    const { rerender } = renderHook(
+      ({ connected }) =>
+        useAutomations({
+          connected,
+          onError: vi.fn(),
+          onThreadCreated: vi.fn(),
+          turnCoordinator,
+        }),
+      { initialProps: { connected: true } },
+    );
+    await waitFor(() =>
+      expect(mocks.listen).toHaveBeenCalledWith(
+        "automation-run-due",
+        expect.any(Function),
+      ),
+    );
+
+    rerender({ connected: false });
+    await act(async () => registration.resolve(cleanup));
+
+    expect(cleanup).toHaveBeenCalledOnce();
+    expect(mocks.invoke).not.toHaveBeenCalledWith("automation_ready");
+    expect(mocks.invoke).not.toHaveBeenCalledWith("automation_list");
+  });
+
   it("exécute un prompt dans un thread de fond et clôt le run", async () => {
     let due:
       ((event: { payload: Record<string, unknown> }) => void) | undefined;

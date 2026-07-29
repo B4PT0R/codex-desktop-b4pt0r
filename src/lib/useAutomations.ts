@@ -178,21 +178,29 @@ export function useAutomations({
     if (!connected || !isDesktopApp()) return;
     let disposed = false;
     let unlisten: (() => void) | undefined;
-    void listen<DueRun>("automation-run-due", ({ payload }) => {
-      if (!disposed) void execute(payload);
-    })
-      .then((cleanup) => {
-        if (disposed) cleanup();
-        else unlisten = cleanup;
-      })
-      .then(() => invoke("automation_ready"))
-      .then(refresh)
-      .catch((cause) => {
+    void (async () => {
+      try {
+        const cleanup = await listen<DueRun>(
+          "automation-run-due",
+          ({ payload }) => {
+            if (!disposed) void execute(payload);
+          },
+        );
+        if (disposed) {
+          cleanup();
+          return;
+        }
+        unlisten = cleanup;
+        await invoke("automation_ready");
+        if (disposed) return;
+        await refresh();
+      } catch (cause) {
         if (!disposed) {
           setError(errorMessage(cause));
           callbacks.current.onError(cause);
         }
-      });
+      }
+    })();
     return () => {
       disposed = true;
       unlisten?.();

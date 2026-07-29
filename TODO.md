@@ -71,6 +71,9 @@ child process state:
   it owns App Server event reduction, remote control and scheduled turns;
 - the scheduler stops claiming due work as soon as the transport is lost and
   catches up only after its renderer listener is attached again.
+- the renderer-to-scheduler readiness handshake is cancellation-safe: a
+  disconnect while the native listener is still attaching cannot re-arm
+  delivery after that listener has already been removed.
 
 Compatibility remains anchored to installed `codex-cli 0.145.0`. The boundary
 also accepts additive thread section metadata, item timestamps and terminal
@@ -133,14 +136,14 @@ repository contracts instead of duplicating them.
 
 - Installed Codex: `codex-cli 0.145.0`.
 - Official source audit: `1def0a892`, stable and experimental v2 schemas.
-- Frontend/unit/contract: 542 tests across 103 files, including 47 installed
+- Frontend/unit/contract: 543 tests across 103 files, including 47 installed
   App Server contract cases.
 - Electron/Node: 68 tests, including the native hidden-window liveness
   invariant.
 - Strict TypeScript: passing.
 - Production Vite build: passing.
 - Production dependency audit: zero vulnerabilities.
-- Main JS: 565.48 kB, 164.07 kB gzip.
+- Main JS: 565.52 kB, 164.07 kB gzip.
 - Lazy diff viewer: 89.50 kB, 32.89 kB gzip.
 - Lazy Markdown/KaTeX: 436.81 kB, 131.40 kB gzip.
 - Shared-browser visual pass: light and dark palettes, 1240×820 and 840×620;

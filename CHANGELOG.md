@@ -3,6 +3,13 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## Unreleased
+
+### Fixed
+
+- Disconnecting while the scheduled-task listener is still attaching no longer
+  re-arms native delivery after the listener has already been removed.
+
 ## [0.3.8] - 2026-07-29
 
 ### Fixed
