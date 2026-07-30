@@ -9,6 +9,7 @@ export type DesktopSettings = {
   fontSize?: "small" | "default" | "large";
   interfaceScale?: number;
   maxVisibleActionsPerGroup?: number;
+  defaultThreadId?: string;
   realtimeVoice?: string;
   sidebarWidth?: number;
 };
@@ -22,6 +23,7 @@ export type DesktopSettingsPatch = Partial<
     | "fontSize"
     | "interfaceScale"
     | "maxVisibleActionsPerGroup"
+    | "defaultThreadId"
     | "realtimeVoice"
     | "sidebarWidth"
   >
@@ -31,6 +33,7 @@ const legacyLocaleKey = "codex-desktop.locale";
 const legacyWorkspaceKey = "codex-desktop.cwd";
 const browserAppearanceKey = "codex-desktop.appearance";
 const browserVoiceKey = "codex-desktop.realtimeVoice";
+const browserDefaultThreadKey = "codex-desktop.defaultThreadId";
 const browserSidebarWidthKey = "codex-desktop.sidebarWidth";
 const browserMaxVisibleActionsKey = "codex-desktop.maxVisibleActionsPerGroup";
 let loadPromise: Promise<DesktopSettings> | undefined;
@@ -89,6 +92,12 @@ function browserSettings(): DesktopSettings {
     ...(localStorage.getItem(browserVoiceKey)
       ? { realtimeVoice: localStorage.getItem(browserVoiceKey) ?? undefined }
       : {}),
+    ...(localStorage.getItem(browserDefaultThreadKey)
+      ? {
+          defaultThreadId:
+            localStorage.getItem(browserDefaultThreadKey) ?? undefined,
+        }
+      : {}),
     ...parseBrowserSidebarWidth(localStorage.getItem(browserSidebarWidthKey)),
     ...parseBrowserMaxVisibleActions(
       localStorage.getItem(browserMaxVisibleActionsKey),
@@ -111,6 +120,11 @@ function writeBrowserSettings(settings: DesktopSettings) {
   );
   if (settings.realtimeVoice) {
     localStorage.setItem(browserVoiceKey, settings.realtimeVoice);
+  }
+  if (settings.defaultThreadId) {
+    localStorage.setItem(browserDefaultThreadKey, settings.defaultThreadId);
+  } else {
+    localStorage.removeItem(browserDefaultThreadKey);
   }
   if (settings.sidebarWidth) {
     localStorage.setItem(
@@ -159,6 +173,14 @@ function validatePatch(patch: DesktopSettingsPatch) {
   }
   if (patch.realtimeVoice && !isRealtimeVoice(patch.realtimeVoice)) {
     throw new Error("Unsupported realtime voice");
+  }
+  if (
+    patch.defaultThreadId !== undefined &&
+    (typeof patch.defaultThreadId !== "string" ||
+      patch.defaultThreadId.length === 0 ||
+      patch.defaultThreadId.length > 1_024)
+  ) {
+    throw new Error("Unsupported default thread");
   }
   if (
     patch.sidebarWidth !== undefined &&

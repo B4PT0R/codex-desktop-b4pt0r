@@ -419,6 +419,28 @@ autorisations déjà accordées.
   notifications tardives, sérialise l’injection des transcriptions dans le
   parent et centralise tous les chemins d’arrêt. `App.tsx` ne coordonne que le
   déclenchement depuis le compositeur.
+- La conversation par défaut est une préférence générale du client, pas un
+  réglage propre à Realtime. Elle est sélectionnable dans Général et depuis le
+  menu du thread ; les actions rapides peuvent la consommer sans charger son
+  transcript dans la conversation visible.
+- Le tray peut lancer une session Realtime sans montrer la fenêtre. Le renderer
+  caché conserve la capture WebRTC, crée un fork vocal éphémère depuis la
+  conversation par défaut et injecte les tours finalisés dans ce parent. Si la
+  préférence est absente ou vise un thread supprimé, un parent persistant est
+  créé dans le dossier utilisateur puis mémorisé. Une erreur transitoire ne doit
+  jamais créer silencieusement un second parent.
+- Si la fenêtre devient visible pendant cette session, elle reprend d’abord le
+  parent persistant puis rattache le transcript accumulé au fil courant. Les
+  deltas suivants utilisent alors exactement la présentation Realtime normale ;
+  la session WebRTC et son fork ne sont ni interrompus ni recréés.
+- La sidebar promeut la conversation par défaut dans une section compacte
+  dédiée au-dessus des projets récents. Elle est retirée de son groupe de
+  workspace tant qu’elle occupe cette position afin d’éviter un doublon
+  visuel, sans modifier son cwd ni son appartenance réelle.
+- Le menu natif ne suppose pas que le renderer est prêt : Realtime reste
+  indisponible jusqu’à l’attachement de son listener, puis expose des états
+  déterministes démarrage, actif et arrêt. Les échecs headless utilisent une
+  notification native et rendent immédiatement le contrôle réutilisable.
 - Les rafales de notifications qui modifient le fil sont réduites dans l’ordre
   à une mise à jour React non urgente par fenêtre de 16 ms. Les interactions
   du compositeur, la dictée et les demandes bloquantes gardent ainsi la

@@ -22,3 +22,8 @@ export function createMainWindow(BrowserWindow, { hidden, root }) {
   window.setMenuBarVisibility(false);
   return window;
 }
+
+export function observeWindowShown(window, onShown) {
+  window.on("show", onShown);
+  window.on("restore", onShown);
+}

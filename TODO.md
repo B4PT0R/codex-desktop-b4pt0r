@@ -1,6 +1,6 @@
 # Codex Desktop Linux — Handoff
 
-Last updated: 2026-07-29
+Last updated: 2026-07-30
 
 Read `AGENTS.md` before contributing. Durable protocol and UI decisions belong
 in `APP_SERVER_COVERAGE.md` and `UI_ARCHITECTURE.md`; release history belongs in
@@ -17,7 +17,7 @@ shared Playwright Chromium session.
 
 The repository is public at
 `https://github.com/B4PT0R/codex-desktop-b4pt0r`. The current public release is
-v0.3.9.
+v0.3.10.
 
 ## Current candidate
 
@@ -55,6 +55,16 @@ API:
 - unattended security restoration accepts either the authoritative settings
   notification or a post-update thread read. This covers App Server's
   documented no-op behavior without reporting a false 15-second timeout.
+- scheduled wake-up transcript cards now replay as a compact one-line summary
+  and expose their full Markdown prompt through an accessible disclosure.
+- a general default conversation can be selected from Settings or the current
+  thread menu. Tray-launched headless Realtime sessions fork this context,
+  persist finalized voice exchanges back into it and create a persistent
+  fallback in the user home only when no valid default exists.
+- opening the hidden window during a tray Realtime session resumes that parent,
+  transfers the buffered transcript into the chat and continues live rendering
+  without restarting WebRTC. The default conversation is promoted once above
+  recent projects in the sidebar rather than duplicated in its workspace.
 
 Background notifications are now routed by `threadId`. A scheduled run updates
 its thread and sidebar without injecting activity into the conversation
@@ -171,9 +181,9 @@ release the current thread's own mutation lock.
 
 - Installed Codex: `codex-cli 0.145.0`.
 - Official source audit: `1def0a892`, stable and experimental v2 schemas.
-- Frontend/unit/contract: 548 tests across 103 files, including 47 installed
+- Frontend/unit/contract: 566 tests across 108 files, including 47 installed
   App Server contract cases.
-- Electron/Node: 72 tests, including the native hidden-window liveness
+- Electron/Node: 77 tests, including the native hidden-window liveness
   invariant.
 - Strict TypeScript: passing.
 - Production Vite build: passing.
@@ -181,12 +191,16 @@ release the current thread's own mutation lock.
   favicon, main and preload with zero native test sources, while the shared
   browser skill remains an external resource.
 - Production dependency audit: zero vulnerabilities.
-- Main JS: 566.18 kB, 164.30 kB gzip.
+- Main JS: 575.36 kB, 166.52 kB gzip.
 - Lazy diff viewer: 89.50 kB, 32.89 kB gzip.
 - Lazy Markdown/KaTeX: 436.81 kB, 131.40 kB gzip.
 - Shared-browser visual pass: light and dark palettes, 1240×820 and 840×620;
   no browser warning, error or horizontal overflow after the Settings
   modularity pass.
+- Shared-browser default-conversation pass: the General selector stays aligned
+  with the existing settings grid at 1240×820 and 840×620, with no warning,
+  error or horizontal overflow. Its dedicated sidebar section remains compact
+  at both sizes and removes the promoted thread from its workspace group.
 - Shared-browser action pass: user-approved continuous multi-step wave with
   seven aggregated calls, saturation, an interleaved compaction boundary and a
   second group containing a detached development server followed by Playwright
@@ -197,8 +211,8 @@ release the current thread's own mutation lock.
   the visual demo intentionally bypasses those events.
 - Shared-browser Markdown pass: complete light/dark fixture at 1240×820 and
   840×620; wide tables scroll locally without widening the message or app.
-- Built Debian release: `codex-desktop-linux 0.3.9 amd64`
-  (`sha256:ba8a0ef6…25c4a3a0`); its packaged ASAR passes the production
+- Built Debian release: `codex-desktop-linux 0.3.10 amd64`
+  (`sha256:75174b0f…b9947e2`); its packaged ASAR passes the production
   runtime inventory contract.
 
 ## Active invariants
@@ -247,12 +261,14 @@ release the current thread's own mutation lock.
 1. Exercise long-idle and suspend/resume recovery in packaged Electron together
    with scheduled execution, including an approval-gated task, hidden-window
    delivery and App Server restart.
-2. Decide whether background task completion merits an OS notification and a
+2. Let scheduled tasks optionally target the general default conversation
+   after the tray Realtime lifecycle has been exercised in packaged Electron.
+3. Decide whether background task completion merits an OS notification and a
    small activity inbox before adding either surface.
-3. Add a concise public App Server compatibility guide and security-reporting
+4. Add a concise public App Server compatibility guide and security-reporting
    policy.
-4. Add user-controlled diagnostic export with redaction and preview.
-5. Define an explicit, non-silent update and rollback strategy.
+5. Add user-controlled diagnostic export with redaction and preview.
+6. Define an explicit, non-silent update and rollback strategy.
 
 Defer generic RPC/filesystem consoles, unstable plugin-marketplace production
 support and Git/worktree management without a stable App Server product

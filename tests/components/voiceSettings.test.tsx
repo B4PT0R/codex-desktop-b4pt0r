@@ -56,4 +56,5 @@ describe("réglages vocaux", () => {
     );
     expect(screen.getByRole("option", { name: "Juniper" })).toBeVisible();
   });
+
 });

@@ -77,6 +77,8 @@ import { useThreadSearch } from "./lib/useThreadSearch";
 import { useShellCommand } from "./lib/useShellCommand";
 import { useExternalAgentImport } from "./lib/useExternalAgentImport";
 import { useRealtimeSettings } from "./lib/useRealtimeSettings";
+import { useDefaultThreadSettings } from "./lib/useDefaultThreadSettings";
+import { useTrayRealtimeConversation } from "./lib/useTrayRealtimeConversation";
 import { useCodexDefaults } from "./lib/useCodexDefaults";
 import { useCodexGlobalSettings } from "./lib/useCodexGlobalSettings";
 import { useChatPresentationSettings } from "./lib/useChatPresentationSettings";
@@ -249,6 +251,7 @@ export default function App() {
     enabled: settings === "advanced",
   });
   const realtime = useRealtimeSettings(settings === "voice");
+  const defaultThread = useDefaultThreadSettings(threads);
   const realtimeConversation = useRealtimeConversation({
     setActivity,
     setMessages,
@@ -359,6 +362,18 @@ export default function App() {
       setThreadId(id);
       applyThreadRuntimeSettings(runtimeSettings);
     },
+  });
+  useTrayRealtimeConversation({
+    activeThreadId: threadId,
+    connected: connection.connected,
+    defaultThread,
+    dictationActive: dictating || dictationProcessing,
+    model,
+    openThread: threadHistory.resume,
+    realtimeConversation,
+    setThreads,
+    translate: t,
+    voice: realtime.voice,
   });
   const interactiveRequests = useInteractiveRequests({ onError: showError });
   const threadActions = useThreadActions({
@@ -916,6 +931,7 @@ export default function App() {
         automations={automations}
         capabilities={capabilities}
         configRequirements={configRequirements}
+        defaultThread={defaultThread}
         externalAgentImport={externalAgentImport}
         integrations={integrations}
         models={models}
@@ -949,6 +965,7 @@ export default function App() {
     <div className="app">
       <Sidebar
         cwd={cwd}
+        defaultThreadId={defaultThread.defaultThreadId}
         open={sidebar}
         width={sidebarWidth}
         selectedThreadId={
@@ -970,7 +987,19 @@ export default function App() {
             return true;
           }
           const deleted = await threadActions.deleteThread(thread.id);
-          if (deleted) threadSearch.remove(thread.id);
+          if (deleted) {
+            threadSearch.remove(thread.id);
+            if (thread.id === defaultThread.defaultThreadId) {
+              const cleared =
+                await defaultThread.setDefaultThreadId(undefined);
+              if (!cleared) {
+                showError(
+                  t("settings.defaultThread.saveError"),
+                  defaultThread.error ?? t("settings.persistence.error"),
+                );
+              }
+            }
+          }
           return deleted;
         }}
         onClose={() => setSidebar(false)}
@@ -1002,6 +1031,7 @@ export default function App() {
           title={
             currentThread?.name ?? currentThread?.preview ?? t("app.newChat")
           }
+          defaultThread={defaultThread.defaultThreadId === threadId}
           demoPlayback={
             demoPlayback.enabled && !isReadmeDemoPreview()
               ? {
@@ -1019,6 +1049,17 @@ export default function App() {
           onReconnect={() => void connection.reconnect()}
           onReload={() => threadHistory.resume(threadId!)}
           onRename={threadActions.rename}
+          onSetDefaultThread={async () => {
+            if (!threadId) return false;
+            const saved = await defaultThread.setDefaultThreadId(threadId);
+            if (!saved && defaultThread.defaultThreadId !== threadId) {
+              showError(
+                t("settings.defaultThread.saveError"),
+                defaultThread.error ?? t("settings.persistence.error"),
+              );
+            }
+            return saved;
+          }}
         />
         <Conversation
           activity={activity}

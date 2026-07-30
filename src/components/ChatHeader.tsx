@@ -28,6 +28,7 @@ type ChatHeaderProps = {
   busy: boolean;
   connected: boolean;
   cwd?: string;
+  defaultThread?: boolean;
   nativeApp: boolean;
   reconnecting: boolean;
   sidebarOpen: boolean;
@@ -46,6 +47,7 @@ type ChatHeaderProps = {
   onReconnect: () => void;
   onReload: () => Promise<boolean>;
   onRename: (name: string) => Promise<boolean>;
+  onSetDefaultThread?: () => Promise<boolean>;
 };
 
 export function ChatHeader({
@@ -53,6 +55,7 @@ export function ChatHeader({
   busy,
   connected,
   cwd = "",
+  defaultThread = false,
   nativeApp,
   reconnecting,
   sidebarOpen,
@@ -66,6 +69,7 @@ export function ChatHeader({
   onReconnect,
   onReload,
   onRename,
+  onSetDefaultThread,
 }: ChatHeaderProps) {
   const { t } = useI18n();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -123,6 +127,13 @@ export function ChatHeader({
     if (saving || busy || !connected) return;
     setSaving(true);
     if (await onReload()) setMenuOpen(false);
+    setSaving(false);
+  }
+
+  async function setAsDefaultThread() {
+    if (!onSetDefaultThread || defaultThread || saving) return;
+    setSaving(true);
+    if (await onSetDefaultThread()) setMenuOpen(false);
     setSaving(false);
   }
 
@@ -230,6 +241,19 @@ export function ChatHeader({
                     <small>{t("chat.actions.reloadDetail")}</small>
                   </span>
                 </button>
+                {onSetDefaultThread && (
+                  <button
+                    className="thread-menu-action"
+                    disabled={defaultThread || saving}
+                    onClick={setAsDefaultThread}
+                  >
+                    <Check />
+                    <span>
+                      <strong>{t("chat.actions.setDefault")}</strong>
+                      <small>{t("chat.actions.setDefaultDetail")}</small>
+                    </span>
+                  </button>
+                )}
                 <button
                   className="thread-menu-action"
                   disabled={!connected}

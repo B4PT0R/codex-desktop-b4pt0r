@@ -523,11 +523,20 @@
   background: #f5f1e6;
 }
 
-:root[data-theme="light"] .scheduled-task-message > header {
+:root[data-theme="light"] .scheduled-task-toggle {
   color: #887342;
 }
 
-:root[data-theme="light"] .scheduled-task-message > header strong {
+:root[data-theme="light"] .scheduled-task-toggle:hover {
+  color: #715d31;
+  background: transparent;
+}
+
+:root[data-theme="light"] .scheduled-task-toggle:focus-visible {
+  outline-color: #b7a77f;
+}
+
+:root[data-theme="light"] .scheduled-task-toggle strong {
   color: #62583e;
 }
 

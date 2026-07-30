@@ -97,6 +97,14 @@ function validatePatch(patch) {
     throw new Error("Unsupported shared browser setting");
   }
   if (
+    patch.defaultThreadId !== undefined &&
+    (typeof patch.defaultThreadId !== "string" ||
+      patch.defaultThreadId.length === 0 ||
+      patch.defaultThreadId.length > 1_024)
+  ) {
+    throw new Error("Unsupported default thread");
+  }
+  if (
     patch.automations !== undefined &&
     (!Array.isArray(patch.automations) ||
       patch.automations.length > 100 ||

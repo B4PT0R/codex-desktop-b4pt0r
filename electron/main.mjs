@@ -8,6 +8,7 @@ import {
   Menu,
   nativeImage,
   net,
+  Notification,
   powerMonitor,
   session,
   shell,
@@ -19,7 +20,7 @@ import { readSettings, settingsPath, updateSettings } from "./settings.mjs";
 import { transcribeDictation } from "./transcription.mjs";
 import { SharedBrowserManager, stopManagedChromium } from "./chromium.mjs";
 import { openFileReference } from "./file-reference.mjs";
-import { createMainWindow } from "./window.mjs";
+import { createMainWindow, observeWindowShown } from "./window.mjs";
 import {
   codexConfigPath,
   readCodexConfig,
@@ -45,6 +46,12 @@ import {
 } from "./autostart.mjs";
 import { bundledSkillsRoot } from "./bundled-skills.mjs";
 import { AutomationScheduler } from "./automation-scheduler.mjs";
+import {
+  pendingRealtimeState,
+  realtimeToggleAction,
+  rendererRealtimeState,
+  trayMenuTemplate,
+} from "./tray-menu.mjs";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const isDevelopment = !app.isPackaged;
@@ -52,6 +59,7 @@ let mainWindow;
 let tray;
 let automationScheduler;
 let appServerHealthMonitor;
+let trayRealtimeState = "unavailable";
 
 function send(event, payload) {
   if (!mainWindow?.isDestroyed()) {
@@ -108,6 +116,18 @@ function registerIpc() {
   ipcMain.handle("desktop:update_desktop_settings", (event, args) => {
     trusted(event);
     return updateSettings(settingsPath(app.getPath("home")), args?.patch ?? {});
+  });
+  ipcMain.handle("desktop:set_tray_realtime_state", (event, args) => {
+    trusted(event);
+    trayRealtimeState = rendererRealtimeState(args?.state);
+    updateTrayMenu();
+    if (
+      args?.state === "error" &&
+      typeof args?.message === "string" &&
+      args.message
+    ) {
+      showRealtimeError(args.message);
+    }
   });
   ipcMain.handle("desktop:read_codex_config", (event) => {
     trusted(event);
@@ -317,6 +337,7 @@ function createWindow() {
       mainWindow.hide();
     }
   });
+  observeWindowShown(mainWindow, () => send("window-shown"));
   if (isDevelopment) void mainWindow.loadURL("http://localhost:1420/");
   else void mainWindow.loadFile(path.join(root, "dist/index.html"));
 }
@@ -327,26 +348,49 @@ function createTray() {
   );
   tray = new Tray(icon.resize({ width: 22, height: 22 }));
   tray.setToolTip("Codex Desktop");
+  updateTrayMenu();
+}
+
+function updateTrayMenu() {
+  if (!tray || tray.isDestroyed()) return;
   tray.setContextMenu(
-    Menu.buildFromTemplate([
-      { label: "Ouvrir Codex", click: () => mainWindow.show() },
-      {
-        label: "Nouveau chat",
-        click: () => {
-          mainWindow.show();
+    Menu.buildFromTemplate(
+      trayMenuTemplate({
+        realtimeState: trayRealtimeState,
+        onOpen: () => mainWindow.show(),
+        onNewChat: () => {
           send("new-chat");
+          mainWindow.show();
         },
-      },
-      { type: "separator" },
-      {
-        label: "Quitter",
-        click: () => {
+        onToggleRealtime: () => {
+          const action = realtimeToggleAction(trayRealtimeState);
+          trayRealtimeState = pendingRealtimeState(trayRealtimeState);
+          updateTrayMenu();
+          send("realtime-tray-toggle", {
+            action,
+            home: app.getPath("home"),
+            windowVisible: mainWindow.isVisible(),
+          });
+        },
+        onQuit: () => {
           app.isQuitting = true;
           app.quit();
         },
-      },
-    ]),
+      }),
+    ),
   );
+}
+
+function showRealtimeError(message) {
+  const body = message.slice(0, 1_024);
+  if (Notification.isSupported()) {
+    new Notification({ title: "Codex Desktop — Realtime", body }).show();
+    return;
+  }
+  tray?.displayBalloon?.({
+    title: "Codex Desktop — Realtime",
+    content: body,
+  });
 }
 
 const singleInstance = app.requestSingleInstanceLock();

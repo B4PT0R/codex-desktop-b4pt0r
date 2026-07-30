@@ -12,10 +12,12 @@ import type { ThreadSummary } from "../types";
 import type { ThreadSearchController } from "../lib/useThreadSearch";
 import { ThreadDeleteDialog } from "./ThreadDeleteDialog";
 import { SidebarThreadGroup } from "./SidebarThreadGroup";
+import { SidebarThreadRow } from "./SidebarThreadRow";
 import { RoundIconButton } from "./RoundIcon";
 
 type SidebarProps = {
   cwd: string;
+  defaultThreadId?: string;
   open: boolean;
   width: number;
   selectedThreadId?: string;
@@ -34,6 +36,7 @@ type SidebarProps = {
 
 export function Sidebar({
   cwd,
+  defaultThreadId,
   open,
   width,
   selectedThreadId,
@@ -73,12 +76,19 @@ export function Sidebar({
   const threadGroups = useMemo(() => {
     const groups = new Map<string, ThreadSummary[]>();
     for (const thread of visibleThreads) {
+      if (!search.query.trim() && thread.id === defaultThreadId) continue;
       const key = thread.cwd || t("sidebar.otherThreads");
       groups.set(key, [...(groups.get(key) ?? []), thread]);
     }
     return [...groups.entries()];
-  }, [t, visibleThreads]);
+  }, [defaultThreadId, search.query, t, visibleThreads]);
   const searching = Boolean(search.query.trim());
+  const defaultThread = defaultThreadId
+    ? (threads.find((thread) => thread.id === defaultThreadId) ?? {
+        id: defaultThreadId,
+        name: t("sidebar.defaultConfigured"),
+      })
+    : undefined;
   const selectedThread = threads.find(
     (thread) => thread.id === selectedThreadId,
   );
@@ -150,6 +160,23 @@ export function Sidebar({
         />
         <kbd>Ctrl K</kbd>
       </label>
+      {defaultThread && !searching && (
+        <>
+          <div className="section-title">{t("sidebar.defaultThread")}</div>
+          <nav
+            aria-label={t("sidebar.defaultThread")}
+            className="sidebar-default-thread"
+          >
+            <SidebarThreadRow
+              onArchive={onArchive}
+              onDelete={setDeleteCandidate}
+              onResume={onResume}
+              selected={selectedThreadId === defaultThread.id}
+              thread={defaultThread}
+            />
+          </nav>
+        </>
+      )}
       <div className="section-title">
         {search.query.trim()
           ? t("sidebar.searchResults")

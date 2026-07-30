@@ -66,4 +66,5 @@ describe("préférences Realtime v3", () => {
     expect(result.current.voice).toBe("maple");
     expect(result.current.persistenceError).toBe("write denied");
   });
+
 });

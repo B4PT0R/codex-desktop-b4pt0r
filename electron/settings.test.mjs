@@ -92,3 +92,21 @@ test("validates the persisted shared browser state", async () => {
     /Unsupported shared browser setting/,
   );
 });
+
+test("validates and clears the default thread", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "codex-settings-"));
+  const file = path.join(directory, "settings.json");
+  const updated = await updateSettings(file, {
+    defaultThreadId: "thread-default",
+  });
+  assert.equal(updated.defaultThreadId, "thread-default");
+  const cleared = await updateSettings(file, {
+    defaultThreadId: undefined,
+  });
+  assert.equal("defaultThreadId" in (await readSettings(file)), false);
+  assert.equal(cleared.defaultThreadId, undefined);
+  await assert.rejects(
+    updateSettings(file, { defaultThreadId: "" }),
+    /Unsupported default thread/,
+  );
+});

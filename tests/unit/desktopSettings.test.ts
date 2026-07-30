@@ -26,6 +26,7 @@ describe("préférences desktop", () => {
       theme: "light",
       fontSize: "large",
       maxVisibleActionsPerGroup: 4,
+      defaultThreadId: "thread-voice",
       realtimeVoice: "juniper",
       sidebarWidth: 320,
     });
@@ -37,6 +38,7 @@ describe("préférences desktop", () => {
       theme: "light",
       fontSize: "large",
       maxVisibleActionsPerGroup: 4,
+      defaultThreadId: "thread-voice",
       realtimeVoice: "juniper",
       sidebarWidth: 320,
     });

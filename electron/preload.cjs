@@ -7,6 +7,7 @@ const allowedCommands = new Set([
   "read_bundled_skills_root",
   "read_desktop_settings",
   "update_desktop_settings",
+  "set_tray_realtime_state",
   "read_codex_config",
   "write_codex_config",
   "read_workspace_agents",
@@ -36,6 +37,8 @@ const allowedEvents = new Set([
   "app-server-exited",
   "new-chat",
   "automation-run-due",
+  "realtime-tray-toggle",
+  "window-shown",
 ]);
 
 contextBridge.exposeInMainWorld("electronDesktop", {

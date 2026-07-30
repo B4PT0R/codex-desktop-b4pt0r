@@ -15,6 +15,8 @@ import {
 } from "../lib/useChatPresentationSettings";
 import type { IntegrationsController } from "../lib/useIntegrations";
 import { useLaunchAtLogin } from "../lib/useLaunchAtLogin";
+import type { DefaultThreadSettingsController } from "../lib/useDefaultThreadSettings";
+import { DefaultThreadSettingsField } from "./DefaultThreadSettingsField";
 
 export type AppServerRestartController = {
   available: boolean;
@@ -45,9 +47,11 @@ const fileOpeners: FileOpener[] = [
 
 export function GeneralSettings({
   appServerRestart,
+  defaultThread,
   globalSettings,
 }: {
   appServerRestart: AppServerRestartController;
+  defaultThread: DefaultThreadSettingsController;
   globalSettings: CodexGlobalSettingsController;
 }) {
   const { locale, persistenceError, setLocale, t } = useI18n();
@@ -96,6 +100,7 @@ export function GeneralSettings({
             ))}
           </select>
         </label>
+        <DefaultThreadSettingsField controller={defaultThread} />
         <label>
           <span className="settings-field-description">
             <strong>{t("settings.startup.title")}</strong>
@@ -148,6 +153,13 @@ export function GeneralSettings({
       {persistenceError && (
         <div className="inventory-message error" role="alert">
           {t("settings.persistence.error")} {persistenceError}
+        </div>
+      )}
+      {defaultThread.error && (
+        <div className="inventory-message error" role="alert">
+          {t("settings.defaultThread.error", {
+            detail: defaultThread.error,
+          })}
         </div>
       )}
       {appServerRestart.error && (

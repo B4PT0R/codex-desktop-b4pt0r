@@ -163,6 +163,46 @@ describe("barre latérale", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("met la conversation par défaut en avant avant les projets récents", () => {
+    const onResume = vi.fn();
+    render(
+      <I18nProvider>
+        <Sidebar
+          cwd=""
+          defaultThreadId="gamma"
+          open
+          selectedThreadId="alpha"
+          width={260}
+          threads={threads}
+          search={searchController()}
+          onArchive={vi.fn()}
+          onDelete={vi.fn()}
+          onClose={vi.fn()}
+          onNewChat={vi.fn()}
+          onOpenSettings={vi.fn()}
+          onResume={onResume}
+          onSelectDirectory={vi.fn()}
+          onWidthChange={vi.fn()}
+          onWidthCommit={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+
+    const defaultHeading = screen.getByText(
+      /Default conversation|Conversation par défaut/,
+    );
+    const recentHeading = screen.getByText(/Recent projects|Projets récents/);
+    expect(
+      defaultHeading.compareDocumentPosition(recentHeading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(screen.getAllByText("Polir la sidebar")).toHaveLength(1);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Polir la sidebar" }),
+    );
+    expect(onResume).toHaveBeenCalledWith("gamma");
+  });
+
   it("demande confirmation avant de supprimer une conversation", async () => {
     const { onDelete } = renderSidebar();
     fireEvent.click(

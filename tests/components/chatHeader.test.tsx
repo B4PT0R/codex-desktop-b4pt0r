@@ -273,4 +273,45 @@ describe("en-tête de conversation", () => {
       screen.queryByRole("dialog", { name: "Actions de la conversation" }),
     ).toBeNull();
   });
+
+  it("définit la conversation courante comme conversation par défaut", async () => {
+    const onSetDefaultThread = vi.fn().mockResolvedValue(true);
+    render(
+      <I18nProvider>
+        <ChatHeader
+          busy={false}
+          connected
+          nativeApp
+          reconnecting={false}
+          sidebarOpen
+          threadId="thread-1"
+          title="Conversation choisie"
+          onCompact={vi.fn()}
+          onDelete={vi.fn()}
+          onFork={vi.fn()}
+          onOpenSidebar={vi.fn()}
+          onReconnect={vi.fn()}
+          onReload={vi.fn()}
+          onRename={vi.fn()}
+          onSetDefaultThread={onSetDefaultThread}
+        />
+      </I18nProvider>,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Conversation choisie" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Définir comme conversation par défaut/,
+      }),
+    );
+
+    expect(onSetDefaultThread).toHaveBeenCalledOnce();
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: "Actions de la conversation" }),
+      ).not.toBeInTheDocument(),
+    );
+  });
 });

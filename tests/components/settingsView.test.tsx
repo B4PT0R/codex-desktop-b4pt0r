@@ -152,6 +152,13 @@ const appServerRestart = {
   restart: vi.fn().mockResolvedValue(true),
   restarting: false,
 };
+const defaultThread = {
+  defaultThreadId: undefined,
+  error: undefined,
+  saving: false,
+  threadOptions: [],
+  setDefaultThreadId: vi.fn().mockResolvedValue(true),
+};
 const memory = {
   enabled: false,
   generateMemories: true,
@@ -223,6 +230,7 @@ function renderSettings(
     automations,
     capabilities,
     chatPresentation,
+    defaultThread,
     externalAgentImport,
     integrations,
     memory,

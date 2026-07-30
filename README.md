@@ -136,7 +136,7 @@ Download the current `.deb` from
 then install it with:
 
 ```bash
-sudo apt install ./codex-desktop-linux_0.3.9_amd64.deb
+sudo apt install ./codex-desktop-linux_0.3.10_amd64.deb
 ```
 
 To build from source instead, clone the repository, install the locked
@@ -145,7 +145,7 @@ dependencies, and build the Debian package:
 ```bash
 npm ci
 npm run electron:deb
-sudo apt install ./dist/codex-desktop-linux_0.3.9_amd64.deb
+sudo apt install ./dist/codex-desktop-linux_0.3.10_amd64.deb
 ```
 
 Launch the installed application from the desktop menu or run:

@@ -396,6 +396,8 @@ export const fr = {
     "Guides et références pour construire et automatiser avec Codex.",
   "app.connectionError": "Erreur de connexion",
   "app.realtimeUnavailable": "Realtime indisponible",
+  "app.realtimeDictationConflict":
+    "Arrêtez la dictée avant de lancer une session Realtime.",
   "app.realtimeTranscriptSaveError":
     "Le transcript Realtime n’a pas pu être enregistré",
   "app.interruptError": "Impossible d’interrompre le tour",
@@ -420,6 +422,9 @@ export const fr = {
   "chat.actions.reload": "Recharger la session",
   "chat.actions.reloadDetail":
     "Relit l’historique et les réglages effectifs de ce thread",
+  "chat.actions.setDefault": "Définir comme conversation par défaut",
+  "chat.actions.setDefaultDetail":
+    "Contexte partagé pour les actions rapides compatibles",
   "chat.actions.fork": "Créer une branche",
   "chat.actions.forkDetail":
     "Poursuit depuis ici dans une nouvelle conversation",
@@ -522,6 +527,8 @@ export const fr = {
   "sidebar.searchError": "Recherche distante indisponible : {detail}",
   "sidebar.loadMore": "Afficher plus de résultats",
   "sidebar.recentProjects": "Projets récents",
+  "sidebar.defaultThread": "Conversation par défaut",
+  "sidebar.defaultConfigured": "Conversation configurée",
   "sidebar.recentThreads": "Conversations récentes",
   "sidebar.otherThreads": "Autres conversations",
   "sidebar.untitled": "Conversation sans titre",
@@ -616,6 +623,8 @@ export const fr = {
   "automations.day.5": "Vendredi",
   "automations.day.6": "Samedi",
   "conversation.scheduledTask": "Réveil planifié",
+  "conversation.scheduledTask.collapse": "Masquer les instructions de la tâche",
+  "conversation.scheduledTask.expand": "Afficher les instructions de la tâche",
   "settings.browser.description":
     "Préférences globales de recherche web et du navigateur partagé.",
   "settings.browser.enabledTitle": "Activer le navigateur partagé",
@@ -725,6 +734,16 @@ export const fr = {
   "settings.fileOpener.cursor": "Cursor",
   "settings.fileOpener.windsurf": "Windsurf",
   "settings.fileOpener.none": "Aucune application",
+  "settings.defaultThread.title": "Conversation par défaut",
+  "settings.defaultThread.detail":
+    "Contexte partagé utilisé par les actions rapides compatibles.",
+  "settings.defaultThread.automatic":
+    "Automatique (dossier utilisateur)",
+  "settings.defaultThread.configured": "Conversation configurée",
+  "settings.defaultThread.error":
+    "Impossible d’enregistrer la conversation par défaut : {detail}",
+  "settings.defaultThread.saveError":
+    "Impossible d’enregistrer la conversation par défaut",
   "settings.reasoningSummary.title": "Résumés de raisonnement",
   "settings.reasoningSummary.detail":
     "Niveau de détail des résumés visibles produits par l’agent.",

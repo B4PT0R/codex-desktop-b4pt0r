@@ -146,4 +146,173 @@ describe("cycle de vie de la conversation Realtime", () => {
     });
     expect(result.current.conversation.recording).toBe(false);
   });
+
+  it("persiste une session headless sans modifier le chat affiché", async () => {
+    const reportError = vi.fn();
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([
+        { id: "visible", role: "assistant", content: "Tour textuel actif" },
+      ]);
+      const [activity, setActivity] = useState<AgentActivity>("working");
+      const conversation = useRealtimeConversation({
+        setActivity,
+        setMessages,
+        showError: vi.fn(),
+        translate: defaultTranslate,
+      });
+      return { activity, conversation, messages };
+    });
+
+    await act(() =>
+      result.current.conversation.start({
+        parentThreadId: "headless-parent",
+        model: "gpt-5.4",
+        voice: "juniper",
+        displayTranscript: false,
+        reportError,
+      }),
+    );
+    act(() => {
+      result.current.conversation.handleMessage({
+        method: "thread/realtime/transcript/done",
+        params: {
+          threadId: "realtime-child",
+          role: "user",
+          text: "Contexte vocal",
+        },
+      });
+      result.current.conversation.handleMessage({
+        method: "thread/realtime/closed",
+        params: { threadId: "realtime-child" },
+      });
+    });
+
+    expect(result.current.messages).toEqual([
+      { id: "visible", role: "assistant", content: "Tour textuel actif" },
+    ]);
+    expect(result.current.activity).toBe("working");
+    await waitFor(() =>
+      expect(requestMock).toHaveBeenCalledWith(
+        "thread/inject_items",
+        expect.objectContaining({
+          threadId: "headless-parent",
+          items: [
+            expect.objectContaining({
+              role: "user",
+              content: [{ type: "input_text", text: "Contexte vocal" }],
+            }),
+          ],
+        }),
+      ),
+    );
+    expect(reportError).not.toHaveBeenCalled();
+  });
+
+  it("rattache le transcript accumulé lorsqu’une session headless devient visible", async () => {
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([
+        { id: "history", role: "assistant", content: "Contexte existant" },
+      ]);
+      const [, setActivity] = useState<AgentActivity>(null);
+      const conversation = useRealtimeConversation({
+        setActivity,
+        setMessages,
+        showError: vi.fn(),
+        translate: defaultTranslate,
+      });
+      return { conversation, messages };
+    });
+
+    await act(() =>
+      result.current.conversation.start({
+        parentThreadId: "headless-parent",
+        model: "gpt-5.4",
+        voice: "juniper",
+        displayTranscript: false,
+      }),
+    );
+    act(() => {
+      result.current.conversation.handleMessage({
+        method: "thread/realtime/transcript/done",
+        params: {
+          threadId: "realtime-child",
+          role: "user",
+          text: "Question déjà prononcée",
+        },
+      });
+      result.current.conversation.handleMessage({
+        method: "thread/realtime/transcript/delta",
+        params: {
+          threadId: "realtime-child",
+          role: "assistant",
+          delta: "Réponse en ",
+        },
+      });
+    });
+
+    expect(result.current.messages).toHaveLength(1);
+    expect(result.current.conversation.headlessParentThreadId).toBe(
+      "headless-parent",
+    );
+    act(() => {
+      expect(
+        result.current.conversation.attachHeadlessTranscript(),
+      ).toBe(true);
+    });
+    expect(result.current.conversation.headlessParentThreadId).toBeUndefined();
+    expect(result.current.messages.map((message) => message.content)).toEqual([
+      "Contexte existant",
+      "Question déjà prononcée",
+      "Réponse en ",
+    ]);
+    expect(result.current.messages.at(-1)).toMatchObject({
+      modality: "realtimeVoice",
+      streaming: true,
+    });
+
+    act(() => {
+      result.current.conversation.handleMessage({
+        method: "thread/realtime/transcript/delta",
+        params: {
+          threadId: "realtime-child",
+          role: "assistant",
+          delta: "direct",
+        },
+      });
+    });
+    expect(result.current.messages.at(-1)?.content).toBe("Réponse en direct");
+  });
+
+  it("libère la session même si l’arrêt audio natif échoue", async () => {
+    const showError = vi.fn();
+    stopRealtimeMock.mockRejectedValueOnce(new Error("audio bridge closed"));
+    const { result } = renderHook(() => {
+      const [, setMessages] = useState<ChatMessage[]>([]);
+      const [, setActivity] = useState<AgentActivity>(null);
+      return useRealtimeConversation({
+        setActivity,
+        setMessages,
+        showError,
+        translate: defaultTranslate,
+      });
+    });
+
+    await act(() =>
+      result.current.start({
+        parentThreadId: "persistent-parent",
+        model: "gpt-5.4",
+        voice: "juniper",
+      }),
+    );
+    await act(() => result.current.stop());
+
+    expect(result.current.recording).toBe(false);
+    expect(requestMock).toHaveBeenCalledWith("thread/unsubscribe", {
+      threadId: "realtime-child",
+    });
+    expect(showError).toHaveBeenCalledWith(
+      expect.stringMatching(/audio|connexion/i),
+      expect.objectContaining({ message: "audio bridge closed" }),
+    );
+  });
 });

@@ -1,7 +1,6 @@
-import { Archive, ChevronRight, Folder, Trash2 } from "lucide-react";
-import { useI18n } from "../i18n/I18nProvider";
+import { ChevronRight, Folder } from "lucide-react";
 import type { ThreadSummary } from "../types";
-import { RoundIconButton } from "./RoundIcon";
+import { SidebarThreadRow } from "./SidebarThreadRow";
 
 type SidebarThreadGroupProps = {
   expanded: boolean;
@@ -26,7 +25,6 @@ export function SidebarThreadGroup({
   selectedThreadId,
   threads,
 }: SidebarThreadGroupProps) {
-  const { t } = useI18n();
   const name = projectName(group);
 
   return (
@@ -46,53 +44,16 @@ export function SidebarThreadGroup({
         <small>{threads.length}</small>
       </button>
       <div className="thread-group-items" hidden={!expanded}>
-        {threads.map((thread) => {
-          const label =
-            thread.name || thread.preview || t("sidebar.untitled");
-          return (
-            <div className="thread-row" key={thread.id}>
-              <button
-                className={selectedThreadId === thread.id ? "selected" : ""}
-                onClick={() => onResume(thread.id)}
-              >
-                <span className="thread-copy">
-                  <span>{label}</span>
-                  {thread.searchSnippet && (
-                    <small>{thread.searchSnippet}</small>
-                  )}
-                </span>
-                {thread.status === "active" && (
-                  <i
-                    className="thread-running"
-                    aria-label={t("sidebar.running")}
-                  />
-                )}
-                {thread.status === "systemError" && (
-                  <i
-                    className="thread-error"
-                    aria-label={t("sidebar.error")}
-                  />
-                )}
-              </button>
-              <RoundIconButton
-                className="thread-archive"
-                aria-label={`${t("sidebar.archive")} ${label}`}
-                icon={Archive}
-                title={t("sidebar.archiveTitle")}
-                onClick={() => onArchive(thread)}
-                variant="tertiary"
-              />
-              <RoundIconButton
-                className="thread-delete"
-                aria-label={`${t("sidebar.delete")} ${label}`}
-                icon={Trash2}
-                title={t("sidebar.deleteTitle")}
-                onClick={() => onDelete(thread)}
-                variant="tertiary"
-              />
-            </div>
-          );
-        })}
+        {threads.map((thread) => (
+          <SidebarThreadRow
+            key={thread.id}
+            onArchive={onArchive}
+            onDelete={onDelete}
+            onResume={onResume}
+            selected={selectedThreadId === thread.id}
+            thread={thread}
+          />
+        ))}
       </div>
     </section>
   );

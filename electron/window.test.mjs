@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createMainWindow } from "./window.mjs";
+import { createMainWindow, observeWindowShown } from "./window.mjs";
 
 test("creates a sandboxed window without a browser menu bar", () => {
   let options;
@@ -26,4 +26,20 @@ test("creates a sandboxed window without a browser menu bar", () => {
   assert.equal(options.webPreferences.nodeIntegration, false);
   assert.equal(options.webPreferences.sandbox, true);
   assert.equal(options.webPreferences.preload, "/app/electron/preload.cjs");
+});
+
+test("reports both showing and restoring the hidden window", () => {
+  const listeners = new Map();
+  const window = {
+    on: (event, listener) => listeners.set(event, listener),
+  };
+  let shown = 0;
+
+  observeWindowShown(window, () => {
+    shown += 1;
+  });
+  listeners.get("show")();
+  listeners.get("restore")();
+
+  assert.equal(shown, 2);
 });

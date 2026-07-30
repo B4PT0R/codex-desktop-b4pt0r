@@ -12,6 +12,7 @@ import type { CodexGlobalSettingsController } from "../lib/useCodexGlobalSetting
 import type { ChatPresentationSettingsController } from "../lib/useChatPresentationSettings";
 import type { ConfigRequirements } from "../lib/useConfigRequirements";
 import type { ExternalAgentImportController } from "../lib/useExternalAgentImport";
+import type { DefaultThreadSettingsController } from "../lib/useDefaultThreadSettings";
 import type { IntegrationsController } from "../lib/useIntegrations";
 import type { MemorySettingsController } from "../lib/useMemorySettings";
 import type { RateLimitsController } from "../lib/useRateLimits";
@@ -46,6 +47,7 @@ export type SettingsViewProps = {
     error?: string;
     loading?: boolean;
   };
+  defaultThread: DefaultThreadSettingsController;
   externalAgentImport: ExternalAgentImportController;
   integrations: IntegrationsController;
   models: Model[];
@@ -99,6 +101,7 @@ function SettingsSection(props: SettingsViewProps) {
       return (
         <GeneralSettings
           appServerRestart={props.appServerRestart}
+          defaultThread={props.defaultThread}
           globalSettings={props.webSearch}
         />
       );

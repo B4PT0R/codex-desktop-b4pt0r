@@ -382,6 +382,8 @@ export const en: Record<MessageKey, string> = {
   "app.previewSnippet": "Guides and references for building with Codex.",
   "app.connectionError": "Connection error",
   "app.realtimeUnavailable": "Realtime unavailable",
+  "app.realtimeDictationConflict":
+    "Stop dictation before starting a Realtime session.",
   "app.realtimeTranscriptSaveError":
     "The Realtime transcript could not be saved",
   "app.interruptError": "Unable to interrupt the turn",
@@ -405,6 +407,9 @@ export const en: Record<MessageKey, string> = {
   "chat.actions.reload": "Reload session",
   "chat.actions.reloadDetail":
     "Reload this thread’s history and effective settings",
+  "chat.actions.setDefault": "Set as default conversation",
+  "chat.actions.setDefaultDetail":
+    "Shared context for compatible quick actions",
   "chat.actions.fork": "Create a branch",
   "chat.actions.forkDetail": "Continue from here in a new conversation",
   "chat.actions.delete": "Delete conversation",
@@ -506,6 +511,8 @@ export const en: Record<MessageKey, string> = {
   "sidebar.searchError": "Remote search unavailable: {detail}",
   "sidebar.loadMore": "Show more results",
   "sidebar.recentProjects": "Recent projects",
+  "sidebar.defaultThread": "Default conversation",
+  "sidebar.defaultConfigured": "Configured conversation",
   "sidebar.recentThreads": "Recent conversations",
   "sidebar.otherThreads": "Other conversations",
   "sidebar.untitled": "Untitled conversation",
@@ -598,6 +605,8 @@ export const en: Record<MessageKey, string> = {
   "automations.day.5": "Friday",
   "automations.day.6": "Saturday",
   "conversation.scheduledTask": "Scheduled wake-up",
+  "conversation.scheduledTask.collapse": "Hide scheduled task instructions",
+  "conversation.scheduledTask.expand": "Show scheduled task instructions",
   "settings.browser.description":
     "Global web search and shared browser preferences.",
   "settings.browser.enabledTitle": "Enable shared browser",
@@ -705,6 +714,16 @@ export const en: Record<MessageKey, string> = {
   "settings.fileOpener.cursor": "Cursor",
   "settings.fileOpener.windsurf": "Windsurf",
   "settings.fileOpener.none": "No application",
+  "settings.defaultThread.title": "Default conversation",
+  "settings.defaultThread.detail":
+    "Shared context used by compatible quick actions.",
+  "settings.defaultThread.automatic":
+    "Automatic (home folder)",
+  "settings.defaultThread.configured": "Configured conversation",
+  "settings.defaultThread.error":
+    "Unable to save the default conversation: {detail}",
+  "settings.defaultThread.saveError":
+    "Unable to save the default conversation",
   "settings.reasoningSummary.title": "Reasoning summaries",
   "settings.reasoningSummary.detail":
     "Level of detail in the visible summaries produced by the agent.",

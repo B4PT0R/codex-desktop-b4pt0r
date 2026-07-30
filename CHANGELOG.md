@@ -3,6 +3,26 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.3.10] - 2026-07-30
+
+### Added
+
+- A persistent default conversation can now be selected from General Settings
+  or directly from the current conversation menu.
+- The tray can start and stop a headless Realtime voice session. It reuses the
+  default conversation for context, creates one in the home folder when needed,
+  and reports native lifecycle failures without opening the main window.
+
+### Changed
+
+- Opening the app during a tray-launched Realtime session now selects its
+  persistent parent, restores the transcript accumulated while hidden and
+  continues streaming voice messages directly in the chat.
+- The default conversation is promoted to a compact dedicated sidebar section
+  above recent projects instead of being duplicated inside its workspace.
+- Scheduled wake-up cards now start collapsed and reveal their full Markdown
+  instructions only when requested, keeping long scheduler prompts compact.
+
 ## [0.3.9] - 2026-07-29
 
 ### Changed
@@ -366,6 +386,7 @@ follows semantic versioning while the public interface is taking shape.
 - Native Electron packaging for Debian/Ubuntu.
 - Stable Chromium microphone capture for dictation and Realtime voice.
 
+[0.3.10]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.9...v0.3.10
 [0.3.9]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.8...v0.3.9
 [0.3.8]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.7...v0.3.8
 [0.3.7]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.6...v0.3.7

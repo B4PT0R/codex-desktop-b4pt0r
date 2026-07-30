@@ -250,6 +250,13 @@ textarea:focus-visible {
   min-height: 0;
   overflow-y: auto;
 }
+.sidebar > .sidebar-default-thread {
+  flex: 0 0 auto;
+  overflow: visible;
+}
+.sidebar-default-thread + .section-title {
+  margin-top: 14px;
+}
 .thread-copy {
   display: flex;
   min-width: 0;
@@ -808,31 +815,57 @@ header button svg {
   background: #29271f;
   border-radius: 12px;
 }
-.scheduled-task-message > header {
+.scheduled-task-toggle {
   display: flex;
   align-items: center;
-  gap: 7px;
-  margin-bottom: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 2px 0;
   color: #b6a374;
+  border: 0;
+  background: transparent;
+  gap: 7px;
   font-size: 10px;
   line-height: 1;
+  text-align: left;
 }
-.scheduled-task-message > header svg {
+.scheduled-task-toggle:hover {
+  color: #c4b17e;
+  background: transparent;
+}
+.scheduled-task-toggle:focus-visible {
+  outline: 1px solid #74694e;
+  outline-offset: 4px;
+}
+.scheduled-task-toggle svg {
+  flex: 0 0 auto;
   width: 13px;
   height: 13px;
 }
-.scheduled-task-message > header span {
+.scheduled-task-toggle span {
+  flex: 0 0 auto;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-.scheduled-task-message > header strong {
+.scheduled-task-toggle strong {
+  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   color: #d0c7ae;
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.scheduled-task-chevron {
+  margin-left: auto;
+  transition: transform 160ms ease;
+}
+.scheduled-task-message.expanded .scheduled-task-chevron {
+  transform: rotate(180deg);
+}
+.scheduled-task-body {
+  margin-top: 10px;
 }
 .message-content p {
   margin: 0 0 12px;
