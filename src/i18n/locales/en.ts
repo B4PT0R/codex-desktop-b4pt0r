@@ -575,6 +575,9 @@ export const en: Record<MessageKey, string> = {
   "automations.weekday": "Day",
   "automations.target": "Conversation",
   "automations.existingThread": "Existing thread",
+  "automations.defaultThread": "Default conversation",
+  "automations.defaultThreadUnavailable":
+    "No default conversation is configured",
   "automations.newThread": "New persistent thread",
   "automations.ephemeralThread": "New ephemeral thread",
   "automations.unattended": "Unattended execution",
@@ -741,6 +744,33 @@ export const en: Record<MessageKey, string> = {
   "settings.startup.disabled": "Disabled",
   "settings.startup.nativeOnly": "Available in the native app",
   "settings.startup.error": "Unable to change automatic startup:",
+  "settings.updates.title": "Updates",
+  "settings.updates.detail":
+    "Check the latest stable GitHub release. Updates are installed through your system package installer.",
+  "settings.updates.client": "Codex Desktop",
+  "settings.updates.clientDetail": "Independent Linux client version",
+  "settings.updates.codex": "Codex",
+  "settings.updates.codexDetail": "Installed CLI and App Server version",
+  "settings.updates.loading": "Reading…",
+  "settings.updates.unavailable": "Unavailable",
+  "settings.updates.nativeOnly":
+    "Update checks are available in the installed desktop app.",
+  "settings.updates.check": "Check for updates",
+  "settings.updates.checking": "Checking…",
+  "settings.updates.checkingDetail": "Contacting GitHub Releases…",
+  "settings.updates.current": "Version {version} is up to date.",
+  "settings.updates.available": "Version {version} is available.",
+  "settings.updates.assetUnavailable":
+    "Version {version} is available, but no package matches this architecture.",
+  "settings.updates.install": "Update",
+  "settings.updates.installing": "Downloading…",
+  "settings.updates.installerOpened":
+    "Package verified. Complete the update in the system installer, then restart the app.",
+  "settings.updates.installerReady": "Installer open",
+  "settings.updates.restartRequired":
+    "Complete the installation, then restart Codex Desktop to use the new version.",
+  "settings.updates.error": "Unable to update:",
+  "settings.updates.codexError": "Unable to read the Codex version:",
   "settings.chromium.title": "Shared Chromium browser",
   "settings.chromium.detail":
     "A private, visible Playwright session shared by the app and the Codex agent.",

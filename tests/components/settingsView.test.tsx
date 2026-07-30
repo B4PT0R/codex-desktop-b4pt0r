@@ -66,6 +66,21 @@ const account = {
   refresh: vi.fn(),
   workspaceMessages: null,
 };
+const appUpdate = {
+  checking: false,
+  error: undefined,
+  installerOpened: false,
+  installing: false,
+  loadingVersions: false,
+  native: true,
+  versions: {
+    clientVersion: "0.3.12",
+    codexVersion: "codex-cli 0.145.0",
+  },
+  status: undefined,
+  check: vi.fn().mockResolvedValue(true),
+  install: vi.fn().mockResolvedValue(true),
+};
 const apps = {
   apps: [],
   loading: false,
@@ -163,6 +178,7 @@ const appServerRestart = {
 const defaultThread = {
   defaultThreadId: undefined,
   error: undefined,
+  loading: false,
   saving: false,
   threadOptions: [],
   setDefaultThreadId: vi.fn().mockResolvedValue(true),
@@ -233,6 +249,7 @@ function renderSettings(
 ) {
   const props: ComponentProps<typeof SettingsView> = {
     account,
+    appUpdate,
     appServerRestart,
     apps,
     automations,
@@ -276,6 +293,25 @@ function renderSettings(
 }
 
 describe("centre de réglages", () => {
+  it("demande un redémarrage après l’ouverture de l’installateur", () => {
+    renderSettings({
+      appUpdate: {
+        ...appUpdate,
+        installerOpened: true,
+        status: {
+          assetAvailable: true,
+          currentVersion: "0.3.12",
+          latestVersion: "0.3.13",
+          updateAvailable: true,
+        },
+      },
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Termine l’installation, puis relance Codex Desktop pour utiliser la nouvelle version.",
+    );
+  });
+
   it("confirme la suppression d’une tâche planifiée", async () => {
     const deleteAutomation = vi.fn().mockResolvedValue(true);
     renderSettings({
@@ -397,6 +433,34 @@ describe("centre de réglages", () => {
     );
   });
 
+  it("cible la conversation par défaut sans figer son identifiant", async () => {
+    const save = vi.fn().mockResolvedValue({ id: "automation-1" });
+    renderSettings({
+      automations: { ...automations, save },
+      section: "automations",
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Créer une tâche" }));
+    fireEvent.change(screen.getByLabelText("Nom"), {
+      target: { value: "Continuité" },
+    });
+    fireEvent.change(screen.getByLabelText("Tâche à réaliser"), {
+      target: { value: "Poursuis le travail courant" },
+    });
+    fireEvent.change(screen.getByLabelText("Conversation"), {
+      target: { value: "defaultThread" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+
+    await waitFor(() =>
+      expect(save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          target: { type: "defaultThread" },
+        }),
+      ),
+    );
+  });
+
   it("propose le redémarrage global d’App Server dans Général", () => {
     const restart = vi.fn().mockResolvedValue(true);
     renderSettings({ appServerRestart: { ...appServerRestart, restart } });
@@ -404,6 +468,42 @@ describe("centre de réglages", () => {
     fireEvent.click(screen.getByRole("button", { name: "Redémarrer" }));
     expect(restart).toHaveBeenCalledOnce();
     expect(screen.queryByText("Navigateur Chromium partagé")).toBeNull();
+  });
+
+  it("affiche les versions et recherche une release à la demande", () => {
+    const check = vi.fn().mockResolvedValue(true);
+    renderSettings({ appUpdate: { ...appUpdate, check } });
+
+    expect(screen.getByText("v0.3.12")).toBeVisible();
+    expect(screen.getByText("codex-cli 0.145.0")).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Rechercher les mises à jour",
+      }),
+    );
+    expect(check).toHaveBeenCalledOnce();
+  });
+
+  it("propose la mise à jour lorsqu’un paquet plus récent est disponible", () => {
+    const install = vi.fn().mockResolvedValue(true);
+    renderSettings({
+      appUpdate: {
+        ...appUpdate,
+        install,
+        status: {
+          assetAvailable: true,
+          currentVersion: "0.3.12",
+          latestVersion: "0.3.13",
+          updateAvailable: true,
+        },
+      },
+    });
+
+    expect(screen.getByText("La version 0.3.13 est disponible.")).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mettre à jour" }),
+    );
+    expect(install).toHaveBeenCalledOnce();
   });
 
   it("modifie le mode global de recherche web depuis Web", () => {

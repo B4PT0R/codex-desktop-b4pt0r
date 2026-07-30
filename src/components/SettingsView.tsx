@@ -5,6 +5,7 @@ import {
   type SettingsSectionId,
 } from "../lib/settingsSections";
 import type { AccountController } from "../lib/useAccount";
+import type { AppUpdateController } from "../lib/useAppUpdate";
 import type { AppsController } from "../lib/useApps";
 import type { AutomationsController } from "../lib/automations";
 import type { CapabilityCatalog } from "../lib/useCapabilityCatalog";
@@ -39,6 +40,7 @@ import { VoiceSettings } from "./VoiceSettings";
 
 export type SettingsViewProps = {
   account: AccountController;
+  appUpdate: AppUpdateController;
   apps: AppsController;
   capabilities: CapabilityCatalog;
   chatPresentation: ChatPresentationSettingsController;
@@ -99,6 +101,7 @@ function SettingsSection(props: SettingsViewProps) {
     case "general":
       return (
         <GeneralSettings
+          appUpdate={props.appUpdate}
           appServerRestart={props.appServerRestart}
           defaultThread={props.defaultThread}
           globalSettings={props.webSearch}

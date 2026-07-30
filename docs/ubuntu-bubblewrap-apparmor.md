@@ -27,16 +27,21 @@ Without a suitable profile, Ubuntu rejects this probe, often with
 
 Do not disable `kernel.apparmor_restrict_unprivileged_userns` globally. Instead,
 from the repository root, install the narrowly scoped profile provided with the
-application:
+application. For an installed Debian package:
 
 ```bash
-sudo install -m 0644 packaging/apparmor/codex-desktop-linux \
+sudo install -m 0644 \
+  "/opt/Codex Desktop/resources/apparmor/codex-desktop-linux" \
   /etc/apparmor.d/codex-desktop-linux
 sudo apparmor_parser -r /etc/apparmor.d/codex-desktop-linux
 ```
 
-The profile attaches only to `/usr/bin/codex-desktop-linux`, which is installed
-and owned by root. The App Server process and Bubblewrap inherit this profile.
+From a source checkout, use
+`packaging/apparmor/codex-desktop-linux` as the first path instead.
+
+The profile attaches only to `/opt/Codex Desktop/codex-desktop`, the root-owned
+executable installed by the Debian package. The App Server process and
+Bubblewrap inherit this profile.
 It grants only the AppArmor `userns` permission and keeps the global restriction
 enabled for every other program.
 
@@ -80,7 +85,7 @@ This procedure never changes Ubuntu's global restriction.
 ## Scope and security
 
 - This rule applies to the Debian application at
-  `/usr/bin/codex-desktop-linux`.
+  `/opt/Codex Desktop/codex-desktop`.
 - It does not automatically cover direct use of a Codex CLI installed through
   NVM.
 - Applying a profile globally to `/usr/bin/bwrap` is discouraged because it

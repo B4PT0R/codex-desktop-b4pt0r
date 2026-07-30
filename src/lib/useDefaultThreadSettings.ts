@@ -8,6 +8,7 @@ import {
 export type DefaultThreadSettingsController = {
   defaultThreadId?: string;
   error?: string;
+  loading: boolean;
   saving: boolean;
   threadOptions: ThreadSummary[];
   setDefaultThreadId: (threadId?: string) => Promise<boolean>;
@@ -17,6 +18,7 @@ export function useDefaultThreadSettings(
   threadOptions: ThreadSummary[],
 ): DefaultThreadSettingsController {
   const [defaultThreadId, setDefaultThreadIdState] = useState<string>();
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -28,6 +30,9 @@ export function useDefaultThreadSettings(
       })
       .catch((cause) => {
         if (!disposed) setError(errorMessage(cause));
+      })
+      .finally(() => {
+        if (!disposed) setLoading(false);
       });
     return () => {
       disposed = true;
@@ -58,6 +63,7 @@ export function useDefaultThreadSettings(
   return {
     defaultThreadId,
     error,
+    loading,
     saving,
     threadOptions,
     setDefaultThreadId,

@@ -24,16 +24,10 @@ import type {
 } from "./lib/appServerTypes";
 import { finishDictationCapture, startDictationCapture } from "./lib/dictation";
 import {
-  threadBehaviorUpdateParams,
-  threadApprovalPolicyUpdateParams,
   threadCwdUpdateParams,
-  threadPermissionUpdateParams,
-  threadServiceTierUpdateParams,
   threadStartParams,
   turnStartParams,
   turnSteerParams,
-  type ApprovalPolicy,
-  type Permission,
   type TurnContextItem,
 } from "./lib/protocol";
 import type { AgentActivity } from "./lib/activity";
@@ -44,6 +38,7 @@ import {
   demoSkills,
   previewDemoThreads,
   initialPreviewMessages,
+  browserPreviewResponse,
   isDemoPreview,
   isReadmeDemoPreview,
 } from "./lib/demoConversation";
@@ -54,6 +49,7 @@ import { useThreadActions } from "./lib/useThreadActions";
 import { useIntegrations } from "./lib/useIntegrations";
 import { useCapabilityCatalog } from "./lib/useCapabilityCatalog";
 import { useAccount } from "./lib/useAccount";
+import { useAppUpdate } from "./lib/useAppUpdate";
 import { useApps } from "./lib/useApps";
 import { useAutomations } from "./lib/useAutomations";
 import { useSchedulerTools } from "./lib/useSchedulerTools";
@@ -67,7 +63,6 @@ import { commandFromText } from "./lib/commands";
 import type { ThreadTelemetry } from "./lib/sessionTelemetry";
 import type {
   ChatMessage,
-  CollaborationMode,
   Model,
   ThreadSummary,
   ToolCall,
@@ -107,6 +102,7 @@ import { routeAppNotification } from "./lib/appNotificationRouting";
 import { useRealtimeConversation } from "./lib/useRealtimeConversation";
 import { useConversationEventQueue } from "./lib/useConversationEventQueue";
 import { useThreadRuntimeState } from "./lib/useThreadRuntimeState";
+import { useThreadRuntimeMutations } from "./lib/useThreadRuntimeMutations";
 import "./styles.css";
 import "./primitives.css";
 import "./realtime.css";
@@ -153,8 +149,6 @@ const fallbackModels: Model[] = [
 export default function App() {
   const { t } = useI18n();
   configureCodexTranslation(t);
-  const translateRef = useRef(t);
-  translateRef.current = t;
   const activeThreadRef = useRef<string | undefined>(undefined);
   const workspaceChanged = useRef(false);
   const [messages, setMessages] = useState<ChatMessage[]>(
@@ -200,7 +194,6 @@ export default function App() {
     model,
     permission,
     serviceTier,
-    setCollaborationMode,
     setEffort,
     setModel,
   } = runtime;
@@ -222,6 +215,7 @@ export default function App() {
   }, []);
   const demoPlayback = useDemoPlayback({
     enabled: isDemoPreview(),
+    scopeKey: threadId,
     setActivity,
     setMessages,
   });
@@ -255,6 +249,7 @@ export default function App() {
     enabled: settings === "agent" || settings === "permissions",
   });
   const account = useAccount(settings === "account");
+  const appUpdate = useAppUpdate(settings === "general");
   const externalAgentImport = useExternalAgentImport({
     cwd,
     enabled: settings === "advanced",
@@ -308,6 +303,8 @@ export default function App() {
   });
   const automations = useAutomations({
     connected: connection.connected,
+    defaultThreadId: defaultThread.defaultThreadId,
+    preferencesReady: !defaultThread.loading,
     onError: (error) => showError(t("automations.error"), error),
     onThreadCreated: (thread) =>
       setThreads((items) => [
@@ -346,6 +343,12 @@ export default function App() {
     false
       ? undefined
       : (webSearch.advanced.personality ?? undefined);
+  const runtimeMutations = useThreadRuntimeMutations({
+    onError: (error) => showError(t("app.saveSettingsError"), error),
+    personality: personalityForModel,
+    runtime,
+    threadId,
+  });
   const memory = useMemorySettings(connection.connected);
   const remoteControl = useRemoteControl(
     connection.connected,
@@ -484,14 +487,7 @@ export default function App() {
             ),
           );
         } catch (error) {
-          setMessages((items) => [
-            ...items,
-            {
-              id: crypto.randomUUID(),
-              role: "assistant",
-              content: `**${t("app.changeDirectoryError")}**\n\n${String(error)}`,
-            },
-          ]);
+          showError(t("app.changeDirectoryError"), error);
           return;
         }
       }
@@ -647,7 +643,7 @@ export default function App() {
           setSidebar(true);
           return;
         case "plan":
-          await changeCollaborationMode("plan");
+          await runtimeMutations.changeCollaborationMode("plan");
           return;
         case "compact":
           await threadActions.compact();
@@ -749,60 +745,13 @@ export default function App() {
           ...items.filter((item) => item.id !== previewThread.id),
         ]);
       }
-      setTimeout(() => {
-        if (activeThreadRef.current !== previewThreadId) return;
-        setMessages((x) => [
-          ...x,
-          {
-            id: crypto.randomUUID(),
-            role: "assistant",
-            content: t("app.preview"),
-            tools: [
-              {
-                id: "1",
-                kind: "commandExecution",
-                title: t("app.previewTool"),
-                detail: "rg --files src",
-                status: "done",
-                output: "src/App.tsx\nsrc/components/Conversation.tsx\n",
-                exitCode: 0,
-                durationMs: 84,
-              },
-              {
-                id: "2",
-                kind: "imageGeneration",
-                title: t("tool.imageGeneration"),
-                detail: t("app.previewImage"),
-                status: "done",
-                artifacts: [
-                  {
-                    type: "generatedImage",
-                    dataUrl:
-                      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAJEAIAAADk2OcmAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAGYktHRP///////wlY99wAAAAHdElNRQfqBxMMIg+1kBTwAAAAYElEQVQoz2MMC8vObmtjoBlg+Vn1Y8fXMhpa8Kvy+45vpbT1wXYa++AHTX3AaLrNiSnwEk19gCUO/kMsx6HnP7IDCemCxcF/JI2MeAxHNgybeog4kgijkpKmppER7YIIAA8zKkZIs1QvAAAAAElFTkSuQmCC",
-                    prompt: t("app.previewImage"),
-                  },
-                ],
-              },
-              {
-                id: "3",
-                kind: "webSearch",
-                title: t("tool.web"),
-                detail: t("app.previewSearch"),
-                status: "done",
-                artifacts: [
-                  {
-                    type: "webResult",
-                    title: t("app.previewResult"),
-                    url: "https://developers.openai.com/codex/",
-                    snippet: t("app.previewSnippet"),
-                  },
-                ],
-              },
-            ],
-          },
-        ]);
-        setBusy(false);
-      }, 900);
+      demoPlayback.submitPreview({
+        message: browserPreviewResponse(t),
+        onComplete: () => {
+          if (activeThreadRef.current === previewThreadId) setBusy(false);
+        },
+        threadId: previewThreadId,
+      });
       return;
     }
     let targetThreadId = threadId;
@@ -831,14 +780,7 @@ export default function App() {
       );
     } catch (e) {
       if (activeThreadRef.current !== targetThreadId) return;
-      setMessages((x) => [
-        ...x,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: `**${t("app.connectionError")}**\n\n${String(e)}`,
-        },
-      ]);
+      showError(t("app.connectionError"), e);
       setBusy(false);
     }
   }
@@ -937,78 +879,6 @@ export default function App() {
       showError(t("app.threadSyncError"), error);
     }
   }
-  async function changeCollaborationMode(nextMode: CollaborationMode) {
-    const previousMode = collaborationMode;
-    setCollaborationMode(nextMode);
-    if (!threadId) return true;
-    try {
-      await request(
-        "thread/settings/update",
-        threadBehaviorUpdateParams(
-          threadId,
-          model,
-          effort,
-          personalityForModel,
-          nextMode,
-          permission,
-          approvalPolicy,
-        ),
-      );
-      return true;
-    } catch (error) {
-      setCollaborationMode(previousMode);
-      showError(t("app.saveSettingsError"), error);
-      return false;
-    }
-  }
-  async function changePermission(nextPermission: Permission) {
-    const previousPermission = permission;
-    runtime.selectPermission(nextPermission);
-    if (!threadId) return true;
-    try {
-      await request(
-        "thread/settings/update",
-        threadPermissionUpdateParams(threadId, nextPermission),
-      );
-      return true;
-    } catch (error) {
-      runtime.selectPermission(previousPermission);
-      showError(t("app.saveSettingsError"), error);
-      return false;
-    }
-  }
-  async function changeApprovalPolicy(nextPolicy: ApprovalPolicy) {
-    const previousPolicy = approvalPolicy;
-    runtime.selectApprovalPolicy(nextPolicy);
-    if (!threadId) return true;
-    try {
-      await request(
-        "thread/settings/update",
-        threadApprovalPolicyUpdateParams(threadId, nextPolicy),
-      );
-      return true;
-    } catch (error) {
-      runtime.selectApprovalPolicy(previousPolicy);
-      showError(t("app.saveSettingsError"), error);
-      return false;
-    }
-  }
-  async function changeServiceTier(nextTier: string | null) {
-    const previousTier = serviceTier;
-    runtime.selectServiceTier(nextTier);
-    if (!threadId) return true;
-    try {
-      await request(
-        "thread/settings/update",
-        threadServiceTierUpdateParams(threadId, nextTier),
-      );
-      return true;
-    } catch (error) {
-      runtime.selectServiceTier(previousTier);
-      showError(t("app.saveSettingsError"), error);
-      return false;
-    }
-  }
   function persistWorkspace(path: string) {
     workspaceChanged.current = true;
     void import("./lib/desktopSettings")
@@ -1028,6 +898,7 @@ export default function App() {
     return (
       <SettingsLoader
         account={account}
+        appUpdate={appUpdate}
         apps={apps}
         automations={automations}
         capabilities={capabilities}
@@ -1223,10 +1094,10 @@ export default function App() {
           onCompact={() => void threadActions.compact()}
           onChangeEffort={setEffort}
           onChangeModel={changeModel}
-          onChangeCollaborationMode={changeCollaborationMode}
-          onChangePermission={changePermission}
-          onChangeApprovalPolicy={changeApprovalPolicy}
-          onChangeServiceTier={changeServiceTier}
+          onChangeCollaborationMode={runtimeMutations.changeCollaborationMode}
+          onChangePermission={runtimeMutations.changePermission}
+          onChangeApprovalPolicy={runtimeMutations.changeApprovalPolicy}
+          onChangeServiceTier={runtimeMutations.changeServiceTier}
           onConsumeQuotaReset={
             isDemoPreview() ? async () => undefined : rateLimits.consumeReset
           }

@@ -1,10 +1,18 @@
 import { useState, type FormEvent } from "react";
 import { useI18n } from "../i18n/I18nProvider";
-import type { Automation, AutomationDraft } from "../lib/automations";
+import type {
+  Automation,
+  AutomationDraft,
+  AutomationTarget,
+} from "../lib/automations";
 import { RoundIconButton } from "./RoundIcon";
 
 type Frequency = "once" | "interval" | "daily" | "weekdays" | "weekly";
-type Target = "thread" | "newThread" | "ephemeralThread";
+type Target =
+  | "thread"
+  | "defaultThread"
+  | "newThread"
+  | "ephemeralThread";
 
 export function AutomationEditor({
   automation,
@@ -61,18 +69,11 @@ export function AutomationEditor({
                         ? [1, 2, 3, 4, 5]
                         : [Number(state.weekday)],
                 },
-        target:
-          state.target === "thread"
-            ? {
-                type: "thread",
-                threadId:
-                  automation?.target.type === "thread"
-                    ? automation.target.threadId
-                    : currentThreadId!,
-              }
-            : state.target === "ephemeralThread"
-              ? { type: "ephemeralThread" }
-              : { type: "newThread" },
+        target: targetFromEditor(
+          state.target,
+          automation,
+          currentThreadId,
+        ),
       });
     } finally {
       setSaving(false);
@@ -209,6 +210,9 @@ export function AutomationEditor({
             >
               {t("automations.existingThread")}
             </option>
+            <option value="defaultThread">
+              {t("automations.defaultThread")}
+            </option>
             <option value="newThread">{t("automations.newThread")}</option>
             <option value="ephemeralThread">
               {t("automations.ephemeralThread")}
@@ -288,6 +292,22 @@ function editorState(
         : "1",
     target: (automation?.target.type ?? "newThread") as Target,
   };
+}
+
+function targetFromEditor(
+  target: Target,
+  automation?: Automation,
+  currentThreadId?: string,
+): AutomationTarget {
+  if (target === "defaultThread") return { type: "defaultThread" };
+  if (target === "newThread") return { type: "newThread" };
+  if (target === "ephemeralThread") return { type: "ephemeralThread" };
+  const threadId =
+    automation?.target.type === "thread"
+      ? automation.target.threadId
+      : currentThreadId;
+  if (!threadId) throw new Error("A conversation is required.");
+  return { type: "thread", threadId };
 }
 
 function localDateTimeValue(timestamp: number) {

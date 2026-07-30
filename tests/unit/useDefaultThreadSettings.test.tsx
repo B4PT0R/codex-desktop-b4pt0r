@@ -30,7 +30,9 @@ describe("thread par défaut", () => {
     ];
     const { result } = renderHook(() => useDefaultThreadSettings(threads));
 
+    expect(result.current.loading).toBe(true);
     await waitFor(() => expect(result.current.defaultThreadId).toBe("thread-a"));
+    expect(result.current.loading).toBe(false);
     await act(() => result.current.setDefaultThreadId("thread-b"));
 
     expect(result.current.defaultThreadId).toBe("thread-b");

@@ -38,6 +38,7 @@ function options() {
     controller: {
       connected: true,
       defaultThread: {
+        loading: false,
         defaultThreadId: undefined,
         saving: false,
         threadOptions: [],

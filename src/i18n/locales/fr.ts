@@ -593,6 +593,9 @@ export const fr = {
   "automations.weekday": "Jour",
   "automations.target": "Conversation",
   "automations.existingThread": "Thread existant",
+  "automations.defaultThread": "Conversation par défaut",
+  "automations.defaultThreadUnavailable":
+    "Aucune conversation par défaut n’est configurée",
   "automations.newThread": "Nouveau thread persistant",
   "automations.ephemeralThread": "Nouveau thread éphémère",
   "automations.unattended": "Exécution sans surveillance",
@@ -762,6 +765,33 @@ export const fr = {
   "settings.startup.disabled": "Désactivé",
   "settings.startup.nativeOnly": "Disponible dans l’application native",
   "settings.startup.error": "Impossible de modifier le démarrage automatique :",
+  "settings.updates.title": "Mises à jour",
+  "settings.updates.detail":
+    "Vérifie la dernière release GitHub stable. L’installation passe par le gestionnaire de paquets du système.",
+  "settings.updates.client": "Codex Desktop",
+  "settings.updates.clientDetail": "Version du client Linux indépendant",
+  "settings.updates.codex": "Codex",
+  "settings.updates.codexDetail": "Version de la CLI et d’App Server installée",
+  "settings.updates.loading": "Lecture…",
+  "settings.updates.unavailable": "Indisponible",
+  "settings.updates.nativeOnly":
+    "La recherche de mises à jour est disponible dans l’application installée.",
+  "settings.updates.check": "Rechercher les mises à jour",
+  "settings.updates.checking": "Recherche…",
+  "settings.updates.checkingDetail": "Consultation des releases GitHub…",
+  "settings.updates.current": "La version {version} est à jour.",
+  "settings.updates.available": "La version {version} est disponible.",
+  "settings.updates.assetUnavailable":
+    "La version {version} est disponible, mais aucun paquet ne correspond à cette architecture.",
+  "settings.updates.install": "Mettre à jour",
+  "settings.updates.installing": "Téléchargement…",
+  "settings.updates.installerOpened":
+    "Paquet vérifié. Termine la mise à jour dans l’installateur système, puis relance l’application.",
+  "settings.updates.installerReady": "Installateur ouvert",
+  "settings.updates.restartRequired":
+    "Termine l’installation, puis relance Codex Desktop pour utiliser la nouvelle version.",
+  "settings.updates.error": "Impossible d’effectuer la mise à jour :",
+  "settings.updates.codexError": "Impossible de lire la version de Codex :",
   "settings.chromium.title": "Navigateur Chromium partagé",
   "settings.chromium.detail":
     "Une session Playwright privée, visible et commune à l’application et à l’agent Codex.",

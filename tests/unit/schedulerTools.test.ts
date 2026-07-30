@@ -51,6 +51,14 @@ describe("outils agentiques du scheduler", () => {
         }),
       ]),
     );
+    const create = namespace.tools.find((tool) => tool.name === "create");
+    expect(
+      (
+        create?.inputSchema as {
+          properties?: { target?: { enum?: string[] } };
+        }
+      ).properties?.target?.enum,
+    ).toContain("defaultThread");
   });
 
   it("ne capture que les appels du namespace scheduler", () => {
@@ -135,6 +143,20 @@ describe("outils agentiques du scheduler", () => {
       schedule: { type: "interval", intervalMinutes: 60 },
       target: { type: "ephemeralThread" },
     });
+  });
+
+  it("conserve la conversation par défaut comme cible logique", () => {
+    expect(
+      automationDraftFromCreate(
+        {
+          name: "Continuité",
+          prompt: "Poursuis le travail courant",
+          schedule: { type: "interval", intervalMinutes: 30 },
+          target: "defaultThread",
+        },
+        "thread-caller",
+      ).target,
+    ).toEqual({ type: "defaultThread" });
   });
 
   it("retourne les erreurs dans le contrat de réponse App Server", () => {

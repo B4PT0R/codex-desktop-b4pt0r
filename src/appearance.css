@@ -670,6 +670,10 @@
   border-color: #e0e0da;
 }
 
+:root[data-theme="light"] .app-version-value {
+  color: #55554f;
+}
+
 :root[data-theme="light"] .tool-list {
   border-color: #ddddd7;
   background: #fafaf8;

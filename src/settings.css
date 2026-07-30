@@ -755,6 +755,25 @@
   height: 12px;
 }
 
+.app-update-card {
+  margin-top: 14px;
+}
+
+.app-version-value {
+  max-width: 50%;
+  margin-left: auto;
+  overflow: hidden;
+  color: #b8b8b2;
+  font-family: inherit;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-update-action-row .settings-field-description {
+  min-width: 0;
+}
+
 .settings-browser-confirm {
   display: grid;
   justify-items: end;
@@ -991,6 +1010,10 @@
   border-color: #554439;
   color: #c89b7a;
   background: #29211c;
+}
+
+.app-update-restart-message {
+  margin-top: 10px;
 }
 
 .hook-row {

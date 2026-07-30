@@ -5,7 +5,7 @@
 abi <abi/4.0>,
 include <tunables/global>
 
-profile codex-desktop-linux /usr/bin/codex-desktop-linux flags=(unconfined) {
+profile codex-desktop-linux "/opt/Codex Desktop/codex-desktop" flags=(unconfined) {
   userns,
 
   # Site-specific additions and overrides.

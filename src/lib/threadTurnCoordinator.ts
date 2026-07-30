@@ -33,12 +33,14 @@ export class ThreadTurnCoordinator {
 
   observeStatus(threadId: string, status: ThreadStatus | undefined) {
     if (!status) return;
-    const state = this.#state(threadId);
     if (status === "active") {
+      const state = this.#state(threadId);
       state.active = true;
       return;
     }
     if (status === "idle" || status === "systemError") {
+      const state = this.#threads.get(threadId);
+      if (!state) return;
       const wasActive = state.active;
       state.active = false;
       if (state.current && wasActive) {
@@ -53,8 +55,16 @@ export class ThreadTurnCoordinator {
     const params = record(message.params);
     const threadId = stringValue(params?.threadId);
     if (!threadId) return false;
-    const state = this.#state(threadId);
+
+    if (message.method === "thread/status/changed") {
+      const status = threadStatusFromValue(params?.status);
+      if (!status) return false;
+      this.observeStatus(threadId, status);
+      return true;
+    }
+
     if (message.method === "turn/started") {
+      const state = this.#state(threadId);
       state.active = true;
       const turnId = stringValue(record(params?.turn)?.id);
       if (state.current && !state.current.turnId && turnId) {
@@ -62,14 +72,12 @@ export class ThreadTurnCoordinator {
       }
       return true;
     }
-    if (message.method === "thread/status/changed") {
-      this.observeStatus(threadId, threadStatusFromValue(params?.status));
-      return true;
-    }
-    if (
+    const terminal =
       message.method === "turn/completed" ||
-      (message.method === "error" && params?.willRetry !== true)
-    ) {
+      (message.method === "error" && params?.willRetry !== true);
+    if (terminal) {
+      const state = this.#threads.get(threadId);
+      if (!state) return false;
       const turnId =
         stringValue(record(params?.turn)?.id) ?? stringValue(params?.turnId);
       if (!state.current || !turnId || state.current.turnId === turnId) {
@@ -129,7 +137,10 @@ export class ThreadTurnCoordinator {
   #drain(threadId: string, state: ThreadState) {
     if (state.active || state.current) return;
     const entry = state.queue.shift();
-    if (!entry) return;
+    if (!entry) {
+      this.#deleteIfIdle(threadId, state);
+      return;
+    }
     const current: CurrentStart = {
       manualRelease: entry.manualRelease,
     };
@@ -147,8 +158,11 @@ export class ThreadTurnCoordinator {
           responseTurnId &&
           current.turnId !== responseTurnId
         ) {
-          state.current = undefined;
-          entry.reject(
+          this.#failStart(
+            threadId,
+            state,
+            current,
+            entry,
             new Error(
               "The thread became active before the reserved turn could start.",
             ),
@@ -160,23 +174,36 @@ export class ThreadTurnCoordinator {
         entry.resolve(result);
       })
       .catch((error) => {
-        if (state.current === current) state.current = undefined;
-        entry.reject(error);
-        this.#drain(threadId, state);
+        this.#failStart(threadId, state, current, entry, error);
       });
   }
 
   #finishCurrent(threadId: string, state: ThreadState) {
     state.current = undefined;
     this.#drain(threadId, state);
-    if (!state.active && !state.current && state.queue.length === 0) {
-      this.#threads.delete(threadId);
-    }
   }
 
   #completeOrHold(threadId: string, state: ThreadState) {
     if (state.current?.manualRelease) return;
     this.#finishCurrent(threadId, state);
+  }
+
+  #failStart(
+    threadId: string,
+    state: ThreadState,
+    current: CurrentStart,
+    entry: QueueEntry<unknown>,
+    error: unknown,
+  ) {
+    if (state.current === current) state.current = undefined;
+    entry.reject(error);
+    this.#drain(threadId, state);
+  }
+
+  #deleteIfIdle(threadId: string, state: ThreadState) {
+    if (!state.active && !state.current && state.queue.length === 0) {
+      this.#threads.delete(threadId);
+    }
   }
 }
 

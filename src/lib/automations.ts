@@ -4,9 +4,13 @@ export type AutomationSchedule =
   | { type: "weekly"; time: string; days: number[] };
 
 export type AutomationTarget =
+  | { type: "defaultThread" }
   | { type: "newThread" }
   | { type: "ephemeralThread" }
   | { type: "thread"; threadId: string };
+
+export const DEFAULT_THREAD_UNAVAILABLE_ERROR =
+  "automation-default-thread-unavailable";
 
 export type Automation = {
   id: string;

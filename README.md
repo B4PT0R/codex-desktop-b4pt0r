@@ -63,11 +63,11 @@ family while remaining free to refine its own interaction design.
   `AGENTS.md` through guarded, conflict-aware editors.
 - Reload the current thread or restart App Server when a configuration change
   cannot apply live.
-- Create recurring or one-time scheduled tasks for an existing, new, or
-  ephemeral thread, and let Codex manage them from chat through a bounded
-  App Server tool with confirmation for deletion. Busy target threads queue
-  wake-ups instead of confusing them with steering; an explicit unattended
-  option can temporarily use Full access with no approval prompts.
+- Create recurring or one-time scheduled tasks for the default conversation or
+  an existing, new, or ephemeral thread, and let Codex manage them from chat
+  through a bounded App Server tool with confirmation for deletion. Busy target
+  threads queue wake-ups instead of confusing them with steering; an explicit
+  unattended option can temporarily use Full access with no approval prompts.
 
 ### Voice and dictation
 
@@ -136,8 +136,15 @@ Download the current `.deb` from
 then install it with:
 
 ```bash
-sudo apt install ./codex-desktop-linux_0.3.12_amd64.deb
+sudo apt install ./codex-desktop-linux_0.3.13_amd64.deb
 ```
+
+After installation, **Settings > General** shows the client and installed Codex
+versions. **Check for updates** reads the latest stable GitHub release; when a
+matching Debian package is available, the app downloads it, verifies its
+published size and SHA-256 digest, then opens the system package installer. The
+app never runs a privileged installation command itself and reminds you to
+restart Codex Desktop after completing the system installation.
 
 To build from source instead, clone the repository, install the locked
 dependencies, and build the Debian package:
@@ -145,7 +152,7 @@ dependencies, and build the Debian package:
 ```bash
 npm ci
 npm run electron:deb
-sudo apt install ./dist/codex-desktop-linux_0.3.12_amd64.deb
+sudo apt install ./dist/codex-desktop-linux_0.3.13_amd64.deb
 ```
 
 Launch the installed application from the desktop menu or run:

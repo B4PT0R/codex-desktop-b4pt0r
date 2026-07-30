@@ -1,361 +1,126 @@
 # Codex Desktop Linux — Handoff
 
-Last updated: 2026-07-30
+Last updated: 2026-07-31
 
 Read `AGENTS.md` before contributing. Durable protocol and UI decisions belong
-in `APP_SERVER_COVERAGE.md` and `UI_ARCHITECTURE.md`; release history belongs in
-`CHANGELOG.md` and Git.
+in `APP_SERVER_COVERAGE.md` and `UI_ARCHITECTURE.md`; completed release detail
+belongs in `CHANGELOG.md` and Git.
 
-## Current baseline
+## Baseline
 
 Codex Desktop Linux is a functional independent Electron client for the
-official `codex app-server`. The daily workflow covers conversations and
-replay, streaming, reasoning, plans, tools, approvals, diffs, files, images,
-Markdown/LaTeX, permissions, models, quotas, goals, dictation, Realtime voice,
-global configuration, skills, Apps, MCP, hooks, memory, remote control and the
+official `codex app-server`. The release candidate is v0.3.13.
+
+The daily workflow covers conversations and replay, concurrent thread activity,
+streaming Markdown/LaTeX, reasoning, plans, tools, approvals, diffs, files,
+images, permissions, models, quotas, goals, dictation, Realtime voice, global
+configuration, skills, Apps, MCP, memory, remote control, scheduled tasks and a
 shared Playwright Chromium session.
 
-The repository is public at
-`https://github.com/B4PT0R/codex-desktop-b4pt0r`. The current public release is
-v0.3.12.
+Compatibility is anchored to installed `codex-cli 0.145.0`. The protocol
+boundary also accepts the additive metadata audited in official Codex
+`1def0a892`, but emits no unpublished request.
 
-## Current candidate
+## Active objective
 
-The client now owns scheduled tasks without inventing an App Server automation
-API:
+Reduce maintenance debt in focused, behavior-preserving lots. Prefer extracting
+one clear responsibility from a concentration point over moving code into
+generic helpers.
 
-- Electron persists at most 100 validated schedules atomically in
-  `~/.codex/codex-desktop-linux.json`;
-- interval, daily, weekday, weekly and one-time local schedules can target the
-  selected existing thread, a new persistent thread or a new ephemeral thread;
-- due runs start or resume an ordinary thread and submit an ordinary Codex
-  turn, preserving normal permissions and approval behavior;
-- tasks can be edited, paused, run immediately and deleted with confirmation
-  from a dedicated global Settings section; a one-time wake disables itself
-  atomically when claimed;
-- the scheduler claims work before dispatch and records running, success,
-  failure, interruption, last thread and next occurrence;
-- scheduling, App Server execution and transport ownership remain separate so
-  the experimental Unix daemon can replace process ownership later without
-  changing the product surface.
-- new ordinary threads expose the native scheduler to the agent through App
-  Server's experimental `dynamicTools` contract: list, create, update,
-  enable/disable and run-now are bounded operations, while deletion waits for
-  explicit desktop confirmation. App Server restores the tools on resume.
-- turn-producing work is serialized per target thread. A wake-up aimed at a
-  busy thread waits for the active user, review or compaction turn to finish;
-  different threads continue in parallel, and security restoration completes
-  before the next queued wake-up starts.
-- scheduled prompts carry a persistent Codex Desktop Scheduler envelope and
-  replay as a distinct wake-up card instead of looking like user steering.
-- each task may explicitly opt into unattended execution. This uses Full access
-  with Never ask for the scheduled turn, visibly warns in Settings, and
-  restores the thread's previous permission and approval settings before its
-  queue is released.
-- unattended security restoration accepts either the authoritative settings
-  notification or a post-update thread read. This covers App Server's
-  documented no-op behavior without reporting a false 15-second timeout.
-- scheduled wake-up transcript cards now replay as a compact one-line summary
-  and expose their full Markdown prompt through an accessible disclosure.
-- a general default conversation can be selected from Settings or the current
-  thread menu. Tray-launched headless Realtime sessions fork this context,
-  persist finalized voice exchanges back into it and create a persistent
-  fallback named “Let's discuss anything” in the user home only when no valid
-  default exists. Existing unnamed fallbacks are migrated on first use, while
-  later user renames are never overwritten.
-- a configured default outside the first 30 conversations is resolved through
-  read-only `thread/read` metadata. Its authoritative name therefore survives
-  restart and reinstall without activating, resuming or renaming the thread;
-  the UI keeps a neutral navigable loading entry instead of fabricating
-  “Configured conversation”. If initial catalog hydration races and replaces
-  an earlier metadata result, the read is retried so Realtime-only parent
-  threads remain promoted even without replayable turns.
-- renaming now verifies the persisted App Server metadata before reporting
-  success. The default conversation refreshes that authoritative metadata after
-  resume, and a partial unnamed response cannot replace a previously confirmed
-  title with “Untitled conversation”.
-- opening the hidden window during a tray Realtime session resumes that parent,
-  transfers the buffered transcript into the chat and continues live rendering
-  without restarting WebRTC. The default conversation is promoted once above
-  recent projects in the sidebar rather than duplicated in its workspace.
+Completed in the current working tree:
 
-Background notifications are now routed by `threadId`. A scheduled run updates
-its thread and sidebar without injecting activity into the conversation
-currently being read. Global notifications and interactive approval requests
-retain their existing behavior.
+- centralize optimistic thread-runtime setting writes outside `App.tsx`;
+- ignore stale failures after a newer choice or conversation switch;
+- use one application-error presentation for native and connection failures;
+- make unused TypeScript locals and parameters fail CI;
+- keep turn coordination state bounded to relevant active/queued work and route
+  every failed reservation through one release/drain path;
+- ship an AppArmor profile attached to the actual packaged executable instead
+  of documenting a nonexistent binary path;
+- keep synthetic browser-preview fixtures and cancellable timers in the demo
+  controller rather than the production submission path;
+- let scheduled tasks target the logical default conversation, resolve its
+  current identifier at wake-up and wait for preference hydration before
+  arming the scheduler;
+- show the client and Codex versions in General, check the latest stable GitHub
+  release on demand and open only a size- and SHA-256-verified matching `.deb`
+  through the system installer;
+- clearly ask the user to finish the system installation and restart Codex
+  Desktop before expecting the updated version;
+- keep this handoff concise instead of accumulating completed release history.
 
-Conversation navigation now establishes its target scope before awaiting
-`thread/resume`. Late deltas from the thread being left are discarded from the
-visible queue, notifications for the selected thread are buffered during
-hydration, and the server snapshot restores missed items, partial tools,
-activity, active turn identity and steering state. Multiple App Server threads
-can therefore continue in parallel without sharing renderer conversation
-state. Resume hydration presents a dedicated centered loading state instead of
-flashing the new-chat welcome. The hydrated transcript is already mounted,
-laid out and scrolled behind the loading overlay before either transition
-starts. The spinner first completes its own 180 ms fade-and-blur exit, then the
-overlay alone dissolves over 400 ms. The transcript receives no visual filter,
-transform or reveal animation, preventing both a late layout pop and extra work
-in the chat renderer. The browser-only demo exposes a repeatable three-second
-loading preview so the transition can be tuned visually without depending on
-App Server latency.
+## Recent constraints
 
-Composer growth now resizes the conversation without exposing an obsolete
-scroll position. When the reader is following the tail, the scroll owner
-reanchors synchronously before Chromium paints the shorter viewport; an
-intentional scroll upward remains untouched. Messages no longer use
-`content-visibility: auto`, whose cached off-screen paint could briefly replay
-Markdown lines at their former position while the viewport changed.
-
-Config Settings now exposes the App Server startup-warning suppression flag in
-a dedicated experimental-features subsection. The persisted TOML value remains
-the source of truth, and the UI clarifies that suppression takes effect after an
-App Server restart without changing feature stability.
-
-The default-conversation selector now has a bounded responsive width. Long
-thread names and workspace paths are compacted visually while their complete
-labels remain available to native accessibility and hover surfaces.
-
-Settings navigation now describes the two remaining advanced destinations by
-their actual jobs: global Codex configuration and import from other agents.
-The permissions destination also uses the shorter product label “Permissions”.
-Unused experimental-feature and diagnostics placeholders have been removed.
-The composer footer uses the same “Permissions” label and compact chevron
-trigger language as its neighboring model picker.
-The flat Settings navigation is ordered by likely consultation frequency:
-everyday agent controls, specialized workflows, integrations, then advanced and
-one-time migration surfaces.
-Appearance and chat-presentation controls now share one “Appearance & Display”
-destination with separate interface and conversation subsections.
-The global AGENTS.md editor is owned by Agent Settings; Advanced Configuration
-now stays focused on guided App Server options and config.toml.
-Permissions presents access profiles, approval policies and the approval
-reviewer as explanatory selectable cards. Managed reviewer constraints disable
-unavailable choices rather than allowing a write that App Server will reject.
-
-Agent Settings now covers capability-driven service tiers and documented
-`agents.*` defaults. Only tiers advertised by the selected/default model are
-shown; the conversation model popover can persist a thread override. Subagent
-enablement, default model/reasoning, concurrency and interruption messages use
-targeted `config/value/write` updates, leaving custom roles and arbitrary agent
-TOML in Advanced Configuration.
-
-Long-idle transport recovery is now explicit rather than inferred from the
-child process state:
-
-- Electron probes the initialized App Server over its real stdio JSON-RPC
-  channel every two minutes and shortly after system resume or unlock;
-- two consecutive bounded probe failures are required before replacing the
-  child, avoiding a restart on a transiently busy response;
-- the renderer reconnects with bounded backoff, restores its subscriptions and
-  catalogs, then resumes the active thread;
-- the tray-hidden Electron renderer opts out of background throttling because
-  it owns App Server event reduction, remote control and scheduled turns;
-- the scheduler stops claiming due work as soon as the transport is lost and
-  catches up only after its renderer listener is attached again.
-- the renderer-to-scheduler readiness handshake is cancellation-safe: a
-  disconnect while the native listener is still attaching cannot re-arm
-  delivery after that listener has already been removed.
-
-Compatibility remains anchored to installed `codex-cli 0.145.0`. The boundary
-also accepts additive thread section metadata, item timestamps and terminal
-turn errors already visible in official Codex `main` at `1def0a892`, but emits
-no unpublished section or automation request.
-
-The new Settings UI reuses the established cards, round controls, compact
-typography, focus treatment and light/dark palettes. It has no horizontal
-overflow at 1240×820 or 840×620.
-
-A maintenance pass has reduced the main Settings concentration without
-inventing generic abstractions:
-
-- `SettingsView` now owns only focus, navigation and section routing;
-- General/Web/Chat, Agent/Permissions and Advanced settings have focused
-  section modules with narrow controller props;
-- scheduled-task listing and editing are separate components, and changing the
-  edited task cannot retain stale form state;
-- scheduler styling is colocated in `automation-settings.css` instead of being
-  split across the general Settings and appearance sheets.
-
-Streaming assistant messages now use the complete GFM/KaTeX renderer
-progressively. Token deltas are coalesced to at most one interruptible Markdown
-parse every 32 ms. Chromium schedules those parses below pending keyboard and
-pointer input; incomplete emphasis, links, fenced code and math remain safe
-while their delimiters are still arriving, and finalization flushes the
-complete source immediately. The renderer reuses stable Markdown component
-types, and the obsolete parallel LaTeX-only streaming parser has been removed.
-Tables, headings, nested and task lists, blockquotes, separators,
-strikethrough, links and inline images now have an explicit responsive
-light/dark presentation instead of inheriting inconsistent browser defaults.
-
-Tool activity now follows a three-state presentation contract: an action is
-open, collapsed on the same fixed one-line header, or hidden in its group
-history. Calls are revealed only after the previous detail panel has finished
-closing; when the configurable one-to-six-row limit is reached, the oldest row
-leaves before the next arrives. The group summary exists from the first call,
-silent agent steps remain aggregated, and text or an intervening non-action
-item closes the prior group before the next visual item appears. Empty
-agent-message and zero-summary reasoning placeholders are discarded live and
-during replay, so they cannot split tools-only steps into consecutive
-one-action groups. A delayed reasoning summary becomes a boundary only when
-its first visible delta arrives.
-The App Server background-terminal inventory is refreshed during active turns.
-A matching long-running command keeps its truthful running state and output,
-but yields its expanded card after a short dwell so later Playwright or tool
-calls cannot accumulate invisibly behind it. Mixed groups report completed and
-still-running counts together; detached jobs use a static job icon rather than
-a spinner that suggests the interface is blocked.
-The action row and its detail rendering now live in a focused component; the
-group component owns only sequencing, history visibility and group lifecycle.
-
-Public contribution intake now has a concise `CONTRIBUTING.md`, structured bug
-and feature forms, and a pull-request checklist. Reports request the App and
-Codex versions, Linux environment, reproducible evidence and explicit
-redaction; protocol and UI contributions are routed back to the durable
-repository contracts instead of duplicating them.
-
-Release identity now has one source of truth. Vite injects the `package.json`
-version into App Server's `initialize.clientInfo`, while Electron passes
-`app.getVersion()` to the app-owned Playwright MCP client. Stale hard-coded
-client versions have been removed and both paths are covered by focused tests.
-
-The shared Config and global AGENTS.md editor now follows the same modal focus
-contract as approvals and native prompts: keyboard traversal stays inside the
-open editor, Escape retains unsaved-change protection, and closing restores the
-settings card that opened it.
-
-Background-terminal discovery remains frequent during active turns, but its
-automatic polls are now silent and retain the previous snapshot identity when
-the inventory and telemetry are unchanged. This avoids periodic app-wide
-rerenders and invalidating stable tool-group props during unrelated streaming;
-an explicit user refresh still exposes its loading state.
-
-The production file manifest now includes the favicon referenced by the built
-HTML, excludes Electron test sources and has a native contract covering the
-renderer, main entry point and external bundled-skill mapping. This keeps
-development-only code out of the ASAR and makes a missing runtime resource fail
-before release packaging.
-
-The native App Server writer now accepts exactly one single-line JSON object per
-renderer command. Malformed values, arrays and embedded NDJSON lines are
-rejected before stdin, so the narrow preload command cannot be used to smuggle
-multiple protocol messages through one IPC invocation.
-
-Goal mutations are now versioned across thread changes. Selecting another
-conversation immediately releases its controls, while a late save, pause or
-clear response from the previous thread cannot overwrite the current goal or
-release the current thread's own mutation lock.
-
-Install and startup persistence is now explicitly idempotent. Generated Debian
-maintainer scripts only manage system integration under `/usr`, `/opt` and
-`/etc`; they never enter the user's home. Native preference and Config writers
-preserve unknown fields and skip byte-identical updates, scheduler readiness
-does not rewrite an unchanged automation list, and a locale inferred for an
-unconfigured profile remains an in-memory default until the user changes it.
-Only explicit actions, documented legacy migration and interrupted scheduler
-recovery can mutate persisted state during ordinary lifecycle paths.
-
-## Verified candidate baseline
-
-- Installed Codex: `codex-cli 0.145.0`.
-- Official source audit: `1def0a892`, stable and experimental v2 schemas.
-- Frontend/unit/contract: 598 tests across 112 files, including 49 installed
-  App Server contract cases.
-- Electron/Node: 80 tests, including native hidden-window liveness and
-  persistence-idempotence invariants.
-- Strict TypeScript: passing.
-- Production Vite build: passing.
-- Electron directory packaging: passing; inspected ASAR contains the renderer,
-  favicon, main and preload with zero native test sources, while the shared
-  browser skill remains an external resource.
-- Production dependency audit: zero vulnerabilities.
-- Main JS: 590.29 kB, 170.45 kB gzip.
-- Lazy diff viewer: 89.50 kB, 32.89 kB gzip.
-- Lazy Markdown/KaTeX: 436.82 kB, 131.40 kB gzip.
-- Shared-browser visual pass: light and dark palettes, 1240×820 and 840×620;
-  no browser warning, error or horizontal overflow after the Settings
-  modularity pass.
-- Shared-browser default-conversation pass: the General selector stays aligned
-  with the existing settings grid at 1240×820 and 840×620, with no warning,
-  error or horizontal overflow. Its dedicated sidebar section remains compact
-  at both sizes and removes the promoted thread from its workspace group.
-- Shared-browser action pass: user-approved continuous multi-step wave with
-  seven aggregated calls, saturation, an interleaved compaction boundary and a
-  second group containing a detached development server followed by Playwright
-  calls; the mixed summary and static job state were user-approved.
-- Shared-browser streaming pass: progressive Markdown and sequential composer
-  input ran together without browser errors or warnings; real App Server
-  tools-only grouping is covered at the reducer and replay boundaries because
-  the visual demo intentionally bypasses those events.
-- Shared-browser Markdown pass: complete light/dark fixture at 1240×820 and
-  840×620; wide tables scroll locally without widening the message or app.
-- Built Debian release: `codex-desktop-linux 0.3.12 amd64`
-  (`sha256:709d4626…50c77c2`); its packaged ASAR passes the production
-  runtime inventory contract. Both an upgrade from 0.3.11 and an immediate
-  same-version reinstall preserved `config.toml` and desktop settings content,
-  inode, size, mtime, mode and ownership exactly.
-
-## Active invariants
-
-- Electron is the only production shell. Do not restore Tauri.
-- The installed App Server schema is the wire source of truth. Future-source
-  observations may inform additive parsing, never unsupported requests.
-- Persist client preferences atomically in the versioned desktop settings
-  file. Keep official Codex configuration in `config.toml`; install, upgrade
-  and ordinary startup must not rewrite either persistence domain.
-- Server-hydrated thread state wins over UI defaults.
-- Realtime uses ephemeral voice threads and injects finalized utterances into
-  the persistent parent in order.
-- Shared browser automation owns an app-managed open-source Chromium and
-  packaged Playwright/MCP pair; never assume a system Chromium.
-- Filesystem, configuration and scheduler IPC remain narrow, validated and
-  secret-free.
-- Preserve French/English key parity and accessible light/dark hover, focus,
-  disabled, destructive and error states.
+- Server-hydrated thread state is the source of truth. A partial resume must not
+  erase confirmed conversation metadata or effective runtime settings.
+- Notifications and active-turn state are isolated by `threadId`; background
+  activity may update catalogs but not the visible conversation.
+- The general default conversation is read through authoritative App Server
+  metadata when absent from the recent catalog. Realtime-only parents remain
+  visible even without replayable turns, and user names are never fabricated or
+  overwritten.
+- Install, upgrade and ordinary startup are idempotent for `config.toml`,
+  desktop preferences and server-owned thread metadata.
+- Scheduled turns are ordinary App Server turns serialized per target thread.
+  Unattended mode temporarily uses Full access/Never ask and must restore the
+  previous security state before releasing the queue.
+- Realtime uses ephemeral voice forks and injects finalized exchanges into the
+  persistent parent in order.
+- The shared browser uses the app-owned Playwright/MCP pair and managed
+  open-source Chromium. Never assume a system Chromium.
 
 ## Known limitations
 
 - Scheduled tasks require the app to remain running in the tray and the machine
-  to be awake. The current scheduler does not wake a suspended or powered-off
-  machine and does not replay a burst of missed intervals.
-- Per-thread serialization covers all turn starts owned by this desktop
-  process. A different App Server client can still race in the narrow interval
-  between an idle observation and `turn/start`, because 0.145 exposes no
-  conditional start-if-idle request.
-- Quitting or restarting the app interrupts an active scheduled run; it is
-  marked failed on reconnect. Closing only the window preserves the hidden
-  renderer and App Server.
-- There is no public App Server automation CRUD/run API in 0.145 or the audited
-  official checkout. The Unix daemon/socket remains experimental and is not yet
-  the production transport.
-- App Server 0.145 only accepts client-owned dynamic tools at `thread/start`.
-  Threads created before v0.3.4 remain usable but need a new fork or
-  conversation before the agent can control scheduled tasks from chat.
-- Linux/Ubuntu is the only packaged environment validated regularly; the `.deb`
-  still needs a clean second-machine or VM lifecycle pass.
-- App Server preserves injected Realtime context but does not project
-  standalone injected voice items into ordinary visual replay.
+  to stay awake. Missed intervals are not replayed in a burst.
+- A different App Server client can race between an idle observation and
+  `turn/start`; App Server 0.145 has no conditional start-if-idle request.
+- Quitting the app interrupts an active scheduled run. Closing the window keeps
+  the hidden renderer and App Server alive.
+- Threads created before v0.3.4 need a new fork or conversation before the
+  agent can receive the scheduler's experimental dynamic tools.
+- App Server preserves injected Realtime context but does not project those
+  standalone voice items into ordinary visual replay.
+- Linux/Ubuntu is the only regularly packaged environment. The `.deb` still
+  needs a clean second-machine or VM lifecycle pass.
 - The lazy Markdown/KaTeX chunk remains large but is not a release blocker.
 
 ## Next bounded work
 
-1. Exercise long-idle and suspend/resume recovery in packaged Electron together
-   with scheduled execution, including an approval-gated task, hidden-window
-   delivery and App Server restart.
-2. Let scheduled tasks optionally target the general default conversation
-   after the tray Realtime lifecycle has been exercised in packaged Electron.
-3. Decide whether background task completion merits an OS notification and a
-   small activity inbox before adding either surface.
-4. Add a concise public App Server compatibility guide and security-reporting
-   policy.
-5. Add user-controlled diagnostic export with redaction and preview.
-6. Define an explicit, non-silent update and rollback strategy.
+1. Exercise long-idle and suspend/resume recovery in packaged Electron with a
+   scheduled task, approval gating and hidden-window delivery.
+2. Add a concise public App Server compatibility guide and
+   `SECURITY.md`.
+3. Add user-controlled diagnostic export with redaction and preview.
+4. Define a documented rollback strategy for package updates.
 
-Defer generic RPC/filesystem consoles, unstable plugin-marketplace production
-support and Git/worktree management without a stable App Server product
-contract.
+Defer generic RPC/filesystem consoles, unstable marketplace production support
+and Git/worktree management without a stable App Server product contract.
 
-## Verification
+## Latest verified baseline
+
+- Frontend/unit/contract: 616 tests across 114 files, including 49 installed
+  App Server contract cases.
+- Electron/Node: 91 tests.
+- Strict TypeScript, production Vite build and production dependency audit:
+  passing; zero production vulnerabilities.
+- Main JS: 596.06 kB, 171.92 kB gzip.
+- Electron directory packaging: passing with the native update manager included.
+- Pre-release live check: installed `codex-cli 0.145.0`; the then-current
+  v0.3.12 release exposed a matching amd64 asset without requiring a download.
+- Shared-browser scheduler pass: the default-conversation target fits the
+  existing two-column editor grid and remains selectable without layout shift.
+- Shared-browser update pass: General at 1164×860 and light theme at 840×620;
+  version rows and the update action remain aligned without horizontal overflow.
+- Current working-tree Debian package: passing; the packaged AppArmor profile
+  is byte-identical to its source and present under `resources/apparmor/`.
+- Debian v0.3.13:
+  `sha256:9b5dc7ed067aa0ca7b3dd057616c9382aac88a62ef11b18f57c3cebcc11f50be`.
+  The package contains the native update manager and matching AppArmor profile.
+  Earlier upgrade and same-version reinstall checks preserved both persistence
+  files byte-for-byte, including inode, timestamps, mode and ownership.
+
+Run for every completed lot:
 
 ```bash
 npm run check
@@ -365,9 +130,9 @@ npm run build
 npm audit --omit=dev
 ```
 
-For protocol changes, also run `npm run test:contract` against the installed
-binary. For packaging or native lifecycle work, use `npm run electron:dev` and
-`npm run electron:deb`. Meaningful UI work must be checked through the shared
-Playwright session at 1240×820 and 840×620.
+Also run `npm run test:contract` for protocol changes, `npm run electron:dev`
+for native UI/lifecycle changes, and `npm run electron:deb` for packaging.
+Meaningful UI changes require the shared Playwright pass at 1240×820 and
+840×620.
 
 No active blocker is known.

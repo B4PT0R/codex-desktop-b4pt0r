@@ -319,7 +319,11 @@ function normalizeSchedule(input) {
 
 function normalizeTarget(input) {
   const value = objectValue(input);
-  if (value.type === "newThread" || value.type === "ephemeralThread") {
+  if (
+    value.type === "defaultThread" ||
+    value.type === "newThread" ||
+    value.type === "ephemeralThread"
+  ) {
     return { type: value.type };
   }
   if (value.type === "thread") {

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ThreadSummary } from "../types";
-import type {
-  Automation,
-  AutomationDraft,
-  AutomationsController,
+import {
+  DEFAULT_THREAD_UNAVAILABLE_ERROR,
+  type Automation,
+  type AutomationDraft,
 } from "./automations";
 import type {
   AppServerThread,
@@ -47,11 +47,15 @@ type RunState = {
 
 export function useAutomations({
   connected,
+  defaultThreadId,
+  preferencesReady = true,
   onError,
   onThreadCreated,
   turnCoordinator,
 }: {
   connected: boolean;
+  defaultThreadId?: string;
+  preferencesReady?: boolean;
   onError: (error: unknown) => void;
   onThreadCreated: (thread: ThreadSummary) => void;
   turnCoordinator: ThreadTurnCoordinator;
@@ -61,8 +65,8 @@ export function useAutomations({
   const [loading, setLoading] = useState(false);
   const runs = useRef(new Map<string, RunState>());
   const settingsConfirmation = useRef(new ThreadSettingsConfirmation());
-  const callbacks = useRef({ onError, onThreadCreated });
-  callbacks.current = { onError, onThreadCreated };
+  const callbacks = useRef({ defaultThreadId, onError, onThreadCreated });
+  callbacks.current = { defaultThreadId, onError, onThreadCreated };
 
   const refresh = useCallback(async () => {
     if (!isDesktopApp()) return;
@@ -84,10 +88,20 @@ export function useAutomations({
     let restoreSecurity: RunState["restoreSecurity"];
     try {
       let runtimeResponse: ThreadRuntimeResponse;
-      if (run.target.type === "thread") {
+      if (
+        run.target.type === "thread" ||
+        run.target.type === "defaultThread"
+      ) {
+        const targetThreadId =
+          run.target.type === "defaultThread"
+            ? callbacks.current.defaultThreadId
+            : run.target.threadId;
+        if (!targetThreadId) {
+          throw new Error(DEFAULT_THREAD_UNAVAILABLE_ERROR);
+        }
         const response = await request<ThreadRuntimeResponse>(
           "thread/resume",
-          automationThreadResumeParams(run.target.threadId),
+          automationThreadResumeParams(targetThreadId),
         );
         runtimeResponse = response;
         thread = response.thread;
@@ -161,7 +175,6 @@ export function useAutomations({
             : item,
         ),
       );
-      void response.turn.id;
     } catch (cause) {
       if (thread && restoreSecurity) {
         await restoreThreadSecurity(
@@ -175,7 +188,7 @@ export function useAutomations({
   }, [turnCoordinator]);
 
   useEffect(() => {
-    if (!connected || !isDesktopApp()) return;
+    if (!connected || !preferencesReady || !isDesktopApp()) return;
     let disposed = false;
     let unlisten: (() => void) | undefined;
     void (async () => {
@@ -205,7 +218,7 @@ export function useAutomations({
       disposed = true;
       unlisten?.();
     };
-  }, [connected, execute, refresh]);
+  }, [connected, execute, preferencesReady, refresh]);
 
   const save = useCallback(
     async (draft: AutomationDraft) => {

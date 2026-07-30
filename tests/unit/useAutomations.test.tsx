@@ -31,6 +31,31 @@ vi.mock("../../src/lib/codex", () => ({
 afterEach(() => vi.clearAllMocks());
 
 describe("tâches planifiées", () => {
+  it("attend l’hydratation des préférences avant d’armer le scheduler", async () => {
+    mocks.listen.mockResolvedValue(() => {});
+    mocks.invoke.mockResolvedValue([]);
+    const turnCoordinator = new ThreadTurnCoordinator();
+    const { rerender } = renderHook(
+      ({ preferencesReady }) =>
+        useAutomations({
+          connected: true,
+          preferencesReady,
+          onError: vi.fn(),
+          onThreadCreated: vi.fn(),
+          turnCoordinator,
+        }),
+      { initialProps: { preferencesReady: false } },
+    );
+
+    expect(mocks.listen).not.toHaveBeenCalled();
+    expect(mocks.invoke).not.toHaveBeenCalledWith("automation_ready");
+
+    rerender({ preferencesReady: true });
+    await waitFor(() =>
+      expect(mocks.invoke).toHaveBeenCalledWith("automation_ready"),
+    );
+  });
+
   it("n’arme pas le scheduler si la connexion disparaît avant le listener", async () => {
     const registration = deferred<() => void>();
     const cleanup = vi.fn();
@@ -192,6 +217,117 @@ describe("tâches planifiées", () => {
       }),
     );
     expect(onThreadCreated).not.toHaveBeenCalled();
+  });
+
+  it("résout la conversation par défaut au moment de l’exécution", async () => {
+    let due:
+      ((event: { payload: Record<string, unknown> }) => void) | undefined;
+    mocks.listen.mockImplementation(async (_event, handler) => {
+      due = handler;
+      return () => {};
+    });
+    mocks.invoke.mockImplementation(async (command) => {
+      if (command === "automation_list") return [];
+      return undefined;
+    });
+    mocks.request.mockImplementation(async (method) => {
+      if (method === "thread/resume") {
+        return { thread: { id: "thread-default-new", cwd: "/project" } };
+      }
+      if (method === "turn/start") return { turn: { id: "turn-default" } };
+      throw new Error(`Unexpected request: ${method}`);
+    });
+    const turnCoordinator = new ThreadTurnCoordinator();
+    const { rerender } = renderHook(
+      ({ defaultThreadId }: { defaultThreadId?: string }) =>
+        useAutomations({
+          connected: true,
+          defaultThreadId,
+          onError: vi.fn(),
+          onThreadCreated: vi.fn(),
+          turnCoordinator,
+        }),
+      { initialProps: { defaultThreadId: "thread-default-old" } },
+    );
+    await waitFor(() =>
+      expect(mocks.invoke).toHaveBeenCalledWith("automation_ready"),
+    );
+
+    rerender({ defaultThreadId: "thread-default-new" });
+    act(() =>
+      due?.({
+        payload: {
+          id: "automation-default",
+          runId: "run-default",
+          name: "Continue",
+          prompt: "Continue the current work",
+          enabled: true,
+          schedule: { type: "interval", intervalMinutes: 60 },
+          target: { type: "defaultThread" },
+        },
+      }),
+    );
+
+    await waitFor(() =>
+      expect(mocks.request).toHaveBeenCalledWith(
+        "thread/resume",
+        expect.objectContaining({ threadId: "thread-default-new" }),
+      ),
+    );
+    expect(mocks.request).not.toHaveBeenCalledWith(
+      "thread/resume",
+      expect.objectContaining({ threadId: "thread-default-old" }),
+    );
+  });
+
+  it("échoue clairement si la conversation par défaut n’est pas configurée", async () => {
+    let due:
+      ((event: { payload: Record<string, unknown> }) => void) | undefined;
+    mocks.listen.mockImplementation(async (_event, handler) => {
+      due = handler;
+      return () => {};
+    });
+    mocks.invoke.mockImplementation(async (command) => {
+      if (command === "automation_list") return [];
+      return undefined;
+    });
+    const turnCoordinator = new ThreadTurnCoordinator();
+    renderHook(() =>
+      useAutomations({
+        connected: true,
+        onError: vi.fn(),
+        onThreadCreated: vi.fn(),
+        turnCoordinator,
+      }),
+    );
+    await waitFor(() =>
+      expect(mocks.invoke).toHaveBeenCalledWith("automation_ready"),
+    );
+
+    act(() =>
+      due?.({
+        payload: {
+          id: "automation-default",
+          runId: "run-default",
+          name: "Continue",
+          prompt: "Continue the current work",
+          enabled: true,
+          schedule: { type: "interval", intervalMinutes: 60 },
+          target: { type: "defaultThread" },
+        },
+      }),
+    );
+
+    await waitFor(() =>
+      expect(mocks.invoke).toHaveBeenCalledWith("automation_complete", {
+        id: "automation-default",
+        runId: "run-default",
+        status: "failed",
+        threadId: undefined,
+        error: "automation-default-thread-unavailable",
+      }),
+    );
+    expect(mocks.request).not.toHaveBeenCalled();
   });
 
   it("distingue deux exécutions qui ciblent le même thread", async () => {

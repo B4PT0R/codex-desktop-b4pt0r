@@ -4,6 +4,7 @@ import type {
 } from "./appServerTypes";
 import type { ChatMessage, Quota, ThreadSummary } from "../types";
 import type { ThreadTelemetry } from "./sessionTelemetry";
+import type { Translate } from "../i18n/translate";
 
 const demoGeneratedImageUrl = new URL(
   "../assets/generated-image-widget-source.jpg",
@@ -271,6 +272,56 @@ export function initialPreviewMessages() {
     : isDemoPreview()
       ? demoConversation()
       : [];
+}
+
+export function browserPreviewResponse(t: Translate): ChatMessage {
+  return {
+    id: crypto.randomUUID(),
+    role: "assistant",
+    content: t("app.preview"),
+    tools: [
+      {
+        id: "1",
+        kind: "commandExecution",
+        title: t("app.previewTool"),
+        detail: "rg --files src",
+        status: "done",
+        output: "src/App.tsx\nsrc/components/Conversation.tsx\n",
+        exitCode: 0,
+        durationMs: 84,
+      },
+      {
+        id: "2",
+        kind: "imageGeneration",
+        title: t("tool.imageGeneration"),
+        detail: t("app.previewImage"),
+        status: "done",
+        artifacts: [
+          {
+            type: "generatedImage",
+            dataUrl:
+              "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAJEAIAAADk2OcmAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAGYktHRP///////wlY99wAAAAHdElNRQfqBxMMIg+1kBTwAAAAYElEQVQoz2MMC8vObmtjoBlg+Vn1Y8fXMhpa8Kvy+45vpbT1wXYa++AHTX3AaLrNiSnwEk19gCUO/kMsx6HnP7IDCemCxcF/JI2MeAxHNgybeog4kgijkpKmppER7YIIAA8zKkZIs1QvAAAAAElFTkSuQmCC",
+            prompt: t("app.previewImage"),
+          },
+        ],
+      },
+      {
+        id: "3",
+        kind: "webSearch",
+        title: t("tool.web"),
+        detail: t("app.previewSearch"),
+        status: "done",
+        artifacts: [
+          {
+            type: "webResult",
+            title: t("app.previewResult"),
+            url: "https://developers.openai.com/codex/",
+            snippet: t("app.previewSnippet"),
+          },
+        ],
+      },
+    ],
+  };
 }
 
 export function isDemoPreview() {

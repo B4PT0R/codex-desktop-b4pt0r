@@ -8,10 +8,11 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
-import type {
-  Automation,
-  AutomationDraft,
-  AutomationsController,
+import {
+  DEFAULT_THREAD_UNAVAILABLE_ERROR,
+  type Automation,
+  type AutomationDraft,
+  type AutomationsController,
 } from "../lib/automations";
 import { AutomationEditor } from "./AutomationEditor";
 import { RoundIconButton } from "./RoundIcon";
@@ -160,6 +161,8 @@ function AutomationRow({
           <em>
             {automation.lastError === "automation-interrupted"
               ? t("automations.interrupted")
+              : automation.lastError === DEFAULT_THREAD_UNAVAILABLE_ERROR
+                ? t("automations.defaultThreadUnavailable")
               : automation.lastError}
           </em>
         )}
@@ -257,6 +260,9 @@ function targetLabel(
 ) {
   if (automation.target.type === "thread") {
     return t("automations.existingThread");
+  }
+  if (automation.target.type === "defaultThread") {
+    return t("automations.defaultThread");
   }
   return t(
     automation.target.type === "ephemeralThread"

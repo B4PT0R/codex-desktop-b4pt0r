@@ -49,6 +49,27 @@ test("claims a one-time task exactly once and accepts an ephemeral target", asyn
   assert.equal(events.length, 1);
 });
 
+test("persists the logical default-conversation target", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "codex-automation-"));
+  const scheduler = new AutomationScheduler({
+    file: path.join(directory, "settings.json"),
+    send: () => undefined,
+  });
+
+  const saved = await scheduler.upsert({
+    name: "Default conversation review",
+    prompt: "Inspect the current context",
+    enabled: true,
+    schedule: { type: "interval", intervalMinutes: 30 },
+    target: { type: "defaultThread" },
+  });
+
+  assert.deepEqual(saved.target, { type: "defaultThread" });
+  assert.deepEqual((await scheduler.list())[0].target, {
+    type: "defaultThread",
+  });
+});
+
 test("persists, claims and completes a scheduled task", async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "codex-automation-"));
   const file = path.join(directory, "settings.json");

@@ -5,7 +5,6 @@ import { Composer } from "./Composer";
 import { SessionTelemetry } from "./SessionTelemetry";
 import type { AppsController } from "../lib/useApps";
 import type { TurnContextItem } from "../lib/protocol";
-import { useI18n } from "../i18n/I18nProvider";
 import { ModelQuickPicker } from "./ModelQuickPicker";
 import type { PermissionProfileSummary } from "../lib/appServerTypes";
 import type { RateLimitResetCreditsSummary } from "../lib/appServerTypes";
@@ -109,7 +108,6 @@ export function ChatFooter({
   onToggleVoice,
   onToggleDictation,
 }: ChatFooterProps) {
-  const { t } = useI18n();
   return (
     <footer>
       <div className="composer-stack">

@@ -11,6 +11,8 @@ import type { IntegrationsController } from "../lib/useIntegrations";
 import { useLaunchAtLogin } from "../lib/useLaunchAtLogin";
 import type { DefaultThreadSettingsController } from "../lib/useDefaultThreadSettings";
 import { DefaultThreadSettingsField } from "./DefaultThreadSettingsField";
+import type { AppUpdateController } from "../lib/useAppUpdate";
+import { AppUpdateSettings } from "./AppUpdateSettings";
 
 export type AppServerRestartController = {
   available: boolean;
@@ -34,10 +36,12 @@ const fileOpeners: FileOpener[] = [
 ];
 
 export function GeneralSettings({
+  appUpdate,
   appServerRestart,
   defaultThread,
   globalSettings,
 }: {
+  appUpdate: AppUpdateController;
   appServerRestart: AppServerRestartController;
   defaultThread: DefaultThreadSettingsController;
   globalSettings: CodexGlobalSettingsController;
@@ -138,6 +142,7 @@ export function GeneralSettings({
           </div>
         </div>
       </div>
+      <AppUpdateSettings controller={appUpdate} />
       {persistenceError && (
         <div className="inventory-message error" role="alert">
           {t("settings.persistence.error")} {persistenceError}

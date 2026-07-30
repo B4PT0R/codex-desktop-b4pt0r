@@ -115,6 +115,69 @@ describe("coordination des tours par thread", () => {
     await expect(next).resolves.toEqual({ turn: { id: "scheduled-2" } });
   });
 
+  it("ignore les notifications qui ne concernent pas la coordination", () => {
+    const coordinator = new ThreadTurnCoordinator();
+
+    expect(
+      coordinator.handleMessage({
+        method: "item/agentMessage/delta",
+        params: { threadId: "thread-1", delta: "hello" },
+      }),
+    ).toBe(false);
+    expect(
+      coordinator.handleMessage({
+        method: "turn/completed",
+        params: {
+          threadId: "thread-1",
+          turn: { id: "external", status: "completed" },
+        },
+      }),
+    ).toBe(false);
+    expect(
+      coordinator.handleMessage({
+        method: "thread/status/changed",
+        params: { threadId: "thread-1", status: { type: "unknown" } },
+      }),
+    ).toBe(false);
+  });
+
+  it("libère une réservation en conflit puis poursuit la file", async () => {
+    const coordinator = new ThreadTurnCoordinator();
+    const first = deferred<{ turn: { id: string } }>();
+    const secondStart = vi
+      .fn()
+      .mockResolvedValue({ turn: { id: "scheduled-2" } });
+    const firstRun = coordinator.runWhenIdle(
+      "thread-1",
+      () => first.promise,
+      (result) => result.turn.id,
+    );
+    const secondRun = coordinator.runWhenIdle(
+      "thread-1",
+      secondStart,
+      (result) => result.turn.id,
+    );
+
+    coordinator.handleMessage({
+      method: "turn/started",
+      params: { threadId: "thread-1", turn: { id: "external-turn" } },
+    });
+    first.resolve({ turn: { id: "scheduled-1" } });
+    await expect(firstRun).rejects.toThrow(
+      "The thread became active before the reserved turn could start.",
+    );
+    expect(secondStart).not.toHaveBeenCalled();
+
+    coordinator.handleMessage({
+      method: "turn/completed",
+      params: {
+        threadId: "thread-1",
+        turn: { id: "external-turn", status: "completed" },
+      },
+    });
+    await expect(secondRun).resolves.toEqual({ turn: { id: "scheduled-2" } });
+  });
+
   it("retient la tâche suivante jusqu’au nettoyage manuel", async () => {
     const coordinator = new ThreadTurnCoordinator();
     const nextStart = vi

@@ -88,9 +88,14 @@ const scheduleSchema: JsonSchema = {
 
 const targetSchema: JsonSchema = {
   type: "string",
-  enum: ["currentThread", "newThread", "ephemeralThread"],
+  enum: [
+    "currentThread",
+    "defaultThread",
+    "newThread",
+    "ephemeralThread",
+  ],
   description:
-    "Where each run executes. Defaults to currentThread. New threads use the task workspace.",
+    "Where each run executes. Defaults to currentThread. defaultThread resolves the user's configured default conversation when the run starts. New threads use the task workspace.",
 };
 
 export function schedulerDynamicTools(): DynamicToolNamespace[] {
@@ -344,6 +349,7 @@ function parseTarget(
   if (value === undefined || value === "currentThread") {
     return { type: "thread", threadId: currentThreadId };
   }
+  if (value === "defaultThread") return { type: "defaultThread" };
   if (value === "newThread") return { type: "newThread" };
   if (value === "ephemeralThread") return { type: "ephemeralThread" };
   throw new Error("Unsupported target.");

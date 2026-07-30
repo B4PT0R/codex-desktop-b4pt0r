@@ -3,6 +3,34 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.3.13] - 2026-07-31
+
+### Added
+
+- General Settings now shows the Codex Desktop and installed Codex CLI/App
+  Server versions, and can check the latest stable GitHub release on demand.
+- A compatible newer Debian package can be downloaded from the trusted project
+  release, verified against its published size and SHA-256 digest, and opened
+  in the system installer. The app clearly asks the user to restart after
+  completing the installation.
+- Scheduled tasks can target the logical default conversation, resolving its
+  current App Server identifier at wake-up rather than persisting a stale one.
+
+### Changed
+
+- Thread runtime setting mutations, browser-preview playback and turn
+  coordination now have smaller focused owners, reducing application-level
+  state concentration without changing their user-facing workflows.
+- The packaged AppArmor profile now names the actual desktop executable and is
+  protected by the package manifest tests.
+
+### Fixed
+
+- A stale failure from an earlier thread-setting change can no longer roll back
+  a newer user choice or the state of another conversation.
+- Turn coordination now bounds completed state and consistently releases queued
+  work after every failed reservation path.
+
 ## [0.3.12] - 2026-07-30
 
 ### Fixed
@@ -462,6 +490,7 @@ follows semantic versioning while the public interface is taking shape.
 - Native Electron packaging for Debian/Ubuntu.
 - Stable Chromium microphone capture for dictation and Realtime voice.
 
+[0.3.13]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.12...v0.3.13
 [0.3.12]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.11...v0.3.12
 [0.3.11]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.10...v0.3.11
 [0.3.10]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.9...v0.3.10

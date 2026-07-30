@@ -52,6 +52,9 @@ import {
   rendererRealtimeState,
   trayMenuTemplate,
 } from "./tray-menu.mjs";
+import {
+  AppUpdateManager,
+} from "./app-update.mjs";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const isDevelopment = !app.isPackaged;
@@ -60,6 +63,7 @@ let tray;
 let automationScheduler;
 let appServerHealthMonitor;
 let trayRealtimeState = "unavailable";
+let appUpdateManager;
 
 function send(event, payload) {
   if (!mainWindow?.isDestroyed()) {
@@ -116,6 +120,18 @@ function registerIpc() {
   ipcMain.handle("desktop:update_desktop_settings", (event, args) => {
     trusted(event);
     return updateSettings(settingsPath(app.getPath("home")), args?.patch ?? {});
+  });
+  ipcMain.handle("desktop:read_app_versions", (event) => {
+    trusted(event);
+    return appUpdateManager.versions();
+  });
+  ipcMain.handle("desktop:check_for_updates", async (event) => {
+    trusted(event);
+    return appUpdateManager.check();
+  });
+  ipcMain.handle("desktop:install_update", async (event, args) => {
+    trusted(event);
+    return appUpdateManager.install(args?.confirmed);
   });
   ipcMain.handle("desktop:set_tray_realtime_state", (event, args) => {
     trusted(event);
@@ -409,6 +425,13 @@ else {
     automationScheduler = new AutomationScheduler({
       file: settingsPath(app.getPath("home")),
       send,
+    });
+    appUpdateManager = new AppUpdateManager({
+      architecture: process.arch,
+      clientVersion: app.getVersion(),
+      fetchImpl: net.fetch,
+      openPath: (target) => shell.openPath(target),
+      tempRoot: app.getPath("temp"),
     });
     automationScheduler.start();
     appServerHealthMonitor = new AppServerHealthMonitor(appServer);

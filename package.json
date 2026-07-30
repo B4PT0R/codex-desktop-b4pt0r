@@ -2,7 +2,7 @@
   "name": "codex-desktop-linux",
   "productName": "Codex Desktop",
   "desktopName": "codex-desktop.desktop",
-  "version": "0.3.12",
+  "version": "0.3.13",
   "description": "Independent desktop client for Codex on Linux",
   "license": "MIT",
   "author": {
@@ -47,6 +47,10 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "packaging/apparmor/codex-desktop-linux",
+        "to": "apparmor/codex-desktop-linux"
       }
     ],
     "linux": {

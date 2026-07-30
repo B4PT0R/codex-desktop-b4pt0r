@@ -19,12 +19,14 @@ type DemoPlaybackFrame = {
 
 type DemoPlaybackOptions = {
   enabled: boolean;
+  scopeKey?: string;
   setActivity: Dispatch<SetStateAction<AgentActivity>>;
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
 };
 
 export function useDemoPlayback({
   enabled,
+  scopeKey,
   setActivity,
   setMessages,
 }: DemoPlaybackOptions) {
@@ -33,11 +35,13 @@ export function useDemoPlayback({
   const [loadingThread, setLoadingThread] = useState(false);
   const timers = useRef<number[]>([]);
   const generation = useRef(0);
+  const scheduledScope = useRef<string | undefined>(undefined);
 
   const cancelTimers = useCallback(() => {
     generation.current += 1;
     timers.current.forEach((timer) => window.clearTimeout(timer));
     timers.current = [];
+    scheduledScope.current = undefined;
   }, []);
 
   const stop = useCallback(() => {
@@ -52,6 +56,7 @@ export function useDemoPlayback({
     if (!enabled) return;
     cancelTimers();
     const run = generation.current;
+    scheduledScope.current = scopeKey;
     const frames = buildDemoPlaybackFrames();
     setHasPlayed(true);
     setRunning(true);
@@ -65,27 +70,67 @@ export function useDemoPlayback({
         }
         if (frame.complete) {
           timers.current = [];
+          scheduledScope.current = undefined;
           setRunning(false);
         }
       }, frame.at);
       timers.current.push(timer);
     }
-  }, [cancelTimers, enabled, setActivity, setMessages]);
+  }, [cancelTimers, enabled, scopeKey, setActivity, setMessages]);
 
   const previewThreadLoading = useCallback(() => {
     if (!enabled) return;
     cancelTimers();
     const run = generation.current;
+    scheduledScope.current = scopeKey;
     setRunning(false);
     setActivity(null);
     setLoadingThread(true);
     const timer = window.setTimeout(() => {
       if (generation.current !== run) return;
       timers.current = [];
+      scheduledScope.current = undefined;
       setLoadingThread(false);
     }, 3_000);
     timers.current = [timer];
-  }, [cancelTimers, enabled, setActivity]);
+  }, [cancelTimers, enabled, scopeKey, setActivity]);
+
+  const submitPreview = useCallback(
+    ({
+      message,
+      onComplete,
+      threadId,
+    }: {
+      message: ChatMessage;
+      onComplete: () => void;
+      threadId: string;
+    }) => {
+      cancelTimers();
+      const run = generation.current;
+      scheduledScope.current = threadId;
+      const timer = window.setTimeout(() => {
+        if (generation.current !== run) return;
+        timers.current = [];
+        scheduledScope.current = undefined;
+        setMessages((messages) => [...messages, message]);
+        onComplete();
+      }, 900);
+      timers.current = [timer];
+    },
+    [cancelTimers, setMessages],
+  );
+
+  useEffect(() => {
+    if (
+      timers.current.length > 0 &&
+      scheduledScope.current !== scopeKey
+    ) {
+      cancelTimers();
+      setRunning(false);
+      setLoadingThread(false);
+      setActivity(null);
+    }
+  }, [cancelTimers, scopeKey, setActivity]);
 
   useEffect(() => cancelTimers, [cancelTimers]);
 
@@ -97,6 +142,7 @@ export function useDemoPlayback({
     previewThreadLoading,
     running,
     stop,
+    submitPreview,
   };
 }
 

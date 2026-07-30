@@ -423,6 +423,11 @@ autorisations déjà accordées.
   réglage propre à Realtime. Elle est sélectionnable dans Général et depuis le
   menu du thread ; les actions rapides peuvent la consommer sans charger son
   transcript dans la conversation visible.
+- Les versions du client et de Codex restent visibles dans Général. Une
+  recherche de mise à jour est toujours explicite : le processus natif consulte
+  la dernière release GitHub stable, conserve seul l’URL du paquet, vérifie sa
+  taille et son digest SHA-256, puis délègue l’installation du `.deb` au
+  gestionnaire de paquets du système sans exécuter de commande privilégiée.
 - Le tray peut lancer une session Realtime sans montrer la fenêtre. Le renderer
   caché conserve la capture WebRTC, crée un fork vocal éphémère depuis la
   conversation par défaut et injecte les tours finalisés dans ce parent. Si la

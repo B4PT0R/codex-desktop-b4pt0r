@@ -26,6 +26,7 @@ describe("réglage de la conversation par défaut", () => {
         <DefaultThreadSettingsField
           controller={{
             defaultThreadId: "thread-a",
+            loading: false,
             saving: false,
             setDefaultThreadId,
             threadOptions: [
@@ -60,6 +61,7 @@ describe("réglage de la conversation par défaut", () => {
         <DefaultThreadSettingsField
           controller={{
             defaultThreadId: "thread-long",
+            loading: false,
             saving: false,
             setDefaultThreadId: vi.fn(),
             threadOptions: [
@@ -88,6 +90,7 @@ describe("réglage de la conversation par défaut", () => {
         <DefaultThreadSettingsField
           controller={{
             defaultThreadId: "thread-outside-page",
+            loading: false,
             saving: false,
             setDefaultThreadId: vi.fn(),
             threadOptions: [],

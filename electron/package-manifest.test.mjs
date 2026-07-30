@@ -30,6 +30,10 @@ test("ships host skills outside the ASAR at the path used in production", async 
       to: "skills",
       filter: ["**/*"],
     },
+    {
+      from: "packaging/apparmor/codex-desktop-linux",
+      to: "apparmor/codex-desktop-linux",
+    },
   ]);
   await Promise.all([
     access(
@@ -45,4 +49,19 @@ test("ships host skills outside the ASAR at the path used in production", async 
       ),
     ),
   ]);
+});
+
+test("ships an AppArmor profile attached to the packaged executable", async () => {
+  const profileUrl = new URL(
+    "../packaging/apparmor/codex-desktop-linux",
+    import.meta.url,
+  );
+  const profile = await readFile(profileUrl, "utf8");
+  const executable = `/opt/${manifest.productName}/${manifest.build.linux.executableName}`;
+  assert.match(
+    profile,
+    new RegExp(
+      `profile codex-desktop-linux "${executable}" flags=\\(unconfined\\)`,
+    ),
+  );
 });

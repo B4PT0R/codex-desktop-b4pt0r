@@ -106,9 +106,6 @@ export function useThreadRuntimeState(initial: InitialThreadRuntimeState) {
   const setEffort = useCallback((effort: string) => {
     setState((current) => ({ ...current, effort }));
   }, []);
-  const setPersonality = useCallback((personality: Personality) => {
-    setState((current) => ({ ...current, personality }));
-  }, []);
   const setCollaborationMode = useCallback(
     (collaborationMode: CollaborationMode) => {
       setState((current) => ({ ...current, collaborationMode }));
@@ -137,6 +134,9 @@ export function useThreadRuntimeState(initial: InitialThreadRuntimeState) {
     setCollaborationMode,
     setEffort,
     setModel,
-    setPersonality,
   };
 }
+
+export type ThreadRuntimeController = ReturnType<
+  typeof useThreadRuntimeState
+>;
