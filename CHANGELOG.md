@@ -3,7 +3,7 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
-## Unreleased
+## [0.3.12] - 2026-07-30
 
 ### Fixed
 
@@ -462,6 +462,7 @@ follows semantic versioning while the public interface is taking shape.
 - Native Electron packaging for Debian/Ubuntu.
 - Stable Chromium microphone capture for dictation and Realtime voice.
 
+[0.3.12]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.11...v0.3.12
 [0.3.11]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.10...v0.3.11
 [0.3.10]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.9...v0.3.10
 [0.3.9]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.8...v0.3.9

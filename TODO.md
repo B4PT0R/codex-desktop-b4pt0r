@@ -17,7 +17,7 @@ shared Playwright Chromium session.
 
 The repository is public at
 `https://github.com/B4PT0R/codex-desktop-b4pt0r`. The current public release is
-v0.3.11.
+v0.3.12.
 
 ## Current candidate
 
@@ -289,9 +289,9 @@ recovery can mutate persisted state during ordinary lifecycle paths.
   the visual demo intentionally bypasses those events.
 - Shared-browser Markdown pass: complete light/dark fixture at 1240×820 and
   840×620; wide tables scroll locally without widening the message or app.
-- Built Debian release: `codex-desktop-linux 0.3.11 amd64`
-  (`sha256:ff2f8bc1…f719c8`); its packaged ASAR passes the production
-  runtime inventory contract. Both an upgrade from 0.3.10 and an immediate
+- Built Debian release: `codex-desktop-linux 0.3.12 amd64`
+  (`sha256:709d4626…50c77c2`); its packaged ASAR passes the production
+  runtime inventory contract. Both an upgrade from 0.3.11 and an immediate
   same-version reinstall preserved `config.toml` and desktop settings content,
   inode, size, mtime, mode and ownership exactly.
 
