@@ -9,7 +9,7 @@ belongs in `CHANGELOG.md` and Git.
 ## Baseline
 
 Codex Desktop Linux is a functional independent Electron client for the
-official `codex app-server`. The release candidate is v0.3.13.
+official `codex app-server`. The current public release is v0.3.13.
 
 The daily workflow covers conversations and replay, concurrent thread activity,
 streaming Markdown/LaTeX, reasoning, plans, tools, approvals, diffs, files,
@@ -106,8 +106,8 @@ and Git/worktree management without a stable App Server product contract.
   passing; zero production vulnerabilities.
 - Main JS: 596.06 kB, 171.92 kB gzip.
 - Electron directory packaging: passing with the native update manager included.
-- Pre-release live check: installed `codex-cli 0.145.0`; the then-current
-  v0.3.12 release exposed a matching amd64 asset without requiring a download.
+- Live release check: an installed v0.3.12 client detects v0.3.13 and its
+  matching amd64 asset through the same native update boundary used by the app.
 - Shared-browser scheduler pass: the default-conversation target fits the
   existing two-column editor grid and remains selectable without layout shift.
 - Shared-browser update pass: General at 1164×860 and light theme at 840×620;
