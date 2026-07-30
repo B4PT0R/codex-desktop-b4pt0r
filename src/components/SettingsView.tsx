@@ -20,14 +20,13 @@ import type { RealtimeSettingsController } from "../lib/useRealtimeSettings";
 import type { RemoteControlController } from "../lib/useRemoteControl";
 import type { Model } from "../types";
 import { AccountSettings } from "./AccountSettings";
-import { AdvancedSettings } from "./AdvancedSettings";
 import { AgentSettings, PermissionSettings } from "./AgentSettingsSections";
 import { AppearanceSettings } from "./AppearanceSettings";
 import { AutomationSettings } from "./AutomationSettings";
 import { CodexConfigSettings } from "./CodexConfigSettings";
+import { ExternalAgentImportSettings } from "./ExternalAgentImportSettings";
 import {
   BrowserSettings,
-  ChatSettings,
   GeneralSettings,
   type AppServerRestartController,
 } from "./GeneralSettingsSections";
@@ -112,13 +111,6 @@ function SettingsSection(props: SettingsViewProps) {
           globalSettings={props.webSearch}
         />
       );
-    case "chat":
-      return (
-        <ChatSettings
-          globalSettings={props.webSearch}
-          presentation={props.chatPresentation}
-        />
-      );
     case "memory":
       return <MemorySettings controller={props.memory} />;
     case "remoteControl":
@@ -139,7 +131,12 @@ function SettingsSection(props: SettingsViewProps) {
         />
       );
     case "appearance":
-      return <AppearanceSettings />;
+      return (
+        <AppearanceSettings
+          globalSettings={props.webSearch}
+          presentation={props.chatPresentation}
+        />
+      );
     case "voice":
       return <VoiceSettings controller={props.realtime} />;
     case "permissions":
@@ -173,7 +170,9 @@ function SettingsSection(props: SettingsViewProps) {
         />
       );
     case "advanced":
-      return <AdvancedSettings controller={props.externalAgentImport} />;
+      return (
+        <ExternalAgentImportSettings controller={props.externalAgentImport} />
+      );
   }
 
   const unhandledSection: never = props.section;

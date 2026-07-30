@@ -17,7 +17,7 @@ shared Playwright Chromium session.
 
 The repository is public at
 `https://github.com/B4PT0R/codex-desktop-b4pt0r`. The current public release is
-v0.3.10.
+v0.3.11.
 
 ## Current candidate
 
@@ -60,7 +60,13 @@ API:
 - a general default conversation can be selected from Settings or the current
   thread menu. Tray-launched headless Realtime sessions fork this context,
   persist finalized voice exchanges back into it and create a persistent
-  fallback in the user home only when no valid default exists.
+  fallback named “Let's discuss anything” in the user home only when no valid
+  default exists. Existing unnamed fallbacks are migrated on first use, while
+  later user renames are never overwritten.
+- resuming a conversation now reconciles its authoritative summary into the
+  recent-thread catalog. A default or search result outside the first 30
+  conversations therefore keeps its real name after resume and rename instead
+  of falling back to “Configured conversation”.
 - opening the hidden window during a tray Realtime session resumes that parent,
   transfers the buffered transcript into the chat and continues live rendering
   without restarting WebRTC. The default conversation is promoted once above
@@ -70,6 +76,62 @@ Background notifications are now routed by `threadId`. A scheduled run updates
 its thread and sidebar without injecting activity into the conversation
 currently being read. Global notifications and interactive approval requests
 retain their existing behavior.
+
+Conversation navigation now establishes its target scope before awaiting
+`thread/resume`. Late deltas from the thread being left are discarded from the
+visible queue, notifications for the selected thread are buffered during
+hydration, and the server snapshot restores missed items, partial tools,
+activity, active turn identity and steering state. Multiple App Server threads
+can therefore continue in parallel without sharing renderer conversation
+state. Resume hydration presents a dedicated centered loading state instead of
+flashing the new-chat welcome. The hydrated transcript is already mounted,
+laid out and scrolled behind the loading overlay before either transition
+starts. The spinner first completes its own 180 ms fade-and-blur exit, then the
+overlay alone dissolves over 400 ms. The transcript receives no visual filter,
+transform or reveal animation, preventing both a late layout pop and extra work
+in the chat renderer. The browser-only demo exposes a repeatable three-second
+loading preview so the transition can be tuned visually without depending on
+App Server latency.
+
+Composer growth now resizes the conversation without exposing an obsolete
+scroll position. When the reader is following the tail, the scroll owner
+reanchors synchronously before Chromium paints the shorter viewport; an
+intentional scroll upward remains untouched. Messages no longer use
+`content-visibility: auto`, whose cached off-screen paint could briefly replay
+Markdown lines at their former position while the viewport changed.
+
+Config Settings now exposes the App Server startup-warning suppression flag in
+a dedicated experimental-features subsection. The persisted TOML value remains
+the source of truth, and the UI clarifies that suppression takes effect after an
+App Server restart without changing feature stability.
+
+The default-conversation selector now has a bounded responsive width. Long
+thread names and workspace paths are compacted visually while their complete
+labels remain available to native accessibility and hover surfaces.
+
+Settings navigation now describes the two remaining advanced destinations by
+their actual jobs: global Codex configuration and import from other agents.
+The permissions destination also uses the shorter product label “Permissions”.
+Unused experimental-feature and diagnostics placeholders have been removed.
+The composer footer uses the same “Permissions” label and compact chevron
+trigger language as its neighboring model picker.
+The flat Settings navigation is ordered by likely consultation frequency:
+everyday agent controls, specialized workflows, integrations, then advanced and
+one-time migration surfaces.
+Appearance and chat-presentation controls now share one “Appearance & Display”
+destination with separate interface and conversation subsections.
+The global AGENTS.md editor is owned by Agent Settings; Advanced Configuration
+now stays focused on guided App Server options and config.toml.
+Permissions presents access profiles, approval policies and the approval
+reviewer as explanatory selectable cards. Managed reviewer constraints disable
+unavailable choices rather than allowing a write that App Server will reject.
+
+Agent Settings now covers capability-driven service tiers and documented
+`agents.*` defaults. Only tiers advertised by the selected/default model are
+shown; the conversation model popover can persist a thread override. Subagent
+enablement, default model/reasoning, concurrency and interruption messages use
+targeted `config/value/write` updates, leaving custom roles and arbitrary agent
+TOML in Advanced Configuration.
 
 Long-idle transport recovery is now explicit rather than inferred from the
 child process state:
@@ -181,7 +243,7 @@ release the current thread's own mutation lock.
 
 - Installed Codex: `codex-cli 0.145.0`.
 - Official source audit: `1def0a892`, stable and experimental v2 schemas.
-- Frontend/unit/contract: 566 tests across 108 files, including 47 installed
+- Frontend/unit/contract: 587 tests across 110 files, including 48 installed
   App Server contract cases.
 - Electron/Node: 77 tests, including the native hidden-window liveness
   invariant.
@@ -191,9 +253,9 @@ release the current thread's own mutation lock.
   favicon, main and preload with zero native test sources, while the shared
   browser skill remains an external resource.
 - Production dependency audit: zero vulnerabilities.
-- Main JS: 575.36 kB, 166.52 kB gzip.
+- Main JS: 589.37 kB, 170.16 kB gzip.
 - Lazy diff viewer: 89.50 kB, 32.89 kB gzip.
-- Lazy Markdown/KaTeX: 436.81 kB, 131.40 kB gzip.
+- Lazy Markdown/KaTeX: 436.82 kB, 131.40 kB gzip.
 - Shared-browser visual pass: light and dark palettes, 1240×820 and 840×620;
   no browser warning, error or horizontal overflow after the Settings
   modularity pass.
@@ -211,8 +273,8 @@ release the current thread's own mutation lock.
   the visual demo intentionally bypasses those events.
 - Shared-browser Markdown pass: complete light/dark fixture at 1240×820 and
   840×620; wide tables scroll locally without widening the message or app.
-- Built Debian release: `codex-desktop-linux 0.3.10 amd64`
-  (`sha256:75174b0f…b9947e2`); its packaged ASAR passes the production
+- Built Debian release: `codex-desktop-linux 0.3.11 amd64`
+  (`sha256:77d14523…513df45`); its packaged ASAR passes the production
   runtime inventory contract.
 
 ## Active invariants

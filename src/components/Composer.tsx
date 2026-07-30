@@ -31,6 +31,7 @@ type ComposerProps = {
   canSteer: boolean;
   cwd: string;
   hasThread: boolean;
+  loadingThread?: boolean;
   recording: boolean;
   dictating: boolean;
   dictationProcessing: boolean;
@@ -57,6 +58,7 @@ export function Composer({
   canSteer,
   cwd,
   hasThread,
+  loadingThread = false,
   recording,
   dictating,
   dictationProcessing,
@@ -86,7 +88,7 @@ export function Composer({
   const menuSurface = useRef<HTMLDivElement>(null);
   const insertedDictation = useRef(0);
   const hasInput = Boolean(text.trim() || context.length);
-  const canSubmit = hasInput && (!busy || canSteer);
+  const canSubmit = !loadingThread && hasInput && (!busy || canSteer);
   const fileSearch = useFileSearch(menu === "files", cwd);
 
   useEffect(() => {
@@ -197,7 +199,7 @@ export function Composer({
   }
 
   return (
-    <div className="composer-shell" ref={shell}>
+    <div className="composer-shell" ref={shell} aria-busy={loadingThread}>
       {text.startsWith("/") && !commandMenuDismissed && (
         <CommandMenu
           busy={busy}
@@ -410,7 +412,7 @@ export function Composer({
           <RoundIconButton
             className={recording ? "active" : ""}
             aria-label={t("composer.voice")}
-            disabled={dictating}
+            disabled={dictating || loadingThread}
             icon={AudioWaveform}
             onClick={onToggleVoice}
             variant="tertiary"
@@ -418,7 +420,7 @@ export function Composer({
           <RoundIconButton
             className={dictating ? "active dictating" : ""}
             aria-label={t("composer.dictation")}
-            disabled={recording || dictationProcessing}
+            disabled={recording || dictationProcessing || loadingThread}
             icon={Mic}
             onClick={onToggleDictation}
             variant="tertiary"

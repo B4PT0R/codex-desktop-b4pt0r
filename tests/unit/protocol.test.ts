@@ -33,6 +33,7 @@ import {
   threadGoalStatusParams,
   threadInjectTranscriptParams,
   threadPermissionUpdateParams,
+  threadServiceTierUpdateParams,
   threadShellCommandParams,
   threadCompactParams,
   threadCwdUpdateParams,
@@ -250,6 +251,28 @@ describe("constructeurs JSON-RPC", () => {
       permissions: ":danger-full-access",
       approvalPolicy: "never",
     }));
+  it("transmet un tier explicite au thread et au tour", () => {
+    expect(
+      threadStartParams(
+        "/tmp/project",
+        "gpt-test",
+        ":workspace",
+        "pragmatic",
+        "on-request",
+        "fast",
+      ),
+    ).toMatchObject({ serviceTier: "fast" });
+    expect(
+      turnStartParams("thr", "gpt-test", "go", [], {
+        effort: "high",
+        serviceTier: "fast",
+      }),
+    ).toMatchObject({ serviceTier: "fast" });
+    expect(threadServiceTierUpdateParams("thr", null)).toEqual({
+      threadId: "thr",
+      serviceTier: null,
+    });
+  });
   it("isole les changements rapides de permission et d’approbation", () => {
     expect(threadPermissionUpdateParams("thr", ":danger-full-access")).toEqual({
       threadId: "thr",

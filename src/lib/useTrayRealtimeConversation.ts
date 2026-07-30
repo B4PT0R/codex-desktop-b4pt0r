@@ -142,14 +142,14 @@ export async function handleTrayRealtimeRequest(
           options.translate("settings.defaultThread.saveError"),
       );
     }
-    options.setThreads((items) => [
-      {
-        ...resolvedThread,
-        cwd: resolvedThread.cwd ?? settings.cwd ?? trayRequest.home,
-      },
-      ...items.filter((item) => item.id !== resolvedThread.id),
-    ]);
   }
+  options.setThreads((items) => [
+    {
+      ...resolvedThread,
+      cwd: resolvedThread.cwd ?? settings.cwd ?? trayRequest.home,
+    },
+    ...items.filter((item) => item.id !== resolvedThread.id),
+  ]);
 
   const started = await options.realtimeConversation.start({
     parentThreadId: resolved.response.thread.id,

@@ -3,16 +3,10 @@ import { useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import type {
   FileOpener,
-  ReasoningSummaryMode,
   WebSearchMode,
 } from "../lib/protocol";
 import { useChromium } from "../lib/useChromium";
 import type { CodexGlobalSettingsController } from "../lib/useCodexGlobalSettings";
-import {
-  MAX_VISIBLE_ACTIONS,
-  MIN_VISIBLE_ACTIONS,
-  type ChatPresentationSettingsController,
-} from "../lib/useChatPresentationSettings";
 import type { IntegrationsController } from "../lib/useIntegrations";
 import { useLaunchAtLogin } from "../lib/useLaunchAtLogin";
 import type { DefaultThreadSettingsController } from "../lib/useDefaultThreadSettings";
@@ -30,12 +24,6 @@ const webSearchModes: WebSearchMode[] = [
   "indexed",
   "live",
   "disabled",
-];
-const reasoningSummaryModes: ReasoningSummaryMode[] = [
-  "auto",
-  "concise",
-  "detailed",
-  "none",
 ];
 const fileOpeners: FileOpener[] = [
   "vscode",
@@ -352,80 +340,6 @@ export function BrowserSettings({
       {globalSettings.error && (
         <div className="inventory-message error" role="alert">
           {t("webSearch.error")} {globalSettings.error}
-        </div>
-      )}
-    </section>
-  );
-}
-
-export function ChatSettings({
-  globalSettings,
-  presentation,
-}: {
-  globalSettings: CodexGlobalSettingsController;
-  presentation: ChatPresentationSettingsController;
-}) {
-  const { t } = useI18n();
-  return (
-    <section className="settings-page">
-      <header>
-        <p>{t("settings.chat.description")}</p>
-      </header>
-      <div className="settings-card settings-fields">
-        <label>
-          <span className="settings-field-description">
-            <strong>{t("settings.reasoningSummary.title")}</strong>
-            <small>{t("settings.reasoningSummary.detail")}</small>
-          </span>
-          <select
-            aria-label={t("settings.reasoningSummary.title")}
-            disabled={globalSettings.loading}
-            value={globalSettings.reasoningSummary}
-            onChange={(event) =>
-              void globalSettings.setReasoningSummary(
-                event.target.value as ReasoningSummaryMode,
-              )
-            }
-          >
-            {reasoningSummaryModes.map((mode) => (
-              <option key={mode} value={mode}>
-                {t(`settings.reasoningSummary.${mode}`)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span className="settings-field-description">
-            <strong>{t("settings.chat.visibleActions.title")}</strong>
-            <small>{t("settings.chat.visibleActions.detail")}</small>
-          </span>
-          <select
-            aria-label={t("settings.chat.visibleActions.title")}
-            disabled={presentation.loading || presentation.saving}
-            value={presentation.maxVisibleActions}
-            onChange={(event) =>
-              void presentation.setMaxVisibleActions(
-                Number(event.target.value),
-              )
-            }
-          >
-            {Array.from(
-              {
-                length:
-                  MAX_VISIBLE_ACTIONS - MIN_VISIBLE_ACTIONS + 1,
-              },
-              (_, index) => MIN_VISIBLE_ACTIONS + index,
-            ).map((count) => (
-              <option key={count} value={count}>
-                {count}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-      {presentation.error && (
-        <div className="inventory-message error" role="alert">
-          {t("settings.chat.visibleActions.error")} {presentation.error}
         </div>
       )}
     </section>

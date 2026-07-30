@@ -17,17 +17,17 @@ describe("file de rendu des événements de conversation", () => {
       const renders = useRef(0);
       const [messages, setMessages] = useState<ChatMessage[]>([]);
       renders.current += 1;
-      const enqueue = useConversationEventQueue({
+      const queue = useConversationEventQueue({
         captureMessageDecorator: () => (_previous, next) => next,
         setMessages,
         translate: defaultTranslate,
       });
-      return { enqueue, messages, renders: renders.current };
+      return { messages, queue, renders: renders.current };
     });
 
     act(() => {
       for (const delta of ["Bon", "jour", " !"]) {
-        result.current.enqueue({
+        result.current.queue.enqueue({
           method: "item/agentMessage/delta",
           params: { itemId: "answer", delta },
         });
@@ -54,7 +54,7 @@ describe("file de rendu des événements de conversation", () => {
     );
 
     act(() => {
-      result.current({ method: "item/agentMessage/delta" });
+      result.current.enqueue({ method: "item/agentMessage/delta" });
     });
     unmount();
     act(() => {
@@ -78,7 +78,7 @@ describe("file de rendu des événements de conversation", () => {
     );
 
     act(() => {
-      result.current({ method: "item/agentMessage/delta" });
+      result.current.enqueue({ method: "item/agentMessage/delta" });
     });
     rerender({ threadId: "thread-b" });
     act(() => {
@@ -92,7 +92,7 @@ describe("file de rendu des événements de conversation", () => {
     let context = "realtime";
     const { result } = renderHook(() => {
       const [messages, setMessages] = useState<ChatMessage[]>([]);
-      const enqueue = useConversationEventQueue({
+      const queue = useConversationEventQueue({
         captureMessageDecorator: () => {
           const captured = context;
           return (_previous, next) =>
@@ -104,11 +104,11 @@ describe("file de rendu des événements de conversation", () => {
         setMessages,
         translate: defaultTranslate,
       });
-      return { enqueue, messages };
+      return { messages, queue };
     });
 
     act(() => {
-      result.current.enqueue({
+      result.current.queue.enqueue({
         method: "item/agentMessage/delta",
         params: { itemId: "answer", delta: "Réponse" },
       });
@@ -116,5 +116,79 @@ describe("file de rendu des événements de conversation", () => {
       vi.advanceTimersByTime(16);
     });
     expect(result.current.messages.at(-1)?.content).toBe("Réponse:realtime");
+  });
+
+  it("écarte immédiatement les événements de l’ancien thread pendant une reprise", () => {
+    vi.useFakeTimers();
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([]);
+      const queue = useConversationEventQueue({
+        captureMessageDecorator: () => (_previous, next) => next,
+        scopeKey: "thread-a",
+        setMessages,
+        translate: defaultTranslate,
+      });
+      return { messages, queue };
+    });
+
+    act(() => {
+      result.current.queue.enqueue(
+        {
+          method: "item/reasoning/summaryTextDelta",
+          params: { itemId: "old-reasoning", delta: "Ancien raisonnement" },
+        },
+        "thread-a",
+      );
+      result.current.queue.beginScopeTransition("thread-b");
+      result.current.queue.enqueue(
+        {
+          method: "item/agentMessage/delta",
+          params: { itemId: "old-answer", delta: "Ancienne réponse" },
+        },
+        "thread-a",
+      );
+      vi.runAllTimers();
+    });
+
+    expect(result.current.messages).toEqual([]);
+  });
+
+  it("tamponne le nouveau stream jusqu’à la fin de son hydratation", () => {
+    vi.useFakeTimers();
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([]);
+      const queue = useConversationEventQueue({
+        captureMessageDecorator: () => (_previous, next) => next,
+        scopeKey: "thread-a",
+        setMessages,
+        translate: defaultTranslate,
+      });
+      return { messages, queue, setMessages };
+    });
+
+    act(() => {
+      result.current.queue.beginScopeTransition("thread-b");
+      result.current.queue.enqueue(
+        {
+          method: "item/agentMessage/delta",
+          params: { itemId: "live-answer", delta: "Suite en direct" },
+        },
+        "thread-b",
+      );
+      vi.runAllTimers();
+    });
+    expect(result.current.messages).toEqual([]);
+
+    act(() => {
+      result.current.setMessages([
+        { id: "history", role: "assistant", content: "Historique" },
+      ]);
+      result.current.queue.completeScopeTransition("thread-b");
+      vi.advanceTimersByTime(16);
+    });
+    expect(result.current.messages.map((message) => message.content)).toEqual([
+      "Historique",
+      "Suite en direct",
+    ]);
   });
 });

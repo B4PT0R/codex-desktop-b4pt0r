@@ -12,6 +12,7 @@ export { scheduledTaskPrompt } from "./scheduledTaskMessage";
 
 export type Permission = string;
 export type ApprovalPolicy = "untrusted" | "on-request" | "never";
+export type ApprovalsReviewer = "user" | "auto_review";
 export type WebSearchMode = "disabled" | "cached" | "indexed" | "live";
 export type ReasoningSummaryMode = "auto" | "concise" | "detailed" | "none";
 export type FileOpener =
@@ -30,6 +31,7 @@ export function threadStartParams(
   permission?: Permission,
   personality?: Personality,
   approvalPolicy?: ApprovalPolicy,
+  serviceTier?: string | null,
 ) {
   return {
     ...(cwd ? { cwd } : {}),
@@ -37,6 +39,7 @@ export function threadStartParams(
     ...(permission ? { permissions: permission } : {}),
     ...(approvalPolicy ? { approvalPolicy } : {}),
     ...(personality ? { personality } : {}),
+    ...(serviceTier !== undefined ? { serviceTier } : {}),
     dynamicTools: schedulerDynamicTools(),
   };
 }
@@ -191,6 +194,7 @@ export function turnStartParams(
     effort?: string;
     personality?: Personality;
     mode?: CollaborationMode;
+    serviceTier?: string | null;
   },
 ) {
   const input: Array<Record<string, string>> = [];
@@ -211,6 +215,9 @@ export function turnStartParams(
     input,
     model,
     effort: behavior?.effort,
+    ...(behavior?.serviceTier !== undefined
+      ? { serviceTier: behavior.serviceTier }
+      : {}),
     ...(behavior?.personality ? { personality: behavior.personality } : {}),
     collaborationMode,
   };
@@ -465,6 +472,13 @@ export function threadApprovalPolicyUpdateParams(
   approvalPolicy: ApprovalPolicy,
 ) {
   return { threadId, approvalPolicy };
+}
+
+export function threadServiceTierUpdateParams(
+  threadId: string,
+  serviceTier: string | null,
+) {
+  return { threadId, serviceTier };
 }
 
 export function backgroundTerminalsListParams(

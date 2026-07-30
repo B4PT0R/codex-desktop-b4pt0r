@@ -1,4 +1,8 @@
-import type { AppServerThread, AppServerTurn } from "./appServerTypes";
+import type {
+  AppServerThread,
+  AppServerThreadItem,
+  AppServerTurn,
+} from "./appServerTypes";
 import { applyConversationEvent } from "./conversationEvents";
 import type { ChatMessage } from "../types";
 import { defaultTranslate, type Translate } from "../i18n/translate";
@@ -27,7 +31,13 @@ function messagesFromTurns(
 ): ChatMessage[] {
   let messages: ChatMessage[] = [];
   for (const turn of turns) {
-    for (const item of turn.items ?? []) {
+    const items = turn.items ?? [];
+    for (const [itemIndex, item] of items.entries()) {
+      const itemRunning = isRunningTurnItem(
+        turn,
+        item,
+        itemIndex === items.length - 1,
+      );
       if (item.type === "userMessage") {
         const content = item.content ?? [];
         const text = content
@@ -74,6 +84,7 @@ function messagesFromTurns(
             ...(isRealtimeVoiceItemId(item.id)
               ? { modality: "realtimeVoice" as const }
               : {}),
+            ...(itemRunning ? { streaming: true } : {}),
           },
         ];
         continue;
@@ -83,6 +94,7 @@ function messagesFromTurns(
         { method: "item/started", params: { item } },
         t,
       );
+      if (itemRunning) continue;
       messages = applyConversationEvent(
         messages,
         {
@@ -110,4 +122,23 @@ function messagesFromTurns(
     }
   }
   return messages;
+}
+
+function isRunningTurnItem(
+  turn: AppServerTurn,
+  item: AppServerThreadItem,
+  last: boolean,
+) {
+  if (turn.status !== "inProgress" || item.type === "userMessage") return false;
+  const status = typeof item.status === "string" ? item.status : undefined;
+  if (status === "inProgress" || status === "running") return true;
+  if (
+    status === "completed" ||
+    status === "failed" ||
+    status === "declined" ||
+    status === "interrupted"
+  ) {
+    return false;
+  }
+  return last;
 }

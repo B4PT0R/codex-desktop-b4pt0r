@@ -12,6 +12,7 @@ export type ThreadRuntimeState = {
   model: string;
   permission: Permission;
   personality: Personality;
+  serviceTier: string | null;
 };
 
 type InitialThreadRuntimeState = ThreadRuntimeState;
@@ -27,6 +28,7 @@ export function useThreadRuntimeState(initial: InitialThreadRuntimeState) {
   const [state, setState] = useState(initial);
   const permissionSource = useRef<SettingSource>("fallback");
   const approvalSource = useRef<SettingSource>("fallback");
+  const serviceTierSource = useRef<SettingSource>("fallback");
 
   const applyServerSettings = useCallback((settings: ThreadRuntimeSettings) => {
     setState((current) => ({
@@ -41,16 +43,21 @@ export function useThreadRuntimeState(initial: InitialThreadRuntimeState) {
       ...(settings.approvalPolicy
         ? { approvalPolicy: settings.approvalPolicy }
         : {}),
+      ...(settings.serviceTier !== undefined
+        ? { serviceTier: settings.serviceTier }
+        : {}),
     }));
     if (settings.permission) permissionSource.current = "server";
     if (settings.approvalPolicy) approvalSource.current = "server";
+    if (settings.serviceTier !== undefined)
+      serviceTierSource.current = "server";
   }, []);
 
   const applyServerDefaults = useCallback(
     (
       defaults: Pick<
         ThreadRuntimeSettings,
-        "approvalPolicy" | "effort" | "model"
+        "approvalPolicy" | "effort" | "model" | "serviceTier"
       >,
     ) => {
       setState((current) => ({
@@ -60,19 +67,26 @@ export function useThreadRuntimeState(initial: InitialThreadRuntimeState) {
         ...(defaults.approvalPolicy
           ? { approvalPolicy: defaults.approvalPolicy }
           : {}),
+        ...(defaults.serviceTier !== undefined
+          ? { serviceTier: defaults.serviceTier }
+          : {}),
       }));
       if (defaults.approvalPolicy) approvalSource.current = "server";
+      if (defaults.serviceTier !== undefined)
+        serviceTierSource.current = "server";
     },
     [],
   );
 
-  const resetAccessSettings = useCallback(() => {
+  const resetForNewThread = useCallback(() => {
     permissionSource.current = "fallback";
     approvalSource.current = "fallback";
+    serviceTierSource.current = "fallback";
     setState((current) => ({
       ...current,
       permission: ":workspace",
       approvalPolicy: "on-request",
+      serviceTier: null,
     }));
   }, []);
 
@@ -101,6 +115,10 @@ export function useThreadRuntimeState(initial: InitialThreadRuntimeState) {
     },
     [],
   );
+  const selectServiceTier = useCallback((serviceTier: string | null) => {
+    serviceTierSource.current = "user";
+    setState((current) => ({ ...current, serviceTier }));
+  }, []);
 
   return {
     ...state,
@@ -110,9 +128,12 @@ export function useThreadRuntimeState(initial: InitialThreadRuntimeState) {
       approvalSource.current === "fallback" ? undefined : state.approvalPolicy,
     permissionForStart:
       permissionSource.current === "fallback" ? undefined : state.permission,
-    resetAccessSettings,
+    serviceTierForStart:
+      serviceTierSource.current === "user" ? state.serviceTier : undefined,
+    resetForNewThread,
     selectApprovalPolicy,
     selectPermission,
+    selectServiceTier,
     setCollaborationMode,
     setEffort,
     setModel,

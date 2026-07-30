@@ -17,6 +17,8 @@ describe("réglages effectifs d'un thread", () => {
           extends: ":workspace",
         },
         approvalPolicy: "never",
+        approvalsReviewer: "auto_review",
+        serviceTier: "fast",
       }),
     ).toEqual({
       cwd: "/project",
@@ -24,6 +26,8 @@ describe("réglages effectifs d'un thread", () => {
       effort: "xhigh",
       permission: ":danger-full-access",
       approvalPolicy: "never",
+      approvalsReviewer: "auto_review",
+      serviceTier: "fast",
     });
   });
 
@@ -83,6 +87,8 @@ describe("réglages effectifs d'un thread", () => {
           activePermissionProfile: { id: ":read-only" },
           sandboxPolicy: { type: "dangerFullAccess" },
           approvalPolicy: "untrusted",
+          approvalsReviewer: "user",
+          serviceTier: null,
         },
       }),
     ).toEqual({
@@ -93,6 +99,8 @@ describe("réglages effectifs d'un thread", () => {
       collaborationMode: "plan",
       permission: ":read-only",
       approvalPolicy: "untrusted",
+      approvalsReviewer: "user",
+      serviceTier: null,
     });
   });
 });

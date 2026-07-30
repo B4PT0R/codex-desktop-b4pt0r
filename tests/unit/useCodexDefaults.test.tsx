@@ -16,6 +16,7 @@ describe("valeurs Codex d'un nouveau thread", () => {
         model: "gpt-5.6",
         model_reasoning_effort: "high",
         approval_policy: "never",
+        service_tier: "fast",
       },
     });
     const onDefaults = vi.fn();
@@ -40,6 +41,7 @@ describe("valeurs Codex d'un nouveau thread", () => {
       model: "gpt-5.6",
       effort: "high",
       approvalPolicy: "never",
+      serviceTier: "fast",
     });
 
     rerender({ cwd: "/other" });

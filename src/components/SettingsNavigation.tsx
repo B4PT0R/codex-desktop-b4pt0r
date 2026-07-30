@@ -4,11 +4,10 @@ import {
   Brain,
   CalendarClock,
   Boxes,
-  FlaskConical,
+  Download,
   FileCog,
   Globe2,
   Mic,
-  MessageSquare,
   Palette,
   Plug,
   RadioTower,
@@ -29,7 +28,6 @@ import { RoundIconButton } from "./RoundIcon";
 const icons: Record<SettingsSectionId, ComponentType> = {
   general: Settings,
   browser: Globe2,
-  chat: MessageSquare,
   memory: Brain,
   remoteControl: RadioTower,
   automations: CalendarClock,
@@ -42,7 +40,7 @@ const icons: Record<SettingsSectionId, ComponentType> = {
   permissions: ShieldCheck,
   config: FileCog,
   hooks: Webhook,
-  advanced: FlaskConical,
+  advanced: Download,
 };
 
 export function SettingsNavigation({

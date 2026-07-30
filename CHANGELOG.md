@@ -3,6 +3,62 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.3.11] - 2026-07-30
+
+### Added
+
+- Config Settings now exposes Codex's global
+  `suppress_unstable_features_warning` option, with a clear reminder that it
+  hides startup warnings without stabilizing experimental features.
+- Agent Settings now exposes model-advertised service tiers and documented
+  subagent defaults: enablement, model, reasoning effort, concurrency and
+  interruption messages. The model popover can override the service tier for
+  the current conversation without presenting unsupported choices.
+- Permissions now controls whether eligible approvals are reviewed directly by
+  the user or by Codex's automatic risk reviewer, while honoring managed
+  `allowedApprovalsReviewers` constraints.
+
+### Changed
+
+- Settings now names the global TOML editor and guided controls “Advanced
+  Configuration”, while agent migration has its own “Import from Other Agents”
+  destination, and shortens “Permission defaults” to “Permissions”.
+  Unimplemented experimental and diagnostics placeholders have been removed.
+- The composer footer now labels its combined permission and approval picker
+  “Permissions” and uses the same compact chevron trigger as the model picker.
+- Settings sections are ordered by likely consultation frequency: core agent
+  controls first, specialized workflows and integrations next, and advanced or
+  one-time migration surfaces last. English section names now consistently use
+  Title Case and `&` for compact compound labels.
+- Theme, interface sizing and conversation presentation now share one
+  “Appearance & Display” section instead of splitting closely related display
+  controls across Appearance and Chat.
+- The global `AGENTS.md` editor now lives with model, reasoning and personality
+  defaults in Agent instead of being buried in Advanced Configuration.
+- Permissions now presents each access profile and approval policy as an
+  explanatory selectable card, matching the composer picker instead of hiding
+  behavior behind two dropdowns and a redundant explanation card.
+
+### Fixed
+
+- Long conversation names and workspace paths no longer stretch the default
+  conversation selector beyond its intended Settings layout.
+- Switching conversations during an active stream no longer lets late
+  messages, reasoning activity or steering state leak into the newly selected
+  thread.
+- Returning to another active conversation now rehydrates the work produced in
+  the background, restores its active turn and continues partial messages and
+  tools without falsely completing them.
+- Conversation hydration now keeps the complete transcript mounted behind a
+  centered loading surface, then dismisses the spinner and overlay without
+  animating or relaying out the chat itself.
+- Automatically created default conversations use the friendly “Let's discuss
+  anything” title, while later user renames remain authoritative across resume
+  and sidebar reconciliation.
+- Growing the composer no longer exposes an obsolete scroll position or lets
+  Chromium briefly replay cached Markdown lines. Tail-following stays anchored
+  while an intentional scroll upward remains untouched.
+
 ## [0.3.10] - 2026-07-30
 
 ### Added
@@ -386,6 +442,7 @@ follows semantic versioning while the public interface is taking shape.
 - Native Electron packaging for Debian/Ubuntu.
 - Stable Chromium microphone capture for dictation and Realtime voice.
 
+[0.3.11]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.10...v0.3.11
 [0.3.10]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.9...v0.3.10
 [0.3.9]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.8...v0.3.9
 [0.3.8]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.7...v0.3.8

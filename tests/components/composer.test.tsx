@@ -142,6 +142,26 @@ describe("composer", () => {
     ).toBeDisabled();
   });
 
+  it("conserve la saisie mais bloque les actions pendant la reprise d’un thread", () => {
+    const props = renderComposer({ loadingThread: true });
+    const textbox = screen.getByRole("textbox");
+    fireEvent.change(textbox, { target: { value: "Réponse prématurée" } });
+
+    expect(textbox).toHaveValue("Réponse prématurée");
+    expect(
+      screen.getByRole("button", { name: "Envoyer" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", {
+        name: "Démarrer la conversation vocale Realtime",
+      }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Dicter dans le message" }),
+    ).toBeDisabled();
+    expect(props.onSend).not.toHaveBeenCalled();
+  });
+
   it("ouvre et parcourt le menu de contexte au clavier", async () => {
     renderComposer();
     const textarea = screen.getByRole("textbox");

@@ -1,6 +1,12 @@
 export type AppServerModel = {
   id: string;
   displayName?: string;
+  isDefault?: boolean;
+  serviceTiers?: Array<{
+    id: string;
+    name: string;
+    description: string;
+  }>;
   supportedReasoningEfforts?: Array<{
     reasoningEffort: string;
     description: string;
@@ -153,6 +159,8 @@ export type ThreadRuntimeResponse = {
   cwd: string;
   model: string;
   reasoningEffort?: string | null;
+  approvalsReviewer?: string | null;
+  serviceTier?: string | null;
   activePermissionProfile?: ActivePermissionProfile | null;
   sandbox?: SandboxPolicy;
   approvalPolicy?: string;

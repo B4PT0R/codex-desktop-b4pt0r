@@ -93,6 +93,74 @@ describe("historique de conversation", () => {
     expect(screen.getByText(/Décrivez une idée/)).toBeVisible();
   });
 
+  it("remplace l’accueil par un chargement puis révèle la conversation", () => {
+    vi.useFakeTimers();
+    const { rerender } = renderConversation({
+      activity: null,
+      loadingThread: true,
+      messages: [],
+    });
+
+    expect(
+      screen.getByRole("status", { name: "Chargement de la conversation…" }),
+    ).toBeVisible();
+    const preparedWelcome = screen
+      .getByRole("heading", {
+        name: "Construisez tout avec Codex",
+        hidden: true,
+      })
+      .closest(".conversation-content");
+    expect(preparedWelcome).toHaveAttribute("aria-hidden", "true");
+    expect(preparedWelcome).not.toHaveClass("is-preparing");
+
+    rerender(
+      <I18nProvider>
+        <Conversation
+          activity={null}
+          messages={[
+            {
+              id: "loaded-message",
+              role: "assistant",
+              content: "Conversation restaurée",
+            },
+          ]}
+        />
+      </I18nProvider>,
+    );
+
+    const exiting = screen.getByRole("status", {
+      name: "Chargement de la conversation…",
+    });
+    expect(exiting).toHaveClass("is-exiting");
+    const preparedTranscript = screen
+      .getByText("Conversation restaurée")
+      .closest(".conversation-content");
+    expect(preparedTranscript).toHaveAttribute("aria-hidden", "true");
+    expect(preparedTranscript).not.toHaveClass("is-preparing");
+
+    act(() => vi.advanceTimersByTime(180));
+
+    expect(
+      screen.queryByRole("status", { name: "Chargement de la conversation…" }),
+    ).not.toBeInTheDocument();
+    expect(
+      document.querySelector(".conversation-loading-layer"),
+    ).toHaveClass("is-exiting");
+    expect(
+      screen.getByText("Conversation restaurée").closest(".conversation-content"),
+    ).toHaveAttribute("aria-hidden", "true");
+
+    act(() => vi.advanceTimersByTime(400));
+
+    expect(screen.getByText("Conversation restaurée")).toBeVisible();
+    expect(
+      screen.getByText("Conversation restaurée").closest(".conversation-content"),
+    ).not.toHaveAttribute("aria-hidden");
+    expect(
+      document.querySelector(".conversation-loading-layer"),
+    ).not.toBeInTheDocument();
+  });
+
   it("permet de charger les échanges précédents", () => {
     const onLoadOlder = vi.fn();
     renderConversation({

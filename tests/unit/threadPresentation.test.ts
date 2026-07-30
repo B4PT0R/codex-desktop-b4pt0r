@@ -273,6 +273,53 @@ describe("reprise de conversation", () => {
     ]);
   });
 
+  it("restaure un tour parallèle encore actif sans finaliser ses derniers items", () => {
+    const messages = messagesFromThread({
+      id: "thread-active",
+      turns: [
+        {
+          id: "turn-active",
+          status: "inProgress",
+          items: [
+            {
+              id: "command-done",
+              type: "commandExecution",
+              command: "git status",
+              status: "completed",
+              exitCode: 0,
+            },
+            {
+              id: "command-live",
+              type: "commandExecution",
+              command: "npm run dev",
+              status: "inProgress",
+              aggregatedOutput: "ready\n",
+            },
+            {
+              id: "agent-live",
+              type: "agentMessage",
+              text: "Réponse partielle",
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(messages[0].tools).toEqual([
+      expect.objectContaining({ id: "command-done", status: "done" }),
+      expect.objectContaining({
+        id: "command-live",
+        status: "running",
+        output: "ready\n",
+      }),
+    ]);
+    expect(messages[1]).toMatchObject({
+      id: "agent-live",
+      content: "Réponse partielle",
+      streaming: true,
+    });
+  });
+
   it("remet une page descendante dans l’ordre de lecture", () => {
     expect(
       messagesFromTurnsNewestFirst([

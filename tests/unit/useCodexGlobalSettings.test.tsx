@@ -16,8 +16,16 @@ describe("réglage global de recherche web", () => {
   it("hydrate la valeur utilisateur puis l'écrit via App Server", async () => {
     requestMock.mockResolvedValueOnce({
       config: {
+        agents: {
+          enabled: false,
+          default_subagent_model: "gpt-subagent",
+          default_subagent_reasoning_effort: "xhigh",
+          max_concurrent_threads_per_session: 4,
+          interrupt_message: false,
+        },
         allow_login_shell: false,
         approval_policy: "never",
+        approvals_reviewer: "auto_review",
         cli_auth_credentials_store: "keyring",
         default_permissions: ":read-only",
         file_opener: "cursor",
@@ -31,6 +39,8 @@ describe("réglage global de recherche web", () => {
         personality: "friendly",
         project_doc_fallback_filenames: ["CLAUDE.md"],
         project_doc_max_bytes: 65_536,
+        service_tier: "fast",
+        suppress_unstable_features_warning: true,
         tool_output_token_limit: 12_000,
         web_search: "indexed",
       },
@@ -43,8 +53,10 @@ describe("réglage global de recherche web", () => {
     expect(result.current.modelVerbosity).toBe("high");
     expect(result.current.planReasoningEffort).toBe("xhigh");
     expect(result.current.advanced).toEqual({
+      agentsEnabled: false,
       allowLoginShell: false,
       approvalPolicy: "never",
+      approvalsReviewer: "auto_review",
       cliAuthCredentialsStore: "keyring",
       defaultPermissions: ":read-only",
       mcpOauthCredentialsStore: "file",
@@ -54,6 +66,12 @@ describe("réglage global de recherche web", () => {
       personality: "friendly",
       projectDocFallbackFilenames: ["CLAUDE.md"],
       projectDocMaxBytes: 65_536,
+      serviceTier: "fast",
+      subagentInterruptMessage: false,
+      subagentMaxConcurrentThreads: 4,
+      subagentModel: "gpt-subagent",
+      subagentReasoningEffort: "xhigh",
+      suppressUnstableFeaturesWarning: true,
       toolOutputTokenLimit: 12_000,
     });
     expect(requestMock).toHaveBeenCalledWith("config/read", {
@@ -84,6 +102,21 @@ describe("réglage global de recherche web", () => {
       expect(await result.current.setReasoningSummary("concise")).toBe(true);
       expect(await result.current.setModelVerbosity("low")).toBe(true);
       expect(await result.current.setPlanReasoningEffort("medium")).toBe(true);
+      expect(
+        await result.current.setAdvanced(
+          "suppress_unstable_features_warning",
+          true,
+        ),
+      ).toBe(true);
+      expect(
+        await result.current.setAdvanced("approvals_reviewer", "auto_review"),
+      ).toBe(true);
+      expect(
+        await result.current.setAdvanced(
+          "agents.max_concurrent_threads_per_session",
+          4,
+        ),
+      ).toBe(true);
     });
     expect(requestMock).toHaveBeenNthCalledWith(2, "config/value/write", {
       keyPath: "file_opener",
@@ -104,6 +137,21 @@ describe("réglage global de recherche web", () => {
       keyPath: "plan_mode_reasoning_effort",
       mergeStrategy: "upsert",
       value: "medium",
+    });
+    expect(requestMock).toHaveBeenNthCalledWith(6, "config/value/write", {
+      keyPath: "suppress_unstable_features_warning",
+      mergeStrategy: "upsert",
+      value: true,
+    });
+    expect(requestMock).toHaveBeenNthCalledWith(7, "config/value/write", {
+      keyPath: "approvals_reviewer",
+      mergeStrategy: "upsert",
+      value: "auto_review",
+    });
+    expect(requestMock).toHaveBeenNthCalledWith(8, "config/value/write", {
+      keyPath: "agents.max_concurrent_threads_per_session",
+      mergeStrategy: "upsert",
+      value: 4,
     });
   });
 

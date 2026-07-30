@@ -717,8 +717,6 @@ header button svg {
 .message {
   display: flex;
   margin: 0 0 28px;
-  content-visibility: auto;
-  contain-intrinsic-size: auto 120px;
 }
 .message.user {
   justify-content: flex-end;
@@ -1222,6 +1220,27 @@ footer {
 .footer-settings svg {
   width: 13px;
 }
+.footer-settings .footer-expander-trigger {
+  min-height: 26px;
+  padding: 0 5px;
+  border-radius: 6px;
+  transition:
+    color 120ms ease,
+    background 120ms ease;
+}
+.footer-settings .footer-expander-trigger:hover,
+.footer-settings .footer-expander-trigger[aria-expanded="true"] {
+  color: #aaa9a4;
+  background: #2c2c29;
+}
+.footer-settings .footer-expander-trigger > svg {
+  transition: transform 140ms ease;
+}
+.footer-settings
+  .footer-expander-trigger[aria-expanded="true"]
+  > svg {
+  transform: rotate(180deg);
+}
 .footer-metrics {
   display: flex;
   align-items: center;
@@ -1319,17 +1338,20 @@ footer {
   width: 14px;
   color: #87a985;
 }
-.model-quick-picker-effort {
+.model-quick-picker-effort,
+.model-quick-picker-tier {
   border-top: 1px solid #353532;
   padding-bottom: 12px;
 }
-.model-quick-picker-effort > div:last-child {
+.model-quick-picker-effort > div:last-child,
+.model-quick-picker-tier > div:last-child {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
   padding: 0 14px;
 }
-.footer-settings .model-quick-picker-effort button {
+.footer-settings .model-quick-picker-effort button,
+.footer-settings .model-quick-picker-tier button {
   min-height: 27px;
   padding: 0 9px;
   border: 1px solid #3d3d39;
@@ -1337,11 +1359,13 @@ footer {
   color: #8d8d88;
   font-size: 10px;
 }
-.footer-settings .model-quick-picker-effort button:hover {
+.footer-settings .model-quick-picker-effort button:hover,
+.footer-settings .model-quick-picker-tier button:hover {
   color: #d9d9d5;
   border-color: #595954;
 }
-.footer-settings .model-quick-picker-effort button.selected {
+.footer-settings .model-quick-picker-effort button.selected,
+.footer-settings .model-quick-picker-tier button.selected {
   color: #e6e6e2;
   border-color: #676760;
   background: #383834;

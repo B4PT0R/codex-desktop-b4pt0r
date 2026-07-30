@@ -4,6 +4,7 @@ import {
   GitFork,
   FileText,
   Menu,
+  LoaderCircle,
   Pencil,
   Play,
   RefreshCw,
@@ -38,6 +39,8 @@ type ChatHeaderProps = {
     hasPlayed: boolean;
     running: boolean;
     onPlay: () => void;
+    loadingThread?: boolean;
+    onPreviewThreadLoading?: () => void;
     onStop: () => void;
   };
   onCompact: () => Promise<boolean>;
@@ -340,28 +343,51 @@ export function ChatHeader({
         )}
         <div className="header-actions">
           {demoPlayback && (
-            <RoundIconButton
-              className="demo-playback-button"
-              icon={
-                demoPlayback.running
-                  ? Square
-                  : demoPlayback.hasPlayed
-                    ? RotateCcw
-                    : Play
-              }
-              label={
-                demoPlayback.running
-                  ? t("demoPlayback.stop")
-                  : demoPlayback.hasPlayed
-                    ? t("demoPlayback.replay")
-                    : t("demoPlayback.play")
-              }
-              onClick={
-                demoPlayback.running ? demoPlayback.onStop : demoPlayback.onPlay
-              }
-              size="medium"
-              variant="secondary"
-            />
+            <>
+              {demoPlayback.onPreviewThreadLoading && (
+                <RoundIconButton
+                  className="demo-playback-button"
+                  disabled={demoPlayback.loadingThread || demoPlayback.running}
+                  icon={LoaderCircle}
+                  iconClassName={
+                    demoPlayback.loadingThread ? "spin" : undefined
+                  }
+                  label={
+                    demoPlayback.loadingThread
+                      ? t("demoPlayback.loading")
+                      : t("demoPlayback.testLoading")
+                  }
+                  onClick={demoPlayback.onPreviewThreadLoading}
+                  size="medium"
+                  variant="secondary"
+                />
+              )}
+              <RoundIconButton
+                className="demo-playback-button"
+                disabled={demoPlayback.loadingThread}
+                icon={
+                  demoPlayback.running
+                    ? Square
+                    : demoPlayback.hasPlayed
+                      ? RotateCcw
+                      : Play
+                }
+                label={
+                  demoPlayback.running
+                    ? t("demoPlayback.stop")
+                    : demoPlayback.hasPlayed
+                      ? t("demoPlayback.replay")
+                      : t("demoPlayback.play")
+                }
+                onClick={
+                  demoPlayback.running
+                    ? demoPlayback.onStop
+                    : demoPlayback.onPlay
+                }
+                size="medium"
+                variant="secondary"
+              />
+            </>
           )}
           {backgroundTerminals && (
             <BackgroundTerminalsLoader

@@ -1,7 +1,34 @@
-import { describe, expect, it } from "vitest";
-import { buildDemoPlaybackFrames } from "../../src/lib/useDemoPlayback";
+// @vitest-environment jsdom
+import { act, renderHook } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  buildDemoPlaybackFrames,
+  useDemoPlayback,
+} from "../../src/lib/useDemoPlayback";
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe("scénario de streaming de démonstration", () => {
+  it("prévisualise le chargement pendant exactement trois secondes", () => {
+    vi.useFakeTimers();
+    const { result } = renderHook(() =>
+      useDemoPlayback({
+        enabled: true,
+        setActivity: vi.fn(),
+        setMessages: vi.fn(),
+      }),
+    );
+
+    act(() => result.current.previewThreadLoading());
+    expect(result.current.loadingThread).toBe(true);
+    act(() => vi.advanceTimersByTime(2_999));
+    expect(result.current.loadingThread).toBe(true);
+    act(() => vi.advanceTimersByTime(1));
+    expect(result.current.loadingThread).toBe(false);
+  });
+
   it("fait progresser texte, plan et outils jusqu’à un état final cohérent", () => {
     const frames = buildDemoPlaybackFrames();
     let messages = frames[0].update([]);

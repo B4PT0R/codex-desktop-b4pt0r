@@ -255,6 +255,10 @@ describe("normalisation initiale App Server", () => {
           {
             id: "model-1",
             displayName: "Model One",
+            isDefault: true,
+            serviceTiers: [
+              { id: "fast", name: "Fast", description: "Priority" },
+            ],
             supportsPersonality: true,
           },
         ],
@@ -263,6 +267,10 @@ describe("normalisation initiale App Server", () => {
       {
         id: "model-1",
         label: "Model One",
+        isDefault: true,
+        serviceTiers: [
+          { id: "fast", name: "Fast", description: "Priority" },
+        ],
         supportedReasoningEfforts: undefined,
         defaultReasoningEffort: undefined,
         supportsPersonality: true,

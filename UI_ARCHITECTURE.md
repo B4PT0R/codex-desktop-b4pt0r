@@ -114,8 +114,8 @@ Responsabilités :
 - commandes shell locales préfixées par `!`, toujours confirmées car exécutées sans
   sandbox sur l’hôte App Server ;
 - envoyer, diriger un tour actif et interrompre ;
-- accès rapide au modèle, mode de travail, profil de permissions et politique
-  d’approbation ; ces deux derniers réglages restent distincts et reflètent
+- accès rapide au modèle, tier de service, mode de travail, profil de
+  permissions et politique d’approbation ; ces deux derniers réglages restent distincts et reflètent
   l’état effectif renvoyé par App Server ;
 - contexte restant et reroutage de modèle sans polluer le fil ;
 - palette de commandes issue des capacités réellement disponibles.
@@ -166,8 +166,8 @@ Le centre utilise une navigation interne durable :
 1. **Général** — langue, démarrage, ouverture des fichiers et cycle App Server ;
 2. **Web** — recherche web globale, Chromium Playwright partagé, activation, état et réparation ;
 3. **Chat** — résumés et futures préférences globales qui contrôlent le niveau de détail visible ;
-4. **Agent** — modèle, effort, personnalité et comportement globaux ;
-5. **Permissions par défaut** — profils, approbations et exigences administrées ;
+4. **Agent** — modèle, effort, tier de service, personnalité et sous-agents globaux ;
+5. **Permissions** — profils, approbations, relecteur et exigences administrées ;
 6. **Configuration** — champs TOML globaux guidés, éditeur brut et instructions personnelles ;
 7. **Intégrations** — MCP, apps/connecteurs, plugins, skills et hooks ;
 8. **Tâches planifiées** — réveils locaux, cible de conversation, pause et exécution immédiate ;
@@ -444,7 +444,14 @@ autorisations déjà accordées.
 - Les rafales de notifications qui modifient le fil sont réduites dans l’ordre
   à une mise à jour React non urgente par fenêtre de 16 ms. Les interactions
   du compositeur, la dictée et les demandes bloquantes gardent ainsi la
-  priorité, et un changement de thread invalide la file en attente.
+  priorité. Un changement de thread remplace le scope visible immédiatement :
+  les événements tardifs de l’ancien thread sont exclus, tandis que ceux du
+  nouveau sont tamponnés jusqu’à la fin de son hydratation.
+- Plusieurs threads peuvent rester actifs en parallèle côté App Server. Le
+  renderer ne duplique pas leur transcript en mémoire : `thread/resume`
+  réhydrate au retour les items produits en arrière-plan, le dernier item
+  partiel, le statut du tour et son identifiant. Messages, activité, état
+  `busy` et steering ne sont ensuite modifiés que par le thread affiché.
 - Les réponses finalisées de l’agent vocal restent le flux principal du chat et
   portent l’accent rose Realtime. Les messages produits en parallèle par
   l’agent textuel utilisent une surface bleue secondaire : visible pendant le

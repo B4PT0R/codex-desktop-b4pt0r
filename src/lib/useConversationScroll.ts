@@ -56,17 +56,29 @@ export function useConversationScroll(
   }, [activity, latestUserId, messages, tail]);
 
   useEffect(() => {
-    const element = content.current;
-    if (!element || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(() => {
+    const contentElement = content.current;
+    const containerElement = container.current;
+    if (
+      !contentElement ||
+      !containerElement ||
+      typeof ResizeObserver === "undefined"
+    )
+      return;
+    const observer = new ResizeObserver((entries) => {
       if (!following.current) return;
       cancelFrame(frame.current);
+      if (entries.some((entry) => entry.target === containerElement)) {
+        frame.current = undefined;
+        scrollToBottom(containerElement, "auto");
+        return;
+      }
       frame.current = scheduleFrame(() => {
         frame.current = undefined;
-        scrollToBottom(container.current, "auto");
+        scrollToBottom(containerElement, "auto");
       });
     });
-    observer.observe(element);
+    observer.observe(contentElement);
+    observer.observe(containerElement);
     return () => observer.disconnect();
   }, []);
 

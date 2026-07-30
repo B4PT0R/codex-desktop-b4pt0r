@@ -27,6 +27,7 @@ type ChatFooterProps = {
   effort: string;
   models: Model[];
   permission: Permission;
+  serviceTier: string | null;
   approvalPolicy: ApprovalPolicy;
   allowedApprovalPolicies?: ApprovalPolicy[];
   permissionProfiles: PermissionProfileSummary[];
@@ -40,6 +41,7 @@ type ChatFooterProps = {
   dictationProcessing: boolean;
   dictationInsertion?: { id: number; text: string };
   hasThread: boolean;
+  loadingThread: boolean;
   telemetry?: ThreadTelemetry;
   onChangeEffort: (effort: string) => void;
   onChangeModel: (model: string) => void;
@@ -51,6 +53,7 @@ type ChatFooterProps = {
   onOpenMcpSettings: () => void;
   onChangePermission: (permission: Permission) => Promise<boolean>;
   onChangeApprovalPolicy: (policy: ApprovalPolicy) => Promise<boolean>;
+  onChangeServiceTier: (tier: string | null) => Promise<boolean>;
   onConsumeQuotaReset: (creditId?: string) => Promise<void>;
   onOpenPluginSettings: () => void;
   onSend: (text: string, context: TurnContextItem[]) => void;
@@ -72,6 +75,7 @@ export function ChatFooter({
   effort,
   models,
   permission,
+  serviceTier,
   approvalPolicy,
   allowedApprovalPolicies,
   permissionProfiles,
@@ -85,6 +89,7 @@ export function ChatFooter({
   dictationProcessing,
   dictationInsertion,
   hasThread,
+  loadingThread,
   telemetry,
   onChangeEffort,
   onChangeModel,
@@ -96,6 +101,7 @@ export function ChatFooter({
   onOpenMcpSettings,
   onChangePermission,
   onChangeApprovalPolicy,
+  onChangeServiceTier,
   onConsumeQuotaReset,
   onOpenPluginSettings,
   onSend,
@@ -118,6 +124,7 @@ export function ChatFooter({
           canSteer={canSteer}
           cwd={cwd}
           hasThread={hasThread}
+          loadingThread={loadingThread}
           recording={recording}
           dictating={dictating}
           dictationProcessing={dictationProcessing}
@@ -139,9 +146,11 @@ export function ChatFooter({
           effort={effort}
           model={model}
           models={models}
+          serviceTier={serviceTier}
           onChangeEffort={onChangeEffort}
           onChangeCollaborationMode={onChangeCollaborationMode}
           onChangeModel={onChangeModel}
+          onChangeServiceTier={onChangeServiceTier}
         />
         <SecurityQuickPicker
           allowedApprovalPolicies={allowedApprovalPolicies}

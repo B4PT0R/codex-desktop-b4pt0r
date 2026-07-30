@@ -114,7 +114,9 @@ const realtime = {
 };
 const webSearch = {
   advanced: {
+    agentsEnabled: true,
     approvalPolicy: "on-request" as const,
+    approvalsReviewer: "user" as const,
     allowLoginShell: true,
     cliAuthCredentialsStore: "file" as const,
     defaultPermissions: ":workspace" as const,
@@ -125,6 +127,12 @@ const webSearch = {
     personality: null,
     projectDocFallbackFilenames: [],
     projectDocMaxBytes: 32_768,
+    serviceTier: null,
+    subagentInterruptMessage: true,
+    subagentMaxConcurrentThreads: null,
+    subagentModel: null,
+    subagentReasoningEffort: null,
+    suppressUnstableFeaturesWarning: false,
     toolOutputTokenLimit: null,
   },
   fileOpener: "vscode" as const,
@@ -236,7 +244,18 @@ function renderSettings(
     memory,
     remoteControl,
     models: [
-      { id: "gpt-a", label: "GPT A" },
+      {
+        id: "gpt-a",
+        label: "GPT A",
+        isDefault: true,
+        serviceTiers: [
+          {
+            id: "fast",
+            name: "Fast",
+            description: "Réponses prioritaires plus rapides.",
+          },
+        ],
+      },
       { id: "gpt-b", label: "GPT B" },
     ],
     rateLimits,
@@ -416,7 +435,7 @@ describe("centre de réglages", () => {
     expect(screen.getByRole("option", { name: "Cache" })).toBeEnabled();
   });
 
-  it("enregistre l’application d’ouverture dans Général et les résumés dans Chat", () => {
+  it("enregistre l’application d’ouverture dans Général et l’affichage dans Apparence", () => {
     const setFileOpener = vi.fn().mockResolvedValue(true);
     const setReasoningSummary = vi.fn().mockResolvedValue(true);
     const setMaxVisibleActions = vi.fn().mockResolvedValue(true);
@@ -439,7 +458,7 @@ describe("centre de réglages", () => {
         ...chatPresentation,
         setMaxVisibleActions,
       },
-      section: "chat",
+      section: "appearance",
       webSearch: controller,
     });
     fireEvent.change(
@@ -488,6 +507,24 @@ describe("centre de réglages", () => {
     expect(webSearch.setAdvanced).toHaveBeenCalledWith(
       "personality",
       "friendly",
+    );
+    fireEvent.click(screen.getByRole("option", { name: /Fast/ }));
+    expect(webSearch.setAdvanced).toHaveBeenCalledWith("service_tier", "fast");
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "Modèle des sous-agents" }),
+      { target: { value: "gpt-b" } },
+    );
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "Sous-agents simultanés" }),
+      { target: { value: "4" } },
+    );
+    expect(webSearch.setAdvanced).toHaveBeenCalledWith(
+      "agents.default_subagent_model",
+      "gpt-b",
+    );
+    expect(webSearch.setAdvanced).toHaveBeenCalledWith(
+      "agents.max_concurrent_threads_per_session",
+      4,
     );
   });
 
@@ -540,28 +577,77 @@ describe("centre de réglages", () => {
     );
     expect(
       await screen.findByRole("heading", {
-        name: "Permissions par défaut",
+        name: "Permissions",
         level: 1,
       }),
     ).toBeVisible();
   });
 
-  it("écrit séparément les permissions et approbations globales", () => {
-    const props = renderSettings({ section: "permissions" });
-    const approvals = screen.getByLabelText("Approbations");
-    expect(approvals).toHaveValue("on-request");
-    fireEvent.change(approvals, { target: { value: "never" } });
-    expect(props.webSearch.setAdvanced).toHaveBeenCalledWith(
-      "approval_policy",
-      "never",
-    );
-    fireEvent.change(screen.getByLabelText("Profil de permissions"), {
-      target: { value: ":read-only" },
+  it("présente et écrit séparément les permissions et approbations globales", async () => {
+    const props = renderSettings({
+      section: "permissions",
+      configRequirements: {
+        managed: true,
+        managedHooksOnly: false,
+        allowedApprovalsReviewers: ["user", "auto_review"],
+      },
     });
-    expect(props.webSearch.setAdvanced).toHaveBeenCalledWith(
-      "default_permissions",
-      ":read-only",
+    expect(
+      screen.getByText(
+        "Définit les fichiers, le réseau et les ressources système accessibles par défaut à Codex.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        "Choisissez quand Codex doit demander votre confirmation.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.queryByText("Permissions et approbations restent distinctes"),
+    ).toBeNull();
+    expect(
+      screen.getByRole("option", { name: /À la demande/ }),
+    ).toHaveAttribute("aria-selected", "true");
+    fireEvent.click(
+      screen.getByRole("option", { name: /Ne jamais demander/ }),
     );
+    await waitFor(() =>
+      expect(props.webSearch.setAdvanced).toHaveBeenCalledWith(
+        "approval_policy",
+        "never",
+      ),
+    );
+    fireEvent.click(screen.getByRole("option", { name: /Lecture seule/ }));
+    await waitFor(() =>
+      expect(props.webSearch.setAdvanced).toHaveBeenCalledWith(
+        "default_permissions",
+        ":read-only",
+      ),
+    );
+    fireEvent.click(
+      screen.getByRole("option", { name: /Relecture automatique/ }),
+    );
+    await waitFor(() =>
+      expect(props.webSearch.setAdvanced).toHaveBeenCalledWith(
+        "approvals_reviewer",
+        "auto_review",
+      ),
+    );
+  });
+
+  it("désactive un relecteur exclu par la politique administrée", () => {
+    renderSettings({
+      section: "permissions",
+      configRequirements: {
+        managed: true,
+        managedHooksOnly: false,
+        allowedApprovalsReviewers: ["user"],
+      },
+    });
+
+    expect(
+      screen.getByRole("option", { name: /Relecture automatique/ }),
+    ).toBeDisabled();
   });
 
   it("expose la navigation cible sans simuler les fonctions futures", async () => {
@@ -575,12 +661,40 @@ describe("centre de réglages", () => {
     expect(
       screen.queryByRole("button", { name: /Git et espaces de travail/ }),
     ).toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Configuration avancée" }),
+    ).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Importer depuis d’autres agents",
+      }),
+    );
+    expect(props.onSelectSection).toHaveBeenCalledWith("advanced");
     fireEvent.click(screen.getByRole("button", { name: /Serveurs MCP/ }));
     expect(props.onSelectSection).toHaveBeenCalledWith("mcp");
     fireEvent.click(
       screen.getByRole("button", { name: "Retour à l’application" }),
     );
     expect(props.onClose).toHaveBeenCalledOnce();
+  });
+
+  it("réserve la section d’import aux migrations réellement disponibles", () => {
+    renderSettings({ section: "advanced" });
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Importer depuis d’autres agents",
+        level: 1,
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("heading", {
+        name: "Importer depuis un autre agent",
+        level: 2,
+      }),
+    ).toBeVisible();
+    expect(screen.queryByText("Fonctions expérimentales")).toBeNull();
+    expect(screen.queryByText("Diagnostics et feedback")).toBeNull();
   });
 
   it("revient à la conversation avec Échap", () => {
@@ -599,6 +713,32 @@ describe("centre de réglages", () => {
     );
     expect(screen.getByRole("button", { name: /Serveurs MCP/ })).toBeVisible();
     expect(screen.queryByRole("button", { name: /Apparence/ })).toBeNull();
+  });
+
+  it("ordonne les catégories selon leur fréquence de consultation", () => {
+    renderSettings();
+    const labels = Array.from(
+      screen.getByRole("navigation").querySelectorAll("button"),
+      (button) => button.textContent?.trim(),
+    );
+
+    expect(labels).toEqual([
+      "Général",
+      "Agent",
+      "Permissions",
+      "Web",
+      "Voix",
+      "Apparence et affichage",
+      "Tâches planifiées",
+      "Mémoire",
+      "Plugins et apps",
+      "Serveurs MCP",
+      "Contrôle à distance",
+      "Compte et utilisation",
+      "Hooks",
+      "Configuration avancée",
+      "Importer depuis d’autres agents",
+    ]);
   });
 
   it("change et conserve la langue de toute la navigation", async () => {
@@ -700,7 +840,7 @@ describe("centre de réglages", () => {
       ),
     ).toBeVisible();
     expect(screen.queryByLabelText("Contenu de config.toml")).toBeNull();
-    expect(screen.getAllByText("Aperçu navigateur")).toHaveLength(2);
+    expect(screen.getAllByText("Aperçu navigateur")).toHaveLength(1);
     const opener = screen.getByRole("button", {
       name: /config\.toml.*Modifier/,
     });
@@ -747,6 +887,11 @@ describe("centre de réglages", () => {
     fireEvent.change(screen.getByLabelText("Identifiants OAuth MCP"), {
       target: { value: "keyring" },
     });
+    fireEvent.click(
+      screen.getByLabelText(
+        "Masquer les avertissements de fonctionnalités instables",
+      ),
+    );
 
     expect(props.webSearch.setAdvanced).toHaveBeenCalledWith(
       "model_auto_compact_token_limit",
@@ -764,10 +909,14 @@ describe("centre de réglages", () => {
       "mcp_oauth_credentials_store",
       "keyring",
     );
+    expect(props.webSearch.setAdvanced).toHaveBeenCalledWith(
+      "suppress_unstable_features_warning",
+      true,
+    );
   });
 
-  it("édite les instructions personnelles globales dans Config", async () => {
-    renderSettings({ section: "config" });
+  it("édite les instructions personnelles globales depuis Agent", async () => {
+    renderSettings({ section: "agent" });
     fireEvent.click(
       screen.getByRole("button", { name: /AGENTS\.md.*Modifier/ }),
     );

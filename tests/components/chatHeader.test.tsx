@@ -18,6 +18,7 @@ describe("en-tête de conversation", () => {
   it("pilote la lecture et l’arrêt de la démo visuelle", () => {
     const onPlay = vi.fn();
     const onStop = vi.fn();
+    const onPreviewThreadLoading = vi.fn();
     const { rerender } = render(
       <I18nProvider>
         <ChatHeader
@@ -27,6 +28,7 @@ describe("en-tête de conversation", () => {
             hasPlayed: false,
             running: false,
             onPlay,
+            onPreviewThreadLoading,
             onStop,
           }}
           nativeApp={false}
@@ -45,6 +47,10 @@ describe("en-tête de conversation", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Lire la démo" }));
     expect(onPlay).toHaveBeenCalledOnce();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tester le chargement" }),
+    );
+    expect(onPreviewThreadLoading).toHaveBeenCalledOnce();
 
     rerender(
       <I18nProvider>

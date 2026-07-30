@@ -39,9 +39,13 @@ describe("sélecteur rapide de sécurité", () => {
       </I18nProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Sécurité" }));
+    const trigger = screen.getByRole("button", { name: "Permissions" });
+    expect(trigger).toHaveClass("footer-expander-trigger");
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(
-      screen.getByRole("dialog", { name: "Sécurité" }),
+      screen.getByRole("dialog", { name: "Permissions" }),
     ).toBeVisible();
     expect(
       screen.getByRole("option", { name: /Accès complet/ }),
@@ -54,7 +58,7 @@ describe("sélecteur rapide de sécurité", () => {
     await waitFor(() =>
       expect(onChangePermission).toHaveBeenCalledWith(":read-only"),
     );
-    expect(screen.getByRole("dialog", { name: "Sécurité" })).toBeVisible();
+    expect(screen.getByRole("dialog", { name: "Permissions" })).toBeVisible();
 
     fireEvent.click(screen.getByRole("option", { name: /Ne jamais demander/ }));
     await waitFor(() =>

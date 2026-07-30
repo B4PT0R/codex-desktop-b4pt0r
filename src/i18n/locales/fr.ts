@@ -408,6 +408,7 @@ export const fr = {
   "empty.subtitle":
     "Décrivez une idée, explorez un projet ou confiez-lui une tâche.",
   "app.newChat": "Nouveau chat",
+  "conversation.loading": "Chargement de la conversation…",
   "conversation.history.loading": "Chargement de l’historique…",
   "conversation.history.loadOlder": "Charger les échanges précédents",
   "conversation.realtime.voice": "Agent vocal Realtime",
@@ -436,6 +437,8 @@ export const fr = {
   "demoPlayback.play": "Lire la démo",
   "demoPlayback.replay": "Rejouer",
   "demoPlayback.stop": "Arrêter",
+  "demoPlayback.testLoading": "Tester le chargement",
+  "demoPlayback.loading": "Chargement…",
   "chat.connection.connecting": "Connexion…",
   "chat.connection.reconnect": "Reconnecter",
   "composer.placeholder": "Demandez n’importe quoi à Codex",
@@ -509,9 +512,6 @@ export const fr = {
   "shellCommand.unavailable": "Commande shell indisponible",
   "shellCommand.busy": "Attendez la fin du tour en cours avant de l’exécuter.",
   "shellCommand.startError": "Impossible de démarrer la commande shell",
-  "chat.permission.workspace": "Espace de travail",
-  "chat.permission.readOnly": "Lecture seule",
-  "chat.permission.fullAccess": "Accès complet",
   "chat.quota.resets": "Réinitialisation",
   "quotaPicker.title": "Quotas d’utilisation",
   "quotaPicker.detail": "Détails des fenêtres de votre abonnement Codex",
@@ -557,20 +557,19 @@ export const fr = {
   "settings.planned": "Prévu",
   "settings.section.general": "Général",
   "settings.section.browser": "Web",
-  "settings.section.chat": "Chat",
   "settings.section.memory": "Mémoire",
   "settings.section.remoteControl": "Contrôle à distance",
   "settings.section.automations": "Tâches planifiées",
   "settings.section.agent": "Agent",
-  "settings.section.appearance": "Apparence",
+  "settings.section.appearance": "Apparence et affichage",
   "settings.section.voice": "Voix",
   "settings.section.account": "Compte et utilisation",
   "settings.section.plugins": "Plugins et apps",
   "settings.section.mcp": "Serveurs MCP",
-  "settings.section.permissions": "Permissions par défaut",
-  "settings.section.config": "Configuration",
+  "settings.section.permissions": "Permissions",
+  "settings.section.config": "Configuration avancée",
   "settings.section.hooks": "Hooks",
-  "settings.section.advanced": "Avancé",
+  "settings.section.advanced": "Importer depuis d’autres agents",
   "settings.general.description":
     "Préférences générales de l’application Linux.",
   "automations.description":
@@ -639,8 +638,6 @@ export const fr = {
   "settings.browser.routingTitle": "Outils navigateur de l’agent",
   "settings.browser.routingDetail":
     "Le Browser officiel non pris en charge et son skill sont désactivés dans cette application. L’agent utilise uniquement le MCP Playwright partagé.",
-  "settings.chat.description":
-    "Contrôle le niveau de détail présenté par Codex dans la conversation.",
   "settings.memory.description":
     "Contrôle la mémoire locale utilisée par Codex entre les conversations.",
   "settings.memory.experimental": "Expérimental",
@@ -751,10 +748,10 @@ export const fr = {
   "settings.reasoningSummary.concise": "Concis",
   "settings.reasoningSummary.detailed": "Détaillés",
   "settings.reasoningSummary.none": "Masqués",
-  "settings.chat.visibleActions.title": "Actions visibles par groupe",
-  "settings.chat.visibleActions.detail":
+  "settings.appearance.visibleActions.title": "Actions visibles par groupe",
+  "settings.appearance.visibleActions.detail":
     "Nombre maximal d’actions récentes conservées sous le résumé d’activité.",
-  "settings.chat.visibleActions.error":
+  "settings.appearance.visibleActions.error":
     "Impossible d’enregistrer la limite des actions visibles :",
   "settings.persistence.error":
     "Impossible d’enregistrer les préférences de l’application :",
@@ -786,7 +783,6 @@ export const fr = {
   "desktopSettings.saveError":
     "Impossible d’enregistrer le dernier espace de travail",
   "settings.plannedArchitecture": "Architecture prévue",
-  "settings.toConnect": "À brancher",
   "settings.global.automatic": "Automatique (recommandé)",
   "settings.agent.description":
     "Valeurs utilisées par défaut au démarrage des nouvelles conversations.",
@@ -806,6 +802,33 @@ export const fr = {
   "settings.agent.verbosity.medium": "Moyenne",
   "settings.agent.verbosity.high": "Élevée",
   "settings.agent.planEffort": "Raisonnement en mode Plan",
+  "settings.agent.serviceTier": "Tier de service",
+  "settings.agent.serviceTierDetail":
+    "Mode de traitement proposé par {model}.",
+  "settings.agent.serviceTierAutomaticDetail":
+    "Laisser Codex utiliser le mode de traitement standard.",
+  "settings.agent.subagents.title": "Sous-agents",
+  "settings.agent.subagents.detail":
+    "Valeurs utilisées lorsque Codex délègue du travail à d’autres agents.",
+  "settings.agent.subagents.enabled": "Outils multi-agents",
+  "settings.agent.subagents.enabledDetail":
+    "Autoriser Codex à déléguer des tâches délimitées à des sous-agents.",
+  "settings.agent.subagents.active": "Activés",
+  "settings.agent.subagents.inactive": "Désactivés",
+  "settings.agent.subagents.model": "Modèle des sous-agents",
+  "settings.agent.subagents.modelDetail":
+    "Modèle utilisé lorsqu’une délégation n’en demande pas explicitement.",
+  "settings.agent.subagents.effort": "Raisonnement des sous-agents",
+  "settings.agent.subagents.effortDetail":
+    "Effort utilisé lorsqu’une délégation n’en demande pas explicitement.",
+  "settings.agent.subagents.concurrency": "Sous-agents simultanés",
+  "settings.agent.subagents.concurrencyDetail":
+    "Nombre maximal de threads délégués ouverts avec le thread principal.",
+  "settings.agent.subagents.interrupt": "Mémoriser les interruptions",
+  "settings.agent.subagents.interruptDetail":
+    "Ajouter un message visible du modèle lorsqu’un sous-agent est interrompu.",
+  "settings.agent.subagents.recorded": "Mémorisées",
+  "settings.agent.subagents.silent": "Silencieuses",
   "settings.effort.none": "Aucun",
   "settings.effort.minimal": "Minimal",
   "settings.effort.low": "Faible",
@@ -820,15 +843,21 @@ export const fr = {
   "modelPicker.effortDetail": "Profondeur et temps accordés à la réflexion",
   "modelPicker.planMode": "Mode Plan",
   "modelPicker.planModeDetail": "Prépare et maintient un plan avant d’agir",
+  "modelPicker.serviceTier": "Traitement",
+  "modelPicker.serviceTierDetail":
+    "Tier de service utilisé pour cette conversation",
   "permissionPicker.title": "Niveau de permission",
   "permissionPicker.detail": "Accès accordé à Codex pour cette conversation",
+  "permissionPicker.readOnly": "Lecture seule",
+  "permissionPicker.workspace": "Espace de travail",
+  "permissionPicker.fullAccess": "Accès complet",
   "permissionPicker.readOnlyDetail": "Lire les fichiers sans les modifier",
   "permissionPicker.workspaceDetail":
     "Modifier les fichiers dans l’espace de travail",
   "permissionPicker.fullAccessDetail":
     "Accéder au système et au réseau sans restriction",
-  "securityPicker.trigger": "Sécurité",
-  "securityPicker.title": "Sécurité",
+  "securityPicker.trigger": "Permissions",
+  "securityPicker.title": "Permissions",
   "securityPicker.detail":
     "Accès accordé à Codex et moments où une confirmation est requise",
   "settings.permissions.description":
@@ -836,14 +865,9 @@ export const fr = {
   "settings.permissions.catalogUnavailable":
     "Catalogue App Server indisponible — les profils intégrés restent utilisables.",
   "settings.permissions.profile": "Profil de permissions",
+  "settings.permissions.profileDetail":
+    "Définit les fichiers, le réseau et les ressources système accessibles par défaut à Codex.",
   "settings.permissions.notAllowed": "non autorisé",
-  "settings.permissions.sensitiveTitle":
-    "Permissions et approbations restent distinctes",
-  "settings.permissions.sensitiveDetail":
-    "Le profil définit l’accès technique ; la politique d’approbation définit quand Codex doit vous demander confirmation.",
-  "settings.permissions.readOnly": "Lecture seule",
-  "settings.permissions.workspace": "Espace de travail",
-  "settings.permissions.fullAccess": "Accès complet",
   "approvalPolicy.title": "Approbations",
   "approvalPolicy.detail":
     "Choisissez quand Codex doit demander votre confirmation.",
@@ -859,6 +883,15 @@ export const fr = {
   "approvalPolicy.short.untrusted": "Non fiable",
   "approvalPolicy.short.on-request": "À la demande",
   "approvalPolicy.short.never": "Sans approbation",
+  "approvalsReviewer.title": "Relecteur des approbations",
+  "approvalsReviewer.detail":
+    "Expérimental — choisissez qui décide des demandes d’approbation autorisées à apparaître.",
+  "approvalsReviewer.user": "Vous",
+  "approvalsReviewer.user.detail":
+    "Afficher directement les demandes d’approbation éligibles.",
+  "approvalsReviewer.auto_review": "Relecture automatique",
+  "approvalsReviewer.auto_review.detail":
+    "Confier l’approbation ou le refus à un sous-agent spécialisé dans le risque.",
   "settings.requirements.permissions":
     "Les profils disponibles sont limités par une politique administrée.",
   "settings.requirements.default": "Profil par défaut administré : {profile}.",
@@ -918,6 +951,13 @@ export const fr = {
   "settings.config.mcpCredentials.title": "Identifiants OAuth MCP",
   "settings.config.mcpCredentials.detail":
     "Emplacement utilisé pour conserver les jetons OAuth des serveurs MCP.",
+  "settings.config.experimental.title": "Fonctionnalités expérimentales",
+  "settings.config.experimental.description":
+    "Contrôlez la manière dont Codex signale les fonctionnalités encore en développement.",
+  "settings.config.suppressUnstableWarning.title":
+    "Masquer les avertissements de fonctionnalités instables",
+  "settings.config.suppressUnstableWarning.detail":
+    "Masque l’avertissement au démarrage sans modifier ni stabiliser les fonctionnalités concernées. S’applique au prochain redémarrage d’App Server.",
   "settings.config.credentials.auto": "Automatique",
   "settings.config.credentials.file": "Fichier local",
   "settings.config.credentials.keyring": "Trousseau système",
@@ -964,7 +1004,13 @@ export const fr = {
   "settings.appServerRestart.running": "Redémarrage…",
   "settings.appServerRestart.error": "Le redémarrage d’App Server a échoué.",
   "settings.appearance.description":
-    "Une interface calme et lisible adaptée au bureau Linux.",
+    "Réglez l’interface et la présentation de l’activité Codex dans les conversations.",
+  "settings.appearance.interface.title": "Interface",
+  "settings.appearance.interface.description":
+    "Choisissez le thème visuel et la densité générale.",
+  "settings.appearance.conversation.title": "Affichage des conversations",
+  "settings.appearance.conversation.description":
+    "Contrôlez le niveau de détail présenté par Codex dans la conversation.",
   "settings.appearance.theme": "Thème",
   "settings.appearance.themeDetail":
     "Suit le système, ou force le mode sombre ou clair.",
@@ -999,15 +1045,6 @@ export const fr = {
   "settings.hooks.availableDetail": "État, origine et déclencheurs",
   "settings.hooks.results": "Résultats",
   "settings.hooks.resultsDetail": "Progression et erreurs dans le fil",
-  "settings.advanced.description":
-    "Fonctions spécialisées isolées des réglages quotidiens.",
-  "settings.advanced.experimental": "Fonctions expérimentales",
-  "settings.advanced.experimentalDetail":
-    "Activation explicite et compatibilité",
-  "settings.advanced.import": "Import d’agents",
-  "settings.advanced.importDetail": "Détection et migration assistée",
-  "settings.advanced.diagnostics": "Diagnostics et feedback",
-  "settings.advanced.diagnosticsDetail": "État App Server et rapports ciblés",
   "externalImport.title": "Importer depuis un autre agent",
   "externalImport.description":
     "Détectez les réglages et historiques compatibles de Cursor ou Claude Code, puis choisissez précisément ce que Codex peut migrer.",

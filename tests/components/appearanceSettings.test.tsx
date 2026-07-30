@@ -12,6 +12,18 @@ import { AppearanceSettings } from "../../src/components/AppearanceSettings";
 import { I18nProvider } from "../../src/i18n/I18nProvider";
 import { AppearanceProvider } from "../../src/lib/AppearanceProvider";
 
+const globalSettings = {
+  loading: false,
+  reasoningSummary: "auto" as const,
+  setReasoningSummary: vi.fn().mockResolvedValue(true),
+};
+const presentation = {
+  loading: false,
+  maxVisibleActions: 3,
+  saving: false,
+  setMaxVisibleActions: vi.fn().mockResolvedValue(true),
+};
+
 beforeEach(() => {
   localStorage.clear();
   localStorage.setItem("codex-desktop.locale", "fr");
@@ -32,7 +44,10 @@ describe("réglages d’apparence", () => {
     render(
       <AppearanceProvider>
         <I18nProvider>
-          <AppearanceSettings />
+          <AppearanceSettings
+            globalSettings={globalSettings}
+            presentation={presentation}
+          />
         </I18nProvider>
       </AppearanceProvider>,
     );
@@ -64,7 +79,10 @@ describe("réglages d’apparence", () => {
     render(
       <AppearanceProvider>
         <I18nProvider>
-          <AppearanceSettings />
+          <AppearanceSettings
+            globalSettings={globalSettings}
+            presentation={presentation}
+          />
         </I18nProvider>
       </AppearanceProvider>,
     );

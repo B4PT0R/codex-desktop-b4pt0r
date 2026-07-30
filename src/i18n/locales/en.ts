@@ -393,6 +393,7 @@ export const en: Record<MessageKey, string> = {
   "empty.title": "Build anything with Codex",
   "empty.subtitle": "Describe an idea, explore a project, or hand off a task.",
   "app.newChat": "New chat",
+  "conversation.loading": "Loading conversation…",
   "conversation.history.loading": "Loading history…",
   "conversation.history.loadOlder": "Load earlier messages",
   "conversation.realtime.voice": "Realtime voice agent",
@@ -420,6 +421,8 @@ export const en: Record<MessageKey, string> = {
   "demoPlayback.play": "Play demo",
   "demoPlayback.replay": "Replay",
   "demoPlayback.stop": "Stop",
+  "demoPlayback.testLoading": "Test loading",
+  "demoPlayback.loading": "Loading…",
   "chat.connection.connecting": "Connecting…",
   "chat.connection.reconnect": "Reconnect",
   "composer.placeholder": "Ask Codex anything",
@@ -493,9 +496,6 @@ export const en: Record<MessageKey, string> = {
   "shellCommand.unavailable": "Shell command unavailable",
   "shellCommand.busy": "Wait for the current turn to finish before running it.",
   "shellCommand.startError": "Unable to start shell command",
-  "chat.permission.workspace": "Workspace",
-  "chat.permission.readOnly": "Read only",
-  "chat.permission.fullAccess": "Full access",
   "chat.quota.resets": "Resets",
   "quotaPicker.title": "Usage limits",
   "quotaPicker.detail": "Details for your Codex plan windows",
@@ -540,20 +540,19 @@ export const en: Record<MessageKey, string> = {
   "settings.planned": "Planned",
   "settings.section.general": "General",
   "settings.section.browser": "Web",
-  "settings.section.chat": "Chat",
   "settings.section.memory": "Memory",
-  "settings.section.remoteControl": "Remote control",
-  "settings.section.automations": "Scheduled tasks",
+  "settings.section.remoteControl": "Remote Control",
+  "settings.section.automations": "Scheduled Tasks",
   "settings.section.agent": "Agent",
-  "settings.section.appearance": "Appearance",
+  "settings.section.appearance": "Appearance & Display",
   "settings.section.voice": "Voice",
-  "settings.section.account": "Account and usage",
-  "settings.section.plugins": "Plugins and apps",
-  "settings.section.mcp": "MCP servers",
-  "settings.section.permissions": "Permission defaults",
-  "settings.section.config": "Configuration",
+  "settings.section.account": "Account & Usage",
+  "settings.section.plugins": "Plugins & Apps",
+  "settings.section.mcp": "MCP Servers",
+  "settings.section.permissions": "Permissions",
+  "settings.section.config": "Advanced Configuration",
   "settings.section.hooks": "Hooks",
-  "settings.section.advanced": "Advanced",
+  "settings.section.advanced": "Import from Other Agents",
   "settings.general.description": "General preferences for the Linux app.",
   "automations.description":
     "Run a prompt at a specific date or on a recurring schedule. The app must remain active in the tray and the machine must stay awake.",
@@ -621,8 +620,6 @@ export const en: Record<MessageKey, string> = {
   "settings.browser.routingTitle": "Agent browser tools",
   "settings.browser.routingDetail":
     "The unsupported official Browser and its skill are disabled in this app. The agent uses only the shared Playwright MCP.",
-  "settings.chat.description":
-    "Controls how much detail Codex exposes in the conversation.",
   "settings.memory.description":
     "Controls the local memory Codex uses across conversations.",
   "settings.memory.experimental": "Experimental",
@@ -731,10 +728,10 @@ export const en: Record<MessageKey, string> = {
   "settings.reasoningSummary.concise": "Concise",
   "settings.reasoningSummary.detailed": "Detailed",
   "settings.reasoningSummary.none": "Hidden",
-  "settings.chat.visibleActions.title": "Visible actions per group",
-  "settings.chat.visibleActions.detail":
+  "settings.appearance.visibleActions.title": "Visible actions per group",
+  "settings.appearance.visibleActions.detail":
     "Maximum number of recent actions kept below the activity summary.",
-  "settings.chat.visibleActions.error":
+  "settings.appearance.visibleActions.error":
     "Unable to save the visible actions limit:",
   "settings.persistence.error": "Unable to save app preferences:",
   "settings.startup.title": "Launch Codex at login",
@@ -763,7 +760,6 @@ export const en: Record<MessageKey, string> = {
   "desktopSettings.loadError": "Unable to read app preferences",
   "desktopSettings.saveError": "Unable to save the last workspace",
   "settings.plannedArchitecture": "Planned architecture",
-  "settings.toConnect": "Not connected yet",
   "settings.global.automatic": "Automatic (recommended)",
   "settings.agent.description":
     "Defaults used when starting new conversations.",
@@ -783,6 +779,33 @@ export const en: Record<MessageKey, string> = {
   "settings.agent.verbosity.medium": "Medium",
   "settings.agent.verbosity.high": "High",
   "settings.agent.planEffort": "Plan mode reasoning",
+  "settings.agent.serviceTier": "Service tier",
+  "settings.agent.serviceTierDetail":
+    "Delivery mode advertised by {model}.",
+  "settings.agent.serviceTierAutomaticDetail":
+    "Let Codex choose the standard delivery mode.",
+  "settings.agent.subagents.title": "Subagents",
+  "settings.agent.subagents.detail":
+    "Defaults used when Codex delegates work to other agents.",
+  "settings.agent.subagents.enabled": "Multi-agent tools",
+  "settings.agent.subagents.enabledDetail":
+    "Allow Codex to delegate bounded tasks to subagents.",
+  "settings.agent.subagents.active": "Enabled",
+  "settings.agent.subagents.inactive": "Disabled",
+  "settings.agent.subagents.model": "Default subagent model",
+  "settings.agent.subagents.modelDetail":
+    "Model used when a delegation does not request one explicitly.",
+  "settings.agent.subagents.effort": "Default subagent reasoning",
+  "settings.agent.subagents.effortDetail":
+    "Reasoning effort used when a delegation does not request one explicitly.",
+  "settings.agent.subagents.concurrency": "Concurrent subagents",
+  "settings.agent.subagents.concurrencyDetail":
+    "Maximum number of delegated threads open alongside the main thread.",
+  "settings.agent.subagents.interrupt": "Record interruptions",
+  "settings.agent.subagents.interruptDetail":
+    "Add a model-visible message when a subagent is interrupted.",
+  "settings.agent.subagents.recorded": "Recorded",
+  "settings.agent.subagents.silent": "Silent",
   "settings.effort.none": "None",
   "settings.effort.minimal": "Minimal",
   "settings.effort.low": "Low",
@@ -797,14 +820,20 @@ export const en: Record<MessageKey, string> = {
   "modelPicker.effortDetail": "Depth and time allocated to reasoning",
   "modelPicker.planMode": "Plan mode",
   "modelPicker.planModeDetail": "Prepare and maintain a plan before acting",
+  "modelPicker.serviceTier": "Delivery",
+  "modelPicker.serviceTierDetail":
+    "Service tier used for this conversation",
   "permissionPicker.title": "Permission level",
   "permissionPicker.detail": "Access granted to Codex for this conversation",
+  "permissionPicker.readOnly": "Read Only",
+  "permissionPicker.workspace": "Workspace",
+  "permissionPicker.fullAccess": "Full Access",
   "permissionPicker.readOnlyDetail": "Read files without changing them",
   "permissionPicker.workspaceDetail": "Edit files inside the workspace",
   "permissionPicker.fullAccessDetail":
     "Access the system and network without restriction",
-  "securityPicker.trigger": "Security",
-  "securityPicker.title": "Security",
+  "securityPicker.trigger": "Permissions",
+  "securityPicker.title": "Permissions",
   "securityPicker.detail":
     "Access granted to Codex and when confirmation is required",
   "settings.permissions.description":
@@ -812,28 +841,32 @@ export const en: Record<MessageKey, string> = {
   "settings.permissions.catalogUnavailable":
     "The App Server catalog is unavailable — built-in profiles remain usable.",
   "settings.permissions.profile": "Permission profile",
+  "settings.permissions.profileDetail":
+    "Controls the files, network and system resources Codex may access by default.",
   "settings.permissions.notAllowed": "not allowed",
-  "settings.permissions.sensitiveTitle":
-    "Permissions and approvals stay separate",
-  "settings.permissions.sensitiveDetail":
-    "The profile defines technical access; the approval policy defines when Codex must ask for confirmation.",
-  "settings.permissions.readOnly": "Read only",
-  "settings.permissions.workspace": "Workspace",
-  "settings.permissions.fullAccess": "Full access",
   "approvalPolicy.title": "Approvals",
   "approvalPolicy.detail": "Choose when Codex must ask for confirmation.",
-  "approvalPolicy.untrusted": "Untrusted commands",
+  "approvalPolicy.untrusted": "Untrusted Commands",
   "approvalPolicy.untrusted.detail":
     "Ask before commands that are not recognized as safe.",
-  "approvalPolicy.on-request": "On request",
+  "approvalPolicy.on-request": "On Request",
   "approvalPolicy.on-request.detail":
     "Let the agent decide when confirmation is necessary.",
-  "approvalPolicy.never": "Never ask",
+  "approvalPolicy.never": "Never Ask",
   "approvalPolicy.never.detail":
     "Continue without confirmation and return failures directly to the agent.",
   "approvalPolicy.short.untrusted": "Untrusted",
   "approvalPolicy.short.on-request": "On request",
   "approvalPolicy.short.never": "No approvals",
+  "approvalsReviewer.title": "Approval reviewer",
+  "approvalsReviewer.detail":
+    "Experimental — choose who decides approval requests that are allowed to surface.",
+  "approvalsReviewer.user": "You",
+  "approvalsReviewer.user.detail":
+    "Show eligible approval requests directly to you.",
+  "approvalsReviewer.auto_review": "Automatic Review",
+  "approvalsReviewer.auto_review.detail":
+    "Ask a risk-focused subagent to approve or deny eligible requests.",
   "settings.requirements.permissions":
     "Available profiles are restricted by a managed policy.",
   "settings.requirements.default": "Managed default profile: {profile}.",
@@ -890,6 +923,13 @@ export const en: Record<MessageKey, string> = {
   "settings.config.mcpCredentials.title": "MCP OAuth credentials",
   "settings.config.mcpCredentials.detail":
     "Storage used for MCP server OAuth tokens.",
+  "settings.config.experimental.title": "Experimental features",
+  "settings.config.experimental.description":
+    "Control how Codex reports features that are still under development.",
+  "settings.config.suppressUnstableWarning.title":
+    "Hide unstable feature warnings",
+  "settings.config.suppressUnstableWarning.detail":
+    "Hides the startup warning without changing or stabilizing the affected features. Applies after the next App Server restart.",
   "settings.config.credentials.auto": "Automatic",
   "settings.config.credentials.file": "Local file",
   "settings.config.credentials.keyring": "System keyring",
@@ -935,7 +975,13 @@ export const en: Record<MessageKey, string> = {
   "settings.appServerRestart.running": "Restarting…",
   "settings.appServerRestart.error": "App Server could not be restarted.",
   "settings.appearance.description":
-    "A calm, readable interface suited to the Linux desktop.",
+    "Tune the interface and how Codex activity is presented in conversations.",
+  "settings.appearance.interface.title": "Interface",
+  "settings.appearance.interface.description":
+    "Choose the visual theme and overall density.",
+  "settings.appearance.conversation.title": "Conversation Display",
+  "settings.appearance.conversation.description":
+    "Control how much detail Codex exposes in the conversation.",
   "settings.appearance.theme": "Theme",
   "settings.appearance.themeDetail":
     "Follow the system, or force dark or light mode.",
@@ -968,16 +1014,6 @@ export const en: Record<MessageKey, string> = {
   "settings.hooks.availableDetail": "Status, source, and triggers",
   "settings.hooks.results": "Results",
   "settings.hooks.resultsDetail": "Progress and errors in the thread",
-  "settings.advanced.description":
-    "Specialized features kept away from everyday settings.",
-  "settings.advanced.experimental": "Experimental features",
-  "settings.advanced.experimentalDetail":
-    "Explicit activation and compatibility",
-  "settings.advanced.import": "Agent import",
-  "settings.advanced.importDetail": "Detection and assisted migration",
-  "settings.advanced.diagnostics": "Diagnostics and feedback",
-  "settings.advanced.diagnosticsDetail":
-    "App Server status and targeted reports",
   "externalImport.title": "Import from another agent",
   "externalImport.description":
     "Detect compatible Cursor or Claude Code settings and history, then choose exactly what Codex may migrate.",

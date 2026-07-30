@@ -3,6 +3,7 @@ import type { ConfigReadResponse } from "./appServerTypes";
 import { appServerRecord, appServerString } from "./appServerValues";
 import { isDesktopApp, request } from "./codex";
 import type { Personality } from "../types";
+import type { ApprovalsReviewer } from "./protocol";
 import {
   configReadParams,
   fileOpenerConfigWriteParams,
@@ -19,7 +20,9 @@ import {
 
 export type CodexGlobalSettingsController = {
   advanced: {
+    agentsEnabled: boolean;
     approvalPolicy: GlobalApprovalPolicy;
+    approvalsReviewer: GlobalApprovalsReviewer;
     allowLoginShell: boolean;
     cliAuthCredentialsStore: CredentialStore;
     defaultPermissions: GlobalPermissionProfile;
@@ -30,6 +33,12 @@ export type CodexGlobalSettingsController = {
     personality: Personality | null;
     projectDocFallbackFilenames: string[];
     projectDocMaxBytes: number;
+    serviceTier: string | null;
+    subagentInterruptMessage: boolean;
+    subagentMaxConcurrentThreads: number | null;
+    subagentModel: string | null;
+    subagentReasoningEffort: string | null;
+    suppressUnstableFeaturesWarning: boolean;
     toolOutputTokenLimit: number | null;
   };
   allowed?: WebSearchMode[];
@@ -59,9 +68,16 @@ export type GlobalApprovalPolicy =
   | "on-request"
   | "never"
   | "custom";
+export type GlobalApprovalsReviewer = ApprovalsReviewer | "custom";
 export type GlobalPermissionProfile = string;
 export type AdvancedConfigKey =
+  | "agents.default_subagent_model"
+  | "agents.default_subagent_reasoning_effort"
+  | "agents.enabled"
+  | "agents.interrupt_message"
+  | "agents.max_concurrent_threads_per_session"
   | "approval_policy"
+  | "approvals_reviewer"
   | "allow_login_shell"
   | "cli_auth_credentials_store"
   | "default_permissions"
@@ -72,10 +88,14 @@ export type AdvancedConfigKey =
   | "personality"
   | "project_doc_fallback_filenames"
   | "project_doc_max_bytes"
+  | "service_tier"
+  | "suppress_unstable_features_warning"
   | "tool_output_token_limit";
 
 const advancedDefaults = {
+  agentsEnabled: true,
   approvalPolicy: "on-request" as GlobalApprovalPolicy,
+  approvalsReviewer: "user" as GlobalApprovalsReviewer,
   allowLoginShell: true,
   cliAuthCredentialsStore: "file" as CredentialStore,
   defaultPermissions: ":workspace" as GlobalPermissionProfile,
@@ -86,6 +106,12 @@ const advancedDefaults = {
   personality: null as Personality | null,
   projectDocFallbackFilenames: [] as string[],
   projectDocMaxBytes: 32_768,
+  serviceTier: null as string | null,
+  subagentInterruptMessage: true,
+  subagentMaxConcurrentThreads: null as number | null,
+  subagentModel: null as string | null,
+  subagentReasoningEffort: null as string | null,
+  suppressUnstableFeaturesWarning: false,
   toolOutputTokenLimit: null as number | null,
 };
 
@@ -119,6 +145,7 @@ export function useCodexGlobalSettings(
       );
       if (refreshVersion.current !== version) return;
       const config = appServerRecord(response.config);
+      const agents = appServerRecord(config?.agents);
       setModeState(normalizeWebSearchMode(appServerString(config?.web_search)));
       setFileOpenerState(normalizeFileOpener(appServerString(config?.file_opener)));
       setReasoningSummaryState(
@@ -133,7 +160,11 @@ export function useCodexGlobalSettings(
         ),
       );
       setAdvancedState({
+        agentsEnabled: agents?.enabled !== false,
         approvalPolicy: normalizeGlobalApprovalPolicy(config?.approval_policy),
+        approvalsReviewer: normalizeGlobalApprovalsReviewer(
+          config?.approvals_reviewer,
+        ),
         allowLoginShell: config?.allow_login_shell !== false,
         cliAuthCredentialsStore: normalizeCredentialStore(
           config?.cli_auth_credentials_store,
@@ -158,6 +189,17 @@ export function useCodexGlobalSettings(
         ),
         projectDocMaxBytes:
           positiveIntegerOrNull(config?.project_doc_max_bytes) ?? 32_768,
+        serviceTier: appServerString(config?.service_tier) ?? null,
+        subagentInterruptMessage: agents?.interrupt_message !== false,
+        subagentMaxConcurrentThreads: positiveIntegerOrNull(
+          agents?.max_concurrent_threads_per_session,
+        ),
+        subagentModel:
+          appServerString(agents?.default_subagent_model) ?? null,
+        subagentReasoningEffort:
+          appServerString(agents?.default_subagent_reasoning_effort) ?? null,
+        suppressUnstableFeaturesWarning:
+          config?.suppress_unstable_features_warning === true,
         toolOutputTokenLimit: positiveIntegerOrNull(
           config?.tool_output_token_limit,
         ),
@@ -306,7 +348,14 @@ export function useCodexGlobalSettings(
 
 function advancedStateKey(key: AdvancedConfigKey) {
   const keys: Record<AdvancedConfigKey, keyof typeof advancedDefaults> = {
+    "agents.default_subagent_model": "subagentModel",
+    "agents.default_subagent_reasoning_effort": "subagentReasoningEffort",
+    "agents.enabled": "agentsEnabled",
+    "agents.interrupt_message": "subagentInterruptMessage",
+    "agents.max_concurrent_threads_per_session":
+      "subagentMaxConcurrentThreads",
     approval_policy: "approvalPolicy",
+    approvals_reviewer: "approvalsReviewer",
     allow_login_shell: "allowLoginShell",
     cli_auth_credentials_store: "cliAuthCredentialsStore",
     default_permissions: "defaultPermissions",
@@ -317,9 +366,20 @@ function advancedStateKey(key: AdvancedConfigKey) {
     personality: "personality",
     project_doc_fallback_filenames: "projectDocFallbackFilenames",
     project_doc_max_bytes: "projectDocMaxBytes",
+    service_tier: "serviceTier",
+    suppress_unstable_features_warning: "suppressUnstableFeaturesWarning",
     tool_output_token_limit: "toolOutputTokenLimit",
   };
   return keys[key];
+}
+
+function normalizeGlobalApprovalsReviewer(
+  value: unknown,
+): GlobalApprovalsReviewer {
+  if (value === "user") return "user";
+  if (value === "auto_review" || value === "guardian_subagent")
+    return "auto_review";
+  return value === undefined ? "user" : "custom";
 }
 
 function normalizePersonality(value: unknown): Personality | null {

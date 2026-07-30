@@ -7,7 +7,6 @@ import type {
   CredentialStore,
 } from "../lib/useCodexGlobalSettings";
 import { ConfigDocumentEditor } from "./ConfigDocumentEditor";
-import { GlobalAgentsSettings } from "./GlobalAgentsSettings";
 import { RoundIconButton } from "./RoundIcon";
 
 const compactLimits = [32_000, 64_000, 128_000];
@@ -164,6 +163,37 @@ export function CodexConfigSettings({
           />
         </div>
 
+        <div className="settings-subsection-heading">
+          <strong>{t("settings.config.experimental.title")}</strong>
+          <small>{t("settings.config.experimental.description")}</small>
+        </div>
+        <div className="settings-card settings-fields">
+          <label>
+            <span className="settings-field-description">
+              <strong>
+                {t("settings.config.suppressUnstableWarning.title")}
+              </strong>
+              <small>
+                {t("settings.config.suppressUnstableWarning.detail")}
+              </small>
+            </span>
+            <input
+              aria-label={t(
+                "settings.config.suppressUnstableWarning.title",
+              )}
+              type="checkbox"
+              checked={advanced.suppressUnstableFeaturesWarning}
+              disabled={globalSettings.loading}
+              onChange={(event) =>
+                void globalSettings.setAdvanced(
+                  "suppress_unstable_features_warning",
+                  event.target.checked,
+                )
+              }
+            />
+          </label>
+        </div>
+
         {globalSettings.error && (
           <div className="inventory-message error" role="alert">
             {t("settings.config.guided.error")} {globalSettings.error}
@@ -197,7 +227,6 @@ export function CodexConfigSettings({
         savedMessage={t("settings.config.saved")}
         saving={config.saving}
       />
-      <GlobalAgentsSettings />
     </section>
   );
 }

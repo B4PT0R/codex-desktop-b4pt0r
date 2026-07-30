@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { isDesktopApp, request } from "./codex";
 import { appServerRecord } from "./appServerValues";
-import type { ApprovalPolicy, WebSearchMode } from "./protocol";
+import type {
+  ApprovalPolicy,
+  ApprovalsReviewer,
+  WebSearchMode,
+} from "./protocol";
 
 export type ConfigRequirements = {
   managed: boolean;
@@ -10,6 +14,7 @@ export type ConfigRequirements = {
   allowedPermissionProfiles?: Record<string, boolean>;
   defaultPermission?: string;
   allowedApprovalPolicies?: ApprovalPolicy[];
+  allowedApprovalsReviewers?: ApprovalsReviewer[];
   allowedWebSearchModes?: WebSearchMode[];
 };
 
@@ -58,6 +63,16 @@ export function normalizeConfigRequirements(
   const allowedApprovals = Array.isArray(value.allowedApprovalPolicies)
     ? value.allowedApprovalPolicies.filter(isApprovalPolicy)
     : undefined;
+  const allowedApprovalsReviewers = Array.isArray(
+    value.allowedApprovalsReviewers,
+  )
+    ? value.allowedApprovalsReviewers.flatMap((reviewer) => {
+        if (reviewer === "user") return ["user" as const];
+        if (reviewer === "auto_review" || reviewer === "guardian_subagent")
+          return ["auto_review" as const];
+        return [];
+      })
+    : undefined;
   const allowedWebSearchModes = Array.isArray(value.allowedWebSearchModes)
     ? value.allowedWebSearchModes.filter(isWebSearchMode)
     : undefined;
@@ -81,6 +96,9 @@ export function normalizeConfigRequirements(
         : undefined,
     allowedApprovalPolicies: allowedApprovals?.length
       ? allowedApprovals
+      : undefined,
+    allowedApprovalsReviewers: allowedApprovalsReviewers?.length
+      ? [...new Set(allowedApprovalsReviewers)]
       : undefined,
     allowedWebSearchModes: allowedWebSearchModes?.length
       ? allowedWebSearchModes

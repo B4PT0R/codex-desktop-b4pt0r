@@ -9,12 +9,14 @@ export type CodexThreadDefaults = {
   model?: string;
   effort?: string;
   approvalPolicy?: ApprovalPolicy;
+  serviceTier?: string | null;
 };
 
 type Options = {
   connected: boolean;
   cwd: string;
   enabled: boolean;
+  refreshKey?: string;
   onDefaults: (defaults: CodexThreadDefaults) => void;
   onError: (error: unknown) => void;
 };
@@ -24,6 +26,7 @@ export function useCodexDefaults({
   connected,
   cwd,
   enabled,
+  refreshKey,
   onDefaults,
   onError,
 }: Options) {
@@ -41,6 +44,7 @@ export function useCodexDefaults({
           model: appServerString(config?.model),
           effort: appServerString(config?.model_reasoning_effort),
           approvalPolicy: approvalPolicy(config?.approval_policy),
+          serviceTier: appServerString(config?.service_tier) ?? null,
         });
       })
       .catch((error) => {
@@ -49,7 +53,7 @@ export function useCodexDefaults({
     return () => {
       disposed = true;
     };
-  }, [connected, cwd, enabled]);
+  }, [connected, cwd, enabled, refreshKey]);
 }
 
 function approvalPolicy(value: unknown): ApprovalPolicy | undefined {

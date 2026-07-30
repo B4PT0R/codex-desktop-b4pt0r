@@ -30,6 +30,7 @@ export function useDemoPlayback({
 }: DemoPlaybackOptions) {
   const [running, setRunning] = useState(false);
   const [hasPlayed, setHasPlayed] = useState(false);
+  const [loadingThread, setLoadingThread] = useState(false);
   const timers = useRef<number[]>([]);
   const generation = useRef(0);
 
@@ -42,6 +43,7 @@ export function useDemoPlayback({
   const stop = useCallback(() => {
     cancelTimers();
     setRunning(false);
+    setLoadingThread(false);
     setActivity(null);
     setMessages(interruptDemoMessages);
   }, [cancelTimers, setActivity, setMessages]);
@@ -53,6 +55,7 @@ export function useDemoPlayback({
     const frames = buildDemoPlaybackFrames();
     setHasPlayed(true);
     setRunning(true);
+    setLoadingThread(false);
     for (const frame of frames) {
       const timer = window.setTimeout(() => {
         if (generation.current !== run) return;
@@ -69,9 +72,32 @@ export function useDemoPlayback({
     }
   }, [cancelTimers, enabled, setActivity, setMessages]);
 
+  const previewThreadLoading = useCallback(() => {
+    if (!enabled) return;
+    cancelTimers();
+    const run = generation.current;
+    setRunning(false);
+    setActivity(null);
+    setLoadingThread(true);
+    const timer = window.setTimeout(() => {
+      if (generation.current !== run) return;
+      timers.current = [];
+      setLoadingThread(false);
+    }, 3_000);
+    timers.current = [timer];
+  }, [cancelTimers, enabled, setActivity]);
+
   useEffect(() => cancelTimers, [cancelTimers]);
 
-  return { enabled, hasPlayed, play, running, stop };
+  return {
+    enabled,
+    hasPlayed,
+    loadingThread,
+    play,
+    previewThreadLoading,
+    running,
+    stop,
+  };
 }
 
 function interruptDemoMessages(messages: ChatMessage[]): ChatMessage[] {

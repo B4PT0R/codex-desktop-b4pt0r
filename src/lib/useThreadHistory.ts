@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import type { ChatMessage } from "../types";
+import type { ChatMessage, ThreadSummary } from "../types";
 import type {
   ThreadResumeResponse,
   ThreadTurnsListResponse,
@@ -15,15 +15,30 @@ import {
   threadRuntimeSettings,
   type ThreadRuntimeSettings,
 } from "./threadRuntimeSettings";
+import { threadStatusFromValue } from "./threadLifecycle";
+import type { AgentActivity } from "./activity";
+import type { ThreadStatus } from "../types";
+import { threadSummary } from "./threadSummary";
+
+export type ThreadResumeRunState = {
+  activity: AgentActivity;
+  busy: boolean;
+  status?: ThreadStatus;
+  turnId?: string;
+};
 
 type ThreadHistoryOptions = {
   activeThreadId?: string;
   onError: (title: string, error: unknown) => void;
   onMessagesPrepended: (messages: ChatMessage[]) => void;
   onMessagesReplaced: (messages: ChatMessage[]) => void;
+  onThreadResumeFailed: (threadId: string) => void;
+  onThreadResumeStarted: (threadId: string) => void;
   onThreadResumed: (
     threadId: string,
     settings: ThreadRuntimeSettings,
+    runState: ThreadResumeRunState,
+    summary: ThreadSummary,
   ) => void;
 };
 
@@ -33,23 +48,30 @@ export function useThreadHistory({
   onError,
   onMessagesPrepended,
   onMessagesReplaced,
+  onThreadResumeFailed,
+  onThreadResumeStarted,
   onThreadResumed,
 }: ThreadHistoryOptions) {
   const { t } = useI18n();
   const [cursor, setCursor] = useState<string>();
   const [loadingOlder, setLoadingOlder] = useState(false);
+  const [resuming, setResuming] = useState(false);
   const loadingOlderRef = useRef(false);
   const resumeGeneration = useRef(0);
   const callbacks = useRef({
     onError,
     onMessagesPrepended,
     onMessagesReplaced,
+    onThreadResumeFailed,
+    onThreadResumeStarted,
     onThreadResumed,
   });
   callbacks.current = {
     onError,
     onMessagesPrepended,
     onMessagesReplaced,
+    onThreadResumeFailed,
+    onThreadResumeStarted,
     onThreadResumed,
   };
 
@@ -58,6 +80,7 @@ export function useThreadHistory({
     loadingOlderRef.current = false;
     setCursor(undefined);
     setLoadingOlder(false);
+    setResuming(false);
   }, []);
 
   const resume = useCallback(
@@ -66,6 +89,9 @@ export function useThreadHistory({
       resumeGeneration.current = generation;
       loadingOlderRef.current = false;
       setCursor(undefined);
+      setLoadingOlder(false);
+      setResuming(true);
+      callbacks.current.onThreadResumeStarted(threadId);
       try {
         const response = await request<ThreadResumeResponse>(
           "thread/resume",
@@ -79,14 +105,25 @@ export function useThreadHistory({
             : messagesFromThread(response.thread, t),
         );
         setCursor(page?.nextCursor ?? undefined);
+        const runtimeSettings = threadRuntimeSettings(response);
+        const summary = threadSummary(response.thread);
         callbacks.current.onThreadResumed(
           threadId,
-          threadRuntimeSettings(response),
+          runtimeSettings,
+          threadResumeRunState(response),
+          {
+            ...summary,
+            cwd: summary.cwd ?? runtimeSettings.cwd,
+          },
         );
+        setResuming(false);
         return true;
       } catch (error) {
-        if (resumeGeneration.current === generation)
+        if (resumeGeneration.current === generation) {
+          setResuming(false);
+          callbacks.current.onThreadResumeFailed(threadId);
           callbacks.current.onError(t("thread.resumeError"), error);
+        }
         return false;
       }
     },
@@ -125,6 +162,29 @@ export function useThreadHistory({
     loadOlder,
     loadingOlder,
     reset,
+    resuming,
     resume,
+  };
+}
+
+export function threadResumeRunState(
+  response: ThreadResumeResponse,
+): ThreadResumeRunState {
+  const status = threadStatusFromValue(response.thread.status);
+  const busy = status === "active";
+  const pagedTurns = response.initialTurnsPage?.data;
+  const turns =
+    pagedTurns && pagedTurns.length > 0
+      ? pagedTurns
+      : (response.thread.turns ?? []);
+  const activeTurn = turns.find((turn) => turn.status === "inProgress");
+  const waiting = response.thread.status?.activeFlags?.some(
+    (flag) => flag === "waitingOnApproval" || flag === "waitingOnUserInput",
+  );
+  return {
+    activity: busy ? (waiting ? "waiting" : "working") : null,
+    busy,
+    status,
+    ...(busy && activeTurn?.id ? { turnId: activeTurn.id } : {}),
   };
 }

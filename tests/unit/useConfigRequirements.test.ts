@@ -15,6 +15,11 @@ describe("contraintes administrées", () => {
             malformed: "no",
           },
           allowedApprovalPolicies: ["on-request", "never", { granular: {} }],
+          allowedApprovalsReviewers: [
+            "user",
+            "guardian_subagent",
+            "invalid",
+          ],
           allowedWebSearchModes: ["cached", "disabled", "invalid"],
         },
       }),
@@ -28,6 +33,7 @@ describe("contraintes administrées", () => {
         ":danger-full-access": false,
       },
       allowedApprovalPolicies: ["on-request", "never"],
+      allowedApprovalsReviewers: ["user", "auto_review"],
       allowedWebSearchModes: ["cached", "disabled"],
     });
   });

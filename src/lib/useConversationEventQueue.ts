@@ -28,6 +28,7 @@ type MessageDecorator = (
 type QueuedConversationEvent = {
   decorate: MessageDecorator;
   event: AppServerMessage;
+  scopeKey?: string;
 };
 
 /**
@@ -42,6 +43,8 @@ export function useConversationEventQueue({
 }: ConversationEventQueueOptions) {
   const pending = useRef<QueuedConversationEvent[]>([]);
   const timer = useRef<number | undefined>(undefined);
+  const activeScope = useRef(scopeKey);
+  const scopeTransition = useRef(false);
   const captureDecoratorRef = useRef(captureMessageDecorator);
   const translateRef = useRef(translate);
   captureDecoratorRef.current = captureMessageDecorator;
@@ -52,10 +55,15 @@ export function useConversationEventQueue({
     const events = pending.current;
     pending.current = [];
     if (events.length === 0) return;
+    const currentScope = activeScope.current;
+    const scopedEvents = events.filter(
+      (queued) => queued.scopeKey === currentScope,
+    );
+    if (scopedEvents.length === 0) return;
 
     startTransition(() => {
       setMessages((messages) =>
-        events.reduce((current, queued) => {
+        scopedEvents.reduce((current, queued) => {
           const next = applyConversationEvent(
             current,
             queued.event,
@@ -67,30 +75,77 @@ export function useConversationEventQueue({
     });
   }, [setMessages]);
 
+  const scheduleFlush = useCallback(() => {
+    if (
+      !scopeTransition.current &&
+      pending.current.length > 0 &&
+      timer.current === undefined
+    ) {
+      timer.current = window.setTimeout(flush, RENDER_BATCH_MS);
+    }
+  }, [flush]);
+
   const enqueue = useCallback(
-    (event: AppServerMessage) => {
+    (event: AppServerMessage, eventScope = activeScope.current) => {
+      if (eventScope !== activeScope.current) return;
       pending.current.push({
         decorate: captureDecoratorRef.current(),
         event,
+        scopeKey: eventScope,
       });
-      timer.current ??= window.setTimeout(flush, RENDER_BATCH_MS);
+      scheduleFlush();
     },
-    [flush],
+    [scheduleFlush],
   );
 
-  useEffect(() => {
+  const clearPending = useCallback(() => {
     if (timer.current !== undefined) window.clearTimeout(timer.current);
     timer.current = undefined;
     pending.current = [];
-  }, [scopeKey]);
+  }, []);
+
+  const replaceScope = useCallback(
+    (nextScope?: string) => {
+      clearPending();
+      activeScope.current = nextScope;
+      scopeTransition.current = false;
+    },
+    [clearPending],
+  );
+
+  const beginScopeTransition = useCallback(
+    (nextScope: string) => {
+      clearPending();
+      activeScope.current = nextScope;
+      scopeTransition.current = true;
+    },
+    [clearPending],
+  );
+
+  const completeScopeTransition = useCallback(
+    (completedScope: string) => {
+      if (activeScope.current !== completedScope) return;
+      scopeTransition.current = false;
+      scheduleFlush();
+    },
+    [scheduleFlush],
+  );
+
+  useEffect(() => {
+    if (activeScope.current !== scopeKey) replaceScope(scopeKey);
+  }, [replaceScope, scopeKey]);
 
   useEffect(
     () => () => {
-      if (timer.current !== undefined) window.clearTimeout(timer.current);
-      pending.current = [];
+      clearPending();
     },
-    [],
+    [clearPending],
   );
 
-  return enqueue;
+  return {
+    beginScopeTransition,
+    completeScopeTransition,
+    enqueue,
+    replaceScope,
+  };
 }

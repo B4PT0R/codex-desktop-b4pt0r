@@ -48,4 +48,36 @@ describe("réglage de la conversation par défaut", () => {
     await act(async () => {});
     await waitFor(() => expect(select).toBeEnabled());
   });
+
+  it("borne les libellés longs sans perdre leur valeur complète", () => {
+    localStorage.setItem("codex-desktop.locale", "fr");
+    const name =
+      "Une conversation au titre volontairement beaucoup trop long pour le sélecteur";
+    const cwd =
+      "/home/user/development/workspaces/a/very/deep/project/directory";
+    render(
+      <I18nProvider>
+        <DefaultThreadSettingsField
+          controller={{
+            defaultThreadId: "thread-long",
+            saving: false,
+            setDefaultThreadId: vi.fn(),
+            threadOptions: [
+              { id: "thread-long", name, cwd },
+            ],
+          }}
+        />
+      </I18nProvider>,
+    );
+
+    const option = screen.getByRole("option", {
+      name: `${name} — ${cwd}`,
+    });
+    expect(option).toHaveAttribute("title", `${name} — ${cwd}`);
+    expect(option).toHaveTextContent("…");
+    expect(option.textContent?.length).toBeLessThan(name.length + cwd.length);
+    expect(
+      screen.getByRole("combobox", { name: "Conversation par défaut" }),
+    ).toHaveClass("default-thread-select");
+  });
 });

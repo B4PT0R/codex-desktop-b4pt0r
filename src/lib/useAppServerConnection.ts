@@ -218,6 +218,8 @@ export function normalizeModels(response: ModelListResponse): Model[] {
   return (response.data ?? response.models ?? []).map((model) => ({
     id: model.id,
     label: model.displayName ?? model.id,
+    isDefault: model.isDefault,
+    serviceTiers: model.serviceTiers,
     supportedReasoningEfforts: model.supportedReasoningEfforts,
     defaultReasoningEffort: model.defaultReasoningEffort,
     supportsPersonality: model.supportsPersonality,

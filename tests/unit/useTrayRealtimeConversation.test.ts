@@ -8,6 +8,7 @@ import {
   useTrayRealtimeConversation,
 } from "../../src/lib/useTrayRealtimeConversation";
 import type { ThreadSummary } from "../../src/types";
+import { DEFAULT_REALTIME_THREAD_NAME } from "../../src/lib/defaultRealtimeThread";
 
 const requestMock = vi.hoisted(() => vi.fn());
 const reportErrorMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
@@ -91,7 +92,12 @@ describe("session Realtime headless", () => {
 
     expect(state.setDefaultThreadId).toHaveBeenCalledWith("thread-default");
     expect(state.threads()).toEqual([
-      { id: "thread-default", cwd: "/home/user", status: undefined },
+      {
+        id: "thread-default",
+        name: DEFAULT_REALTIME_THREAD_NAME,
+        cwd: "/home/user",
+        status: undefined,
+      },
     ]);
     expect(state.start).toHaveBeenCalledWith(
       expect.objectContaining({

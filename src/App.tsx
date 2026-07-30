@@ -28,6 +28,7 @@ import {
   threadApprovalPolicyUpdateParams,
   threadCwdUpdateParams,
   threadPermissionUpdateParams,
+  threadServiceTierUpdateParams,
   threadStartParams,
   turnStartParams,
   turnSteerParams,
@@ -79,6 +80,7 @@ import { useExternalAgentImport } from "./lib/useExternalAgentImport";
 import { useRealtimeSettings } from "./lib/useRealtimeSettings";
 import { useDefaultThreadSettings } from "./lib/useDefaultThreadSettings";
 import { useTrayRealtimeConversation } from "./lib/useTrayRealtimeConversation";
+import { ThreadViewStateGuard } from "./lib/threadViewStateGuard";
 import { useCodexDefaults } from "./lib/useCodexDefaults";
 import { useCodexGlobalSettings } from "./lib/useCodexGlobalSettings";
 import { useChatPresentationSettings } from "./lib/useChatPresentationSettings";
@@ -177,6 +179,7 @@ export default function App() {
     [appsEnabled, setAppsEnabled] = useState(false),
     [workPanel, setWorkPanel] = useState<ToolCall>();
   const [turnCoordinator] = useState(() => new ThreadTurnCoordinator());
+  const [viewStateGuard] = useState(() => new ThreadViewStateGuard());
   const runtime = useThreadRuntimeState({
     model: fallbackModels[0].id,
     effort: "medium",
@@ -184,6 +187,7 @@ export default function App() {
     collaborationMode: "default",
     permission: ":workspace",
     approvalPolicy: "on-request",
+    serviceTier: null,
   });
   const {
     approvalPolicy,
@@ -191,6 +195,7 @@ export default function App() {
     effort,
     model,
     permission,
+    serviceTier,
     setCollaborationMode,
     setEffort,
     setModel,
@@ -259,7 +264,7 @@ export default function App() {
     translate: t,
   });
   const recording = realtimeConversation.recording;
-  const enqueueConversationEvent = useConversationEventQueue({
+  const conversationEvents = useConversationEventQueue({
     captureMessageDecorator: realtimeConversation.captureMessageDecorator,
     setMessages,
     scopeKey: threadId,
@@ -340,6 +345,12 @@ export default function App() {
     connected: connection.connected,
     cwd,
     enabled: !threadId,
+    refreshKey: [
+      webSearch.advanced.model,
+      webSearch.advanced.modelReasoningEffort,
+      webSearch.advanced.approvalPolicy,
+      webSearch.advanced.serviceTier,
+    ].join("|"),
     onDefaults: (defaults) => {
       runtime.applyServerDefaults(defaults);
     },
@@ -358,8 +369,28 @@ export default function App() {
     onMessagesPrepended: (older) =>
       setMessages((items) => [...older, ...items]),
     onMessagesReplaced: setMessages,
-    onThreadResumed: (id, runtimeSettings) => {
+    onThreadResumeFailed: (id) => {
+      conversationEvents.completeScopeTransition(id);
+      viewStateGuard.failResume(id);
+    },
+    onThreadResumeStarted: (id) => {
+      activeThreadRef.current = id;
+      conversationEvents.beginScopeTransition(id);
+      viewStateGuard.beginResume(id);
       setThreadId(id);
+      setMessages([]);
+      setActivity(null);
+      setBusy(false);
+      setTurnId(undefined);
+    },
+    onThreadResumed: (id, runtimeSettings, runState, summary) => {
+      conversationEvents.completeScopeTransition(id);
+      turnCoordinator.observeStatus(id, runState.status);
+      setThreads((items) => restoreThread(items, summary));
+      const patch = viewStateGuard.reconcileResume(id, runState);
+      if (Object.hasOwn(patch, "activity")) setActivity(patch.activity ?? null);
+      if (Object.hasOwn(patch, "busy")) setBusy(patch.busy ?? false);
+      if (Object.hasOwn(patch, "turnId")) setTurnId(patch.turnId);
       applyThreadRuntimeSettings(runtimeSettings);
     },
   });
@@ -405,13 +436,16 @@ export default function App() {
   });
   function newChat() {
     realtimeConversation.reset();
+    activeThreadRef.current = undefined;
+    viewStateGuard.reset();
+    conversationEvents.replaceScope(undefined);
     setDictating(false);
     setMessages([]);
     setThreadId(undefined);
     setTurnId(undefined);
     threadHistory.reset();
     setBusy(false);
-    runtime.resetAccessSettings();
+    runtime.resetForNewThread();
   }
   activeThreadRef.current = threadId;
   async function selectDirectory() {
@@ -454,15 +488,32 @@ export default function App() {
     automations.handleMessage(msg);
     const affectsActiveThread =
       !routed.threadId || routed.threadId === activeThreadRef.current;
-    if (affectsActiveThread && routed.activity !== undefined)
+    if (affectsActiveThread && routed.activity !== undefined) {
+      viewStateGuard.observe("activity");
       setActivity(routed.activity);
+    }
     if (schedulerTools.handleMessage(msg)) return;
     if (interactiveRequests.handleMessage(msg)) return;
-    if (affectsActiveThread && routed.conversationEvent)
-      enqueueConversationEvent(msg);
-    if (affectsActiveThread && routed.startsTurn) setTurnId(routed.turnId);
-    if (affectsActiveThread && routed.completesTurn) setBusy(false);
-    if (affectsActiveThread && routed.clearsActivity) setActivity(null);
+    if (affectsActiveThread && routed.conversationEvent) {
+      conversationEvents.enqueue(
+        msg,
+        routed.threadId ?? activeThreadRef.current,
+      );
+    }
+    if (affectsActiveThread && routed.startsTurn) {
+      viewStateGuard.observe("busy", "turn");
+      setBusy(true);
+      setTurnId(routed.turnId);
+    }
+    if (affectsActiveThread && routed.completesTurn) {
+      viewStateGuard.observe("busy", "turn");
+      setBusy(false);
+      setTurnId(undefined);
+    }
+    if (affectsActiveThread && routed.clearsActivity) {
+      viewStateGuard.observe("activity");
+      setActivity(null);
+    }
 
     const threadEvent = routed.thread;
     if (threadEvent) {
@@ -544,6 +595,7 @@ export default function App() {
         runtime.permissionForStart,
         personalityForModel,
         runtime.approvalPolicyForStart,
+        runtime.serviceTierForStart,
       ),
     );
     const id = r.thread.id as string;
@@ -551,11 +603,14 @@ export default function App() {
     const resolvedCwd = runtimeSettings.cwd ?? cwd;
     turnCoordinator.observeStatus(id, threadSummary(r.thread).status ?? "idle");
     applyThreadRuntimeSettings(runtimeSettings);
+    activeThreadRef.current = id;
+    conversationEvents.replaceScope(id);
     setThreadId(id);
     setThreads((x) => [{ id, name: t("app.newChat"), cwd: resolvedCwd }, ...x]);
     return id;
   }
   async function send(text: string, context: TurnContextItem[]) {
+    if (threadHistory.resuming) return;
     if (text.trimStart().startsWith("!")) {
       shellCommand.requestExecution(text.trimStart().slice(1));
       return;
@@ -601,16 +656,18 @@ export default function App() {
             showError(t("app.reviewUnavailable"), t("app.reviewNeedsThread"));
             return;
           }
+          const reviewThreadId = threadId;
           setBusy(true);
           try {
-            await turnCoordinator.runWhenIdle(threadId, () =>
+            await turnCoordinator.runWhenIdle(reviewThreadId, () =>
               request("review/start", {
-                threadId,
+                threadId: reviewThreadId,
                 delivery: "inline",
                 target: { type: "uncommittedChanges" },
               }),
             );
           } catch (error) {
+            if (activeThreadRef.current !== reviewThreadId) return;
             setBusy(false);
             showError(t("app.reviewUnavailable"), error);
           }
@@ -645,25 +702,30 @@ export default function App() {
         showError(t("app.steerError"), t("app.noActiveTurn"));
         return;
       }
+      const steeringThreadId = threadId;
       try {
         await request(
           "turn/steer",
-          turnSteerParams(threadId, turnId, text, context),
+          turnSteerParams(steeringThreadId, turnId, text, context),
         );
       } catch (error) {
+        if (activeThreadRef.current !== steeringThreadId) return;
         showError(t("app.steerError"), error);
       }
       return;
     }
     setBusy(true);
     if (!isDesktopApp()) {
+      const previewThreadId = threadId ?? "browser-preview";
       if (!threadId) {
         const previewThread: ThreadSummary = {
-          id: "browser-preview",
+          id: previewThreadId,
           name: text || t("app.newChat"),
           preview: text,
           cwd: cwd || undefined,
         };
+        activeThreadRef.current = previewThreadId;
+        conversationEvents.replaceScope(previewThreadId);
         setThreadId(previewThread.id);
         setThreads((items) => [
           previewThread,
@@ -671,6 +733,7 @@ export default function App() {
         ]);
       }
       setTimeout(() => {
+        if (activeThreadRef.current !== previewThreadId) return;
         setMessages((x) => [
           ...x,
           {
@@ -725,8 +788,10 @@ export default function App() {
       }, 900);
       return;
     }
+    let targetThreadId = threadId;
     try {
-      const id = threadId ?? (await createThread());
+      const id = targetThreadId ?? (await createThread());
+      targetThreadId = id;
       turnCoordinator.observeStatus(
         id,
         busy
@@ -742,11 +807,13 @@ export default function App() {
               effort,
               personality: personalityForModel,
               mode: collaborationMode,
+              serviceTier,
             }),
           ),
         (result) => result.turn.id,
       );
     } catch (e) {
+      if (activeThreadRef.current !== targetThreadId) return;
       setMessages((x) => [
         ...x,
         {
@@ -759,6 +826,7 @@ export default function App() {
     }
   }
   async function toggleVoice() {
+    if (threadHistory.resuming) return;
     if (recording) {
       await realtimeConversation.stop();
       return;
@@ -908,6 +976,22 @@ export default function App() {
       return false;
     }
   }
+  async function changeServiceTier(nextTier: string | null) {
+    const previousTier = serviceTier;
+    runtime.selectServiceTier(nextTier);
+    if (!threadId) return true;
+    try {
+      await request(
+        "thread/settings/update",
+        threadServiceTierUpdateParams(threadId, nextTier),
+      );
+      return true;
+    } catch (error) {
+      runtime.selectServiceTier(previousTier);
+      showError(t("app.saveSettingsError"), error);
+      return false;
+    }
+  }
   function persistWorkspace(path: string) {
     workspaceChanged.current = true;
     void import("./lib/desktopSettings")
@@ -1036,8 +1120,11 @@ export default function App() {
             demoPlayback.enabled && !isReadmeDemoPreview()
               ? {
                   hasPlayed: demoPlayback.hasPlayed,
+                  loadingThread: demoPlayback.loadingThread,
                   running: demoPlayback.running,
                   onPlay: demoPlayback.play,
+                  onPreviewThreadLoading:
+                    demoPlayback.previewThreadLoading,
                   onStop: demoPlayback.stop,
                 }
               : undefined
@@ -1067,6 +1154,9 @@ export default function App() {
           canLoadOlder={threadHistory.canLoadOlder}
           cwd={cwd}
           fileOpener={webSearch.fileOpener}
+          loadingThread={
+            threadHistory.resuming || demoPlayback.loadingThread
+          }
           loadingOlder={threadHistory.loadingOlder}
           maxVisibleActions={chatPresentation.maxVisibleActions}
           messages={messages}
@@ -1087,6 +1177,7 @@ export default function App() {
           effort={effort}
           models={models}
           permission={permission}
+          serviceTier={serviceTier}
           approvalPolicy={approvalPolicy}
           allowedApprovalPolicies={configRequirements.allowedApprovalPolicies}
           permissionProfiles={capabilities.permissionProfiles.data}
@@ -1102,6 +1193,9 @@ export default function App() {
           dictationProcessing={dictationProcessing}
           dictationInsertion={dictationInsertion}
           hasThread={Boolean(threadId) || isDemoPreview()}
+          loadingThread={
+            threadHistory.resuming || demoPlayback.loadingThread
+          }
           telemetry={
             threadId
               ? threadTelemetry[threadId]
@@ -1115,6 +1209,7 @@ export default function App() {
           onChangeCollaborationMode={changeCollaborationMode}
           onChangePermission={changePermission}
           onChangeApprovalPolicy={changeApprovalPolicy}
+          onChangeServiceTier={changeServiceTier}
           onConsumeQuotaReset={
             isDemoPreview() ? async () => undefined : rateLimits.consumeReset
           }

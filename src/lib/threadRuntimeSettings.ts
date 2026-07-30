@@ -1,6 +1,10 @@
 import type { ThreadRuntimeResponse } from "./appServerTypes";
 import { appServerRecord, appServerString } from "./appServerValues";
-import type { ApprovalPolicy, Permission } from "./protocol";
+import type {
+  ApprovalPolicy,
+  ApprovalsReviewer,
+  Permission,
+} from "./protocol";
 import type { CollaborationMode, Personality } from "../types";
 
 export type ThreadRuntimeSettings = {
@@ -11,6 +15,8 @@ export type ThreadRuntimeSettings = {
   personality?: Personality;
   collaborationMode?: CollaborationMode;
   approvalPolicy?: ApprovalPolicy;
+  approvalsReviewer?: ApprovalsReviewer;
+  serviceTier?: string | null;
 };
 
 /**
@@ -47,6 +53,8 @@ function normalizeThreadRuntimeSettings(
   const collaborationMode = appServerString(collaboration?.mode);
   const personality = appServerString(settings.personality);
   const approvalPolicy = appServerString(settings.approvalPolicy);
+  const approvalsReviewer = appServerString(settings.approvalsReviewer);
+  const hasServiceTier = Object.hasOwn(settings, "serviceTier");
   return {
     cwd:
       appServerString(settings.cwd) ??
@@ -65,7 +73,20 @@ function normalizeThreadRuntimeSettings(
     approvalPolicy: isApprovalPolicy(approvalPolicy)
       ? approvalPolicy
       : undefined,
+    approvalsReviewer: normalizeApprovalsReviewer(approvalsReviewer),
+    serviceTier: hasServiceTier
+      ? (appServerString(settings.serviceTier) ?? null)
+      : undefined,
   };
+}
+
+function normalizeApprovalsReviewer(
+  value?: string,
+): ApprovalsReviewer | undefined {
+  if (value === "user") return "user";
+  if (value === "auto_review" || value === "guardian_subagent")
+    return "auto_review";
+  return undefined;
 }
 
 function isApprovalPolicy(value?: string): value is ApprovalPolicy {

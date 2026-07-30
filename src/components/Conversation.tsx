@@ -1,5 +1,5 @@
-import { Folder, Sparkles } from "lucide-react";
-import { memo, useEffect, useState } from "react";
+import { Folder, LoaderCircle, Sparkles } from "lucide-react";
+import { memo, useEffect, useRef, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { AgentActivity } from "../lib/activity";
 import type { ChatMessage, ToolCall } from "../types";
@@ -20,10 +20,14 @@ import type { FileOpener } from "../lib/protocol";
 import { MemoryCitations } from "./MemoryCitations";
 import { ScheduledTaskMessage } from "./ScheduledTaskMessage";
 
+const loadingExitDurationMs = 180;
+const loadingLayerExitDurationMs = 400;
+
 type ConversationProps = {
   activity: AgentActivity;
   backgroundToolIds?: ReadonlySet<string>;
   canLoadOlder?: boolean;
+  loadingThread?: boolean;
   loadingOlder?: boolean;
   maxVisibleActions?: number;
   messages: ChatMessage[];
@@ -38,6 +42,7 @@ export function Conversation({
   activity,
   backgroundToolIds,
   canLoadOlder = false,
+  loadingThread = false,
   loadingOlder = false,
   maxVisibleActions = 3,
   messages,
@@ -50,12 +55,75 @@ export function Conversation({
   const { t } = useI18n();
   const scroll = useConversationScroll(messages, activity);
   const plan = latestPlan(messages);
+  const wasLoadingThread = useRef(loadingThread);
+  const [loadingVisible, setLoadingVisible] = useState(loadingThread);
+  const [loadingExiting, setLoadingExiting] = useState(false);
+  const [loadingLayerExiting, setLoadingLayerExiting] = useState(false);
+
+  useEffect(() => {
+    const wasLoading = wasLoadingThread.current;
+    wasLoadingThread.current = loadingThread;
+    if (loadingThread) {
+      setLoadingVisible(true);
+      setLoadingExiting(false);
+      setLoadingLayerExiting(false);
+      return;
+    }
+    if (!wasLoading) return;
+    const reducedMotion =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    if (reducedMotion) {
+      setLoadingVisible(false);
+      setLoadingExiting(false);
+      setLoadingLayerExiting(false);
+      return;
+    }
+
+    setLoadingExiting(true);
+    let layerTimer: number | undefined;
+    const spinnerTimer = window.setTimeout(() => {
+      setLoadingExiting(false);
+      setLoadingLayerExiting(true);
+      layerTimer = window.setTimeout(() => {
+        setLoadingVisible(false);
+        setLoadingLayerExiting(false);
+      }, loadingLayerExitDurationMs);
+    }, loadingExitDurationMs);
+
+    return () => {
+      window.clearTimeout(spinnerTimer);
+      if (layerTimer !== undefined) window.clearTimeout(layerTimer);
+    };
+  }, [loadingThread]);
+
+  const showingLoading = loadingThread || loadingVisible;
+  const contentState = messages.length === 0 ? " is-empty" : "";
 
   return (
     <MarkdownLinkProvider value={{ cwd, fileOpener, onError: onLinkError }}>
       <div className="conversation-shell">
         <div className="conversation-viewport">
+          {showingLoading && (
+            <div
+              className={`conversation-loading-layer${
+                loadingLayerExiting ? " is-exiting" : ""
+              }`}
+            >
+              {!loadingLayerExiting && (
+                <div
+                  aria-label={t("conversation.loading")}
+                  className={`conversation-loading${
+                    loadingExiting ? " is-exiting" : ""
+                  }`}
+                  role="status"
+                >
+                  <LoaderCircle aria-hidden="true" className="spin" />
+                </div>
+              )}
+            </div>
+          )}
           <section
+            aria-busy={showingLoading}
             className={`conversation${plan ? " has-plan" : ""}`}
             onKeyDown={scroll.onKeyDown}
             onPointerDown={scroll.onPointerDown}
@@ -65,7 +133,8 @@ export function Conversation({
             ref={scroll.container}
           >
             <div
-              className={`conversation-content${messages.length === 0 ? " is-empty" : ""}`}
+              aria-hidden={showingLoading || undefined}
+              className={`conversation-content${contentState}`}
               ref={scroll.content}
             >
               {canLoadOlder && (

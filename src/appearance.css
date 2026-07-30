@@ -68,6 +68,18 @@
   background: #e2e2dc;
 }
 
+:root[data-theme="light"] .conversation-loading {
+  color: #7184a2;
+}
+
+:root[data-theme="light"] .conversation-loading-layer {
+  background: #f8f8f6;
+}
+
+:root[data-theme="light"] .conversation-loading svg {
+  filter: drop-shadow(0 0 6px #6e83a31f);
+}
+
 :root[data-theme="light"] .thread-group-title small,
 :root[data-theme="light"] .thread-group-title .thread-group-chevron {
   color: #85857f;
@@ -166,6 +178,24 @@
   color: #5d5d57;
   border-color: #d5d5cf;
   background: #f3f3ef;
+}
+
+:root[data-theme="light"] .settings-option-card {
+  color: #666660;
+  border-color: #d9d9d3;
+  background: #fff;
+}
+
+:root[data-theme="light"] .settings-option-card:hover:not(:disabled),
+:root[data-theme="light"] .settings-option-card:focus-visible:not(:disabled),
+:root[data-theme="light"] .settings-option-card.selected {
+  color: var(--reader-ink);
+  border-color: #c4c4bd;
+  background: #efefeb;
+}
+
+:root[data-theme="light"] .settings-option-card small {
+  color: #777770;
 }
 
 :root[data-theme="light"] .composer-shell:focus-within {
@@ -302,6 +332,14 @@
   background: #e8e8e2;
 }
 
+:root[data-theme="light"] .footer-settings .footer-expander-trigger:hover,
+:root[data-theme="light"]
+  .footer-settings
+  .footer-expander-trigger[aria-expanded="true"] {
+  color: #555550;
+  background: #e8e8e2;
+}
+
 :root[data-theme="light"] .model-quick-picker {
   color: #393934;
   border-color: #d5d5cf;
@@ -316,24 +354,31 @@
   background: #efefeb;
 }
 
-:root[data-theme="light"] .model-quick-picker-effort {
+:root[data-theme="light"] .model-quick-picker-effort,
+:root[data-theme="light"] .model-quick-picker-tier {
   border-color: #e0e0da;
 }
 
-:root[data-theme="light"] .model-quick-picker-effort button {
+:root[data-theme="light"] .model-quick-picker-effort button,
+:root[data-theme="light"] .model-quick-picker-tier button {
   border-color: #d5d5cf;
   color: #71716b;
 }
 
-:root[data-theme="light"] .model-quick-picker-effort button.selected {
+:root[data-theme="light"] .model-quick-picker-effort button.selected,
+:root[data-theme="light"] .model-quick-picker-tier button.selected {
   color: var(--reader-ink);
   border-color: #aaa9a2;
   background: #e4e4de;
 }
 
 :root[data-theme="light"] .model-quick-picker-effort button.selected:hover,
+:root[data-theme="light"] .model-quick-picker-tier button.selected:hover,
 :root[data-theme="light"]
   .model-quick-picker-effort
+  button.selected:focus-visible,
+:root[data-theme="light"]
+  .model-quick-picker-tier
   button.selected:focus-visible {
   color: var(--reader-ink);
   border-color: #96968f;

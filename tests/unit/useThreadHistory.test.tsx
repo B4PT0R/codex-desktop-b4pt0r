@@ -18,9 +18,12 @@ vi.mock("../../src/i18n/I18nProvider", async () => {
   };
 });
 
-import { useThreadHistory } from "../../src/lib/useThreadHistory";
+import {
+  useThreadHistory,
+  type ThreadResumeRunState,
+} from "../../src/lib/useThreadHistory";
 import type { ThreadRuntimeSettings } from "../../src/lib/threadRuntimeSettings";
-import type { ChatMessage } from "../../src/types";
+import type { ChatMessage, ThreadSummary } from "../../src/types";
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -36,8 +39,17 @@ function options(activeThreadId?: string) {
     onError: vi.fn(),
     onMessagesPrepended: vi.fn<(messages: ChatMessage[]) => void>(),
     onMessagesReplaced: vi.fn<(messages: ChatMessage[]) => void>(),
+    onThreadResumeFailed: vi.fn<(threadId: string) => void>(),
+    onThreadResumeStarted: vi.fn<(threadId: string) => void>(),
     onThreadResumed:
-      vi.fn<(threadId: string, settings: ThreadRuntimeSettings) => void>(),
+      vi.fn<
+        (
+          threadId: string,
+          settings: ThreadRuntimeSettings,
+          runState: ThreadResumeRunState,
+          summary: ThreadSummary,
+        ) => void
+      >(),
   };
 }
 
@@ -50,7 +62,10 @@ describe("historique paginé", () => {
   it("hydrate la page récente et expose la pagination", async () => {
     const callbacks = options();
     requestMock.mockResolvedValue({
-      thread: { id: "thread-1", cwd: "/tmp/project" },
+      thread: {
+        id: "thread-1",
+        name: "Conversation principale",
+      },
       cwd: "/tmp/project",
       model: "gpt-5.4",
       reasoningEffort: "high",
@@ -80,6 +95,20 @@ describe("historique paginé", () => {
         model: "gpt-5.4",
         effort: "high",
         permission: ":danger-full-access",
+      },
+      {
+        activity: null,
+        busy: false,
+        status: undefined,
+      },
+      {
+        id: "thread-1",
+        name: "Conversation principale",
+        cwd: "/tmp/project",
+        preview: undefined,
+        section: undefined,
+        status: undefined,
+        updatedAt: undefined,
       },
     );
     expect(result.current.canLoadOlder).toBe(true);
@@ -114,7 +143,62 @@ describe("historique paginé", () => {
         effort: undefined,
         permission: undefined,
       },
+      {
+        activity: null,
+        busy: false,
+        status: undefined,
+      },
+      expect.objectContaining({ id: "thread-2" }),
     );
+  });
+
+  it("isole immédiatement la navigation et restaure le tour actif hydraté", async () => {
+    const callbacks = options("thread-old");
+    const response = deferred<{
+      thread: {
+        id: string;
+        status: { type: string; activeFlags: string[] };
+      };
+      initialTurnsPage: {
+        data: Array<{ id: string; status: string; items: [] }>;
+      };
+    }>();
+    requestMock.mockReturnValueOnce(response.promise);
+    const { result } = renderHook(() => useThreadHistory(callbacks));
+
+    let resume!: Promise<boolean>;
+    act(() => {
+      resume = result.current.resume("thread-live");
+    });
+    expect(callbacks.onThreadResumeStarted).toHaveBeenCalledWith("thread-live");
+    expect(callbacks.onMessagesReplaced).not.toHaveBeenCalled();
+
+    response.resolve({
+      thread: {
+        id: "thread-live",
+        status: {
+          type: "active",
+          activeFlags: ["waitingOnUserInput"],
+        },
+      },
+      initialTurnsPage: {
+        data: [{ id: "turn-live", status: "inProgress", items: [] }],
+      },
+    });
+    await act(() => resume);
+
+    expect(callbacks.onThreadResumed).toHaveBeenCalledWith(
+      "thread-live",
+      expect.any(Object),
+      {
+        activity: "waiting",
+        busy: true,
+        status: "active",
+        turnId: "turn-live",
+      },
+      expect.objectContaining({ id: "thread-live", status: "active" }),
+    );
+    expect(callbacks.onThreadResumeFailed).not.toHaveBeenCalled();
   });
 
   it("ajoute une page plus ancienne et épuise son curseur", async () => {
@@ -184,6 +268,7 @@ describe("historique paginé", () => {
     const { result } = renderHook(() => useThreadHistory(callbacks));
 
     await act(() => result.current.resume("thread-1"));
+    expect(callbacks.onThreadResumeFailed).toHaveBeenCalledWith("thread-1");
     expect(callbacks.onError).toHaveBeenLastCalledWith(
       "Unable to resume this conversation",
       expect.any(Error),

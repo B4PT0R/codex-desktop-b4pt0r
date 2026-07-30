@@ -1,9 +1,7 @@
 import {
   Check,
-  Eye,
-  FolderPen,
+  ChevronDown,
   LoaderCircle,
-  ShieldAlert,
   ShieldCheck,
   ShieldQuestion,
 } from "lucide-react";
@@ -11,7 +9,13 @@ import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { PermissionProfileSummary } from "../lib/appServerTypes";
 import type { ApprovalPolicy, Permission } from "../lib/protocol";
-import { RoundIcon, RoundIconButton } from "./RoundIcon";
+import { RoundIcon } from "./RoundIcon";
+import {
+  normalizePermission,
+  permissionDetail,
+  permissionIcon,
+  permissionLabel,
+} from "./permissionPresentation";
 
 type Props = {
   allowedApprovalPolicies?: ApprovalPolicy[];
@@ -66,16 +70,17 @@ export function SecurityQuickPicker({
       }}
       ref={shell}
     >
-      <RoundIconButton
+      <button
         aria-expanded={open}
         aria-haspopup="dialog"
-        gap="large"
-        icon={ShieldCheck}
-        label={t("securityPicker.trigger")}
+        className="footer-expander-trigger security-select"
         onClick={() => setOpen((current) => !current)}
         ref={trigger}
-        variant="tertiary"
-      />
+        type="button"
+      >
+        {t("securityPicker.trigger")}
+        <ChevronDown />
+      </button>
       {open && (
         <div
           aria-label={t("securityPicker.title")}
@@ -198,40 +203,4 @@ export function SecurityQuickPicker({
       )}
     </div>
   );
-}
-
-function normalizePermission(permission: string) {
-  if (permission === "read-only") return ":read-only";
-  if (permission === "workspace-write") return ":workspace";
-  if (permission === "danger-full-access") return ":danger-full-access";
-  return permission;
-}
-
-function permissionIcon(permission: string) {
-  const normalized = normalizePermission(permission);
-  if (normalized === ":read-only") return Eye;
-  if (normalized === ":workspace") return FolderPen;
-  return ShieldAlert;
-}
-
-function permissionLabel(
-  permission: string,
-  t: ReturnType<typeof useI18n>["t"],
-) {
-  const normalized = normalizePermission(permission);
-  if (normalized === ":read-only") return t("chat.permission.readOnly");
-  if (normalized === ":workspace") return t("chat.permission.workspace");
-  return t("chat.permission.fullAccess");
-}
-
-function permissionDetail(
-  permission: string,
-  t: ReturnType<typeof useI18n>["t"],
-) {
-  const normalized = normalizePermission(permission);
-  if (normalized === ":read-only")
-    return t("permissionPicker.readOnlyDetail");
-  if (normalized === ":workspace")
-    return t("permissionPicker.workspaceDetail");
-  return t("permissionPicker.fullAccessDetail");
 }

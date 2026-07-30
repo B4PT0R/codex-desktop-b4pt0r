@@ -14,6 +14,9 @@ const models: Model[] = [
       { reasoningEffort: "low", description: "" },
       { reasoningEffort: "high", description: "" },
     ],
+    serviceTiers: [
+      { id: "fast", name: "Rapide", description: "Prioritaire" },
+    ],
   },
   {
     id: "model-b",
@@ -39,9 +42,11 @@ describe("sélecteur rapide de modèle", () => {
           effort="low"
           model="model-a"
           models={models}
+          serviceTier={null}
           onChangeEffort={onChangeEffort}
           onChangeCollaborationMode={vi.fn().mockResolvedValue(true)}
           onChangeModel={onChangeModel}
+          onChangeServiceTier={vi.fn().mockResolvedValue(true)}
         />
       </I18nProvider>,
     );
@@ -72,9 +77,11 @@ describe("sélecteur rapide de modèle", () => {
           effort="low"
           model="model-a"
           models={models}
+          serviceTier={null}
           onChangeCollaborationMode={onChangeCollaborationMode}
           onChangeEffort={vi.fn()}
           onChangeModel={vi.fn()}
+          onChangeServiceTier={vi.fn().mockResolvedValue(true)}
         />
       </I18nProvider>,
     );
@@ -82,5 +89,28 @@ describe("sélecteur rapide de modèle", () => {
     fireEvent.click(screen.getByRole("button", { name: /Model A/ }));
     fireEvent.click(screen.getByRole("checkbox", { name: "Mode Plan" }));
     expect(onChangeCollaborationMode).toHaveBeenCalledWith("plan");
+  });
+
+  it("sélectionne un tier de service annoncé par le modèle", () => {
+    const onChangeServiceTier = vi.fn().mockResolvedValue(true);
+    render(
+      <I18nProvider>
+        <ModelQuickPicker
+          collaborationMode="default"
+          effort="low"
+          model="model-a"
+          models={models}
+          serviceTier={null}
+          onChangeCollaborationMode={vi.fn().mockResolvedValue(true)}
+          onChangeEffort={vi.fn()}
+          onChangeModel={vi.fn()}
+          onChangeServiceTier={onChangeServiceTier}
+        />
+      </I18nProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Model A/ }));
+    fireEvent.click(screen.getByRole("radio", { name: "Rapide" }));
+    expect(onChangeServiceTier).toHaveBeenCalledWith("fast");
   });
 });

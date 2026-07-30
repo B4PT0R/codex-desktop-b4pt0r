@@ -1,4 +1,11 @@
-import { Brain, Check, ChevronDown, ListTodo, Sparkles } from "lucide-react";
+import {
+  Brain,
+  Check,
+  ChevronDown,
+  Gauge,
+  ListTodo,
+  Sparkles,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import { reasoningEffortLabel } from "../lib/reasoningEffort";
@@ -10,9 +17,11 @@ type ModelQuickPickerProps = {
   collaborationMode: CollaborationMode;
   model: string;
   models: Model[];
+  serviceTier: string | null;
   onChangeEffort: (effort: string) => void;
   onChangeCollaborationMode: (mode: CollaborationMode) => Promise<boolean>;
   onChangeModel: (model: string) => void;
+  onChangeServiceTier: (tier: string | null) => Promise<boolean>;
 };
 
 export function ModelQuickPicker({
@@ -20,9 +29,11 @@ export function ModelQuickPicker({
   collaborationMode,
   model,
   models,
+  serviceTier,
   onChangeEffort,
   onChangeCollaborationMode,
   onChangeModel,
+  onChangeServiceTier,
 }: ModelQuickPickerProps) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
@@ -32,6 +43,7 @@ export function ModelQuickPicker({
   const efforts = selected?.supportedReasoningEfforts?.length
     ? selected.supportedReasoningEfforts
     : [{ reasoningEffort: effort, description: "" }];
+  const serviceTiers = selected?.serviceTiers ?? [];
 
   useEffect(() => {
     if (!open) return;
@@ -61,7 +73,7 @@ export function ModelQuickPicker({
       <button
         aria-expanded={open}
         aria-haspopup="dialog"
-        className="model-select"
+        className="footer-expander-trigger model-select"
         onClick={() => setOpen((current) => !current)}
         ref={trigger}
       >
@@ -98,6 +110,13 @@ export function ModelQuickPicker({
                     candidate.supportedReasoningEfforts?.[0]?.reasoningEffort;
                   if (nextEffort && nextEffort !== effort)
                     onChangeEffort(nextEffort);
+                  if (
+                    serviceTier &&
+                    !candidate.serviceTiers?.some(
+                      (tier) => tier.id === serviceTier,
+                    )
+                  )
+                    void onChangeServiceTier(null);
                 }}
                 role="option"
                 type="button"
@@ -141,6 +160,52 @@ export function ModelQuickPicker({
               ))}
             </div>
           </div>
+          {serviceTiers.length > 0 && (
+            <div className="model-quick-picker-tier">
+              <div className="model-quick-picker-heading">
+                <Gauge />
+                <div>
+                  <strong>{t("modelPicker.serviceTier")}</strong>
+                  <small>{t("modelPicker.serviceTierDetail")}</small>
+                </div>
+              </div>
+              <div
+                aria-label={t("modelPicker.serviceTier")}
+                role="radiogroup"
+              >
+                <RoundIconButton
+                  aria-checked={serviceTier === null}
+                  className={serviceTier === null ? "selected" : ""}
+                  label={t("settings.global.automatic")}
+                  onClick={() => {
+                    void onChangeServiceTier(null);
+                    closePicker();
+                  }}
+                  role="radio"
+                  size="medium"
+                  variant={serviceTier === null ? "primary" : "secondary"}
+                />
+                {serviceTiers.map((tier) => (
+                  <RoundIconButton
+                    aria-checked={tier.id === serviceTier}
+                    className={tier.id === serviceTier ? "selected" : ""}
+                    key={tier.id}
+                    label={tier.name}
+                    onClick={() => {
+                      void onChangeServiceTier(tier.id);
+                      closePicker();
+                    }}
+                    role="radio"
+                    size="medium"
+                    title={tier.description}
+                    variant={
+                      tier.id === serviceTier ? "primary" : "secondary"
+                    }
+                  />
+                ))}
+              </div>
+            </div>
+          )}
           <div className="model-quick-picker-mode">
             <div className="model-quick-picker-heading">
               <ListTodo />

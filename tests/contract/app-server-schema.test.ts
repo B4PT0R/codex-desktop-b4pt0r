@@ -51,6 +51,7 @@ import {
   threadGoalStatusParams,
   threadInjectTranscriptParams,
   threadPermissionUpdateParams,
+  threadServiceTierUpdateParams,
   threadShellCommandParams,
   threadSetNameParams,
   threadStartParams,
@@ -307,7 +308,16 @@ describe("contrat Codex installé", () => {
       expect(properties).toHaveProperty("model");
       expect(properties).toHaveProperty("reasoningEffort");
       expect(properties).toHaveProperty("activePermissionProfile");
+      expect(properties).toHaveProperty("serviceTier");
     }
+  });
+  it("annonce les tiers modèles et les relecteurs autorisés", () => {
+    expect(JSON.stringify(schema("ModelListResponse"))).toContain(
+      '"serviceTiers"',
+    );
+    expect(JSON.stringify(schema("ConfigRequirementsReadResponse"))).toContain(
+      '"allowedApprovalsReviewers"',
+    );
   });
   it("notifie les réglages effectifs complets d’un thread", () => {
     const properties = schema("ThreadSettingsUpdatedNotification")
@@ -363,6 +373,10 @@ describe("contrat Codex installé", () => {
       "ThreadSettingsUpdateParams",
       threadApprovalPolicyUpdateParams("thr_1", "never"),
     );
+    validates(
+      "ThreadSettingsUpdateParams",
+      threadServiceTierUpdateParams("thr_1", "fast"),
+    );
   });
   it("accepte turn/start", () =>
     validates(
@@ -383,6 +397,7 @@ describe("contrat Codex installé", () => {
           effort: "high",
           personality: "friendly",
           mode: "plan",
+          serviceTier: "fast",
         },
       ),
     ));

@@ -3,7 +3,6 @@ import type { MessageKey } from "../i18n/locales/fr";
 export type SettingsSectionId =
   | "general"
   | "browser"
-  | "chat"
   | "memory"
   | "remoteControl"
   | "automations"
@@ -41,6 +40,20 @@ const settingsSectionDefinitions: SettingsSectionDefinition[] = [
     available: true,
   },
   {
+    id: "agent",
+    labelKey: "settings.section.agent",
+    keywords:
+      "global agent default défaut model modèle effort personality personnalité service tier fast rapide subagents sous-agents multi-agent",
+    available: true,
+  },
+  {
+    id: "permissions",
+    labelKey: "settings.section.permissions",
+    keywords:
+      "global default défaut sandbox approvals approbations reviewer relecteur auto review profile profil access accès",
+    available: true,
+  },
+  {
     id: "browser",
     labelKey: "settings.section.browser",
     keywords:
@@ -48,23 +61,16 @@ const settingsSectionDefinitions: SettingsSectionDefinition[] = [
     available: true,
   },
   {
-    id: "chat",
-    labelKey: "settings.section.chat",
-    keywords:
-      "chat conversation feedback detail détail summary summaries résumé résumés reasoning raisonnement",
+    id: "voice",
+    labelKey: "settings.section.voice",
+    keywords: "audio realtime microphone micro",
     available: true,
   },
   {
-    id: "memory",
-    labelKey: "settings.section.memory",
-    keywords: "mémoire memory memories recall souvenir personnalisation",
-    available: true,
-  },
-  {
-    id: "remoteControl",
-    labelKey: "settings.section.remoteControl",
+    id: "appearance",
+    labelKey: "settings.section.appearance",
     keywords:
-      "remote control distance appareil device pairing association chatgpt relay relais",
+      "theme thème clair sombre interface font police size taille chat conversation feedback detail détail summary summaries résumé résumés reasoning raisonnement display affichage",
     available: true,
   },
   {
@@ -75,28 +81,9 @@ const settingsSectionDefinitions: SettingsSectionDefinition[] = [
     available: true,
   },
   {
-    id: "agent",
-    labelKey: "settings.section.agent",
-    keywords:
-      "global agent default défaut model modèle effort personality personnalité",
-    available: true,
-  },
-  {
-    id: "appearance",
-    labelKey: "settings.section.appearance",
-    keywords: "theme thème clair sombre interface font police size taille",
-    available: true,
-  },
-  {
-    id: "voice",
-    labelKey: "settings.section.voice",
-    keywords: "audio realtime microphone micro",
-    available: true,
-  },
-  {
-    id: "account",
-    labelKey: "settings.section.account",
-    keywords: "login connexion limits quotas usage billing facturation",
+    id: "memory",
+    labelKey: "settings.section.memory",
+    keywords: "mémoire memory memories recall souvenir personnalisation",
     available: true,
   },
   {
@@ -112,16 +99,16 @@ const settingsSectionDefinitions: SettingsSectionDefinition[] = [
     available: true,
   },
   {
-    id: "permissions",
-    labelKey: "settings.section.permissions",
+    id: "remoteControl",
+    labelKey: "settings.section.remoteControl",
     keywords:
-      "global default défaut sandbox approvals approbations profile profil access accès",
+      "remote control distance appareil device pairing association chatgpt relay relais",
     available: true,
   },
   {
-    id: "config",
-    labelKey: "settings.section.config",
-    keywords: "config configuration toml global codex options features modèles",
+    id: "account",
+    labelKey: "settings.section.account",
+    keywords: "login connexion limits quotas usage billing facturation",
     available: true,
   },
   {
@@ -131,9 +118,17 @@ const settingsSectionDefinitions: SettingsSectionDefinition[] = [
     available: true,
   },
   {
+    id: "config",
+    labelKey: "settings.section.config",
+    keywords:
+      "advanced avancée config configuration toml global codex options features modèles",
+    available: true,
+  },
+  {
     id: "advanced",
     labelKey: "settings.section.advanced",
-    keywords: "experimental expérimental import diagnostics feedback",
+    keywords:
+      "import agents migration cursor claude code settings configuration history historique",
     available: true,
   },
 ];

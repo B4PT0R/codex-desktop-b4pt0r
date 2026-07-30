@@ -291,6 +291,83 @@
   font-size: 11px;
 }
 
+.settings-option-list {
+  display: grid;
+  gap: 6px;
+}
+
+.settings-option-card {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 18px;
+  width: 100%;
+  min-height: 62px;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border: 1px solid #343431;
+  border-radius: 9px;
+  color: #aaa9a4;
+  background: #20201e;
+  text-align: left;
+  transition:
+    color 120ms ease,
+    border-color 120ms ease,
+    background 120ms ease;
+}
+
+.settings-option-card:hover:not(:disabled),
+.settings-option-card:focus-visible:not(:disabled),
+.settings-option-card.selected {
+  color: #e8e8e4;
+  border-color: #4b4b46;
+  background: #292927;
+}
+
+.settings-option-card:focus-visible {
+  outline: 1px solid #666660;
+  outline-offset: 1px;
+}
+
+.settings-option-card:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.settings-option-card > span:nth-child(2) {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.settings-option-card strong {
+  color: inherit;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.settings-option-card small {
+  color: #777773;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.settings-option-card > svg {
+  width: 14px;
+  color: #87a985;
+}
+
+.settings-option-unavailable {
+  justify-self: center;
+  color: #777773;
+  font-size: 13px !important;
+}
+
+.settings-fields .default-thread-select {
+  width: min(320px, 42vw);
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+
 .startup-toggle {
   display: flex;
   align-items: center;

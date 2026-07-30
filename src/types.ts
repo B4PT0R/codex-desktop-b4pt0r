@@ -83,6 +83,12 @@ export type Approval = {
 export type Model = {
   id: string;
   label: string;
+  isDefault?: boolean;
+  serviceTiers?: Array<{
+    id: string;
+    name: string;
+    description: string;
+  }>;
   supportedReasoningEfforts?: Array<{
     reasoningEffort: string;
     description: string;
