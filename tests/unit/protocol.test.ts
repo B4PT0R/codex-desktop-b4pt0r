@@ -43,11 +43,19 @@ import {
   threadStartParams,
   threadUnsubscribeParams,
   threadTurnsListParams,
+  threadReadParams,
   turnStartParams,
   turnSteerParams,
   scheduledTaskPrompt,
 } from "../../src/lib/protocol";
 describe("constructeurs JSON-RPC", () => {
+  it("lit les métadonnées d'un thread sans charger ni modifier son état", () => {
+    expect(threadReadParams("thread-1")).toEqual({
+      threadId: "thread-1",
+      includeTurns: false,
+    });
+  });
+
   it("construit une exécution planifiée sans figer les réglages globaux", () => {
     expect(automationThreadStartParams("/project")).toEqual({
       cwd: "/project",

@@ -24,6 +24,14 @@ describe("réconciliation multi-client des conversations", () => {
     ]);
   });
 
+  it("ne perd pas un nom confirmé sur une réponse de reprise partielle", () => {
+    expect(restoreThread(threads, { id: "one", status: "idle" })[0]).toEqual({
+      id: "one",
+      name: "Une",
+      status: "idle",
+    });
+  });
+
   it("marque une conversation déchargée sans la retirer de l’historique", () => {
     expect(markThreadClosed(threads, "one")[0]).toMatchObject({
       id: "one",

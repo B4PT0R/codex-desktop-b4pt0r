@@ -273,6 +273,11 @@ version comparisons or guessed payload variants through presentation code.
   Native updates must be atomic, preserve unknown fields for forward compatibility,
   and avoid exposing arbitrary filesystem writes to the frontend. `localStorage`
   may only serve the browser preview and backward-compatible migration.
+- Installing, upgrading and ordinarily starting the application must be
+  idempotent for user state. These paths do not rewrite `config.toml`, desktop
+  preferences or Codex thread metadata. Writes require an explicit user action,
+  a documented one-time migration or recovery of interrupted operational state;
+  migrations preserve unknown fields and server-owned conversation names.
 - Linux is the primary platform. Validate behavior in packaged Electron, not
   only the Vite browser preview.
 - Prefer portable Linux behavior, and document distribution-specific packaging

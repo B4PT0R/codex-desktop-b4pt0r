@@ -313,6 +313,9 @@ export function threadShellCommandParams(threadId: string, command: string) {
 export function threadForkParams(threadId: string) {
   return { threadId };
 }
+export function threadReadParams(threadId: string) {
+  return { threadId, includeTurns: false };
+}
 export function threadResumeParams(threadId: string) {
   return {
     threadId,

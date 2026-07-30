@@ -1,17 +1,23 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
-import type { ThreadForkResponse } from "./appServerTypes";
+import type {
+  ThreadForkResponse,
+  ThreadReadResponse,
+} from "./appServerTypes";
 import { request } from "./codex";
 import {
   threadArchiveParams,
   threadCompactParams,
   threadDeleteParams,
   threadForkParams,
+  threadReadParams,
   threadSetNameParams,
   threadUnarchiveParams,
 } from "./protocol";
 import type { ThreadSummary } from "../types";
 import { useI18n } from "../i18n/I18nProvider";
 import type { ThreadTurnCoordinator } from "./threadTurnCoordinator";
+import { threadSummary } from "./threadSummary";
+import { restoreThread } from "./threadReconciliation";
 
 export type ArchivedThread = {
   thread: ThreadSummary;
@@ -106,16 +112,24 @@ export function useThreadActions({
 
   async function rename(name: string) {
     if (!activeThreadId) return false;
+    const normalizedName = name.trim();
     try {
       await request(
         "thread/name/set",
-        threadSetNameParams(activeThreadId, name),
+        threadSetNameParams(activeThreadId, normalizedName),
       );
-      setThreads((items) =>
-        items.map((thread) =>
-          thread.id === activeThreadId ? { ...thread, name } : thread,
-        ),
+      const response = await request<ThreadReadResponse>(
+        "thread/read",
+        threadReadParams(activeThreadId),
       );
+      const summary = threadSummary(response.thread);
+      if (
+        summary.id !== activeThreadId ||
+        summary.name?.trim() !== normalizedName
+      ) {
+        throw new Error("App Server did not persist the conversation name");
+      }
+      setThreads((items) => restoreThread(items, summary));
       return true;
     } catch (error) {
       onError(t("thread.renameError"), error);

@@ -53,6 +53,7 @@ export async function writeCodexConfig(file, content, expectedVersion) {
     error.code = "CONFIG_CONFLICT";
     throw error;
   }
+  if (current.content === content) return current;
   await writeFileAtomically(file, content, {
     createDirectory: true,
     mode: 0o600,

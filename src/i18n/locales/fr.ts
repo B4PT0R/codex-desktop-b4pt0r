@@ -528,7 +528,7 @@ export const fr = {
   "sidebar.loadMore": "Afficher plus de résultats",
   "sidebar.recentProjects": "Projets récents",
   "sidebar.defaultThread": "Conversation par défaut",
-  "sidebar.defaultConfigured": "Conversation configurée",
+  "sidebar.defaultPending": "Ouvrir pour charger la conversation",
   "sidebar.recentThreads": "Conversations récentes",
   "sidebar.otherThreads": "Autres conversations",
   "sidebar.untitled": "Conversation sans titre",
@@ -736,7 +736,7 @@ export const fr = {
     "Contexte partagé utilisé par les actions rapides compatibles.",
   "settings.defaultThread.automatic":
     "Automatique (dossier utilisateur)",
-  "settings.defaultThread.configured": "Conversation configurée",
+  "settings.defaultThread.pending": "Conversation par défaut sélectionnée",
   "settings.defaultThread.error":
     "Impossible d’enregistrer la conversation par défaut : {detail}",
   "settings.defaultThread.saveError":

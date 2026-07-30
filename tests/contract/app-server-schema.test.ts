@@ -6,6 +6,7 @@ import Ajv from "ajv";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   automationThreadResumeParams,
+  threadReadParams,
   automationThreadSecurityRestoreParams,
   automationThreadStartParams,
   automationTurnStartParams,
@@ -147,6 +148,13 @@ describe("contrat Codex installé", () => {
         ":workspace",
         "on-request",
       ),
+    );
+  });
+
+  it("accepte la lecture sans tours des métadonnées d'un thread", () => {
+    validates(
+      "ThreadReadParams",
+      threadReadParams("01900000-0000-7000-8000-000000000000"),
     );
   });
   it("accepte la lecture de la configuration Codex effective", () =>

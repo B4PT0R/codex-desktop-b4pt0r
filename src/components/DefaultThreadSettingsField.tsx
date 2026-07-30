@@ -34,7 +34,7 @@ export function DefaultThreadSettingsField({
         <option value="">{t("settings.defaultThread.automatic")}</option>
         {!configuredThreadIsListed && controller.defaultThreadId && (
           <option value={controller.defaultThreadId}>
-            {t("settings.defaultThread.configured")}
+            {t("settings.defaultThread.pending")}
           </option>
         )}
         {controller.threadOptions.map((thread) => {

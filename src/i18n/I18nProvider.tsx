@@ -40,14 +40,6 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         if (settings.locale && !changedBeforeLoad.current) {
           setLocale(settings.locale);
           document.documentElement.lang = settings.locale;
-        } else if (!settings.locale) {
-          void import("../lib/desktopSettings")
-            .then(({ updateDesktopSettings }) =>
-              updateDesktopSettings({ locale }),
-            )
-            .catch((error) => {
-              if (!disposed) setPersistenceError(String(error));
-            });
         }
       })
       .catch((error) => {

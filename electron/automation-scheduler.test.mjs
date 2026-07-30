@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile } from "node:fs/promises";
+import { mkdtemp, readFile, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -126,6 +126,34 @@ test("defers due work until App Server is available again", async () => {
   await scheduler.ready();
   assert.equal(events.length, 1);
   assert.equal(events[0].event, "automation-run-due");
+  scheduler.stop();
+});
+
+test("becoming ready is persistence-idempotent without an interrupted run", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "codex-automation-"));
+  const file = path.join(directory, "settings.json");
+  const scheduler = new AutomationScheduler({ file, send: () => undefined });
+  await scheduler.upsert({
+    name: "Future task",
+    prompt: "Run later",
+    enabled: true,
+    schedule: { type: "interval", intervalMinutes: 60 },
+    target: { type: "newThread" },
+  });
+  const settings = JSON.parse(await readFile(file, "utf8"));
+  await updateSettings(file, {
+    automations: settings.automations.map((automation) => ({
+      ...automation,
+      futureField: { preserved: true },
+    })),
+  });
+  const before = await stat(file);
+  const content = await readFile(file, "utf8");
+
+  await scheduler.ready();
+
+  assert.equal((await stat(file)).ino, before.ino);
+  assert.equal(await readFile(file, "utf8"), content);
   scheduler.stop();
 });
 

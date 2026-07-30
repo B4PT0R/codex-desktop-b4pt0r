@@ -83,10 +83,13 @@ export function Sidebar({
     return [...groups.entries()];
   }, [defaultThreadId, search.query, t, visibleThreads]);
   const searching = Boolean(search.query.trim());
+  const resolvedDefaultThread = defaultThreadId
+    ? threads.find((thread) => thread.id === defaultThreadId)
+    : undefined;
   const defaultThread = defaultThreadId
-    ? (threads.find((thread) => thread.id === defaultThreadId) ?? {
+    ? (resolvedDefaultThread ?? {
         id: defaultThreadId,
-        name: t("sidebar.defaultConfigured"),
+        name: t("sidebar.defaultPending"),
       })
     : undefined;
   const selectedThread = threads.find(
@@ -168,6 +171,7 @@ export function Sidebar({
             className="sidebar-default-thread"
           >
             <SidebarThreadRow
+              actions={Boolean(resolvedDefaultThread)}
               onArchive={onArchive}
               onDelete={setDeleteCandidate}
               onResume={onResume}

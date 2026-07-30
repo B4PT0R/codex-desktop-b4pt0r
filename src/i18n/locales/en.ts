@@ -512,7 +512,7 @@ export const en: Record<MessageKey, string> = {
   "sidebar.loadMore": "Show more results",
   "sidebar.recentProjects": "Recent projects",
   "sidebar.defaultThread": "Default conversation",
-  "sidebar.defaultConfigured": "Configured conversation",
+  "sidebar.defaultPending": "Open to load conversation",
   "sidebar.recentThreads": "Recent conversations",
   "sidebar.otherThreads": "Other conversations",
   "sidebar.untitled": "Untitled conversation",
@@ -716,7 +716,7 @@ export const en: Record<MessageKey, string> = {
     "Shared context used by compatible quick actions.",
   "settings.defaultThread.automatic":
     "Automatic (home folder)",
-  "settings.defaultThread.configured": "Configured conversation",
+  "settings.defaultThread.pending": "Selected default conversation",
   "settings.defaultThread.error":
     "Unable to save the default conversation: {detail}",
   "settings.defaultThread.saveError":

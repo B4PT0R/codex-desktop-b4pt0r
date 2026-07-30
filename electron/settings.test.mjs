@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile } from "node:fs/promises";
+import { mkdtemp, readFile, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -27,6 +27,27 @@ test("atomically updates known preferences and preserves unknown fields", async 
   assert.equal(updated.theme, "dark");
   assert.deepEqual(JSON.parse(await readFile(file, "utf8")), updated);
   assert.deepEqual(await readSettings(file), updated);
+});
+
+test("does not rewrite preferences when a repeated patch changes nothing", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "codex-settings-"));
+  const file = path.join(directory, "settings.json");
+  await updateSettings(file, {
+    locale: "fr",
+    theme: "dark",
+    futureField: { enabled: true },
+  });
+  const before = await stat(file);
+  const content = await readFile(file, "utf8");
+
+  const unchanged = await updateSettings(file, {
+    locale: "fr",
+    theme: "dark",
+  });
+
+  assert.equal((await stat(file)).ino, before.ino);
+  assert.equal(await readFile(file, "utf8"), content);
+  assert.deepEqual(unchanged.futureField, { enabled: true });
 });
 
 test("serializes concurrent patches without losing either preference", async () => {

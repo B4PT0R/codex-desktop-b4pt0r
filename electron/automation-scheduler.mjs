@@ -39,18 +39,23 @@ export class AutomationScheduler {
 
   async ready() {
     this.#ready = true;
-    await this.#mutate((items) =>
-      items.map((item) =>
-        item.activeRunId
-          ? {
-              ...item,
-              activeRunId: undefined,
-              lastStatus: "failed",
-              lastError: "automation-interrupted",
-            }
-          : item,
-      ),
+    const hasInterruptedRun = (await this.list()).some(
+      (item) => item.activeRunId,
     );
+    if (hasInterruptedRun) {
+      await this.#mutate((items) =>
+        items.map((item) =>
+          item.activeRunId
+            ? {
+                ...item,
+                activeRunId: undefined,
+                lastStatus: "failed",
+                lastError: "automation-interrupted",
+              }
+            : item,
+        ),
+      );
+    }
     await this.#tick();
   }
 

@@ -35,11 +35,13 @@ export async function updateSettings(file, patch) {
 }
 
 async function updateSettingsNow(file, patch) {
+  const current = await readSettings(file);
   const document = {
-    ...(await readSettings(file)),
+    ...current,
     ...patch,
     version: SETTINGS_VERSION,
   };
+  if (JSON.stringify(document) === JSON.stringify(current)) return current;
   await writeFileAtomically(file, `${JSON.stringify(document, null, 2)}\n`, {
     createDirectory: true,
     mode: 0o600,

@@ -80,4 +80,29 @@ describe("réglage de la conversation par défaut", () => {
       screen.getByRole("combobox", { name: "Conversation par défaut" }),
     ).toHaveClass("default-thread-select");
   });
+
+  it("présente une résolution en cours sans inventer de titre", () => {
+    localStorage.setItem("codex-desktop.locale", "fr");
+    render(
+      <I18nProvider>
+        <DefaultThreadSettingsField
+          controller={{
+            defaultThreadId: "thread-outside-page",
+            saving: false,
+            setDefaultThreadId: vi.fn(),
+            threadOptions: [],
+          }}
+        />
+      </I18nProvider>,
+    );
+
+    expect(
+      screen.getByRole("option", {
+        name: "Conversation par défaut sélectionnée",
+      }),
+    ).toHaveValue("thread-outside-page");
+    expect(
+      screen.queryByText("Conversation configurée"),
+    ).not.toBeInTheDocument();
+  });
 });

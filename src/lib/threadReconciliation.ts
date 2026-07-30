@@ -11,7 +11,15 @@ export function restoreThread(
   threads: ThreadSummary[],
   restored: ThreadSummary,
 ): ThreadSummary[] {
-  return [restored, ...threads.filter((thread) => thread.id !== restored.id)];
+  const previous = threads.find((thread) => thread.id === restored.id);
+  const reconciled =
+    previous?.name && !restored.name
+      ? { ...restored, name: previous.name }
+      : restored;
+  return [
+    reconciled,
+    ...threads.filter((thread) => thread.id !== restored.id),
+  ];
 }
 
 export function markThreadClosed(

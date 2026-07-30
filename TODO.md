@@ -63,10 +63,17 @@ API:
   fallback named “Let's discuss anything” in the user home only when no valid
   default exists. Existing unnamed fallbacks are migrated on first use, while
   later user renames are never overwritten.
-- resuming a conversation now reconciles its authoritative summary into the
-  recent-thread catalog. A default or search result outside the first 30
-  conversations therefore keeps its real name after resume and rename instead
-  of falling back to “Configured conversation”.
+- a configured default outside the first 30 conversations is resolved through
+  read-only `thread/read` metadata. Its authoritative name therefore survives
+  restart and reinstall without activating, resuming or renaming the thread;
+  the UI keeps a neutral navigable loading entry instead of fabricating
+  “Configured conversation”. If initial catalog hydration races and replaces
+  an earlier metadata result, the read is retried so Realtime-only parent
+  threads remain promoted even without replayable turns.
+- renaming now verifies the persisted App Server metadata before reporting
+  success. The default conversation refreshes that authoritative metadata after
+  resume, and a partial unnamed response cannot replace a previously confirmed
+  title with “Untitled conversation”.
 - opening the hidden window during a tray Realtime session resumes that parent,
   transfers the buffered transcript into the chat and continues live rendering
   without restarting WebRTC. The default conversation is promoted once above
@@ -239,21 +246,30 @@ conversation immediately releases its controls, while a late save, pause or
 clear response from the previous thread cannot overwrite the current goal or
 release the current thread's own mutation lock.
 
+Install and startup persistence is now explicitly idempotent. Generated Debian
+maintainer scripts only manage system integration under `/usr`, `/opt` and
+`/etc`; they never enter the user's home. Native preference and Config writers
+preserve unknown fields and skip byte-identical updates, scheduler readiness
+does not rewrite an unchanged automation list, and a locale inferred for an
+unconfigured profile remains an in-memory default until the user changes it.
+Only explicit actions, documented legacy migration and interrupted scheduler
+recovery can mutate persisted state during ordinary lifecycle paths.
+
 ## Verified candidate baseline
 
 - Installed Codex: `codex-cli 0.145.0`.
 - Official source audit: `1def0a892`, stable and experimental v2 schemas.
-- Frontend/unit/contract: 587 tests across 110 files, including 48 installed
+- Frontend/unit/contract: 598 tests across 112 files, including 49 installed
   App Server contract cases.
-- Electron/Node: 77 tests, including the native hidden-window liveness
-  invariant.
+- Electron/Node: 80 tests, including native hidden-window liveness and
+  persistence-idempotence invariants.
 - Strict TypeScript: passing.
 - Production Vite build: passing.
 - Electron directory packaging: passing; inspected ASAR contains the renderer,
   favicon, main and preload with zero native test sources, while the shared
   browser skill remains an external resource.
 - Production dependency audit: zero vulnerabilities.
-- Main JS: 589.37 kB, 170.16 kB gzip.
+- Main JS: 590.29 kB, 170.45 kB gzip.
 - Lazy diff viewer: 89.50 kB, 32.89 kB gzip.
 - Lazy Markdown/KaTeX: 436.82 kB, 131.40 kB gzip.
 - Shared-browser visual pass: light and dark palettes, 1240×820 and 840×620;
@@ -274,8 +290,10 @@ release the current thread's own mutation lock.
 - Shared-browser Markdown pass: complete light/dark fixture at 1240×820 and
   840×620; wide tables scroll locally without widening the message or app.
 - Built Debian release: `codex-desktop-linux 0.3.11 amd64`
-  (`sha256:77d14523…513df45`); its packaged ASAR passes the production
-  runtime inventory contract.
+  (`sha256:ff2f8bc1…f719c8`); its packaged ASAR passes the production
+  runtime inventory contract. Both an upgrade from 0.3.10 and an immediate
+  same-version reinstall preserved `config.toml` and desktop settings content,
+  inode, size, mtime, mode and ownership exactly.
 
 ## Active invariants
 
@@ -283,7 +301,8 @@ release the current thread's own mutation lock.
 - The installed App Server schema is the wire source of truth. Future-source
   observations may inform additive parsing, never unsupported requests.
 - Persist client preferences atomically in the versioned desktop settings
-  file. Keep official Codex configuration in `config.toml`.
+  file. Keep official Codex configuration in `config.toml`; install, upgrade
+  and ordinary startup must not rewrite either persistence domain.
 - Server-hydrated thread state wins over UI defaults.
 - Realtime uses ephemeral voice threads and injects finalized utterances into
   the persistent parent in order.

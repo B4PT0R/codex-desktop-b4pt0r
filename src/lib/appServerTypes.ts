@@ -168,6 +168,9 @@ export type ThreadRuntimeResponse = {
 
 export type ThreadStartResponse = ThreadRuntimeResponse;
 export type ThreadForkResponse = ThreadRuntimeResponse;
+export type ThreadReadResponse = {
+  thread: AppServerThread;
+};
 export type ThreadResumeResponse = {
   thread: AppServerThread;
   cwd: string;

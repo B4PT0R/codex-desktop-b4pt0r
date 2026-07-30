@@ -3,6 +3,26 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## Unreleased
+
+### Fixed
+
+- Reinstalling or restarting no longer fabricates “Configured conversation”
+  as the default conversation's name. When the conversation is outside the
+  recent catalog, its authoritative App Server summary is resolved through a
+  read-only metadata request without activating or renaming it.
+- The default conversation remains visible and navigable while that metadata
+  is loading or unavailable, including Realtime-only parents with no replayable
+  turns. Initial catalog hydration can no longer discard an earlier metadata
+  response.
+- Conversation renames are now confirmed with read-only server metadata before
+  the UI reports success. Resuming the default Realtime parent refreshes that
+  authoritative name, while a partial unnamed resume can no longer erase a
+  previously confirmed title.
+- Startup and repeated saves skip unchanged desktop preferences and
+  `config.toml` content, preserving user state and file identity across
+  reinstall and relaunch.
+
 ## [0.3.11] - 2026-07-30
 
 ### Added

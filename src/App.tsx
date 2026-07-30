@@ -79,6 +79,10 @@ import { useShellCommand } from "./lib/useShellCommand";
 import { useExternalAgentImport } from "./lib/useExternalAgentImport";
 import { useRealtimeSettings } from "./lib/useRealtimeSettings";
 import { useDefaultThreadSettings } from "./lib/useDefaultThreadSettings";
+import {
+  readDefaultThreadCatalogEntry,
+  useDefaultThreadCatalogEntry,
+} from "./lib/useDefaultThreadCatalogEntry";
 import { useTrayRealtimeConversation } from "./lib/useTrayRealtimeConversation";
 import { ThreadViewStateGuard } from "./lib/threadViewStateGuard";
 import { useCodexDefaults } from "./lib/useCodexDefaults";
@@ -296,6 +300,12 @@ export default function App() {
       if (activeThreadId) await threadHistory.resume(activeThreadId);
     },
   });
+  useDefaultThreadCatalogEntry({
+    connected: connection.connected,
+    defaultThreadId: defaultThread.defaultThreadId,
+    setThreads,
+    threads,
+  });
   const automations = useAutomations({
     connected: connection.connected,
     onError: (error) => showError(t("automations.error"), error),
@@ -387,6 +397,13 @@ export default function App() {
       conversationEvents.completeScopeTransition(id);
       turnCoordinator.observeStatus(id, runState.status);
       setThreads((items) => restoreThread(items, summary));
+      if (id === defaultThread.defaultThreadId) {
+        void readDefaultThreadCatalogEntry(id)
+          .then((authoritative) =>
+            setThreads((items) => restoreThread(items, authoritative)),
+          )
+          .catch(() => undefined);
+      }
       const patch = viewStateGuard.reconcileResume(id, runState);
       if (Object.hasOwn(patch, "activity")) setActivity(patch.activity ?? null);
       if (Object.hasOwn(patch, "busy")) setBusy(patch.busy ?? false);

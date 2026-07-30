@@ -53,6 +53,54 @@ beforeEach(() => {
 });
 
 describe("actions de conversation", () => {
+  it("confirme un renommage avec les métadonnées persistées du serveur", async () => {
+    mockedRequest
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({
+        thread: {
+          id: "thread-1",
+          name: "Nouveau titre",
+          cwd: "/project",
+        },
+      });
+    const { result } = renderHook(useHarness);
+
+    await act(async () => {
+      expect(await result.current.actions.rename("Nouveau titre")).toBe(true);
+    });
+
+    expect(mockedRequest).toHaveBeenNthCalledWith(1, "thread/name/set", {
+      threadId: "thread-1",
+      name: "Nouveau titre",
+    });
+    expect(mockedRequest).toHaveBeenNthCalledWith(2, "thread/read", {
+      threadId: "thread-1",
+      includeTurns: false,
+    });
+    expect(result.current.threads[0]?.name).toBe("Nouveau titre");
+  });
+
+  it("refuse un succès optimiste si le serveur ne conserve pas le nom", async () => {
+    mockedRequest
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({
+        thread: { id: "thread-1", name: null, cwd: "/project" },
+      });
+    const { result } = renderHook(useHarness);
+
+    await act(async () => {
+      expect(await result.current.actions.rename("Nouveau titre")).toBe(false);
+    });
+
+    expect(result.current.threads[0]?.name).toBe("Original");
+    expect(result.current.onError).toHaveBeenCalledWith(
+      "Impossible de renommer cette conversation",
+      expect.objectContaining({
+        message: "App Server did not persist the conversation name",
+      }),
+    );
+  });
+
   it("archive puis restaure la conversation à sa position", async () => {
     mockedRequest.mockResolvedValue({});
     const { result } = renderHook(useHarness);

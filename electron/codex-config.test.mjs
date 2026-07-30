@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -56,4 +56,23 @@ test("rejects invalid TOML and stale writes without changing the file", async ()
     /changed outside/,
   );
   assert.equal(await readFile(file, "utf8"), 'model = "external"\n');
+});
+
+test("does not replace config.toml when saving identical content", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "codex-config-"));
+  const file = path.join(directory, "config.toml");
+  const content = 'model = "gpt-5.4"\n';
+  await writeFile(file, content);
+  const before = await stat(file);
+  const current = await readCodexConfig(file);
+
+  const unchanged = await writeCodexConfig(
+    file,
+    content,
+    current.version,
+  );
+
+  assert.equal((await stat(file)).ino, before.ino);
+  assert.equal(await readFile(file, "utf8"), content);
+  assert.equal(unchanged.version, current.version);
 });

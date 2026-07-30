@@ -203,6 +203,49 @@ describe("barre latérale", () => {
     expect(onResume).toHaveBeenCalledWith("gamma");
   });
 
+  it("garde le thread par défaut navigable pendant la résolution de son titre", () => {
+    const onResume = vi.fn();
+    render(
+      <I18nProvider>
+        <Sidebar
+          cwd=""
+          defaultThreadId="configured-outside-recent-page"
+          open
+          width={260}
+          threads={threads}
+          search={searchController()}
+          onArchive={vi.fn()}
+          onDelete={vi.fn()}
+          onClose={vi.fn()}
+          onNewChat={vi.fn()}
+          onOpenSettings={vi.fn()}
+          onResume={onResume}
+          onSelectDirectory={vi.fn()}
+          onWidthChange={vi.fn()}
+          onWidthCommit={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+
+    expect(
+      screen.getByRole("navigation", {
+        name: /Default conversation|Conversation par défaut/,
+      }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Configured conversation")).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Open to load conversation|Ouvrir pour charger la conversation/,
+      }),
+    );
+    expect(onResume).toHaveBeenCalledWith("configured-outside-recent-page");
+    expect(
+      screen.queryByRole("button", {
+        name: /Archiver|Archive|Supprimer|Delete/,
+      }),
+    ).not.toBeInTheDocument();
+  });
+
   it("demande confirmation avant de supprimer une conversation", async () => {
     const { onDelete } = renderSidebar();
     fireEvent.click(

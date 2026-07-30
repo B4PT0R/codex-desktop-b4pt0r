@@ -1,0 +1,86 @@
+// @vitest-environment jsdom
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useState } from "react";
+import type { ThreadSummary } from "../../src/types";
+
+const requestMock = vi.hoisted(() => vi.fn());
+vi.mock("../../src/lib/codex", () => ({ request: requestMock }));
+
+import { useDefaultThreadCatalogEntry } from "../../src/lib/useDefaultThreadCatalogEntry";
+
+function useHarness(initialThreads: ThreadSummary[] = []) {
+  const [threads, setThreads] = useState(initialThreads);
+  useDefaultThreadCatalogEntry({
+    connected: true,
+    defaultThreadId: "thread-default",
+    setThreads,
+    threads,
+  });
+  return { setThreads, threads };
+}
+
+describe("catalogue de la conversation par défaut", () => {
+  beforeEach(() => {
+    requestMock.mockReset().mockResolvedValue({
+      thread: {
+        id: "thread-default",
+        name: "Mon titre conservé",
+        preview: "Dernier échange",
+        cwd: "/home/user",
+      },
+    });
+  });
+
+  it("résout le titre serveur absent de la page récente sans le modifier", async () => {
+    const { result } = renderHook(() => useHarness());
+
+    await waitFor(() =>
+      expect(result.current.threads).toEqual([
+        {
+          id: "thread-default",
+          name: "Mon titre conservé",
+          preview: "Dernier échange",
+          cwd: "/home/user",
+          section: undefined,
+          status: undefined,
+          updatedAt: undefined,
+        },
+      ]),
+    );
+    expect(requestMock).toHaveBeenCalledOnce();
+    expect(requestMock).toHaveBeenCalledWith("thread/read", {
+      threadId: "thread-default",
+      includeTurns: false,
+    });
+    expect(
+      requestMock.mock.calls.some(([method]) => method === "thread/name/set"),
+    ).toBe(false);
+  });
+
+  it("reste idempotent sur deux démarrages successifs", async () => {
+    const first = renderHook(() => useHarness());
+    await waitFor(() => expect(first.result.current.threads).toHaveLength(1));
+    first.unmount();
+
+    const second = renderHook(() => useHarness());
+    await waitFor(() => expect(second.result.current.threads).toHaveLength(1));
+
+    expect(requestMock).toHaveBeenCalledTimes(2);
+    expect(
+      requestMock.mock.calls.map(([method]) => method),
+    ).toEqual(["thread/read", "thread/read"]);
+  });
+
+  it("relit les métadonnées si le catalogue initial écrase une réponse plus rapide", async () => {
+    const { result } = renderHook(() => useHarness());
+    await waitFor(() => expect(result.current.threads).toHaveLength(1));
+
+    act(() => result.current.setThreads([]));
+
+    await waitFor(() => expect(requestMock).toHaveBeenCalledTimes(2));
+    await waitFor(() =>
+      expect(result.current.threads[0]?.name).toBe("Mon titre conservé"),
+    );
+  });
+});
