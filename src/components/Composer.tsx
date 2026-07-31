@@ -10,6 +10,7 @@ import { isDesktopApp } from "../lib/codex";
 import {
   AddMenu,
   AppsMenu,
+  CommandChoiceMenu,
   CommandMenu,
   SkillsMenu,
 } from "./ComposerMenus";
@@ -19,6 +20,7 @@ import type { TurnContextItem } from "../lib/protocol";
 import { useI18n } from "../i18n/I18nProvider";
 import { useFileSearch, type FileSearchResult } from "../lib/useFileSearch";
 import { RoundIconButton } from "./RoundIcon";
+import type { ComposerCommandChoiceRequest } from "../lib/commands";
 
 type ComposerProps = {
   busy: boolean;
@@ -32,6 +34,7 @@ type ComposerProps = {
   cwd: string;
   hasThread: boolean;
   loadingThread?: boolean;
+  commandChoiceRequest?: ComposerCommandChoiceRequest;
   recording: boolean;
   dictating: boolean;
   dictationProcessing: boolean;
@@ -41,6 +44,8 @@ type ComposerProps = {
   onNeedApps: () => void;
   onNeedSkills: () => void;
   onConsumeDictationInsertion: (id: number) => void;
+  onCommandChoiceDismiss: () => void;
+  onCommandChoiceSelect: (choiceId: string) => void;
   onSend: (text: string, context: TurnContextItem[]) => void;
   onStop: () => void;
   onToggleVoice: () => void;
@@ -59,6 +64,7 @@ export function Composer({
   cwd,
   hasThread,
   loadingThread = false,
+  commandChoiceRequest,
   recording,
   dictating,
   dictationProcessing,
@@ -68,6 +74,8 @@ export function Composer({
   onNeedApps,
   onNeedSkills,
   onConsumeDictationInsertion,
+  onCommandChoiceDismiss,
+  onCommandChoiceSelect,
   onSend,
   onStop,
   onToggleVoice,
@@ -114,6 +122,25 @@ export function Composer({
     setContext([]);
   }
 
+  function dispatchCommand(command: string) {
+    onSend(command, []);
+    setText("");
+    setContext([]);
+    setCommandMenuDismissed(true);
+    textarea.current?.focus();
+  }
+
+  function selectCommandChoice(choiceId: string) {
+    onCommandChoiceSelect(choiceId);
+    textarea.current?.focus();
+  }
+
+  function completeCommand(command: string) {
+    setText(`${command} `);
+    setCommandMenuDismissed(true);
+    textarea.current?.focus();
+  }
+
   useEffect(() => {
     function close(event: PointerEvent) {
       const target = event.target as Node;
@@ -122,21 +149,24 @@ export function Composer({
         !addButton.current?.contains(target)
       ) {
         setMenu(null);
+        if (commandChoiceRequest) onCommandChoiceDismiss();
       }
     }
     document.addEventListener("pointerdown", close);
     return () => document.removeEventListener("pointerdown", close);
-  }, []);
+  }, [commandChoiceRequest, onCommandChoiceDismiss]);
 
   useEffect(() => {
-    if (!menu) return;
+    if (!menu && !commandChoiceRequest) return;
     const surface = menuSurface.current;
     surface
-      ?.querySelector<HTMLElement>("[data-menu-autofocus]")
+      ?.querySelector<HTMLElement>(
+        '[data-menu-autofocus], [aria-checked="true"]:not(:disabled)',
+      )
       ?.focus();
     if (!surface?.contains(document.activeElement))
       surface?.querySelector<HTMLButtonElement>(menuItemSelector)?.focus();
-  }, [menu]);
+  }, [commandChoiceRequest?.id, commandChoiceRequest?.stage, menu]);
 
   function closeMenu() {
     setMenu(null);
@@ -146,14 +176,32 @@ export function Composer({
   function moveInMenu(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === "Escape") {
       event.preventDefault();
-      if (menu) closeMenu();
+      if (commandChoiceRequest) {
+        onCommandChoiceDismiss();
+        textarea.current?.focus();
+      } else if (menu) closeMenu();
       else {
         setCommandMenuDismissed(true);
         textarea.current?.focus();
       }
       return;
     }
-    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+    if (event.key === "Tab" || (event.key === "/" && !event.ctrlKey)) {
+      const command = (event.target as HTMLElement).dataset.command;
+      if (command) {
+        event.preventDefault();
+        completeCommand(command);
+      }
+      return;
+    }
+    const navigationKey =
+      event.ctrlKey && event.key === "n"
+        ? "ArrowDown"
+        : event.ctrlKey && event.key === "p"
+          ? "ArrowUp"
+          : event.key;
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(navigationKey))
+      return;
     const items = [
       ...(menuSurface.current?.querySelectorAll<HTMLButtonElement>(
         menuItemSelector,
@@ -163,11 +211,11 @@ export function Composer({
     event.preventDefault();
     const current = items.indexOf(document.activeElement as HTMLButtonElement);
     const next =
-      event.key === "Home"
+      navigationKey === "Home"
         ? 0
-        : event.key === "End"
+        : navigationKey === "End"
           ? items.length - 1
-          : event.key === "ArrowUp"
+          : navigationKey === "ArrowUp"
             ? (current - 1 + items.length) % items.length
             : (current + 1) % items.length;
     items[next].focus();
@@ -200,20 +248,23 @@ export function Composer({
 
   return (
     <div className="composer-shell" ref={shell} aria-busy={loadingThread}>
-      {text.startsWith("/") && !commandMenuDismissed && (
+      {commandChoiceRequest ? (
+        <CommandChoiceMenu
+          menuRef={menuSurface}
+          onMenuKeyDown={moveInMenu}
+          onSelect={selectCommandChoice}
+          request={commandChoiceRequest}
+        />
+      ) : text.startsWith("/") && !commandMenuDismissed ? (
         <CommandMenu
           busy={busy}
           hasThread={hasThread}
           menuRef={menuSurface}
           onMenuKeyDown={moveInMenu}
           query={text}
-          onSelect={(command) => {
-            setText(command);
-            setCommandMenuDismissed(true);
-            textarea.current?.focus();
-          }}
+          onSelect={dispatchCommand}
         />
-      )}
+      ) : null}
       {menu === "add" && (
         <AddMenu
           menuRef={menuSurface}
@@ -348,19 +399,51 @@ export function Composer({
         onKeyDown={(event) => {
           if (event.key === "Escape") {
             setMenu(null);
+            if (commandChoiceRequest) onCommandChoiceDismiss();
             if (text.startsWith("/")) setCommandMenuDismissed(true);
           }
-          if (event.key === "ArrowDown" && text.startsWith("/")) {
-            const first = shell.current?.querySelector<HTMLButtonElement>(
-              ".command-menu [role='menuitem']:not(:disabled)",
+          if (
+            text.startsWith("/") &&
+            (["ArrowDown", "ArrowUp"].includes(event.key) ||
+              (event.ctrlKey && ["n", "p"].includes(event.key)))
+          ) {
+            const items = shell.current?.querySelectorAll<HTMLButtonElement>(
+              `.command-menu ${menuItemSelector}`,
             );
-            if (first) {
+            const backwards =
+              event.key === "ArrowUp" || (event.ctrlKey && event.key === "p");
+            const selected = backwards
+              ? items?.item((items?.length ?? 1) - 1)
+              : items?.item(0);
+            if (selected) {
               event.preventDefault();
-              first.focus();
+              selected.focus();
+            }
+          }
+          if (
+            text.startsWith("/") &&
+            (event.key === "Tab" ||
+              (event.key === "/" && text.length > 1 && !event.ctrlKey))
+          ) {
+            const selected = shell.current?.querySelector<HTMLButtonElement>(
+              `.command-menu [data-command]:not(:disabled)`,
+            );
+            if (selected?.dataset.command) {
+              event.preventDefault();
+              completeCommand(selected.dataset.command);
             }
           }
           if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
+            const selected = text.startsWith("/")
+              ? shell.current?.querySelector<HTMLButtonElement>(
+                  `.command-menu [data-command]:not(:disabled)`,
+                )
+              : undefined;
+            if (selected?.dataset.command) {
+              dispatchCommand(selected.dataset.command);
+              return;
+            }
             submit();
           }
         }}
@@ -486,7 +569,8 @@ export function Composer({
   }
 }
 
-const menuItemSelector = '[role="menuitem"]:not(:disabled)';
+const menuItemSelector =
+  ':is([role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"]):not(:disabled)';
 
 function appSlug(name: string) {
   return name

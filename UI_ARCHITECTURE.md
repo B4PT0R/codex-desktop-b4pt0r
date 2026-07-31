@@ -105,6 +105,15 @@ Une commande identifiée par `thread/backgroundTerminals/list` constitue
 l’exception : son processus reste réellement actif et continue d’alimenter ses
 détails, mais sa carte se replie après un court délai et ne retient pas les
 appels suivants. Son statut reste « en arrière-plan » jusqu’à sa terminaison.
+Un `spawnAgent` reste lui aussi une action ordinaire de ce groupe parent. Son
+panneau de détail contient le fil borné du thread enfant, y compris ses messages
+et ses propres groupes d’outils. Il peut céder visuellement la place à l’action
+parent suivante et se comporte alors comme un job d’arrière-plan : le groupe
+peut se refermer à sa frontière normale tout en conservant dans son résumé le
+nombre d’actions encore actives. L’utilisateur peut rouvrir ce groupe puis la
+carte du sous-agent à tout moment pour consulter son transcript vivant. Les
+descendants sont réhydratés au replay et toutes les notifications restent
+isolées par thread.
 
 ### 4. Compositeur et barre de session
 
@@ -407,10 +416,11 @@ autorisations déjà accordées.
 - Les détails de diff, navigateur et ressources utilisent un panneau contextuel dès
   que leur persistance dépasse les cartes inline ; un terminal persistant reste une
   surface inférieure séparée.
-- Le menu de commandes `/` devient une palette pilotée par des commandes déclarées,
-  testables et activées selon les capacités. Il s’ancre au-dessus du composer
-  avec un espace visible : la palette peut défiler, mais ne recouvre jamais la
-  saisie en cours.
+- Le menu de commandes `/` est une palette pilotée par un registre déclaré et
+  testé. Il reprend les raccourcis de conversation utiles de la CLI sans
+  dupliquer les réglages avancés ni les commandes propres au terminal. Les
+  choix suivants restent des listes plates au clavier et à la souris ; la
+  palette défile au-dessus du composer sans recouvrir la saisie.
 - Pendant une session Realtime, les deltas du transcript assistant alimentent
   directement le message vocal principal dans la conversation. La finalisation
   remplace l’assemblage provisoire en place ; le composer ne porte aucune
@@ -477,8 +487,9 @@ autorisations déjà accordées.
 - Le mini-affichage de quotas caché arbitrairement sous 850 px sera remplacé par un
   résumé de compte accessible dans les réglages ; seule l’alerte utile restera dans
   la barre de session.
-- Les entrées slash codées directement dans le JSX seront remplacées par le registre
-  de commandes ; aucune commande non disponible ne doit être annoncée.
+- Aucune commande slash non raccordée à un comportement réel ne doit être
+  annoncée ; disponibilité du thread, tour actif et capacités du modèle sont
+  vérifiées avant exécution.
 - Les futurs appels FS/process/MCP bruts ne recevront pas de boutons génériques dans
   le seul but d’augmenter la couverture protocolaire.
 

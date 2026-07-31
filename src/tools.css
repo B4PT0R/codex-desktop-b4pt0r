@@ -337,6 +337,110 @@
   white-space: pre;
 }
 
+.subagent-tool-details {
+  gap: 8px;
+}
+
+.subagent-objective p,
+.subagent-empty {
+  margin: 0;
+  color: #92928d;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.subagent-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.subagent-meta span {
+  padding: 2px 6px;
+  border: 1px solid #353531;
+  border-radius: 999px;
+  color: #82827d;
+  font-size: 9px;
+}
+
+.subagent-thread {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #30302d;
+  border-radius: 7px;
+  background: #171716;
+}
+
+.subagent-thread > header {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  color: #83837e;
+}
+
+.subagent-thread > header svg {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+}
+
+.subagent-thread > header strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #aaa9a3;
+  font-size: 10px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subagent-thread > header span,
+.subagent-thread > header small {
+  color: #74746f;
+  font-size: 9px;
+}
+
+.subagent-thread > header small {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.subagent-thread > .subagent-empty {
+  padding: 2px 8px 8px 28px;
+}
+
+.subagent-transcript {
+  min-width: 0;
+  padding: 8px 9px 2px;
+  border-top: 1px solid #2d2d2a;
+  background: #131312;
+}
+
+.subagent-transcript .message {
+  margin-bottom: 12px;
+}
+
+.subagent-transcript .message.assistant .message-content {
+  width: 100%;
+}
+
+.subagent-transcript .message-content {
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.subagent-transcript .message.user .message-content {
+  max-width: 85%;
+  padding: 6px 9px;
+  border-radius: 9px 9px 3px 9px;
+}
+
+.subagent-transcript .tool-group {
+  margin-top: 6px;
+}
+
 .tool-artifacts {
   display: grid;
   gap: 8px;

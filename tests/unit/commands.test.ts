@@ -4,9 +4,6 @@ import {
   composerCommands,
   filteredComposerCommands,
 } from "../../src/lib/commands";
-import { fr } from "../../src/i18n/locales/fr";
-
-const labelFor = (key: keyof typeof fr) => fr[key];
 
 describe("composer commands", () => {
   it("retrouve une commande complète sans accepter les préfixes", () => {
@@ -16,33 +13,29 @@ describe("composer commands", () => {
 
   it("expose uniquement des commandes réellement branchées", () => {
     expect(composerCommands.map((command) => command.id)).toEqual([
+      "model",
+      "reasoning",
+      "fast",
       "plan",
+      "permissions",
+      "approvals",
+      "approve",
       "review",
-      "new",
+      "init",
       "compact",
-      "fork",
-      "resume",
+      "goal",
+      "copy",
       "status",
-      "usage",
-      "personality",
-      "skills",
-      "mcp",
-      "apps",
-      "plugins",
-      "hooks",
+      "ps",
       "stop",
       "clear",
     ]);
   });
 
-  it("filtre sur le nom et la description", () => {
+  it("filtre sur le nom comme la CLI", () => {
     expect(
-      filteredComposerCommands("rev", labelFor).map((command) => command.id),
+      filteredComposerCommands("rev").map((command) => command.id),
     ).toEqual(["review"]);
-    expect(
-      filteredComposerCommands("session", labelFor).map(
-        (command) => command.id,
-      ),
-    ).toEqual(["status"]);
+    expect(filteredComposerCommands("session")).toEqual([]);
   });
 });

@@ -22,6 +22,9 @@ export function toolFromItem(
   const value = record(item);
   const id = stringValue(value?.id);
   const type = stringValue(value?.type);
+  if (value && id && type === "subAgentActivity") {
+    return subagentActivityTool(value, t);
+  }
   if (!value || !id || !type || !isToolKind(type)) return undefined;
   const [title, detail] = presentation(type, value, t);
   return {
@@ -29,8 +32,28 @@ export function toolFromItem(
     kind: type,
     title,
     detail,
-    status: status(value.status),
+    status: toolStatus(value),
     ...finalDetails(type, value, t),
+  };
+}
+
+function subagentActivityTool(
+  item: Record<string, unknown>,
+  t: Translate,
+): ToolCall | undefined {
+  if (item.kind !== "started") return undefined;
+  const threadId = stringValue(item.agentThreadId);
+  if (!threadId) return undefined;
+  return {
+    id: stringValue(item.id)!,
+    kind: "collabAgentToolCall",
+    title: t("tool.collab.spawn"),
+    detail: stringValue(item.agentPath) ?? t("tool.collab.agents", { count: 1 }),
+    status: "running",
+    subagent: {
+      threadIds: [threadId],
+      status: "running",
+    },
   };
 }
 
@@ -70,6 +93,11 @@ export function toolStatus(
   completed = false,
 ): ToolCall["status"] {
   const value = record(item);
+  if (
+    value?.type === "collabAgentToolCall" &&
+    value.tool === "spawnAgent"
+  )
+    return collabToolStatus(value);
   return value?.status !== undefined
     ? status(value.status)
     : completed
@@ -177,8 +205,61 @@ function finalDetails(
     };
   }
   if (type === "fileChange") return patchDetails(item.changes, t);
+  if (type === "collabAgentToolCall" && item.tool === "spawnAgent") {
+    const threadIds = stringArray(item.receiverThreadIds);
+    return {
+      subagent: {
+        threadIds,
+        status: collabAgentStatus(item.agentsStates),
+        ...(boundedString(item.prompt, 20_000)
+          ? { prompt: boundedString(item.prompt, 20_000) }
+          : {}),
+        ...(boundedString(item.model, 1_024)
+          ? { model: boundedString(item.model, 1_024) }
+          : {}),
+        ...(boundedString(item.reasoningEffort, 128)
+          ? { reasoningEffort: boundedString(item.reasoningEffort, 128) }
+          : {}),
+      },
+    };
+  }
   const artifacts = richArtifacts(type, item);
   return artifacts.length ? { artifacts } : {};
+}
+
+function collabToolStatus(item: Record<string, unknown>): ToolCall["status"] {
+  if (item.status === "failed") return "error";
+  const childStatus = collabAgentStatus(item.agentsStates);
+  if (childStatus === "error") return "error";
+  if (childStatus === "completed" || childStatus === "interrupted")
+    return "done";
+  if (childStatus === "running" || childStatus === "pending") return "running";
+  return status(item.status);
+}
+
+function collabAgentStatus(value: unknown) {
+  const states = Object.values(record(value) ?? {}).flatMap((candidate) => {
+    const agent = record(candidate);
+    return typeof agent?.status === "string" ? [agent.status] : [];
+  });
+  if (states.some((state) => state === "errored" || state === "notFound"))
+    return "error" as const;
+  if (states.some((state) => state === "running")) return "running" as const;
+  if (states.some((state) => state === "pendingInit")) return "pending" as const;
+  if (states.some((state) => state === "interrupted"))
+    return "interrupted" as const;
+  if (
+    states.length > 0 &&
+    states.every((state) => state === "completed" || state === "shutdown")
+  )
+    return "completed" as const;
+  return undefined;
+}
+
+function stringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === "string")
+    : [];
 }
 
 function richArtifacts(

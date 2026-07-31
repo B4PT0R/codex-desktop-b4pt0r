@@ -34,6 +34,8 @@ function renderlessComposerProps(): ComponentProps<typeof Composer> {
     onNeedApps: vi.fn(),
     onNeedSkills: vi.fn(),
     onConsumeDictationInsertion: vi.fn(),
+    onCommandChoiceDismiss: vi.fn(),
+    onCommandChoiceSelect: vi.fn(),
     onSend: vi.fn(),
     onStop: vi.fn(),
     onToggleVoice: vi.fn(),
@@ -348,26 +350,76 @@ describe("composer", () => {
     expect(screen.queryByRole("menuitem", { name: /clear/ })).toBeNull();
   });
 
-  it("présente les commandes desktop fréquentes et protège l’arrêt", () => {
+  it("présente les commandes desktop fréquentes", () => {
     renderComposer();
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "/" } });
 
-    expect(screen.queryByRole("menuitem", { name: /\/model/ })).toBeNull();
+    expect(screen.getByRole("menuitem", { name: /\/model/ })).toBeEnabled();
     expect(
-      screen.queryByRole("menuitem", { name: /\/permissions/ }),
-    ).toBeNull();
-    expect(screen.getByRole("menuitem", { name: /\/personality/ })).toBeEnabled();
+      screen.getByRole("menuitem", { name: /\/permissions/ }),
+    ).toBeEnabled();
+    expect(screen.getByRole("menuitem", { name: /\/reasoning/ })).toBeEnabled();
+    expect(screen.getByRole("menuitem", { name: /\/approvals/ })).toBeEnabled();
     expect(screen.getByRole("menuitem", { name: /\/compact/ })).toBeDisabled();
-    expect(screen.getByRole("menuitem", { name: /\/stop/ })).toBeDisabled();
   });
 
-  it("insère une commande sélectionnée", () => {
-    renderComposer({ hasThread: true });
+  it("garde seulement les commandes sûres disponibles pendant un tour", () => {
+    renderComposer({ busy: true, canSteer: true, hasThread: true });
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "/" } });
+
+    expect(screen.getByRole("menuitem", { name: /\/status/ })).toBeEnabled();
+    expect(screen.getByRole("menuitem", { name: /\/stop/ })).toBeEnabled();
+    expect(screen.getByRole("menuitem", { name: /\/compact/ })).toBeDisabled();
+    expect(screen.getByRole("menuitem", { name: /\/clear/ })).toBeDisabled();
+  });
+
+  it("présente les choix d’une commande comme une liste plate", () => {
+    const onCommandChoiceSelect = vi.fn();
+    renderComposer({
+      commandChoiceRequest: {
+        id: 1,
+        command: "/model",
+        stage: "model",
+        choices: [
+          { id: "gpt-a", label: "GPT A", selected: true },
+          { id: "gpt-b", label: "GPT B" },
+        ],
+      },
+      onCommandChoiceSelect,
+    });
+
+    const choice = screen.getByRole("menuitemradio", { name: /GPT A/ });
+    expect(choice).toHaveAttribute("aria-checked", "true");
+    expect(choice).toHaveFocus();
+    fireEvent.click(choice);
+    expect(onCommandChoiceSelect).toHaveBeenCalledWith("gpt-a");
+    expect(screen.getByRole("textbox")).toHaveFocus();
+  });
+
+  it("exécute la commande sélectionnée", () => {
+    const props = renderComposer({ hasThread: true });
     fireEvent.change(screen.getByRole("textbox"), {
       target: { value: "/sta" },
     });
-    fireEvent.click(screen.getByRole("menuitem", { name: /status/ }));
-    expect(screen.getByRole("textbox")).toHaveValue("/status");
+    const status = screen.getByRole("menuitem", { name: /status/ });
+    status.focus();
+    fireEvent.click(status);
+    expect(props.onSend).toHaveBeenCalledWith("/status", []);
+    expect(screen.getByRole("textbox")).toHaveValue("");
+    expect(screen.getByRole("textbox")).toHaveFocus();
+  });
+
+  it("reprend la complétion clavier de la CLI", () => {
+    const props = renderComposer({ hasThread: true });
+    const textbox = screen.getByRole("textbox");
+    fireEvent.change(textbox, { target: { value: "/sta" } });
+    fireEvent.keyDown(textbox, { key: "Tab" });
+    expect(textbox).toHaveValue("/status ");
+    expect(props.onSend).not.toHaveBeenCalled();
+
+    fireEvent.change(textbox, { target: { value: "/sta" } });
+    fireEvent.keyDown(textbox, { key: "Enter" });
+    expect(props.onSend).toHaveBeenCalledWith("/status", []);
   });
 
   it("distingue l’arrêt et l’ajout d’une instruction pendant un tour", () => {

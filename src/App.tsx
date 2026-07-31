@@ -36,6 +36,7 @@ import {
   demoQuotas,
   demoResetCredits,
   demoSkills,
+  demoSubagentTranscripts,
   previewDemoThreads,
   initialPreviewMessages,
   browserPreviewResponse,
@@ -60,6 +61,7 @@ import {
 } from "./lib/threadDeletion";
 import type { SettingsSectionId } from "./lib/settingsSections";
 import { commandFromText } from "./lib/commands";
+import { useComposerCommands } from "./lib/useComposerCommands";
 import type { ThreadTelemetry } from "./lib/sessionTelemetry";
 import type {
   ChatMessage,
@@ -103,6 +105,7 @@ import { useRealtimeConversation } from "./lib/useRealtimeConversation";
 import { useConversationEventQueue } from "./lib/useConversationEventQueue";
 import { useThreadRuntimeState } from "./lib/useThreadRuntimeState";
 import { useThreadRuntimeMutations } from "./lib/useThreadRuntimeMutations";
+import { useSubagentTranscripts } from "./lib/useSubagentTranscripts";
 import "./styles.css";
 import "./primitives.css";
 import "./realtime.css";
@@ -295,6 +298,11 @@ export default function App() {
       if (activeThreadId) await threadHistory.resume(activeThreadId);
     },
   });
+  const subagents = useSubagentTranscripts({
+    enabled: connection.connected && !isDemoPreview(),
+    parentThreadId: threadId,
+    translate: t,
+  });
   useDefaultThreadCatalogEntry({
     connected: connection.connected,
     defaultThreadId: defaultThread.defaultThreadId,
@@ -438,6 +446,33 @@ export default function App() {
     onForked: threadHistory.resume,
     turnCoordinator,
   });
+  const composerCommands = useComposerCommands({
+    allowedApprovalPolicies: configRequirements.allowedApprovalPolicies,
+    approvalPolicy,
+    backgroundTerminals,
+    busy,
+    connected: connection.connected,
+    effort,
+    messages,
+    model,
+    models,
+    permission,
+    permissionProfiles: capabilities.permissionProfiles.data,
+    runtimeMutations,
+    serviceTier,
+    threadId,
+    translate: t,
+    onAppendResult: appendCommandResult,
+    onClear: () => {
+      conversationEvents.replaceScope(threadId);
+      setMessages([]);
+    },
+    onCompact: threadActions.compact,
+    onReview: reviewCurrentThread,
+    onSetEffort: setEffort,
+    onSetModel: setModel,
+    onShowError: showError,
+  });
   const shellCommand = useShellCommand({
     busy,
     threadId,
@@ -497,6 +532,7 @@ export default function App() {
   }
   function handle(msg: AppServerMessage) {
     const routed = routeAppNotification(msg);
+    subagents.handleMessage(msg);
     turnCoordinator.handleMessage(msg);
     automations.handleMessage(msg);
     const affectsActiveThread =
@@ -622,6 +658,7 @@ export default function App() {
     setThreads((x) => [{ id, name: t("app.newChat"), cwd: resolvedCwd }, ...x]);
     return id;
   }
+
   async function send(text: string, context: TurnContextItem[]) {
     if (threadHistory.resuming) return;
     if (text.trimStart().startsWith("!")) {
@@ -630,62 +667,7 @@ export default function App() {
     }
     const command = commandFromText(text);
     if (command) {
-      if (command.settingsSection) {
-        setSettings(command.settingsSection);
-        return;
-      }
-      switch (command.id) {
-        case "new":
-        case "clear":
-          newChat();
-          return;
-        case "resume":
-          setSidebar(true);
-          return;
-        case "plan":
-          await runtimeMutations.changeCollaborationMode("plan");
-          return;
-        case "compact":
-          await threadActions.compact();
-          return;
-        case "fork":
-          await threadActions.fork();
-          return;
-        case "stop":
-          await interrupt();
-          return;
-        case "status":
-          setMessages((x) => [
-            ...x,
-            {
-              id: crypto.randomUUID(),
-              role: "assistant",
-              content: `**${t("app.session.title")}**\n\n- ${t("app.session.connection")} : ${connection.connected ? t("app.session.active") : t("app.session.inactive")}\n- ${t("app.session.model")} : ${model}\n- ${t("app.session.permissions")} : ${permission}\n- ${t("app.session.thread")} : ${threadId ?? t("app.session.new")}`,
-            },
-          ]);
-          return;
-        case "review":
-          if (!threadId) {
-            showError(t("app.reviewUnavailable"), t("app.reviewNeedsThread"));
-            return;
-          }
-          const reviewThreadId = threadId;
-          setBusy(true);
-          try {
-            await turnCoordinator.runWhenIdle(reviewThreadId, () =>
-              request("review/start", {
-                threadId: reviewThreadId,
-                delivery: "inline",
-                target: { type: "uncommittedChanges" },
-              }),
-            );
-          } catch (error) {
-            if (activeThreadRef.current !== reviewThreadId) return;
-            setBusy(false);
-            showError(t("app.reviewUnavailable"), error);
-          }
-          return;
-      }
+      await composerCommands.execute(command);
       return;
     }
     const attachments = context.flatMap((item) =>
@@ -783,6 +765,42 @@ export default function App() {
       showError(t("app.connectionError"), e);
       setBusy(false);
     }
+  }
+
+  async function reviewCurrentThread() {
+    if (!threadId) {
+      showError(t("app.reviewUnavailable"), t("app.reviewNeedsThread"));
+      return false;
+    }
+    const reviewThreadId = threadId;
+    setBusy(true);
+    try {
+      await turnCoordinator.runWhenIdle(reviewThreadId, () =>
+        request("review/start", {
+          threadId: reviewThreadId,
+          delivery: "inline",
+          target: { type: "uncommittedChanges" },
+        }),
+      );
+      return true;
+    } catch (error) {
+      if (activeThreadRef.current !== reviewThreadId) return false;
+      setBusy(false);
+      showError(t("app.reviewUnavailable"), error);
+      return false;
+    }
+  }
+  function appendCommandResult(title: string, content: string) {
+    setMessages((items) => [
+      ...items,
+      {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        modality: "commandResult",
+        title,
+        content,
+      },
+    ]);
   }
   async function toggleVoice() {
     if (threadHistory.resuming) return;
@@ -1003,6 +1021,7 @@ export default function App() {
           title={
             currentThread?.name ?? currentThread?.preview ?? t("app.newChat")
           }
+          commandRequest={composerCommands.headerRequest}
           defaultThread={defaultThread.defaultThreadId === threadId}
           demoPlayback={
             demoPlayback.enabled && !isReadmeDemoPreview()
@@ -1051,6 +1070,10 @@ export default function App() {
           onLinkError={(error) => showError(t("link.openError"), error)}
           onLoadOlder={threadHistory.loadOlder}
           onReviewDiff={setWorkPanel}
+          subagentError={subagents.error}
+          subagentTranscripts={
+            isDemoPreview() ? demoSubagentTranscripts : subagents.transcripts
+          }
         />
         <ChatFooter
           apps={apps}
@@ -1083,6 +1106,11 @@ export default function App() {
           hasThread={Boolean(threadId) || isDemoPreview()}
           loadingThread={
             threadHistory.resuming || demoPlayback.loadingThread
+          }
+          commandChoiceRequest={composerCommands.choiceRequest}
+          onCommandChoiceDismiss={composerCommands.dismissChoices}
+          onCommandChoiceSelect={(choiceId) =>
+            void composerCommands.selectChoice(choiceId)
           }
           telemetry={
             threadId

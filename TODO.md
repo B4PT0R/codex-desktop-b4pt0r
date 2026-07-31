@@ -9,7 +9,7 @@ belongs in `CHANGELOG.md` and Git.
 ## Baseline
 
 Codex Desktop Linux is a functional independent Electron client for the
-official `codex app-server`. The current public release is v0.3.13.
+official `codex app-server`. The current public release is v0.3.14.
 
 The daily workflow covers conversations and replay, concurrent thread activity,
 streaming Markdown/LaTeX, reasoning, plans, tools, approvals, diffs, files,
@@ -47,6 +47,27 @@ Completed in the current working tree:
   through the system installer;
 - clearly ask the user to finish the system installation and restart Codex
   Desktop before expecting the updated version;
+- allow the native window to shrink to a focused 520 px chat column when the
+  sidebar is collapsed, with compact responsive gutters;
+- align composer commands with the CLI's keyboard contract: prefix filtering,
+  Enter dispatch, Tab or `/` completion, flat follow-up choices, and a joined
+  surface that preserves the composer border;
+- keep the composer command catalog deliberately focused on 16 frequent
+  conversation actions, with separate model/reasoning and
+  permissions/approvals pickers, exact Fast and auto-review semantics, and no
+  duplication of terminal-only or advanced Settings controls;
+- keep command orchestration and auto-review normalization outside `App.tsx`,
+  and discard asynchronous command results after the user changes conversation;
+- render one explicit command-result item after every validated composer
+  command, including selections and modal-opening shortcuts;
+- keep each spawned subagent as an ordinary action in its parent group while
+  streaming the bounded child-thread transcript inside that action, including
+  nested messages and tool groups, replay hydration and strict thread routing;
+- reconstruct that action from `subAgentActivity.started` when App Server does
+  not emit a distinct live `spawnAgent` item, while merging both forms when it
+  does;
+- treat `item/completed` as terminal for status-less tool items so web searches
+  and other partial lifecycle deliveries cannot retain a stale spinner;
 - keep this handoff concise instead of accumulating completed release history.
 
 ## Recent constraints
@@ -99,12 +120,12 @@ and Git/worktree management without a stable App Server product contract.
 
 ## Latest verified baseline
 
-- Frontend/unit/contract: 616 tests across 114 files, including 49 installed
+- Frontend/unit/contract: 645 tests across 120 files, including 51 installed
   App Server contract cases.
 - Electron/Node: 91 tests.
 - Strict TypeScript, production Vite build and production dependency audit:
   passing; zero production vulnerabilities.
-- Main JS: 596.06 kB, 171.92 kB gzip.
+- Main JS: 622.38 kB, 179.34 kB gzip.
 - Electron directory packaging: passing with the native update manager included.
 - Live release check: an installed v0.3.12 client detects v0.3.13 and its
   matching amd64 asset through the same native update boundary used by the app.
@@ -112,10 +133,16 @@ and Git/worktree management without a stable App Server product contract.
   existing two-column editor grid and remains selectable without layout shift.
 - Shared-browser update pass: General at 1164×860 and light theme at 840×620;
   version rows and the update action remain aligned without horizontal overflow.
+- Shared-browser command pass: flat CLI-style command and follow-up choices at
+  840×620 and 1240×820, including the complete 16-command catalog and separate
+  reasoning picker, fully keyboard-operable with no console errors after a
+  clean reload.
+- Shared-browser subagent pass: nested transcript and child action group at
+  1240×820 and 840×620 in light and dark themes, with no console errors.
 - Current working-tree Debian package: passing; the packaged AppArmor profile
   is byte-identical to its source and present under `resources/apparmor/`.
-- Debian v0.3.13:
-  `sha256:9b5dc7ed067aa0ca7b3dd057616c9382aac88a62ef11b18f57c3cebcc11f50be`.
+- Debian v0.3.14:
+  `sha256:d8c4027777892f08e776d02b6195f7c0aa58e283f4512af4e48c3815d69ceb1e`.
   The package contains the native update manager and matching AppArmor profile.
   Earlier upgrade and same-version reinstall checks preserved both persistence
   files byte-for-byte, including inode, timestamps, mode and ownership.

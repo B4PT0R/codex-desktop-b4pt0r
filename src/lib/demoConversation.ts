@@ -2,7 +2,12 @@ import type {
   AppServerSkill,
   RateLimitResetCreditsSummary,
 } from "./appServerTypes";
-import type { ChatMessage, Quota, ThreadSummary } from "../types";
+import type {
+  ChatMessage,
+  Quota,
+  SubagentTranscript,
+  ThreadSummary,
+} from "../types";
 import type { ThreadTelemetry } from "./sessionTelemetry";
 import type { Translate } from "../i18n/translate";
 
@@ -64,6 +69,20 @@ export function demoConversation(): ChatMessage[] {
           output: "18 tests réussis",
           exitCode: 0,
           durationMs: 103,
+        },
+        {
+          id: "demo-subagent",
+          kind: "collabAgentToolCall",
+          title: "Audit délégué",
+          detail: "Vérifier la frontière IPC Electron",
+          status: "done",
+          subagent: {
+            threadIds: ["demo-child-thread"],
+            prompt: "Vérifie la sécurité et les tests de la frontière IPC.",
+            model: "gpt-5.4",
+            reasoningEffort: "high",
+            status: "completed",
+          },
         },
         {
           id: "demo-files",
@@ -163,6 +182,48 @@ index 08a1e34..66d19a2 100644
     },
   ];
 }
+
+export const demoSubagentTranscripts: Record<string, SubagentTranscript> = {
+  "demo-child-thread": {
+    name: "Atlas",
+    role: "reviewer",
+    status: "completed",
+    messages: [
+      {
+        id: "demo-child-intro",
+        role: "assistant",
+        content:
+          "Je contrôle les canaux exposés par le preload et leurs validations.",
+        tools: [
+          {
+            id: "demo-child-search",
+            kind: "webSearch",
+            title: "Inspection IPC",
+            detail: 'rg "ipcMain.handle|contextBridge" electron',
+            status: "done",
+            durationMs: 71,
+          },
+          {
+            id: "demo-child-tests",
+            kind: "commandExecution",
+            title: "Tests Electron ciblés",
+            detail: "node --test electron/window.test.mjs",
+            status: "done",
+            output: "12 tests réussis",
+            exitCode: 0,
+            durationMs: 486,
+          },
+        ],
+      },
+      {
+        id: "demo-child-result",
+        role: "assistant",
+        content:
+          "La surface preload reste bornée et les entrées natives sont validées avant exécution.",
+      },
+    ],
+  },
+};
 
 export function readmeDemoConversation(): ChatMessage[] {
   return [

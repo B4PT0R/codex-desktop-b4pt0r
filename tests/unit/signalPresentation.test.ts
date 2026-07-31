@@ -44,6 +44,16 @@ describe("signaux agent", () => {
     ).toBeUndefined();
   });
 
+  it("laisse l’activité de démarrage au rendu d’action du sous-agent", () => {
+    expect(
+      signalFromItem({
+        id: "spawn-1",
+        type: "subAgentActivity",
+        kind: "started",
+      }),
+    ).toBeUndefined();
+  });
+
   it("présente les plans structurés", () =>
     expect(
       signalFromNotification({

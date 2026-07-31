@@ -286,6 +286,29 @@ export function threadInjectTranscriptParams(
     ],
   };
 }
+export function threadInjectAutoReviewApprovalParams(
+  threadId: string,
+  action: Record<string, unknown>,
+) {
+  const approvedAction = JSON.stringify({ action, outcome: "allowed" }, null, 2);
+  const prefix =
+    "The user has manually approved a specific action that was previously `Rejected`.";
+  return {
+    threadId,
+    items: [
+      {
+        type: "message",
+        role: "developer",
+        content: [
+          {
+            type: "input_text",
+            text: `${prefix}\n\nTreat this as approval to perform that exact action in the same context in which it was originally requested.\nDo not assume this also authorizes similar operations with different payloads.\n\nApproved action:\n${approvedAction}`,
+          },
+        ],
+      },
+    ],
+  };
+}
 export function threadCwdUpdateParams(threadId: string, cwd: string) {
   return { threadId, cwd };
 }
@@ -315,6 +338,24 @@ export function threadForkParams(threadId: string) {
 }
 export function threadReadParams(threadId: string) {
   return { threadId, includeTurns: false };
+}
+export function threadReadWithTurnsParams(threadId: string) {
+  return { threadId, includeTurns: true };
+}
+export function subagentDescendantsListParams(ancestorThreadId: string) {
+  return {
+    ancestorThreadId,
+    limit: 80,
+    sortDirection: "asc" as const,
+    sortKey: "created_at" as const,
+    sourceKinds: [
+      "subAgent",
+      "subAgentReview",
+      "subAgentCompact",
+      "subAgentThreadSpawn",
+      "subAgentOther",
+    ] as const,
+  };
 }
 export function threadResumeParams(threadId: string) {
   return {

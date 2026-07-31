@@ -1,23 +1,20 @@
 import type { MessageKey } from "../i18n/locales/fr";
-import type { SettingsSectionId } from "./settingsSections";
 
 export type ComposerCommandId =
   | "model"
-  | "permissions"
+  | "reasoning"
+  | "fast"
   | "plan"
+  | "permissions"
+  | "approvals"
+  | "approve"
   | "review"
-  | "new"
+  | "init"
   | "compact"
-  | "fork"
-  | "resume"
+  | "goal"
+  | "copy"
   | "status"
-  | "usage"
-  | "personality"
-  | "skills"
-  | "mcp"
-  | "apps"
-  | "plugins"
-  | "hooks"
+  | "ps"
   | "stop"
   | "clear";
 
@@ -25,41 +22,55 @@ export type ComposerCommand = {
   id: ComposerCommandId;
   value: `/${ComposerCommandId}`;
   labelKey: MessageKey;
+  availableDuringTask?: boolean;
   requiresThread?: boolean;
-  requiresTurn?: boolean;
-  settingsSection?: SettingsSectionId;
+};
+
+export type ComposerCommandChoiceRequest = {
+  id: number;
+  command: "/model" | "/reasoning" | "/permissions" | "/approvals" | "/approve";
+  stage: "model" | "effort" | "permission" | "approval" | "autoReview";
+  choices: Array<{
+    id: string;
+    label: string;
+    detail?: string;
+    selected?: boolean;
+    disabled?: boolean;
+  }>;
+};
+
+export type HeaderCommandRequest = {
+  id: number;
+  target: "agents" | "goal";
 };
 
 export const composerCommands: ComposerCommand[] = [
+  command("model", { availableDuringTask: true }),
+  command("reasoning", { availableDuringTask: true }),
+  command("fast"),
   command("plan"),
+  command("permissions", { availableDuringTask: true }),
+  command("approvals", { availableDuringTask: true }),
+  command("approve", { availableDuringTask: true, requiresThread: true }),
   command("review", { requiresThread: true }),
-  command("new"),
+  command("init", { requiresThread: true }),
   command("compact", { requiresThread: true }),
-  command("fork", { requiresThread: true }),
-  command("resume"),
-  command("status"),
-  command("usage", { settingsSection: "account" }),
-  command("personality", { settingsSection: "agent" }),
-  command("skills", { settingsSection: "plugins" }),
-  command("mcp", { settingsSection: "mcp" }),
-  command("apps", { settingsSection: "plugins" }),
-  command("plugins", { settingsSection: "plugins" }),
-  command("hooks", { settingsSection: "hooks" }),
-  command("stop", { requiresTurn: true }),
-  command("clear"),
+  command("goal", { availableDuringTask: true, requiresThread: true }),
+  command("copy", { availableDuringTask: true, requiresThread: true }),
+  command("status", { availableDuringTask: true }),
+  command("ps", { availableDuringTask: true, requiresThread: true }),
+  command("stop", { availableDuringTask: true, requiresThread: true }),
+  command("clear", { requiresThread: true }),
 ];
 
-export function filteredComposerCommands(
-  query: string,
-  labelFor: (key: MessageKey) => string,
-) {
+export function filteredComposerCommands(query: string) {
   const needle = query.replace(/^\//, "").trim().toLocaleLowerCase();
   if (!needle) return composerCommands;
-  return composerCommands.filter((item) =>
-    `${item.value} ${labelFor(item.labelKey)}`
-      .toLocaleLowerCase()
-      .includes(needle),
+  const exact = composerCommands.filter((item) => item.id === needle);
+  const prefixes = composerCommands.filter(
+    (item) => item.id !== needle && item.id.startsWith(needle),
   );
+  return [...exact, ...prefixes];
 }
 
 export function commandFromText(text: string) {

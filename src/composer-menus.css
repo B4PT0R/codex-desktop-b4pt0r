@@ -75,13 +75,48 @@
   flex: 0 0 auto;
 }
 
+.command-menu button {
+  min-height: 29px;
+  padding-block: 2px;
+}
+
 .command-menu button span {
   font-size: 12px;
 }
+
+.command-choice-menu button b {
+  width: auto;
+  flex: 0 1 auto;
+}
+
+.command-choice-detail {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.command-choice-check {
+  margin-left: auto;
+  flex: 0 0 auto;
+  color: #8298bd;
+}
+
+.command-choice-menu button:not(.selected):hover:not(:disabled) {
+  background: transparent;
+}
+
 .command-menu {
-  bottom: calc(100% + 8px);
-  max-height: min(480px, calc(100vh - 210px));
+  bottom: 100%;
+  max-height: min(400px, calc(100vh - 260px));
+  border-bottom: 0;
+  border-radius: 12px 12px 0 0;
   overflow-y: auto;
+}
+
+.composer-shell:focus-within .command-menu {
+  border-color: #555550;
 }
 
 .add-menu {

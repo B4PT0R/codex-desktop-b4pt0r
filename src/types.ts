@@ -19,6 +19,13 @@ export type ToolCall = {
   exitCode?: number;
   durationMs?: number;
   artifacts?: ToolArtifact[];
+  subagent?: {
+    threadIds: string[];
+    prompt?: string;
+    model?: string;
+    reasoningEffort?: string;
+    status?: SubagentStatus;
+  };
 };
 export type ToolArtifact =
   | {
@@ -33,6 +40,19 @@ export type ToolArtifact =
       url: string;
       snippet?: string;
     };
+export type SubagentStatus =
+  | "pending"
+  | "running"
+  | "completed"
+  | "interrupted"
+  | "error";
+export type SubagentTranscript = {
+  messages: ChatMessage[];
+  status: SubagentStatus;
+  name?: string;
+  role?: string;
+  path?: string;
+};
 export type AgentSignal = {
   id: string;
   kind: "reasoning" | "plan" | "compaction" | "review" | "agent" | "warning";
@@ -53,7 +73,8 @@ export type ChatMessage = {
     | "realtimeVoice"
     | "realtimeText"
     | "applicationError"
-    | "scheduledTask";
+    | "scheduledTask"
+    | "commandResult";
   /** Client-owned heading for an application error card. */
   title?: string;
   content: string;

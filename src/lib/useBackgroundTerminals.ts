@@ -18,7 +18,7 @@ export type BackgroundTerminal = {
 export type BackgroundTerminalsController = {
   error?: string;
   loading: boolean;
-  refresh: () => Promise<void>;
+  refresh: () => Promise<BackgroundTerminal[]>;
   terminals: BackgroundTerminal[];
   terminate: (processId: string) => Promise<boolean>;
   terminating: string[];
@@ -43,7 +43,9 @@ export function useBackgroundTerminals({
   const pendingRequests = useRef(new Map<string, number>());
   const terminatingProcesses = useRef(new Set<string>());
   const activeThreadId = useRef(threadId);
+  const terminalsRef = useRef(terminals);
   activeThreadId.current = threadId;
+  terminalsRef.current = terminals;
 
   useEffect(() => {
     refreshVersion.current += 1;
@@ -58,9 +60,9 @@ export function useBackgroundTerminals({
   const refreshTerminals = useCallback(async (showLoading: boolean) => {
     if (!connected || !threadId) {
       if (!threadId) setTerminals([]);
-      return;
+      return [];
     }
-    if (pendingRequests.current.has(threadId)) return;
+    if (pendingRequests.current.has(threadId)) return terminalsRef.current;
     const version = ++refreshVersion.current;
     pendingRequests.current.set(threadId, version);
     if (showLoading) setLoading(true);
@@ -83,10 +85,12 @@ export function useBackgroundTerminals({
           sameTerminalSnapshots(current, items) ? current : items,
         );
       }
+      return version === refreshVersion.current ? items : terminalsRef.current;
     } catch (cause) {
       if (version === refreshVersion.current) {
         setError(cause instanceof Error ? cause.message : String(cause));
       }
+      return terminalsRef.current;
     } finally {
       if (pendingRequests.current.get(threadId) === version) {
         pendingRequests.current.delete(threadId);

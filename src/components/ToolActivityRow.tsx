@@ -1,5 +1,6 @@
 import {
   BriefcaseBusiness,
+  Bot,
   Check,
   ChevronDown,
   CircleAlert,
@@ -11,7 +12,7 @@ import {
   Terminal,
   Wrench,
 } from "lucide-react";
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState, type ReactNode } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import {
   CLOSED_STEP_TOOL_DWELL_MS,
@@ -19,7 +20,7 @@ import {
   TOOL_COLLAPSE_MS,
   TOOL_COMPLETION_DWELL_MS,
 } from "../lib/toolActivityTiming";
-import type { ToolCall } from "../types";
+import type { ChatMessage, SubagentTranscript, ToolCall } from "../types";
 import { ToolArtifacts } from "./ToolArtifacts";
 
 type ToolActivityRowProps = {
@@ -28,7 +29,13 @@ type ToolActivityRowProps = {
   index: number;
   onCollapsed: (index: number) => void;
   onReviewDiff?: (tool: ToolCall) => void;
+  renderSubagentMessages?: (
+    messages: ChatMessage[],
+    complete: boolean,
+  ) => ReactNode;
   stepClosed: boolean;
+  subagentError?: string;
+  subagentTranscripts?: Record<string, SubagentTranscript>;
   tool: ToolCall;
   yieldRunning: boolean;
 };
@@ -41,7 +48,10 @@ export const ToolActivityRow = memo(function ToolActivityRow({
   index,
   onCollapsed,
   onReviewDiff,
+  renderSubagentMessages,
   stepClosed,
+  subagentError,
+  subagentTranscripts = {},
   tool,
   yieldRunning,
 }: ToolActivityRowProps) {
@@ -167,7 +177,13 @@ export const ToolActivityRow = memo(function ToolActivityRow({
         className="tool-details-shell"
         hidden={!expanded}
       >
-        <ToolDetails tool={tool} onReviewDiff={onReviewDiff} />
+        <ToolDetails
+          onReviewDiff={onReviewDiff}
+          renderSubagentMessages={renderSubagentMessages}
+          subagentError={subagentError}
+          subagentTranscripts={subagentTranscripts}
+          tool={tool}
+        />
       </div>
     </article>
   );
@@ -208,6 +224,7 @@ function ToolStatus({
 }
 
 function ToolIcon({ kind }: { kind: ToolCall["kind"] }) {
+  if (kind === "collabAgentToolCall") return <Bot />;
   if (kind === "commandExecution") return <Terminal />;
   if (kind === "fileChange") return <FilePenLine />;
   if (kind === "mcpToolCall" || kind === "dynamicToolCall") return <Plug />;
@@ -237,12 +254,31 @@ function ToolMetrics({ tool }: { tool: ToolCall }) {
 
 function ToolDetails({
   onReviewDiff,
+  renderSubagentMessages,
+  subagentError,
+  subagentTranscripts,
   tool,
 }: {
   onReviewDiff?: (tool: ToolCall) => void;
+  renderSubagentMessages?: (
+    messages: ChatMessage[],
+    complete: boolean,
+  ) => ReactNode;
+  subagentError?: string;
+  subagentTranscripts: Record<string, SubagentTranscript>;
   tool: ToolCall;
 }) {
   const { t } = useI18n();
+  if (tool.subagent) {
+    return (
+      <SubagentToolDetails
+        error={subagentError}
+        renderMessages={renderSubagentMessages}
+        transcripts={subagentTranscripts}
+        tool={tool}
+      />
+    );
+  }
   const output = tool.output ?? tool.progress;
   const artifacts = tool.artifacts?.filter(
     (artifact) => artifact.type !== "generatedImage",
@@ -274,6 +310,75 @@ function ToolDetails({
       )}
       {artifacts && artifacts.length > 0 && (
         <ToolArtifacts artifacts={artifacts} />
+      )}
+    </div>
+  );
+}
+
+function SubagentToolDetails({
+  error,
+  renderMessages,
+  transcripts,
+  tool,
+}: {
+  error?: string;
+  renderMessages?: (messages: ChatMessage[], complete: boolean) => ReactNode;
+  transcripts: Record<string, SubagentTranscript>;
+  tool: ToolCall;
+}) {
+  const { t } = useI18n();
+  const subagent = tool.subagent!;
+  return (
+    <div className="tool-details subagent-tool-details">
+      {subagent.prompt && (
+        <section className="subagent-objective">
+          <span>{t("tool.subagent.objective")}</span>
+          <p>{subagent.prompt}</p>
+        </section>
+      )}
+      {(subagent.model || subagent.reasoningEffort) && (
+        <div className="subagent-meta">
+          {subagent.model && <span>{subagent.model}</span>}
+          {subagent.reasoningEffort && <span>{subagent.reasoningEffort}</span>}
+        </div>
+      )}
+      {subagent.threadIds.length === 0 ? (
+        <p className="subagent-empty">{t("tool.subagent.starting")}</p>
+      ) : (
+        subagent.threadIds.map((threadId, index) => {
+          const transcript = transcripts[threadId];
+          const complete =
+            transcript?.status === "completed" ||
+            transcript?.status === "interrupted" ||
+            transcript?.status === "error";
+          return (
+            <section className="subagent-thread" key={threadId}>
+              <header>
+                <Bot />
+                <strong>
+                  {transcript?.name ??
+                    transcript?.path?.split("/").filter(Boolean).at(-1) ??
+                    t("tool.subagent.name", { index: index + 1 })}
+                </strong>
+                {transcript?.role && <span>{transcript.role}</span>}
+                <small>
+                  {t(
+                    `tool.subagent.status.${transcript?.status ?? "pending"}`,
+                  )}
+                </small>
+              </header>
+              {transcript?.messages.length && renderMessages ? (
+                <div className="subagent-transcript">
+                  {renderMessages(transcript.messages, complete)}
+                </div>
+              ) : (
+                <p className="subagent-empty">
+                  {error ?? t("tool.subagent.waiting")}
+                </p>
+              )}
+            </section>
+          );
+        })
       )}
     </div>
   );

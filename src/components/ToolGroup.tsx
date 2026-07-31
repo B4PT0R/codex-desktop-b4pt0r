@@ -1,5 +1,6 @@
 import {
   BriefcaseBusiness,
+  Bot,
   Check,
   ChevronDown,
   CircleAlert,
@@ -19,6 +20,7 @@ import {
   useRef,
   useState,
 } from "react";
+import type { ReactNode } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import {
   CLOSED_STEP_GROUP_DWELL_MS,
@@ -26,15 +28,21 @@ import {
   TOOL_GROUP_DWELL_MS,
   TOOL_HIDE_MS,
 } from "../lib/toolActivityTiming";
-import type { ToolCall } from "../types";
+import type { ChatMessage, SubagentTranscript, ToolCall } from "../types";
 import { ToolActivityRow } from "./ToolActivityRow";
 
 type ToolGroupProps = {
   backgroundToolIds?: ReadonlySet<string>;
   maxVisibleActions?: number;
   onReviewDiff?: (tool: ToolCall) => void;
+  renderSubagentMessages?: (
+    messages: ChatMessage[],
+    complete: boolean,
+  ) => ReactNode;
   /** True once later chat content is ready or the owning turn has ended. */
   stepClosed?: boolean;
+  subagentError?: string;
+  subagentTranscripts?: Record<string, SubagentTranscript>;
   tools: ToolCall[];
 };
 
@@ -52,7 +60,10 @@ export const ToolGroup = memo(function ToolGroup({
   backgroundToolIds = EMPTY_TOOL_IDS,
   maxVisibleActions = 3,
   onReviewDiff,
+  renderSubagentMessages,
   stepClosed,
+  subagentError,
+  subagentTranscripts = {},
   tools,
 }: ToolGroupProps) {
   const { t } = useI18n();
@@ -202,7 +213,7 @@ export const ToolGroup = memo(function ToolGroup({
         aria-expanded={groupExpanded}
         className="tool-group-summary"
         onClick={() => {
-          if (!allResolved || presentationActive) return;
+          if (presentationActive) return;
           if (groupPhase === "closed") {
             manuallyOpened.current = true;
             setGroupPhase("open");
@@ -259,7 +270,10 @@ export const ToolGroup = memo(function ToolGroup({
               key={tool.id}
               onCollapsed={handleCollapsed}
               onReviewDiff={onReviewDiff}
+              renderSubagentMessages={renderSubagentMessages}
               stepClosed={Boolean(stepClosed)}
+              subagentError={subagentError}
+              subagentTranscripts={subagentTranscripts}
               tool={tool}
               yieldRunning={
                 tool.status === "running" && backgroundToolIds.has(tool.id)
@@ -355,6 +369,11 @@ function ToolKindSummary({ tools }: { tools: ToolCall[] }) {
       count: tools.filter(
         (tool) => tool.kind === "imageView" || tool.kind === "imageGeneration",
       ).length,
+    },
+    {
+      key: "tool.kind.agents" as const,
+      icon: <Bot />,
+      count: tools.filter((tool) => tool.kind === "collabAgentToolCall").length,
     },
   ];
   const knownCount = groups.reduce((total, group) => total + group.count, 0);

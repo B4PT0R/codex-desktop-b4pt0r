@@ -20,6 +20,8 @@ test("creates a sandboxed window without a browser menu bar", () => {
     window,
   );
   assert.equal(options.autoHideMenuBar, true);
+  assert.equal(options.minWidth, 520);
+  assert.equal(options.minHeight, 620);
   assert.equal(options.show, true);
   assert.equal(options.webPreferences.backgroundThrottling, false);
   assert.equal(options.webPreferences.contextIsolation, true);

@@ -122,6 +122,9 @@ export type AppServerTurn = {
 
 export type AppServerThread = {
   id: string;
+  parentThreadId?: string | null;
+  agentNickname?: string | null;
+  agentRole?: string | null;
   name?: string | null;
   preview?: string;
   updatedAt?: number;

@@ -275,6 +275,12 @@
   background: #e8e8e2;
 }
 
+:root[data-theme="light"]
+  .command-choice-menu
+  button:not(.selected):hover:not(:disabled) {
+  background: transparent;
+}
+
 :root[data-theme="light"] .composer-menu .composer-menu-back {
   color: #353530;
   border-color: #d5d5cf;
@@ -678,6 +684,26 @@
   border-color: #ddddd7;
   background: #fafaf8;
   box-shadow: none;
+}
+
+:root[data-theme="light"] .subagent-meta span,
+:root[data-theme="light"] .subagent-thread {
+  border-color: #ddddd7;
+}
+
+:root[data-theme="light"] .subagent-thread {
+  background: #f7f7f4;
+}
+
+:root[data-theme="light"] .subagent-transcript {
+  border-color: #e3e3dd;
+  background: #fff;
+}
+
+:root[data-theme="light"] .subagent-thread > header strong,
+:root[data-theme="light"] .subagent-objective p,
+:root[data-theme="light"] .subagent-empty {
+  color: #5d5d57;
 }
 
 :root[data-theme="light"] .tool-row strong,

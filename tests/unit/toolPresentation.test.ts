@@ -13,13 +13,31 @@ describe("feedbacks d’outils", () => {
     "agentMessage",
     "userMessage",
     "hookPrompt",
-    "subAgentActivity",
     "enteredReviewMode",
     "exitedReviewMode",
     "contextCompaction",
   ])("exclut %s", (type) =>
     expect(toolFromItem({ id: "1", type })).toBeUndefined(),
   );
+
+  it("reconstruit une délégation depuis l’activité native du sous-agent", () => {
+    expect(
+      toolFromItem({
+        id: "spawn-1",
+        type: "subAgentActivity",
+        kind: "started",
+        agentThreadId: "child-1",
+        agentPath: "/root/audit",
+      }),
+    ).toMatchObject({
+      id: "spawn-1",
+      kind: "collabAgentToolCall",
+      title: "Nouvel agent",
+      detail: "/root/audit",
+      status: "running",
+      subagent: { threadIds: ["child-1"], status: "running" },
+    });
+  });
 
   it.each([
     ["commandExecution", { command: "cargo test" }, "Commande", "cargo test"],
@@ -63,6 +81,50 @@ describe("feedbacks d’outils", () => {
     expect(toolStatus({ status: "failed" })).toBe("error");
     expect(toolStatus({ status: "declined" })).toBe("error");
     expect(toolStatus({}, true)).toBe("done");
+  });
+
+  it("garde l’action de délégation active pendant le tour du sous-agent", () => {
+    const item = {
+      id: "collab-1",
+      type: "collabAgentToolCall",
+      tool: "spawnAgent",
+      status: "completed",
+      receiverThreadIds: ["child-1"],
+      prompt: "Audite le transport",
+      model: "gpt-5.4",
+      reasoningEffort: "high",
+      agentsStates: { "child-1": { status: "running" } },
+    };
+    expect(toolStatus(item, true)).toBe("running");
+    expect(toolFromItem(item)).toMatchObject({
+      status: "running",
+      subagent: {
+        threadIds: ["child-1"],
+        prompt: "Audite le transport",
+        model: "gpt-5.4",
+        reasoningEffort: "high",
+        status: "running",
+      },
+    });
+    expect(
+      toolStatus({
+        ...item,
+        agentsStates: { "child-1": { status: "completed" } },
+      }),
+    ).toBe("done");
+  });
+
+  it("laisse les autres appels de collaboration sous forme d’actions simples", () => {
+    const wait = toolFromItem({
+      id: "wait-1",
+      type: "collabAgentToolCall",
+      tool: "wait",
+      status: "completed",
+      receiverThreadIds: ["child-1"],
+      agentsStates: { "child-1": { status: "running" } },
+    });
+    expect(wait?.status).toBe("done");
+    expect(wait?.subagent).toBeUndefined();
   });
 
   it("présente prudemment un outil partiellement formé", () => {

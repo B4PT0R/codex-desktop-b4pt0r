@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   demoConversation,
   demoQuotas,
+  demoSubagentTranscripts,
   demoTelemetry,
   demoThreads,
   readmeDemoConversation,
@@ -33,7 +34,11 @@ describe("conversation de démonstration", () => {
         "commandExecution",
         "fileChange",
         "imageGeneration",
+        "collabAgentToolCall",
       ]),
+    );
+    expect(demoSubagentTranscripts["demo-child-thread"].messages).toHaveLength(
+      2,
     );
   });
 

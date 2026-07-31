@@ -3,6 +3,37 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.3.14] - 2026-07-31
+
+### Added
+
+- The composer now offers a focused CLI-style command surface with keyboard
+  completion, inline choices and a dedicated result item for every validated
+  command.
+- Spawned subagents appear as ordinary parent tool actions whose expandable
+  details stream the bounded child transcript, nested messages and tool calls.
+- The main window can shrink to a compact chat-column layout when the sidebar
+  is collapsed.
+
+### Changed
+
+- The command catalog now concentrates on frequent conversation operations
+  while advanced configuration remains in Settings.
+- The README presents installation, architecture and supported workflows more
+  directly for new users and contributors.
+- Long-running subagents follow the same background-job presentation as
+  command processes, without holding the parent action group open.
+
+### Fixed
+
+- Subagent activity is reconstructed from the native App Server activity event
+  when a distinct live spawn item is absent, while both representations merge
+  without duplicate actions when present.
+- Completed status-less tools, including web searches, no longer retain a
+  running spinner after their terminal notification.
+- Command execution preserves composer focus and ignores stale asynchronous
+  results after switching conversations.
+
 ## [0.3.13] - 2026-07-31
 
 ### Added
@@ -490,6 +521,7 @@ follows semantic versioning while the public interface is taking shape.
 - Native Electron packaging for Debian/Ubuntu.
 - Stable Chromium microphone capture for dictation and Realtime voice.
 
+[0.3.14]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.13...v0.3.14
 [0.3.13]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.12...v0.3.13
 [0.3.12]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.11...v0.3.12
 [0.3.11]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.10...v0.3.11

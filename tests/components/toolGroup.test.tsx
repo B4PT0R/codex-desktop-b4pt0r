@@ -83,6 +83,91 @@ describe("activité des outils", () => {
     ).toHaveAttribute("aria-expanded", "true");
   });
 
+  it("affiche le fil d’un sous-agent dans l’action de délégation parent", () => {
+    render(
+      <ToolGroup
+        renderSubagentMessages={(messages) =>
+          messages.map((message) => <p key={message.id}>{message.content}</p>)
+        }
+        subagentTranscripts={{
+          "child-1": {
+            messages: [
+              {
+                id: "child-answer",
+                role: "assistant",
+                content: "Audit en cours",
+              },
+            ],
+            name: "Atlas",
+            role: "reviewer",
+            status: "running",
+          },
+        }}
+        tools={[
+          {
+            id: "spawn-1",
+            kind: "collabAgentToolCall",
+            title: "Nouvel agent",
+            detail: "Inspecter le transport",
+            status: "running",
+            subagent: {
+              threadIds: ["child-1"],
+              prompt: "Inspecter le transport",
+              model: "gpt-5.4",
+            },
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("Atlas")).toBeVisible();
+    expect(screen.getByText("reviewer")).toBeVisible();
+    expect(screen.getByText("Audit en cours")).toBeVisible();
+    expect(screen.getByText("Inspecter le transport")).toBeVisible();
+  });
+
+  it("traite un sous-agent cédé comme un job d’arrière-plan", () => {
+    vi.useFakeTimers();
+    const spawn: ToolCall = {
+      id: "spawn-1",
+      kind: "collabAgentToolCall",
+      title: "Nouvel agent",
+      detail: "Audit",
+      status: "running",
+      subagent: { threadIds: ["child-1"], status: "running" },
+    };
+    render(
+      <ToolGroup
+        backgroundToolIds={new Set(["spawn-1"])}
+        stepClosed
+        tools={[spawn]}
+      />,
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(TOOL_BACKGROUND_DWELL_MS + TOOL_COLLAPSE_MS);
+    });
+
+    expect(screen.getByRole("button", { name: /Nouvel agent/ })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+    act(() => vi.advanceTimersByTime(CLOSED_STEP_GROUP_DWELL_MS));
+    act(() => vi.advanceTimersByTime(TOOL_GROUP_COLLAPSE_MS));
+    const summary = screen.getByRole("button", { name: /Action en cours/ });
+    expect(summary).toHaveAttribute("aria-expanded", "false");
+    expect(summary.querySelector(".spin")).toBeNull();
+    expect(
+      summary.querySelector(".lucide-briefcase-business"),
+    ).not.toBeNull();
+
+    fireEvent.click(summary);
+    expect(summary).toHaveAttribute("aria-expanded", "true");
+    const action = screen.getByRole("button", { name: /Nouvel agent/ });
+    fireEvent.click(action);
+    expect(action).toHaveAttribute("aria-expanded", "true");
+  });
+
   it("replie uniquement le panneau de détail sans remplacer l’en-tête", () => {
     vi.useFakeTimers();
     const running = command("check");

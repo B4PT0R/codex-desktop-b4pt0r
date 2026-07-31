@@ -12,6 +12,7 @@ import type { AppServerSkill } from "../lib/appServerTypes";
 import { QuotaQuickPicker } from "./QuotaQuickPicker";
 import { ContextGauge } from "./ContextGauge";
 import { SecurityQuickPicker } from "./SecurityQuickPicker";
+import type { ComposerCommandChoiceRequest } from "../lib/commands";
 
 type ChatFooterProps = {
   apps: AppsController;
@@ -41,6 +42,7 @@ type ChatFooterProps = {
   dictationInsertion?: { id: number; text: string };
   hasThread: boolean;
   loadingThread: boolean;
+  commandChoiceRequest?: ComposerCommandChoiceRequest;
   telemetry?: ThreadTelemetry;
   onChangeEffort: (effort: string) => void;
   onChangeModel: (model: string) => void;
@@ -48,6 +50,8 @@ type ChatFooterProps = {
   onCompact: () => void;
   onNeedApps: () => void;
   onNeedSkills: () => void;
+  onCommandChoiceDismiss: () => void;
+  onCommandChoiceSelect: (choiceId: string) => void;
   onConsumeDictationInsertion: (id: number) => void;
   onOpenMcpSettings: () => void;
   onChangePermission: (permission: Permission) => Promise<boolean>;
@@ -89,6 +93,7 @@ export function ChatFooter({
   dictationInsertion,
   hasThread,
   loadingThread,
+  commandChoiceRequest,
   telemetry,
   onChangeEffort,
   onChangeModel,
@@ -96,6 +101,8 @@ export function ChatFooter({
   onCompact,
   onNeedApps,
   onNeedSkills,
+  onCommandChoiceDismiss,
+  onCommandChoiceSelect,
   onConsumeDictationInsertion,
   onOpenMcpSettings,
   onChangePermission,
@@ -123,6 +130,7 @@ export function ChatFooter({
           cwd={cwd}
           hasThread={hasThread}
           loadingThread={loadingThread}
+          commandChoiceRequest={commandChoiceRequest}
           recording={recording}
           dictating={dictating}
           dictationProcessing={dictationProcessing}
@@ -130,6 +138,8 @@ export function ChatFooter({
           onNeedApps={onNeedApps}
           onNeedSkills={onNeedSkills}
           onConsumeDictationInsertion={onConsumeDictationInsertion}
+          onCommandChoiceDismiss={onCommandChoiceDismiss}
+          onCommandChoiceSelect={onCommandChoiceSelect}
           onOpenMcp={onOpenMcpSettings}
           onOpenPlugins={onOpenPluginSettings}
           onSend={onSend}

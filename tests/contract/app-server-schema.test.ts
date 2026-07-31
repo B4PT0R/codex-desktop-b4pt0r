@@ -6,7 +6,9 @@ import Ajv from "ajv";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   automationThreadResumeParams,
+  subagentDescendantsListParams,
   threadReadParams,
+  threadReadWithTurnsParams,
   automationThreadSecurityRestoreParams,
   automationThreadStartParams,
   automationTurnStartParams,
@@ -51,6 +53,7 @@ import {
   threadGoalSaveParams,
   threadGoalStatusParams,
   threadInjectTranscriptParams,
+  threadInjectAutoReviewApprovalParams,
   threadPermissionUpdateParams,
   threadServiceTierUpdateParams,
   threadShellCommandParams,
@@ -156,6 +159,11 @@ describe("contrat Codex installé", () => {
       "ThreadReadParams",
       threadReadParams("01900000-0000-7000-8000-000000000000"),
     );
+  });
+  it("accepte la découverte et le replay des threads de sous-agents", () => {
+    const threadId = "01900000-0000-7000-8000-000000000000";
+    validates("ThreadListParams", subagentDescendantsListParams(threadId));
+    validates("ThreadReadParams", threadReadWithTurnsParams(threadId));
   });
   it("accepte la lecture de la configuration Codex effective", () =>
     validates("ConfigReadParams", configReadParams("/tmp/project")));
@@ -296,6 +304,16 @@ describe("contrat Codex installé", () => {
       ),
     );
   });
+  it("accepte l’autorisation précise d’un refus de relecture automatique", () =>
+    validates(
+      "ThreadInjectItemsParams",
+      threadInjectAutoReviewApprovalParams("thr_1", {
+        type: "command",
+        command: "git push",
+        cwd: "/tmp/project",
+        source: "shell",
+      }),
+    ));
   it("accepte la suppression définitive d’une conversation", () =>
     validates("ThreadDeleteParams", threadDeleteParams("thr_1")));
   it("accepte le renommage et la compaction", () => {

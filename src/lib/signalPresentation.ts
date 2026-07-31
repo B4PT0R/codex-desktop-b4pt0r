@@ -42,6 +42,10 @@ export function signalFromItem(
         status: "running",
       };
     case "subAgentActivity":
+      // A start event is the only canonical live representation emitted by
+      // some App Server builds for spawn_agent. It is rendered as the parent
+      // tool action so the child transcript has one stable owner.
+      if (value.kind === "started") return undefined;
       return {
         id,
         kind: "agent",

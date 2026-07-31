@@ -79,7 +79,7 @@ describe("mise à jour de l’application", () => {
     const { result } = renderHook(() => useAppUpdate(true));
 
     await waitFor(() =>
-      expect(result.current.versions?.clientVersion).toBe("0.3.13"),
+      expect(result.current.versions?.clientVersion).toBe(__APP_VERSION__),
     );
     await act(async () => {
       expect(await result.current.check()).toBe(false);

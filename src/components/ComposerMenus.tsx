@@ -9,6 +9,7 @@ import {
   TerminalSquare,
 } from "lucide-react";
 import { filteredComposerCommands } from "../lib/commands";
+import type { ComposerCommandChoiceRequest } from "../lib/commands";
 import type { AppInfo, AppServerSkill } from "../lib/appServerTypes";
 import { useI18n } from "../i18n/I18nProvider";
 import type { KeyboardEventHandler, Ref } from "react";
@@ -34,7 +35,7 @@ export function CommandMenu({
   onMenuKeyDown,
 }: CommandMenuProps) {
   const { t } = useI18n();
-  const commands = filteredComposerCommands(query, t);
+  const commands = filteredComposerCommands(query);
   return (
     <div
       className="composer-menu command-menu"
@@ -47,19 +48,18 @@ export function CommandMenu({
         commands.map((command) => {
           const disabled =
             (command.requiresThread && !hasThread) ||
-            (command.requiresTurn && !busy);
+            (busy && !command.availableDuringTask);
           return (
             <button
               key={command.id}
+              data-command={command.value}
               role="menuitem"
               disabled={disabled}
               title={
-                disabled
-                  ? t(
-                      command.requiresTurn
-                        ? "composer.commands.requiresTurn"
-                        : "composer.commands.requiresThread",
-                    )
+                command.requiresThread && !hasThread
+                  ? t("composer.commands.requiresThread")
+                  : busy && !command.availableDuringTask
+                    ? t("composer.commands.requiresIdle")
                   : undefined
               }
               onClick={() => onSelect(command.value)}
@@ -72,6 +72,46 @@ export function CommandMenu({
       ) : (
         <p>{t("composer.commands.empty")}</p>
       )}
+    </div>
+  );
+}
+
+export function CommandChoiceMenu({
+  request,
+  onMenuKeyDown,
+  onSelect,
+  menuRef,
+}: {
+  request: ComposerCommandChoiceRequest;
+  onSelect: (choiceId: string) => void;
+} & ComposerMenuSurfaceProps) {
+  return (
+    <div
+      aria-label={`${request.command} ${request.stage}`}
+      className="composer-menu command-menu command-choice-menu"
+      onKeyDown={onMenuKeyDown}
+      ref={menuRef}
+      role="menu"
+    >
+      {request.choices.map((choice) => (
+        <button
+          aria-checked={Boolean(choice.selected)}
+          className={choice.selected ? "selected" : undefined}
+          disabled={choice.disabled}
+          key={choice.id}
+          onClick={() => onSelect(choice.id)}
+          role="menuitemradio"
+          type="button"
+        >
+          <b>{choice.label}</b>
+          {choice.detail && (
+            <span className="command-choice-detail">{choice.detail}</span>
+          )}
+          {choice.selected && (
+            <span aria-hidden="true" className="command-choice-check">✓</span>
+          )}
+        </button>
+      ))}
     </div>
   );
 }

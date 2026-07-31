@@ -4,7 +4,7 @@ export function createMainWindow(BrowserWindow, { hidden, root }) {
   const window = new BrowserWindow({
     width: 1240,
     height: 820,
-    minWidth: 840,
+    minWidth: 520,
     minHeight: 620,
     title: "Codex",
     show: !hidden,

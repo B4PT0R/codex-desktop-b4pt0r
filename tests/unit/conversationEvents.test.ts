@@ -10,6 +10,66 @@ const assistantMessage: ChatMessage = {
 };
 
 describe("événements de conversation", () => {
+  it("matérialise un sous-agent depuis son seul événement d’activité", () => {
+    const updated = applyConversationEvent([], {
+      method: "item/completed",
+      params: {
+        item: {
+          id: "spawn-1",
+          type: "subAgentActivity",
+          kind: "started",
+          agentThreadId: "child-1",
+          agentPath: "/root/audit",
+        },
+      },
+    });
+
+    expect(updated[0].tools?.[0]).toMatchObject({
+      id: "spawn-1",
+      title: "Nouvel agent",
+      status: "running",
+      subagent: { threadIds: ["child-1"] },
+    });
+    expect(updated[0].signals).toBeUndefined();
+  });
+
+  it("enrichit une délégation existante sans perdre son objectif", () => {
+    const started = applyConversationEvent([], {
+      method: "item/started",
+      params: {
+        item: {
+          id: "spawn-1",
+          type: "collabAgentToolCall",
+          tool: "spawnAgent",
+          prompt: "Audite le transport",
+          status: "inProgress",
+          receiverThreadIds: [],
+        },
+      },
+    });
+    const updated = applyConversationEvent(started, {
+      method: "item/completed",
+      params: {
+        item: {
+          id: "spawn-1",
+          type: "subAgentActivity",
+          kind: "started",
+          agentThreadId: "child-1",
+          agentPath: "/root/audit",
+        },
+      },
+    });
+
+    expect(updated[0].tools?.[0]).toMatchObject({
+      detail: "Audite le transport",
+      status: "running",
+      subagent: {
+        prompt: "Audite le transport",
+        threadIds: ["child-1"],
+      },
+    });
+  });
+
   it("identifie un réveil planifié sans dupliquer les messages utilisateur", () => {
     const event = {
       method: "item/started",
@@ -152,6 +212,33 @@ describe("événements de conversation", () => {
         ],
       },
     ]);
+  });
+
+  it("finalise une recherche web même sans statut dans l’item terminal", () => {
+    const event = {
+      method: "item/completed",
+      params: {
+        item: {
+          id: "search-1",
+          type: "webSearch",
+          query: "Tokio runtime",
+        },
+      },
+    };
+    const started = applyConversationEvent([assistantMessage], {
+      method: "item/started",
+      params: event.params,
+    });
+    const completed = applyConversationEvent(started, event);
+
+    expect(completed[0].tools?.[0]).toMatchObject({
+      id: "search-1",
+      status: "done",
+    });
+    expect(applyConversationEvent([], event)[0].tools?.[0]).toMatchObject({
+      id: "search-1",
+      status: "done",
+    });
   });
 
   it("ne ressuscite pas une action isolée sur un démarrage dupliqué", () => {

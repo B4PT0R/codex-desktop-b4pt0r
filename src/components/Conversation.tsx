@@ -1,8 +1,8 @@
 import { Folder, LoaderCircle, Sparkles } from "lucide-react";
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { AgentActivity } from "../lib/activity";
-import type { ChatMessage, ToolCall } from "../types";
+import type { ChatMessage, SubagentTranscript, ToolCall } from "../types";
 import { useConversationScroll } from "../lib/useConversationScroll";
 import { AgentStatus } from "./AgentStatus";
 import { Markdown } from "./Markdown";
@@ -19,9 +19,12 @@ import { MarkdownLinkProvider } from "./MarkdownLinkContext";
 import type { FileOpener } from "../lib/protocol";
 import { MemoryCitations } from "./MemoryCitations";
 import { ScheduledTaskMessage } from "./ScheduledTaskMessage";
+import { CommandResultMessage } from "./CommandResultMessage";
+import { presentSubagentTools } from "../lib/subagentPresentation";
 
 const loadingExitDurationMs = 180;
 const loadingLayerExitDurationMs = 400;
+const EMPTY_SUBAGENT_TRANSCRIPTS: Record<string, SubagentTranscript> = {};
 
 type ConversationProps = {
   activity: AgentActivity;
@@ -36,6 +39,8 @@ type ConversationProps = {
   cwd?: string;
   fileOpener?: FileOpener;
   onLinkError?: (error: unknown) => void;
+  subagentError?: string;
+  subagentTranscripts?: Record<string, SubagentTranscript>;
 };
 
 export function Conversation({
@@ -51,6 +56,8 @@ export function Conversation({
   onLinkError = () => undefined,
   onLoadOlder,
   onReviewDiff,
+  subagentError,
+  subagentTranscripts = {},
 }: ConversationProps) {
   const { t } = useI18n();
   const scroll = useConversationScroll(messages, activity);
@@ -159,19 +166,28 @@ export function Conversation({
                   <p>{t("empty.subtitle")}</p>
                 </div>
               ) : (
-                messages.map((message, messageIndex) => (
-                  <ConversationMessage
-                    key={message.id}
-                    message={message}
-                    backgroundToolIds={backgroundToolIds}
-                    maxVisibleActions={maxVisibleActions}
-                    onReviewDiff={onReviewDiff}
-                    stepClosed={
-                      messageIndex < messages.length - 1 ||
-                      (messageIndex === messages.length - 1 && activity === null)
-                    }
-                  />
-                ))
+                messages.map((message, messageIndex) => {
+                  const tracksSubagents = hasSubagentTool(message);
+                  return (
+                    <ConversationMessage
+                      key={message.id}
+                      message={message}
+                      backgroundToolIds={backgroundToolIds}
+                      maxVisibleActions={maxVisibleActions}
+                      onReviewDiff={onReviewDiff}
+                      subagentError={tracksSubagents ? subagentError : undefined}
+                      subagentTranscripts={
+                        tracksSubagents
+                          ? subagentTranscripts
+                          : EMPTY_SUBAGENT_TRANSCRIPTS
+                      }
+                      stepClosed={
+                        messageIndex < messages.length - 1 ||
+                        (messageIndex === messages.length - 1 && activity === null)
+                      }
+                    />
+                  );
+                })
               )}
               <AgentStatus activity={activity} />
               <PlanProgressWidget plan={plan} />
@@ -188,13 +204,19 @@ const ConversationMessage = memo(function ConversationMessage({
   backgroundToolIds,
   maxVisibleActions,
   onReviewDiff,
+  subagentError,
+  subagentTranscripts,
   stepClosed,
+  depth = 0,
 }: {
   message: ChatMessage;
   backgroundToolIds?: ReadonlySet<string>;
   maxVisibleActions: number;
   onReviewDiff?: (tool: ToolCall) => void;
+  subagentError?: string;
+  subagentTranscripts: Record<string, SubagentTranscript>;
   stepClosed: boolean;
+  depth?: number;
 }) {
   const { t } = useI18n();
   const [revealed, setRevealed] = useState(
@@ -210,6 +232,16 @@ const ConversationMessage = memo(function ConversationMessage({
     (tool.artifacts ?? []).filter(
       (artifact) => artifact.type === "generatedImage",
     ),
+  );
+  const presentedTools = useMemo(
+    () =>
+      presentSubagentTools(
+        message.tools ?? [],
+        subagentTranscripts,
+        backgroundToolIds,
+        stepClosed,
+      ),
+    [backgroundToolIds, message.tools, stepClosed, subagentTranscripts],
   );
 
   useEffect(() => {
@@ -257,6 +289,8 @@ const ConversationMessage = memo(function ConversationMessage({
           <RealtimeTextMessage message={message} />
         ) : message.modality === "scheduledTask" ? (
           <ScheduledTaskMessage message={message} />
+        ) : message.modality === "commandResult" ? (
+          <CommandResultMessage message={message} />
         ) : (
           <Markdown streaming={message.streaming}>{message.content}</Markdown>
         )}
@@ -266,13 +300,45 @@ const ConversationMessage = memo(function ConversationMessage({
         {trailingSignals && trailingSignals.length > 0 && (
           <SignalCards signals={trailingSignals} />
         )}{" "}
-        {message.tools && message.tools.length > 0 && (
+        {presentedTools.tools.length > 0 && (
           <ToolGroup
-            backgroundToolIds={backgroundToolIds}
+            backgroundToolIds={presentedTools.backgroundToolIds}
             maxVisibleActions={maxVisibleActions}
-            tools={message.tools}
+            tools={presentedTools.tools}
             onReviewDiff={onReviewDiff}
+            renderSubagentMessages={
+              depth >= 4
+                ? undefined
+                : (childMessages, childComplete) =>
+                    childMessages.map((childMessage, childIndex) => {
+                      const tracksSubagents = hasSubagentTool(childMessage);
+                      return (
+                        <ConversationMessage
+                          backgroundToolIds={backgroundToolIds}
+                          depth={depth + 1}
+                          key={childMessage.id}
+                          maxVisibleActions={maxVisibleActions}
+                          message={childMessage}
+                          onReviewDiff={onReviewDiff}
+                          stepClosed={
+                            childIndex < childMessages.length - 1 ||
+                            childComplete
+                          }
+                          subagentError={
+                            tracksSubagents ? subagentError : undefined
+                          }
+                          subagentTranscripts={
+                            tracksSubagents
+                              ? subagentTranscripts
+                              : EMPTY_SUBAGENT_TRANSCRIPTS
+                          }
+                        />
+                      );
+                    })
+            }
             stepClosed={stepClosed}
+            subagentError={subagentError}
+            subagentTranscripts={subagentTranscripts}
           />
         )}
         {generatedImages && generatedImages.length > 0 && (
@@ -282,6 +348,10 @@ const ConversationMessage = memo(function ConversationMessage({
     </article>
   );
 });
+
+function hasSubagentTool(message: ChatMessage) {
+  return message.tools?.some((tool) => tool.subagent) ?? false;
+}
 
 function latestPlan(messages: ChatMessage[]) {
   for (

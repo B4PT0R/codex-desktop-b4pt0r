@@ -1,0 +1,81 @@
+.command-result {
+  overflow: hidden;
+  border: 1px solid #363633;
+  border-radius: 9px;
+  background: #222220;
+}
+
+.command-result-toggle {
+  display: grid;
+  width: 100%;
+  min-height: 34px;
+  grid-template-columns: 18px auto 1fr 16px;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 9px;
+  color: #aaa9a4;
+  text-align: left;
+}
+
+.command-result-toggle:hover,
+.command-result-toggle:focus-visible {
+  outline: 0;
+  color: #d6d6d1;
+  background: #2a2a27;
+}
+
+.command-result-toggle > svg:first-child {
+  width: 15px;
+  color: #8298bd;
+}
+
+.command-result-toggle strong {
+  color: inherit;
+  font: 600 11px/1.2 "DM Mono", monospace;
+}
+
+.command-result-toggle span {
+  color: #71716d;
+  font-size: 10px;
+}
+
+.command-result-chevron {
+  width: 13px;
+  transition: transform 150ms ease;
+}
+
+.command-result.expanded .command-result-chevron {
+  transform: rotate(180deg);
+}
+
+.command-result-body {
+  padding: 7px 11px 9px 34px;
+  border-top: 1px solid #343431;
+  color: #a5a5a0;
+  font-size: 11px;
+}
+
+.command-result-body :is(p, ul) {
+  margin-block: 2px;
+}
+
+
+:root[data-theme="light"] .command-result {
+  border-color: #d8d8d2;
+  background: #fafaf8;
+}
+
+:root[data-theme="light"] .command-result-toggle {
+  color: #50504b;
+}
+
+:root[data-theme="light"] .command-result-toggle:hover,
+:root[data-theme="light"] .command-result-toggle:focus-visible {
+  color: #343430;
+  background: #f0f0ec;
+}
+
+:root[data-theme="light"] .command-result-body {
+  border-color: #e0e0da;
+  color: #5f5f59;
+}

@@ -319,18 +319,7 @@ function completeItem(
         ? {
             tools: message.tools?.map((tool) =>
               tool.id === item.id
-                ? {
-                    ...tool,
-                    ...completedTool,
-                    ...(!completedTool?.output && tool.output
-                      ? { output: tool.output }
-                      : {}),
-                    ...(!completedTool?.diff && tool.diff
-                      ? { diff: tool.diff }
-                      : {}),
-                    ...(tool.progress ? { progress: tool.progress } : {}),
-                    status: toolStatus(item, true),
-                  }
+                ? mergeCompletedTool(tool, completedTool, item)
                 : tool,
             ),
           }
@@ -363,7 +352,51 @@ function completeItem(
     const signal = signalFromItem(item, t);
     if (signal) return appendSignal(next, completedSignal(signal, item, t));
   }
+  if (index < 0 && completedTool) {
+    return startItem(
+      next,
+      item.type === "subAgentActivity" || item.status !== undefined
+        ? item
+        : { ...item, status: "completed" },
+      t,
+    );
+  }
   return next;
+}
+
+function mergeCompletedTool(
+  tool: ToolCall,
+  completed: ToolCall | undefined,
+  item: AppServerItem,
+): ToolCall {
+  if (item.type === "subAgentActivity" && completed?.subagent) {
+    return {
+      ...tool,
+      status: tool.status,
+      subagent: {
+        ...completed.subagent,
+        ...tool.subagent,
+        threadIds: [
+          ...new Set([
+            ...(tool.subagent?.threadIds ?? []),
+            ...completed.subagent.threadIds,
+          ]),
+        ],
+        status: tool.subagent?.status ?? completed.subagent.status,
+      },
+    };
+  }
+  return {
+    ...tool,
+    ...completed,
+    ...(!completed?.output && tool.output ? { output: tool.output } : {}),
+    ...(!completed?.diff && tool.diff ? { diff: tool.diff } : {}),
+    ...(tool.progress ? { progress: tool.progress } : {}),
+    // The lifecycle notification itself is authoritative. Several terminal
+    // items (notably webSearch) omit a wire-level status, so the presentation
+    // reconstructed above still says "running" unless completion is explicit.
+    status: toolStatus(item, true),
+  };
 }
 
 function trimTrailingEmptyAssistantMessages(messages: ChatMessage[]) {

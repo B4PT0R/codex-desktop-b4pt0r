@@ -23,6 +23,7 @@ import { ThreadGoalButton } from "./ThreadGoalButton";
 import { WorkspaceAgentsButton } from "./WorkspaceAgentsButton";
 import { RoundIconButton } from "./RoundIcon";
 import type { BackgroundTerminalsController } from "../lib/useBackgroundTerminals";
+import type { HeaderCommandRequest } from "../lib/commands";
 
 type ChatHeaderProps = {
   backgroundTerminals?: BackgroundTerminalsController;
@@ -43,6 +44,7 @@ type ChatHeaderProps = {
     onPreviewThreadLoading?: () => void;
     onStop: () => void;
   };
+  commandRequest?: HeaderCommandRequest;
   onCompact: () => Promise<boolean>;
   onDelete: () => Promise<boolean>;
   onFork: () => Promise<boolean>;
@@ -65,6 +67,7 @@ export function ChatHeader({
   threadId,
   title,
   demoPlayback,
+  commandRequest,
   onCompact,
   onDelete,
   onFork,
@@ -91,6 +94,12 @@ export function ChatHeader({
     setName(title);
     setEditingName(false);
   }, [title]);
+  useEffect(() => {
+    if (!commandRequest) return;
+    setMenuOpen(false);
+    if (commandRequest.target === "agents") setAgentsOpen(true);
+    else setGoalOpen(true);
+  }, [commandRequest]);
   useEffect(() => {
     if (!menuOpen) return;
     const close = (event: MouseEvent) => {
