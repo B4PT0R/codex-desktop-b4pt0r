@@ -163,7 +163,6 @@ export class AppServerTransport {
       () => this.#settleProbe(id, "unresponsive"),
       timeoutMs,
     );
-    timer.unref?.();
     this.#probe = { id, promise, resolve: resolveProbe, timer };
     child.stdin.write(
       `${JSON.stringify({

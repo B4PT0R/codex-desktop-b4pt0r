@@ -101,7 +101,7 @@ and Git/worktree management without a stable App Server product contract.
   reported its page/context closed; no alternate browser stack was substituted.
 - Debian package: built successfully as `codex-desktop-linux 0.3.17` (amd64),
   SHA-256
-  `000b0c655a172d4675989a6a869975a3dbce6cfacde10bce659a9bec7812aefd`;
+  `0a50e029f683e66e7d8191e9a5f376efb3bad12b756a28dd80540f4d59ead681`;
   package metadata, dependencies, bundled skill and AppArmor resources were
   inspected directly.
 - Packaged Electron interaction check: not rerun for v0.3.17; the release lot

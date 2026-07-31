@@ -30,8 +30,9 @@ follows semantic versioning while the public interface is taking shape.
 - Background App Server activity and unscoped errors no longer alter the busy,
   terminal or conversation state of the visible thread.
 - App Server startup is now single-flight and cancellation-safe, while native
-  renderer delivery, recovery and navigation reject stale or untrusted states
-  without entering restart loops.
+  health probes retain their timeout until settlement, and native renderer
+  delivery, recovery and navigation reject stale or untrusted states without
+  entering restart loops.
 - Desktop preference updates now accept only allowlisted values with their
   exact expected types while preserving previously stored forward-compatible
   fields.
