@@ -9,7 +9,7 @@ belongs in `CHANGELOG.md` and Git.
 ## Baseline
 
 Codex Desktop Linux is a functional independent Electron client for the
-official `codex app-server`. The current public release is v0.3.15.
+official `codex app-server`. The current public release is v0.3.16.
 
 The daily workflow covers conversations and replay, concurrent thread activity,
 streaming Markdown/LaTeX, reasoning, plans, tools, approvals, diffs, files,
@@ -68,6 +68,13 @@ Completed in the current working tree:
   does;
 - treat `item/completed` as terminal for status-less tool items so web searches
   and other partial lifecycle deliveries cannot retain a stale spinner;
+- seed Realtime v3 with effective `developer_instructions` followed by the
+  AGENTS.md hierarchy reported for its ephemeral fork, through a bounded
+  App Server-attested native read, so voice and text start from the same
+  durable guidance without either source overwriting the other;
+- expose `developer_instructions` in Advanced Configuration through the shared
+  document editor and typed `config/value/write`, while preserving the raw TOML
+  editor as a separate escape hatch;
 - keep this handoff concise instead of accumulating completed release history.
 
 ## Recent constraints
@@ -124,13 +131,13 @@ and Git/worktree management without a stable App Server product contract.
 
 ## Latest verified baseline
 
-- Frontend/unit/contract: 645 tests across 120 files, including 51 installed
+- Frontend/unit/contract: 649 tests across 121 files, including 51 installed
   App Server contract cases.
-- Electron/Node: 94 tests, including explicit APT upgrade, metadata mismatch
+- Electron/Node: 99 tests, including explicit APT upgrade, metadata mismatch
   and denied-authorization coverage for the native updater.
 - Strict TypeScript, production Vite build and production dependency audit:
   passing; zero production vulnerabilities.
-- Main JS: 622.38 kB, 179.34 kB gzip.
+- Main JS: 624.16 kB, 179.71 kB gzip.
 - Electron directory and Debian packaging: passing with the native update
   manager included; the generated package declares `pkexec` explicitly.
 - Live release check: an installed v0.3.12 client detects v0.3.13 and its

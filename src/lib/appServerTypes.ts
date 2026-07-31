@@ -25,6 +25,7 @@ export type ConfigReadResponse = {
     model?: string | null;
     model_reasoning_effort?: string | null;
     approval_policy?: string | null;
+    developer_instructions?: string | null;
   };
 };
 
@@ -167,6 +168,7 @@ export type ThreadRuntimeResponse = {
   activePermissionProfile?: ActivePermissionProfile | null;
   sandbox?: SandboxPolicy;
   approvalPolicy?: string;
+  instructionSources?: string[];
 };
 
 export type ThreadStartResponse = ThreadRuntimeResponse;

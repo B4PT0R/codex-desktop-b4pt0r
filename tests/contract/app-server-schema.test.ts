@@ -437,7 +437,13 @@ describe("contrat Codex installé", () => {
   it("accepte Realtime WebSocket", () =>
     validates(
       "ThreadRealtimeStartParams",
-      realtimeStartParams("thr_1", { type: "websocket" }, "juniper"),
+      realtimeStartParams(
+        "thr_1",
+        { type: "websocket" },
+        "juniper",
+        "conversation",
+        [{ role: "developer", text: "Effective AGENTS.md instructions" }],
+      ),
     ));
   it("accepte Realtime WebRTC", () =>
     validates(

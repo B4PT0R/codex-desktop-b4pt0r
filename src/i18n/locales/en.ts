@@ -1022,6 +1022,17 @@ export const en: Record<MessageKey, string> = {
   "settings.config.discard": "Discard changes",
   "settings.config.save": "Save",
   "settings.config.saving": "Saving…",
+  "settings.developerInstructions.title": "Developer instructions",
+  "settings.developerInstructions.description":
+    "Edit the additional global instructions injected before the AGENTS.md hierarchy in every conversation.",
+  "settings.developerInstructions.editor": "Developer instructions content",
+  "settings.developerInstructions.placeholder":
+    "Add global guidance that should apply to every Codex conversation…",
+  "settings.developerInstructions.error":
+    "Unable to save developer instructions",
+  "settings.developerInstructions.saved": "Developer instructions saved.",
+  "settings.developerInstructions.restart":
+    "Reload already open conversations to apply this change. New Realtime sessions receive these instructions automatically.",
   "settings.globalAgents.title": "Personal instructions",
   "settings.globalAgents.description":
     "Define rules that Codex applies by default across your projects. More specific local AGENTS.md files still take precedence.",

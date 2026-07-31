@@ -3,6 +3,24 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.3.16] - 2026-07-31
+
+### Added
+
+- Advanced Configuration now provides a focused editor for the global
+  `developer_instructions` value without requiring manual TOML editing.
+
+### Changed
+
+- Labeled icon buttons now keep their icon centered in the rounded leading
+  edge, including when the label is omitted and the control becomes circular.
+
+### Fixed
+
+- Realtime voice sessions now receive the effective global developer
+  instructions followed by the App Server-attested AGENTS.md hierarchy, so
+  voice and text conversations start with the same durable guidance.
+
 ## [0.3.15] - 2026-07-31
 
 ### Fixed
@@ -532,6 +550,7 @@ follows semantic versioning while the public interface is taking shape.
 - Native Electron packaging for Debian/Ubuntu.
 - Stable Chromium microphone capture for dictation and Realtime voice.
 
+[0.3.16]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.15...v0.3.16
 [0.3.15]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.14...v0.3.15
 [0.3.14]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.13...v0.3.14
 [0.3.13]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.12...v0.3.13

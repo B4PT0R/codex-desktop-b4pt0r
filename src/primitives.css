@@ -40,7 +40,9 @@
 .round-icon-button-labeled .round-icon-button-glyph {
   width: var(--round-icon-labeled-glyph-size);
   height: var(--round-icon-labeled-glyph-size);
-  margin-left: 3px;
+  margin-left: calc(
+    (var(--round-icon-size) - var(--round-icon-labeled-glyph-size)) / 2 - 1px
+  );
 }
 
 .round-icon-button-labeled .round-icon-button-glyph > svg {

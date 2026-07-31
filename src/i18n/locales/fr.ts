@@ -1051,6 +1051,19 @@ export const fr = {
   "settings.config.discard": "Ignorer les modifications",
   "settings.config.save": "Enregistrer",
   "settings.config.saving": "Enregistrement…",
+  "settings.developerInstructions.title": "Instructions développeur",
+  "settings.developerInstructions.description":
+    "Modifiez les instructions globales supplémentaires injectées avant la hiérarchie AGENTS.md dans chaque conversation.",
+  "settings.developerInstructions.editor":
+    "Contenu des instructions développeur",
+  "settings.developerInstructions.placeholder":
+    "Ajoutez les consignes globales applicables à toutes les conversations Codex…",
+  "settings.developerInstructions.error":
+    "Impossible d’enregistrer les instructions développeur",
+  "settings.developerInstructions.saved":
+    "Instructions développeur enregistrées.",
+  "settings.developerInstructions.restart":
+    "Rechargez les conversations déjà ouvertes pour appliquer ce changement. Les nouvelles sessions Realtime reçoivent automatiquement ces instructions.",
   "settings.globalAgents.title": "Instructions personnelles",
   "settings.globalAgents.description":
     "Définissez les règles que Codex applique par défaut dans tous vos projets. Les AGENTS.md locaux plus spécifiques restent prioritaires.",

@@ -455,6 +455,15 @@ describe("constructeurs JSON-RPC", () => {
       realtimeStartParams("thr", { type: "webrtc", sdp: "v=0" }, "maple")
         .transport,
     ).toEqual({ type: "webrtc", sdp: "v=0" });
+    expect(
+      realtimeStartParams(
+        "thr",
+        { type: "websocket" },
+        "juniper",
+        "conversation",
+        [{ role: "developer", text: "Workspace instructions" }],
+      ).initialItems,
+    ).toEqual([{ role: "developer", text: "Workspace instructions" }]);
   });
   it("isole les conversations vocales dans un fork éphémère du parent", () => {
     expect(

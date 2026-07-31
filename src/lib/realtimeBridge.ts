@@ -15,9 +15,16 @@ export async function startRealtime(
   voice: import("./appServerTypes").RealtimeVoice,
   mode: "conversation" | "dictation",
   onFailure?: (error: unknown) => void,
+  initialItems: import("./realtimeInstructions").RealtimeInitialItem[] = [],
 ) {
   const realtime = await loadRealtime();
-  await realtime.startRealtime(threadId, voice, mode, onFailure);
+  await realtime.startRealtime(
+    threadId,
+    voice,
+    mode,
+    onFailure,
+    initialItems,
+  );
 }
 
 export async function acceptRealtimeAnswer(threadId: string, sdp: string) {

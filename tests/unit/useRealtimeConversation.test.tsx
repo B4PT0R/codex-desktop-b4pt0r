@@ -9,6 +9,7 @@ const acceptRealtimeAnswerMock = vi.hoisted(() => vi.fn());
 const playRealtimeAudioMock = vi.hoisted(() => vi.fn());
 const startRealtimeMock = vi.hoisted(() => vi.fn());
 const stopRealtimeMock = vi.hoisted(() => vi.fn());
+const realtimeInstructionItemsMock = vi.hoisted(() => vi.fn());
 
 vi.mock("../../src/lib/codex", () => ({
   request: requestMock,
@@ -22,6 +23,9 @@ vi.mock("../../src/lib/realtimeBridge", () => ({
   startRealtime: startRealtimeMock,
   stopRealtime: stopRealtimeMock,
 }));
+vi.mock("../../src/lib/realtimeInstructions", () => ({
+  realtimeInstructionItems: realtimeInstructionItemsMock,
+}));
 
 import { defaultTranslate } from "../../src/i18n/translate";
 import { useRealtimeConversation } from "../../src/lib/useRealtimeConversation";
@@ -32,11 +36,14 @@ beforeEach(() => {
   requestMock.mockReset().mockResolvedValue({});
   createRealtimeThreadMock
     .mockReset()
-    .mockResolvedValue({ thread: { id: "realtime-child" } });
+    .mockResolvedValue({ thread: { id: "realtime-child" }, cwd: "/resolved" });
   acceptRealtimeAnswerMock.mockReset();
   playRealtimeAudioMock.mockReset();
   startRealtimeMock.mockReset().mockResolvedValue(undefined);
   stopRealtimeMock.mockReset().mockResolvedValue(undefined);
+  realtimeInstructionItemsMock.mockReset().mockResolvedValue([
+    { role: "developer", text: "Effective AGENTS.md instructions" },
+  ]);
 });
 
 describe("cycle de vie de la conversation Realtime", () => {
@@ -66,6 +73,17 @@ describe("cycle de vie de la conversation Realtime", () => {
       }),
     );
     expect(result.current.conversation.recording).toBe(true);
+    expect(realtimeInstructionItemsMock).toHaveBeenCalledWith(
+      "realtime-child",
+      "/resolved",
+    );
+    expect(startRealtimeMock).toHaveBeenCalledWith(
+      "realtime-child",
+      "juniper",
+      "conversation",
+      expect.any(Function),
+      [{ role: "developer", text: "Effective AGENTS.md instructions" }],
+    );
 
     act(() => {
       result.current.conversation.handleMessage({

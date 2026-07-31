@@ -204,22 +204,23 @@ export function ConfigDocumentEditor({
               ) : (
                 <>
                   <RoundIconButton
-                    className="secondary-button"
                     disabled={loading || saving}
                     icon={RotateCcw}
                     label={t("settings.config.reload")}
                     onClick={() => void onReload()}
                     variant="secondary"
                   />
-                  <button
+                  <RoundIconButton
                     disabled={!dirty || loading || saving}
+                    icon={Save}
+                    label={
+                      saving
+                        ? t("settings.config.saving")
+                        : t("settings.config.save")
+                    }
                     onClick={() => void onSave()}
-                  >
-                    <Save />
-                    {saving
-                      ? t("settings.config.saving")
-                      : t("settings.config.save")}
-                  </button>
+                    variant="primary"
+                  />
                 </>
               )}
             </footer>

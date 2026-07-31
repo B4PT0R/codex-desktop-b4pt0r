@@ -8,6 +8,7 @@ import type {
 import type { ExternalAgentMigrationItem } from "./appServerTypes";
 import { schedulerDynamicTools } from "./schedulerTools";
 import { scheduledTaskPrompt } from "./scheduledTaskMessage";
+import type { RealtimeInitialItem } from "./realtimeInstructions";
 export { scheduledTaskPrompt } from "./scheduledTaskMessage";
 
 export type Permission = string;
@@ -238,6 +239,7 @@ export function realtimeStartParams(
   transport: { type: "websocket" } | { type: "webrtc"; sdp: string },
   voice: RealtimeVoice,
   mode: "conversation" | "dictation" = "conversation",
+  initialItems: RealtimeInitialItem[] = [],
 ) {
   return {
     threadId,
@@ -253,7 +255,7 @@ export function realtimeStartParams(
           codexResponseHandoffPrefix: "",
           codexResponseItemPrefix: null,
           codexResponsesAsItems: false,
-          initialItems: [],
+          initialItems,
           realtimeSessionId: null,
         }
       : { clientManagedHandoffs: true }),

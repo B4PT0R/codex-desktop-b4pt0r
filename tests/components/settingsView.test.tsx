@@ -135,6 +135,7 @@ const webSearch = {
     allowLoginShell: true,
     cliAuthCredentialsStore: "file" as const,
     defaultPermissions: ":workspace" as const,
+    developerInstructions: "Keep changes focused.",
     mcpOauthCredentialsStore: "auto" as const,
     model: null,
     modelAutoCompactTokenLimit: null,
@@ -940,9 +941,9 @@ describe("centre de réglages", () => {
       ),
     ).toBeVisible();
     expect(screen.queryByLabelText("Contenu de config.toml")).toBeNull();
-    expect(screen.getAllByText("Aperçu navigateur")).toHaveLength(1);
+    expect(screen.getAllByText("Aperçu navigateur")).toHaveLength(2);
     const opener = screen.getByRole("button", {
-      name: /config\.toml.*Modifier/,
+      name: /^config\.toml.*Modifier/,
     });
     opener.focus();
     fireEvent.click(opener);
@@ -1015,6 +1016,34 @@ describe("centre de réglages", () => {
     );
   });
 
+  it("édite developer_instructions sans manipuler le TOML brut", async () => {
+    const props = renderSettings({ section: "config" });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /developer_instructions.*Modifier/,
+      }),
+    );
+
+    const editor = await screen.findByLabelText(
+      "Contenu des instructions développeur",
+    );
+    expect(editor).toHaveValue("Keep changes focused.");
+    fireEvent.change(editor, {
+      target: { value: "Be precise and verify changes." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+
+    await waitFor(() =>
+      expect(props.webSearch.setAdvanced).toHaveBeenCalledWith(
+        "developer_instructions",
+        "Be precise and verify changes.",
+      ),
+    );
+    expect(
+      await screen.findByText("Instructions développeur enregistrées."),
+    ).toBeVisible();
+  });
+
   it("édite les instructions personnelles globales depuis Agent", async () => {
     renderSettings({ section: "agent" });
     fireEvent.click(
@@ -1036,7 +1065,7 @@ describe("centre de réglages", () => {
   it("protège les modifications de Config à la fermeture de la modale", async () => {
     const props = renderSettings({ section: "config" });
     fireEvent.click(
-      screen.getByRole("button", { name: /config\.toml.*Modifier/ }),
+      screen.getByRole("button", { name: /^config\.toml.*Modifier/ }),
     );
     const editor = await screen.findByLabelText("Contenu de config.toml");
     fireEvent.change(editor, { target: { value: 'model = "changed"\n' } });

@@ -1955,6 +1955,11 @@
   margin: 0 0 -22px;
 }
 
+.config-document-list {
+  display: grid;
+  gap: 20px;
+}
+
 .config-document-section {
   display: grid;
   gap: 10px;
@@ -2189,12 +2194,15 @@
   gap: 8px;
 }
 
-.config-editor-dialog > footer button {
+.config-editor-dialog > footer button:not(.round-icon-button) {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 7px 10px;
   border-radius: 7px;
+}
+
+.config-editor-dialog > footer button {
   font-size: 10px;
 }
 

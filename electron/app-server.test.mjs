@@ -130,6 +130,35 @@ test("probes App Server through stdio without leaking the response to the render
   transport.stop();
 });
 
+test("remembers only App Server-attested instruction sources for loaded threads", async () => {
+  const child = fakeChild();
+  const transport = new AppServerTransport(() => undefined, {
+    resolveExecutable: async () => "/opt/codex/bin/codex",
+    spawnProcess: () => child,
+  });
+  await transport.start();
+
+  child.stdout.write(`${JSON.stringify({
+    id: "fork",
+    result: {
+      thread: { id: "thread-1" },
+      instructionSources: [
+        "/home/alice/.codex/AGENTS.md",
+        "/work/project/AGENTS.md",
+      ],
+    },
+  })}\n`);
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.deepEqual(transport.instructionSources("thread-1"), [
+    "/home/alice/.codex/AGENTS.md",
+    "/work/project/AGENTS.md",
+  ]);
+  assert.deepEqual(transport.instructionSources("unknown"), []);
+  transport.stop();
+  assert.deepEqual(transport.instructionSources("thread-1"), []);
+});
+
 test("reports a confirmed unresponsive transport once before terminating it", async () => {
   const child = fakeChild();
   const events = [];

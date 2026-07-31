@@ -28,6 +28,7 @@ describe("réglage global de recherche web", () => {
         approvals_reviewer: "auto_review",
         cli_auth_credentials_store: "keyring",
         default_permissions: ":read-only",
+        developer_instructions: "Keep changes focused.",
         file_opener: "cursor",
         mcp_oauth_credentials_store: "file",
         model: "gpt-test",
@@ -59,6 +60,7 @@ describe("réglage global de recherche web", () => {
       approvalsReviewer: "auto_review",
       cliAuthCredentialsStore: "keyring",
       defaultPermissions: ":read-only",
+      developerInstructions: "Keep changes focused.",
       mcpOauthCredentialsStore: "file",
       model: "gpt-test",
       modelAutoCompactTokenLimit: 64_000,
@@ -117,6 +119,12 @@ describe("réglage global de recherche web", () => {
           4,
         ),
       ).toBe(true);
+      expect(
+        await result.current.setAdvanced(
+          "developer_instructions",
+          "Be precise.",
+        ),
+      ).toBe(true);
     });
     expect(requestMock).toHaveBeenNthCalledWith(2, "config/value/write", {
       keyPath: "file_opener",
@@ -152,6 +160,11 @@ describe("réglage global de recherche web", () => {
       keyPath: "agents.max_concurrent_threads_per_session",
       mergeStrategy: "upsert",
       value: 4,
+    });
+    expect(requestMock).toHaveBeenNthCalledWith(9, "config/value/write", {
+      keyPath: "developer_instructions",
+      mergeStrategy: "upsert",
+      value: "Be precise.",
     });
   });
 

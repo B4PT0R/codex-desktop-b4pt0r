@@ -27,6 +27,7 @@ describe("chargement différé du realtime", () => {
       "juniper",
       "conversation",
       onFailure,
+      [],
     );
 
     await acceptRealtimeAnswer("thread-1", "answer");

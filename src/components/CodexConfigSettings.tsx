@@ -7,6 +7,7 @@ import type {
   CredentialStore,
 } from "../lib/useCodexGlobalSettings";
 import { ConfigDocumentEditor } from "./ConfigDocumentEditor";
+import { DeveloperInstructionsSettings } from "./DeveloperInstructionsSettings";
 import { RoundIconButton } from "./RoundIcon";
 
 const compactLimits = [32_000, 64_000, 128_000];
@@ -205,28 +206,31 @@ export function CodexConfigSettings({
         <strong>{t("settings.config.advanced.title")}</strong>
         <small>{t("settings.config.advanced.description")}</small>
       </div>
-      <ConfigDocumentEditor
-        title={t("settings.config.file")}
-        description={t("settings.config.description")}
-        fileName={t("settings.config.file")}
-        filePath={config.document?.filePath ?? "~/.codex/config.toml"}
-        editorLabel={t("settings.config.editor")}
-        draft={config.draft}
-        dirty={config.dirty}
-        error={config.error}
-        errorTitle={t("settings.config.error")}
-        loading={config.loading}
-        native={config.native}
-        onChange={config.setDraft}
-        onReload={config.load}
-        onSave={async () => {
-          if (await config.save()) await globalSettings.refresh();
-        }}
-        restartNote={t("settings.config.restart")}
-        saved={config.saved}
-        savedMessage={t("settings.config.saved")}
-        saving={config.saving}
-      />
+      <div className="config-document-list">
+        <DeveloperInstructionsSettings controller={globalSettings} />
+        <ConfigDocumentEditor
+          title={t("settings.config.file")}
+          description={t("settings.config.description")}
+          fileName={t("settings.config.file")}
+          filePath={config.document?.filePath ?? "~/.codex/config.toml"}
+          editorLabel={t("settings.config.editor")}
+          draft={config.draft}
+          dirty={config.dirty}
+          error={config.error}
+          errorTitle={t("settings.config.error")}
+          loading={config.loading}
+          native={config.native}
+          onChange={config.setDraft}
+          onReload={config.load}
+          onSave={async () => {
+            if (await config.save()) await globalSettings.refresh();
+          }}
+          restartNote={t("settings.config.restart")}
+          saved={config.saved}
+          savedMessage={t("settings.config.saved")}
+          saving={config.saving}
+        />
+      </div>
     </section>
   );
 }

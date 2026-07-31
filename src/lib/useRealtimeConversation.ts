@@ -25,6 +25,7 @@ import {
   realtimeAudioFromValue,
 } from "./appServerValues";
 import { createRealtimeThread } from "./realtimeThread";
+import { realtimeInstructionItems } from "./realtimeInstructions";
 import {
   appendRealtimeUserDelta,
   appendRealtimeVoiceDelta,
@@ -214,6 +215,10 @@ export function useRealtimeConversation({
         const threadId = started.thread.id as string;
         activeThreadId.current = threadId;
         parentThreadId.current = options.parentThreadId;
+        const initialItems = await realtimeInstructionItems(
+          threadId,
+          started.cwd ?? options.cwd,
+        );
         if (displayTranscript.current) {
           setMessages((messages) => {
             preRealtimeMessageIds.current = new Set(
@@ -233,6 +238,7 @@ export function useRealtimeConversation({
             reportError(translateRef.current("app.audioInterrupted"), error);
             void releaseFork(failedThreadId, reportError);
           },
+          initialItems,
         );
         setRecording(true);
         return true;

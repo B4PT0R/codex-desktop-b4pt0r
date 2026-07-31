@@ -17,6 +17,7 @@ const allowedCommands = new Set([
   "write_workspace_agents",
   "read_global_agents",
   "write_global_agents",
+  "read_thread_instructions",
   "read_launch_at_login",
   "set_launch_at_login",
   "transcribe_dictation",

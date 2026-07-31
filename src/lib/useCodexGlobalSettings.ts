@@ -26,6 +26,7 @@ export type CodexGlobalSettingsController = {
     allowLoginShell: boolean;
     cliAuthCredentialsStore: CredentialStore;
     defaultPermissions: GlobalPermissionProfile;
+    developerInstructions: string | null;
     mcpOauthCredentialsStore: CredentialStore;
     model: string | null;
     modelAutoCompactTokenLimit: number | null;
@@ -81,6 +82,7 @@ export type AdvancedConfigKey =
   | "allow_login_shell"
   | "cli_auth_credentials_store"
   | "default_permissions"
+  | "developer_instructions"
   | "mcp_oauth_credentials_store"
   | "model"
   | "model_auto_compact_token_limit"
@@ -99,6 +101,7 @@ const advancedDefaults = {
   allowLoginShell: true,
   cliAuthCredentialsStore: "file" as CredentialStore,
   defaultPermissions: ":workspace" as GlobalPermissionProfile,
+  developerInstructions: null as string | null,
   mcpOauthCredentialsStore: "auto" as CredentialStore,
   model: null as string | null,
   modelAutoCompactTokenLimit: null as number | null,
@@ -173,6 +176,8 @@ export function useCodexGlobalSettings(
         defaultPermissions: normalizeGlobalPermissionProfile(
           config?.default_permissions,
         ),
+        developerInstructions:
+          appServerString(config?.developer_instructions) ?? null,
         mcpOauthCredentialsStore: normalizeCredentialStore(
           config?.mcp_oauth_credentials_store,
           "auto",
@@ -359,6 +364,7 @@ function advancedStateKey(key: AdvancedConfigKey) {
     allow_login_shell: "allowLoginShell",
     cli_auth_credentials_store: "cliAuthCredentialsStore",
     default_permissions: "defaultPermissions",
+    developer_instructions: "developerInstructions",
     mcp_oauth_credentials_store: "mcpOauthCredentialsStore",
     model: "model",
     model_auto_compact_token_limit: "modelAutoCompactTokenLimit",

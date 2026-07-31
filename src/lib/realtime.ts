@@ -1,6 +1,7 @@
 import { request } from "./codex";
 import { realtimeStartParams } from "./protocol";
 import type { RealtimeVoice } from "./appServerTypes";
+import type { RealtimeInitialItem } from "./realtimeInstructions";
 
 let connection: RTCPeerConnection | undefined;
 let microphone: MediaStream | undefined;
@@ -14,6 +15,7 @@ export async function startRealtime(
   voice: RealtimeVoice,
   mode: "conversation" | "dictation",
   onFailure?: (error: unknown) => void,
+  initialItems: RealtimeInitialItem[] = [],
 ) {
   await stopRealtime();
   if (
@@ -66,6 +68,7 @@ export async function startRealtime(
         { type: "webrtc", sdp: offer.sdp ?? "" },
         voice,
         mode,
+        initialItems,
       ),
     );
   } catch (error) {

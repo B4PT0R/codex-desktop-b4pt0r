@@ -69,6 +69,7 @@ export function environmentForCodex(
 export class AppServerTransport {
   #child;
   #initialized = false;
+  #instructionSources = new Map();
   #probe;
   #probeSequence = 0;
   #send;
@@ -125,6 +126,13 @@ export class AppServerTransport {
     if (parsed.method === "initialized") this.#initialized = true;
   }
 
+  instructionSources(threadId) {
+    if (typeof threadId !== "string" || !threadId) {
+      throw new Error("Invalid App Server thread id");
+    }
+    return [...(this.#instructionSources.get(threadId) ?? [])];
+  }
+
   async probe(timeoutMs = 15_000) {
     const child = this.#child;
     if (!child?.stdin.writable || !this.#initialized) return "unavailable";
@@ -159,6 +167,7 @@ export class AppServerTransport {
     if (!child) return false;
     this.#child = undefined;
     this.#initialized = false;
+    this.#instructionSources.clear();
     this.#settleProbe(this.#probe?.id, "unavailable");
     child.kill();
     this.#send("app-server-exited", {
@@ -173,6 +182,7 @@ export class AppServerTransport {
     const child = this.#child;
     this.#child = undefined;
     this.#initialized = false;
+    this.#instructionSources.clear();
     this.#settleProbe(this.#probe?.id, "unavailable");
     child?.kill();
   }
@@ -186,6 +196,7 @@ export class AppServerTransport {
     if (this.#child !== child) return;
     this.#child = undefined;
     this.#initialized = false;
+    this.#instructionSources.clear();
     this.#settleProbe(this.#probe?.id, "unavailable");
     this.#send("app-server-exited", { code, message });
   }
@@ -194,6 +205,7 @@ export class AppServerTransport {
     if (this.#child !== child) return;
     try {
       const message = JSON.parse(line);
+      this.#rememberInstructionSources(message);
       if (String(message?.id ?? "").startsWith("desktop-health:")) {
         if (message.id === this.#probe?.id) {
           this.#settleProbe(this.#probe.id, "responsive");
@@ -204,6 +216,25 @@ export class AppServerTransport {
       // The renderer owns normal protocol validation and its visible warning.
     }
     this.#send("app-server-message", line);
+  }
+
+  #rememberInstructionSources(message) {
+    const threadId = message?.result?.thread?.id;
+    const sources = message?.result?.instructionSources;
+    if (
+      typeof threadId !== "string" ||
+      !Array.isArray(sources) ||
+      !sources.every((source) => typeof source === "string")
+    ) {
+      return;
+    }
+    this.#instructionSources.delete(threadId);
+    this.#instructionSources.set(threadId, [...sources]);
+    while (this.#instructionSources.size > 256) {
+      const oldestThreadId = this.#instructionSources.keys().next().value;
+      if (oldestThreadId === undefined) break;
+      this.#instructionSources.delete(oldestThreadId);
+    }
   }
 
   #settleProbe(id, status) {

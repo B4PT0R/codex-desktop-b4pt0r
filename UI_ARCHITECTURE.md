@@ -374,15 +374,18 @@ fournit pas un accès générique aux fichiers : elle borne lecture et écriture
 seul `<workspace>/AGENTS.md`, détecte les conflits externes, refuse les liens
 symboliques et remplace le fichier atomiquement.
 
-Le `AGENTS.md` personnel appartient en revanche à la section **Config**, à côté
-de `config.toml`, car sa portée est globale à Codex plutôt que liée au workspace
-courant. Son éditeur suit les mêmes garanties natives sur le seul chemin
+Le `AGENTS.md` personnel appartient en revanche à la section **Agent**, car sa
+portée est globale à Codex plutôt que liée au workspace courant. Son éditeur
+suit les mêmes garanties natives sur le seul chemin
 `$CODEX_HOME/AGENTS.md` et signale explicitement un `AGENTS.override.md` global
 non vide, qui prend priorité selon les règles de découverte Codex.
-La page garde ces deux documents sous forme de cartes compactes et ouvre leur
-éditeur partagé dans une modale : le contenu long ne monopolise ainsi pas la
-navigation Config, tandis que focus, raccourci d’enregistrement et protection
-des brouillons suivent le même contrat pour les deux fichiers.
+`developer_instructions` dispose d’un éditeur ciblé dans **Configuration
+avancée** : il partage la lecture `config/read` et l’écriture typée
+`config/value/write` avec les contrôles guidés, sans réécrire le document TOML
+complet. Une valeur vide retire explicitement la clé. L’éditeur TOML brut reste
+une échappatoire distincte. Ces surfaces utilisent la même modale afin que
+focus, raccourci d’enregistrement et protection des brouillons suivent un seul
+contrat d’interaction.
 
 Le **Contrôle à distance** possède une section personnelle distincte, placée à
 côté de Memory plutôt que dans Config ou Permissions. Elle reflète l’état
