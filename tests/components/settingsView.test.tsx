@@ -69,7 +69,7 @@ const account = {
 const appUpdate = {
   checking: false,
   error: undefined,
-  installerOpened: false,
+  updateInstalled: false,
   installing: false,
   loadingVersions: false,
   native: true,
@@ -293,11 +293,11 @@ function renderSettings(
 }
 
 describe("centre de réglages", () => {
-  it("demande un redémarrage après l’ouverture de l’installateur", () => {
+  it("demande un redémarrage après l’installation de la mise à jour", () => {
     renderSettings({
       appUpdate: {
         ...appUpdate,
-        installerOpened: true,
+        updateInstalled: true,
         status: {
           assetAvailable: true,
           currentVersion: "0.3.12",
@@ -308,7 +308,7 @@ describe("centre de réglages", () => {
     });
 
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Termine l’installation, puis relance Codex Desktop pour utiliser la nouvelle version.",
+      "Relance Codex Desktop pour utiliser la nouvelle version.",
     );
   });
 

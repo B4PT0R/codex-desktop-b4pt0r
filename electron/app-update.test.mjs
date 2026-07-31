@@ -9,6 +9,7 @@ import {
   checkLatestRelease,
   compareVersions,
   downloadReleaseAsset,
+  installDebianPackage,
   publicUpdateStatus,
   readAppVersions,
   releaseCandidate,
@@ -148,7 +149,7 @@ test("removes a partial package when verification fails", async () => {
 });
 
 test("requires a fresh checked candidate and explicit install confirmation", async () => {
-  const opened = [];
+  const installed = [];
   const manager = new AppUpdateManager({
     architecture: "x64",
     clientVersion: "0.3.12",
@@ -156,9 +157,8 @@ test("requires a fresh checked candidate and explicit install confirmation", asy
       String(url).includes("/releases/latest")
         ? new Response(JSON.stringify(release()))
         : new Response(packageBytes),
-    openPath: async (target) => {
-      opened.push(target);
-      return "";
+    installPackage: async (target, expected) => {
+      installed.push({ expected, target });
     },
     tempRoot: os.tmpdir(),
   });
@@ -166,8 +166,99 @@ test("requires a fresh checked candidate and explicit install confirmation", asy
   await assert.rejects(manager.install(true), /Check for an available update/);
   assert.equal((await manager.check()).updateAvailable, true);
   await assert.rejects(manager.install(false), /explicit confirmation/);
-  assert.deepEqual(await manager.install(true), { opened: true });
-  assert.equal(opened.length, 1);
-  assert.match(opened[0], /codex-desktop-linux_0\.4\.0_amd64\.deb$/);
+  assert.deepEqual(await manager.install(true), { installed: true });
+  assert.equal(installed.length, 1);
+  assert.match(
+    installed[0].target,
+    /codex-desktop-linux_0\.4\.0_amd64\.deb$/,
+  );
+  assert.deepEqual(installed[0].expected, {
+    architecture: "amd64",
+    version: "0.4.0",
+  });
   await assert.rejects(manager.install(true), /Check for an available update/);
+});
+
+test("installs a matching Debian package as an explicit apt upgrade", async () => {
+  const calls = [];
+  const packagePath = "/tmp/codex-desktop-linux_0.4.0_amd64.deb";
+  await installDebianPackage(
+    packagePath,
+    { architecture: "amd64", version: "0.4.0" },
+    {
+      execFileImpl: (executable, args, options, callback) => {
+        calls.push({ args, executable, options });
+        if (executable === "/usr/bin/dpkg-deb") {
+          callback(
+            null,
+            "Package: codex-desktop-linux\nVersion: 0.4.0\nArchitecture: amd64\n",
+            "",
+          );
+          return;
+        }
+        callback(null, "", "");
+      },
+    },
+  );
+
+  assert.deepEqual(calls.map(({ executable }) => executable), [
+    "/usr/bin/dpkg-deb",
+    "/usr/bin/pkexec",
+  ]);
+  assert.deepEqual(calls[1].args, [
+    "/usr/bin/apt-get",
+    "--yes",
+    "--no-remove",
+    "--only-upgrade",
+    "install",
+    packagePath,
+  ]);
+  assert.equal(calls[1].options.timeout, 10 * 60_000);
+});
+
+test("rejects mismatched package metadata before requesting privileges", async () => {
+  const executables = [];
+  await assert.rejects(
+    installDebianPackage(
+      "/tmp/codex-desktop-linux_0.4.0_amd64.deb",
+      { architecture: "amd64", version: "0.4.0" },
+      {
+        execFileImpl: (executable, _args, _options, callback) => {
+          executables.push(executable);
+          callback(
+            null,
+            "Package: another-package\nVersion: 0.4.0\nArchitecture: amd64\n",
+            "",
+          );
+        },
+      },
+    ),
+    /metadata does not match/,
+  );
+  assert.deepEqual(executables, ["/usr/bin/dpkg-deb"]);
+});
+
+test("reports a cancelled update authorization clearly", async () => {
+  await assert.rejects(
+    installDebianPackage(
+      "/tmp/codex-desktop-linux_0.4.0_amd64.deb",
+      { architecture: "amd64", version: "0.4.0" },
+      {
+        execFileImpl: (executable, _args, _options, callback) => {
+          if (executable === "/usr/bin/dpkg-deb") {
+            callback(
+              null,
+              "Package: codex-desktop-linux\nVersion: 0.4.0\nArchitecture: amd64\n",
+              "",
+            );
+            return;
+          }
+          const error = new Error("Command failed");
+          error.code = 126;
+          callback(error, "", "Dismissed");
+        },
+      },
+    ),
+    /authorization was cancelled or denied/,
+  );
 });

@@ -9,7 +9,7 @@ belongs in `CHANGELOG.md` and Git.
 ## Baseline
 
 Codex Desktop Linux is a functional independent Electron client for the
-official `codex app-server`. The current public release is v0.3.14.
+official `codex app-server`. The current public release is v0.3.15.
 
 The daily workflow covers conversations and replay, concurrent thread activity,
 streaming Markdown/LaTeX, reasoning, plans, tools, approvals, diffs, files,
@@ -43,10 +43,10 @@ Completed in the current working tree:
   current identifier at wake-up and wait for preference hydration before
   arming the scheduler;
 - show the client and Codex versions in General, check the latest stable GitHub
-  release on demand and open only a size- and SHA-256-verified matching `.deb`
-  through the system installer;
-- clearly ask the user to finish the system installation and restart Codex
-  Desktop before expecting the updated version;
+  release on demand and install only a size-, SHA-256- and metadata-verified
+  matching `.deb` as an explicit authenticated APT upgrade;
+- clearly ask the user to restart Codex Desktop after the verified package
+  upgrade succeeds;
 - allow the native window to shrink to a focused 520 px chat column when the
   sidebar is collapsed, with compact responsive gutters;
 - align composer commands with the CLI's keyboard contract: prefix filtering,
@@ -105,6 +105,10 @@ Completed in the current working tree:
 - Linux/Ubuntu is the only regularly packaged environment. The `.deb` still
   needs a clean second-machine or VM lifecycle pass.
 - The lazy Markdown/KaTeX chunk remains large but is not a release blocker.
+- Clients through v0.3.14 delegate updates to Ubuntu App Center, whose local
+  package upgrade path is unreliable. One manual installation of the first
+  release containing the native APT upgrader is required before later updates
+  can validate the corrected end-to-end flow.
 
 ## Next bounded work
 
@@ -122,11 +126,13 @@ and Git/worktree management without a stable App Server product contract.
 
 - Frontend/unit/contract: 645 tests across 120 files, including 51 installed
   App Server contract cases.
-- Electron/Node: 91 tests.
+- Electron/Node: 94 tests, including explicit APT upgrade, metadata mismatch
+  and denied-authorization coverage for the native updater.
 - Strict TypeScript, production Vite build and production dependency audit:
   passing; zero production vulnerabilities.
 - Main JS: 622.38 kB, 179.34 kB gzip.
-- Electron directory packaging: passing with the native update manager included.
+- Electron directory and Debian packaging: passing with the native update
+  manager included; the generated package declares `pkexec` explicitly.
 - Live release check: an installed v0.3.12 client detects v0.3.13 and its
   matching amd64 asset through the same native update boundary used by the app.
 - Shared-browser scheduler pass: the default-conversation target fits the
@@ -141,9 +147,10 @@ and Git/worktree management without a stable App Server product contract.
   1240×820 and 840×620 in light and dark themes, with no console errors.
 - Current working-tree Debian package: passing; the packaged AppArmor profile
   is byte-identical to its source and present under `resources/apparmor/`.
-- Debian v0.3.14:
-  `sha256:d8c4027777892f08e776d02b6195f7c0aa58e283f4512af4e48c3815d69ceb1e`.
-  The package contains the native update manager and matching AppArmor profile.
+- Debian v0.3.15:
+  `sha256:f5f4a6709c68fdd8d4f2f019e4e1c6f3de41b6946a9f38f26c790ad32eed2b0b`.
+  The package contains the authenticated APT update manager and matching
+  AppArmor profile.
   Earlier upgrade and same-version reinstall checks preserved both persistence
   files byte-for-byte, including inode, timestamps, mode and ownership.
 

@@ -3,6 +3,17 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.3.15] - 2026-07-31
+
+### Fixed
+
+- Debian updates now run as an explicit authenticated APT upgrade after the
+  downloaded package name, version, architecture, size and SHA-256 have been
+  verified. This avoids Ubuntu App Center treating a newer local package as an
+  already-installed application and leaving its install action unavailable.
+- The update request now returns only after APT succeeds or reports a bounded,
+  actionable error; temporary packages are removed in either case.
+
 ## [0.3.14] - 2026-07-31
 
 ### Added
@@ -521,6 +532,7 @@ follows semantic versioning while the public interface is taking shape.
 - Native Electron packaging for Debian/Ubuntu.
 - Stable Chromium microphone capture for dictation and Realtime voice.
 
+[0.3.15]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.14...v0.3.15
 [0.3.14]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.13...v0.3.14
 [0.3.13]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.12...v0.3.13
 [0.3.12]: https://github.com/B4PT0R/codex-desktop-b4pt0r/compare/v0.3.11...v0.3.12

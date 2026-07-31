@@ -430,7 +430,6 @@ else {
       architecture: process.arch,
       clientVersion: app.getVersion(),
       fetchImpl: net.fetch,
-      openPath: (target) => shell.openPath(target),
       tempRoot: app.getPath("temp"),
     });
     automationScheduler.start();

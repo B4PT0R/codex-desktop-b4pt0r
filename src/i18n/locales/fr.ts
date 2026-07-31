@@ -806,7 +806,7 @@ export const fr = {
   "settings.startup.error": "Impossible de modifier le démarrage automatique :",
   "settings.updates.title": "Mises à jour",
   "settings.updates.detail":
-    "Vérifie la dernière release GitHub stable. L’installation passe par le gestionnaire de paquets du système.",
+    "Vérifie la dernière release GitHub stable et installe son paquet Debian validé.",
   "settings.updates.client": "Codex Desktop",
   "settings.updates.clientDetail": "Version du client Linux indépendant",
   "settings.updates.codex": "Codex",
@@ -823,12 +823,12 @@ export const fr = {
   "settings.updates.assetUnavailable":
     "La version {version} est disponible, mais aucun paquet ne correspond à cette architecture.",
   "settings.updates.install": "Mettre à jour",
-  "settings.updates.installing": "Téléchargement…",
-  "settings.updates.installerOpened":
-    "Paquet vérifié. Termine la mise à jour dans l’installateur système, puis relance l’application.",
-  "settings.updates.installerReady": "Installateur ouvert",
+  "settings.updates.installing": "Installation…",
+  "settings.updates.installComplete":
+    "La mise à jour vérifiée a bien été installée.",
+  "settings.updates.installed": "Installée",
   "settings.updates.restartRequired":
-    "Termine l’installation, puis relance Codex Desktop pour utiliser la nouvelle version.",
+    "Relance Codex Desktop pour utiliser la nouvelle version.",
   "settings.updates.error": "Impossible d’effectuer la mise à jour :",
   "settings.updates.codexError": "Impossible de lire la version de Codex :",
   "settings.chromium.title": "Navigateur Chromium partagé",

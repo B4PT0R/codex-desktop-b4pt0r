@@ -54,7 +54,7 @@ describe("mise à jour de l’application", () => {
           updateAvailable: true,
         };
       }
-      if (command === "install_update") return { opened: true };
+      if (command === "install_update") return { installed: true };
       throw new Error(`Unexpected command: ${command}`);
     });
     const { result } = renderHook(() => useAppUpdate(true));
@@ -71,7 +71,7 @@ describe("mise à jour de l’application", () => {
     expect(bridge.invoke).toHaveBeenCalledWith("install_update", {
       confirmed: true,
     });
-    expect(result.current.installerOpened).toBe(true);
+    expect(result.current.updateInstalled).toBe(true);
   });
 
   it("reste informatif mais non mutable dans la preview web", async () => {

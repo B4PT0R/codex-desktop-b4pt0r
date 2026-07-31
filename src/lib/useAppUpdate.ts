@@ -17,7 +17,7 @@ export type UpdateStatus = {
 export type AppUpdateController = {
   checking: boolean;
   error?: string;
-  installerOpened: boolean;
+  updateInstalled: boolean;
   installing: boolean;
   loadingVersions: boolean;
   native: boolean;
@@ -34,7 +34,7 @@ export function useAppUpdate(enabled: boolean): AppUpdateController {
   const [loadingVersions, setLoadingVersions] = useState(false);
   const [checking, setChecking] = useState(false);
   const [installing, setInstalling] = useState(false);
-  const [installerOpened, setInstallerOpened] = useState(false);
+  const [updateInstalled, setUpdateInstalled] = useState(false);
   const [error, setError] = useState<string>();
 
   useEffect(() => {
@@ -63,7 +63,7 @@ export function useAppUpdate(enabled: boolean): AppUpdateController {
   const check = useCallback(async () => {
     if (!native || checking || installing) return false;
     setChecking(true);
-    setInstallerOpened(false);
+    setUpdateInstalled(false);
     setStatus(undefined);
     setError(undefined);
     try {
@@ -91,7 +91,7 @@ export function useAppUpdate(enabled: boolean): AppUpdateController {
     setError(undefined);
     try {
       await invoke("install_update", { confirmed: true });
-      setInstallerOpened(true);
+      setUpdateInstalled(true);
       return true;
     } catch (cause) {
       setError(errorMessage(cause));
@@ -106,7 +106,7 @@ export function useAppUpdate(enabled: boolean): AppUpdateController {
     checking,
     error,
     install,
-    installerOpened,
+    updateInstalled,
     installing,
     loadingVersions,
     native,

@@ -785,7 +785,7 @@ export const en: Record<MessageKey, string> = {
   "settings.startup.error": "Unable to change automatic startup:",
   "settings.updates.title": "Updates",
   "settings.updates.detail":
-    "Check the latest stable GitHub release. Updates are installed through your system package installer.",
+    "Check the latest stable GitHub release and install its verified Debian package.",
   "settings.updates.client": "Codex Desktop",
   "settings.updates.clientDetail": "Independent Linux client version",
   "settings.updates.codex": "Codex",
@@ -802,12 +802,12 @@ export const en: Record<MessageKey, string> = {
   "settings.updates.assetUnavailable":
     "Version {version} is available, but no package matches this architecture.",
   "settings.updates.install": "Update",
-  "settings.updates.installing": "Downloading…",
-  "settings.updates.installerOpened":
-    "Package verified. Complete the update in the system installer, then restart the app.",
-  "settings.updates.installerReady": "Installer open",
+  "settings.updates.installing": "Installing…",
+  "settings.updates.installComplete":
+    "The verified update was installed successfully.",
+  "settings.updates.installed": "Installed",
   "settings.updates.restartRequired":
-    "Complete the installation, then restart Codex Desktop to use the new version.",
+    "Restart Codex Desktop to use the new version.",
   "settings.updates.error": "Unable to update:",
   "settings.updates.codexError": "Unable to read the Codex version:",
   "settings.chromium.title": "Shared Chromium browser",

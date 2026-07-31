@@ -44,13 +44,13 @@ export function AppUpdateSettings({
             <small>{updateMessage(controller, t)}</small>
           </span>
           <div className="settings-browser-status">
-            {controller.installerOpened ? (
+            {controller.updateInstalled ? (
               <button
                 className="app-server-restart-button secondary-button"
                 disabled
               >
                 <Check />
-                {t("settings.updates.installerReady")}
+                {t("settings.updates.installed")}
               </button>
             ) : canInstall ? (
               <button
@@ -86,7 +86,7 @@ export function AppUpdateSettings({
           </div>
         </div>
       </div>
-      {controller.installerOpened && (
+      {controller.updateInstalled && (
         <div
           className="inventory-message neutral app-update-restart-message"
           role="status"
@@ -116,7 +116,7 @@ function updateMessage(
   t: ReturnType<typeof useI18n>["t"],
 ) {
   if (!controller.native) return t("settings.updates.nativeOnly");
-  if (controller.installerOpened) return t("settings.updates.installerOpened");
+  if (controller.updateInstalled) return t("settings.updates.installComplete");
   if (controller.checking) return t("settings.updates.checkingDetail");
   if (!controller.status) return t("settings.updates.detail");
   if (!controller.status.updateAvailable) {

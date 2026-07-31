@@ -21,20 +21,20 @@ export class AppUpdateManager {
   #clientVersion;
   #fetch;
   #installing = false;
-  #openPath;
+  #installPackage;
   #tempRoot;
 
   constructor({
     architecture,
     clientVersion,
     fetchImpl,
-    openPath,
+    installPackage = installDebianPackage,
     tempRoot,
   }) {
     this.#architecture = architecture;
     this.#clientVersion = clientVersion;
     this.#fetch = fetchImpl;
-    this.#openPath = openPath;
+    this.#installPackage = installPackage;
     this.#tempRoot = tempRoot;
   }
 
@@ -66,8 +66,9 @@ export class AppUpdateManager {
       throw new Error("An update download is already in progress");
     }
     this.#installing = true;
+    let directory;
     try {
-      const directory = await mkdtemp(
+      directory = await mkdtemp(
         path.join(this.#tempRoot, "codex-desktop-update-"),
       );
       const packagePath = await downloadReleaseAsset(
@@ -75,17 +76,74 @@ export class AppUpdateManager {
         directory,
         this.#fetch,
       );
-      const openError = await this.#openPath(packagePath);
-      if (openError) {
-        throw new Error(
-          `The update was downloaded to ${packagePath}, but the system installer could not open it: ${openError}`,
+      await this.#installPackage(packagePath, {
+        architecture: debianArchitecture(this.#architecture),
+        version: this.#candidate.latestVersion,
+      });
+      this.#candidate = undefined;
+      return { installed: true };
+    } finally {
+      if (directory) {
+        await rm(directory, { force: true, recursive: true }).catch(
+          () => undefined,
         );
       }
-      this.#candidate = undefined;
-      return { opened: true };
-    } finally {
       this.#installing = false;
     }
+  }
+}
+
+export async function installDebianPackage(
+  packagePath,
+  { architecture, version },
+  { execFileImpl = execFile } = {},
+) {
+  if (!path.isAbsolute(packagePath) || path.extname(packagePath) !== ".deb") {
+    throw new Error("Update package path must be an absolute .deb file");
+  }
+
+  const { stdout } = await executeFile(
+    "/usr/bin/dpkg-deb",
+    ["--field", packagePath, "Package", "Version", "Architecture"],
+    execFileImpl,
+  );
+  const metadata = debianControlFields(stdout);
+  if (
+    metadata.Package !== "codex-desktop-linux" ||
+    metadata.Version !== version ||
+    metadata.Architecture !== architecture
+  ) {
+    throw new Error(
+      "Downloaded package metadata does not match the requested update",
+    );
+  }
+
+  try {
+    await executeFile(
+      "/usr/bin/pkexec",
+      [
+        "/usr/bin/apt-get",
+        "--yes",
+        "--no-remove",
+        "--only-upgrade",
+        "install",
+        packagePath,
+      ],
+      execFileImpl,
+      10 * 60_000,
+    );
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error) {
+      if (error.code === 126 || error.code === 127) {
+        throw new Error("Update authorization was cancelled or denied");
+      }
+    }
+    const detail = commandErrorDetail(error);
+    throw new Error(
+      detail
+        ? `Debian package upgrade failed: ${detail}`
+        : "Debian package upgrade failed",
+    );
   }
 }
 
@@ -322,4 +380,45 @@ function objectValue(value) {
 
 function errorMessage(error) {
   return error instanceof Error ? error.message : String(error);
+}
+
+function executeFile(executable, args, execFileImpl, timeout = 30_000) {
+  return new Promise((resolve, reject) => {
+    execFileImpl(
+      executable,
+      args,
+      {
+        encoding: "utf8",
+        maxBuffer: 1024 * 1024,
+        timeout,
+        windowsHide: true,
+      },
+      (error, stdout = "", stderr = "") => {
+        if (error) {
+          const commandError =
+            error instanceof Error ? error : new Error(String(error));
+          commandError.stderr = stderr;
+          reject(commandError);
+          return;
+        }
+        resolve({ stdout, stderr });
+      },
+    );
+  });
+}
+
+function debianControlFields(output) {
+  return Object.fromEntries(
+    String(output)
+      .split(/\r?\n/)
+      .map((line) => /^([^:]+):\s*(.*)$/.exec(line))
+      .filter(Boolean)
+      .map((match) => [match[1], match[2]]),
+  );
+}
+
+function commandErrorDetail(error) {
+  if (!error || typeof error !== "object") return "";
+  const stderr = "stderr" in error ? String(error.stderr ?? "") : "";
+  return stderr.replace(/\s+/g, " ").trim().slice(0, 500);
 }

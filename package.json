@@ -2,7 +2,7 @@
   "name": "codex-desktop-linux",
   "productName": "Codex Desktop",
   "desktopName": "codex-desktop.desktop",
-  "version": "0.3.14",
+  "version": "0.3.15",
   "description": "Independent desktop client for Codex on Linux",
   "license": "MIT",
   "author": {
@@ -69,6 +69,7 @@
         "libnss3",
         "libxss1",
         "libxtst6",
+        "pkexec",
         "xdg-utils"
       ]
     }
