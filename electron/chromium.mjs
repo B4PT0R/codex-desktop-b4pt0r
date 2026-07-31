@@ -29,14 +29,17 @@ export const sharedBrowserEndpoint = MCP_URL;
 export class SharedBrowserManager {
   #artifacts;
   #client;
+  #clientConnecting;
   #clientVersion;
   #environment;
   #home;
   #installLog = "";
   #installer;
+  #lifecycleVersion = 0;
   #processExecutable;
   #root;
   #server;
+  #serverStarting;
   #spawn;
 
   constructor({
@@ -152,10 +155,13 @@ export class SharedBrowserManager {
   }
 
   async #stopServer() {
+    this.#lifecycleVersion += 1;
     const client = this.#client;
     const server = this.#server;
     this.#client = undefined;
+    this.#clientConnecting = undefined;
     this.#server = undefined;
+    this.#serverStarting = undefined;
     server?.kill();
     await client?.close().catch(() => undefined);
   }
@@ -207,12 +213,31 @@ export class SharedBrowserManager {
 
   async #startServer(executable) {
     if (this.#server && this.#server.exitCode == null) return;
+    if (!this.#serverStarting) {
+      const lifecycleVersion = this.#lifecycleVersion;
+      const starting = this.#startServerOnce(
+        executable,
+        lifecycleVersion,
+      ).finally(() => {
+        if (this.#serverStarting === starting) {
+          this.#serverStarting = undefined;
+        }
+      });
+      this.#serverStarting = starting;
+    }
+    return this.#serverStarting;
+  }
+
+  async #startServerOnce(executable, lifecycleVersion) {
     const paths = sharedBrowserPaths(this.#home);
     await stopStaleSharedBrowserServer(paths.serverPid, paths.profile);
     await Promise.all([
       privateDirectory(paths.profile),
       privateDirectory(paths.output),
     ]);
+    if (lifecycleVersion !== this.#lifecycleVersion) {
+      throw new Error("Shared browser start was cancelled");
+    }
     const cli = path.join(
       this.#root,
       "node_modules/@playwright/mcp/cli.js",
@@ -256,17 +281,27 @@ export class SharedBrowserManager {
       stderr = `${stderr}${chunk}`.slice(-MAX_INSTALL_LOG);
     });
     child.once("exit", () => {
-      if (this.#server === child) this.#server = undefined;
       void removeOwnedPidFile(paths.serverPid, child.pid);
+      if (this.#server !== child) return;
+      this.#server = undefined;
+      this.#lifecycleVersion += 1;
       void this.#client?.close().catch(() => undefined);
       this.#client = undefined;
     });
     child.once("error", () => {
-      if (this.#server === child) this.#server = undefined;
+      if (this.#server === child) {
+        this.#server = undefined;
+        this.#lifecycleVersion += 1;
+      }
       void removeOwnedPidFile(paths.serverPid, child.pid);
     });
     try {
       await waitForServer(child);
+      if (lifecycleVersion !== this.#lifecycleVersion) {
+        child.kill();
+        if (this.#server === child) this.#server = undefined;
+        throw new Error("Shared browser start was cancelled");
+      }
     } catch (error) {
       child.kill();
       if (this.#server === child) this.#server = undefined;
@@ -276,10 +311,27 @@ export class SharedBrowserManager {
 
   async #connectClient() {
     if (this.#client) return this.#client;
-    const client = new PlaywrightMcpClient(MCP_URL, this.#clientVersion);
-    await client.connect();
-    this.#client = client;
-    return client;
+    if (!this.#clientConnecting) {
+      const lifecycleVersion = this.#lifecycleVersion;
+      const client = new PlaywrightMcpClient(MCP_URL, this.#clientVersion);
+      const connecting = client
+        .connect()
+        .then(async () => {
+          if (lifecycleVersion !== this.#lifecycleVersion) {
+            await client.close();
+            throw new Error("Shared browser connection was cancelled");
+          }
+          this.#client = client;
+          return client;
+        })
+        .finally(() => {
+          if (this.#clientConnecting === connecting) {
+            this.#clientConnecting = undefined;
+          }
+        });
+      this.#clientConnecting = connecting;
+    }
+    return this.#clientConnecting;
   }
 
   async #ensureCodexConfig() {

@@ -979,6 +979,8 @@ export const en: Record<MessageKey, string> = {
   "settings.config.fallbackFiles.title": "Fallback filenames",
   "settings.config.fallbackFiles.detail":
     "Ordered comma-separated list used when AGENTS.md is absent.",
+  "settings.config.fallbackFiles.placeholder":
+    "CLAUDE.md, CONTRIBUTING.md",
   "settings.config.fallbackFiles.save": "Save fallback filenames",
   "settings.config.runtime.title": "Runtime and credentials",
   "settings.config.runtime.description":

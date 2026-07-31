@@ -52,6 +52,7 @@ function options() {
         attachHeadlessTranscript,
         headlessParentThreadId: undefined,
         recording: false,
+        starting: false,
         start,
         stop,
       },

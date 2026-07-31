@@ -70,9 +70,11 @@ export class AppServerTransport {
   #child;
   #initialized = false;
   #instructionSources = new Map();
+  #lifecycleGeneration = 0;
   #probe;
   #probeSequence = 0;
   #send;
+  #startPromise;
   #spawnProcess;
   #resolveExecutable;
 
@@ -90,7 +92,21 @@ export class AppServerTransport {
 
   async start() {
     if (this.#child?.stdin.writable) return !this.#initialized;
+    if (this.#startPromise) return this.#startPromise;
+    const generation = this.#lifecycleGeneration;
+    const startPromise = this.#start(generation);
+    this.#startPromise = startPromise;
+    try {
+      return await startPromise;
+    } finally {
+      if (this.#startPromise === startPromise) this.#startPromise = undefined;
+    }
+  }
+
+  async #start(generation) {
     const executable = await this.#resolveExecutable();
+    if (generation !== this.#lifecycleGeneration) return false;
+    if (this.#child?.stdin.writable) return !this.#initialized;
     const child = this.#spawnProcess(
       executable,
       appServerArguments,
@@ -179,6 +195,8 @@ export class AppServerTransport {
   }
 
   stop() {
+    this.#lifecycleGeneration += 1;
+    this.#startPromise = undefined;
     const child = this.#child;
     this.#child = undefined;
     this.#initialized = false;

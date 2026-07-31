@@ -106,6 +106,7 @@ import { useConversationEventQueue } from "./lib/useConversationEventQueue";
 import { useThreadRuntimeState } from "./lib/useThreadRuntimeState";
 import { useThreadRuntimeMutations } from "./lib/useThreadRuntimeMutations";
 import { useSubagentTranscripts } from "./lib/useSubagentTranscripts";
+import { ThreadNavigationGuard } from "./lib/threadNavigationGuard";
 import "./styles.css";
 import "./primitives.css";
 import "./realtime.css";
@@ -181,6 +182,7 @@ export default function App() {
     [workPanel, setWorkPanel] = useState<ToolCall>();
   const [turnCoordinator] = useState(() => new ThreadTurnCoordinator());
   const [viewStateGuard] = useState(() => new ThreadViewStateGuard());
+  const [threadNavigationGuard] = useState(() => new ThreadNavigationGuard());
   const runtime = useThreadRuntimeState({
     model: fallbackModels[0].id,
     effort: "medium",
@@ -201,6 +203,8 @@ export default function App() {
     setModel,
   } = runtime;
   const dictationSequence = useRef(0);
+  const realtimeStartGeneration = useRef(0);
+  const realtimeStartPending = useRef(false);
   const [cwd, setCwd] = useState(
     () => localStorage.getItem("codex-desktop.cwd") ?? "",
   );
@@ -260,6 +264,7 @@ export default function App() {
   const realtime = useRealtimeSettings(settings === "voice");
   const defaultThread = useDefaultThreadSettings(threads);
   const realtimeConversation = useRealtimeConversation({
+    activeParentThreadId: threadId,
     setActivity,
     setMessages,
     showError,
@@ -395,7 +400,9 @@ export default function App() {
       viewStateGuard.failResume(id);
     },
     onThreadResumeStarted: (id) => {
+      threadNavigationGuard.navigate();
       activeThreadRef.current = id;
+      realtimeConversation.detachVisibleTranscript(id);
       conversationEvents.beginScopeTransition(id);
       viewStateGuard.beginResume(id);
       setThreadId(id);
@@ -420,6 +427,7 @@ export default function App() {
       if (Object.hasOwn(patch, "busy")) setBusy(patch.busy ?? false);
       if (Object.hasOwn(patch, "turnId")) setTurnId(patch.turnId);
       applyThreadRuntimeSettings(runtimeSettings);
+      realtimeConversation.attachVisibleTranscript(id);
     },
   });
   useTrayRealtimeConversation({
@@ -477,11 +485,13 @@ export default function App() {
     busy,
     threadId,
     createThread,
-    onError: (title, error) => {
+    onError: (title, error, commandThreadId) => {
+      if (activeThreadRef.current !== commandThreadId) return;
       setBusy(false);
       showError(title, error);
     },
-    onStarted: (command) => {
+    onStarted: (command, commandThreadId) => {
+      if (activeThreadRef.current !== commandThreadId) return;
       setBusy(true);
       setMessages((items) => [
         ...items,
@@ -490,6 +500,9 @@ export default function App() {
     },
   });
   function newChat() {
+    threadNavigationGuard.navigate();
+    realtimeStartGeneration.current += 1;
+    realtimeStartPending.current = false;
     realtimeConversation.reset();
     activeThreadRef.current = undefined;
     viewStateGuard.reset();
@@ -636,6 +649,7 @@ export default function App() {
     realtimeConversation.handleMessage(msg);
   }
   async function createThread() {
+    const creationGeneration = threadNavigationGuard.beginCreation();
     const r = await request<ThreadStartResponse>(
       "thread/start",
       threadStartParams(
@@ -651,12 +665,15 @@ export default function App() {
     const runtimeSettings = threadRuntimeSettings(r);
     const resolvedCwd = runtimeSettings.cwd ?? cwd;
     turnCoordinator.observeStatus(id, threadSummary(r.thread).status ?? "idle");
-    applyThreadRuntimeSettings(runtimeSettings);
-    activeThreadRef.current = id;
-    conversationEvents.replaceScope(id);
-    setThreadId(id);
     setThreads((x) => [{ id, name: t("app.newChat"), cwd: resolvedCwd }, ...x]);
-    return id;
+    const activated = threadNavigationGuard.shouldActivate(creationGeneration);
+    if (activated) {
+      applyThreadRuntimeSettings(runtimeSettings);
+      activeThreadRef.current = id;
+      conversationEvents.replaceScope(id);
+      setThreadId(id);
+    }
+    return { id, activated };
   }
 
   async function send(text: string, context: TurnContextItem[]) {
@@ -738,7 +755,10 @@ export default function App() {
     }
     let targetThreadId = threadId;
     try {
-      const id = targetThreadId ?? (await createThread());
+      const created = targetThreadId ? undefined : await createThread();
+      if (created && !created.activated) return;
+      const id = targetThreadId ?? created?.id;
+      if (!id) return;
       targetThreadId = id;
       turnCoordinator.observeStatus(
         id,
@@ -804,13 +824,20 @@ export default function App() {
   }
   async function toggleVoice() {
     if (threadHistory.resuming) return;
-    if (recording) {
+    if (recording || realtimeConversation.starting) {
       await realtimeConversation.stop();
       return;
     }
-    if (dictating) return;
+    if (dictating || realtimeStartPending.current) return;
+    const generation = realtimeStartGeneration.current + 1;
+    realtimeStartGeneration.current = generation;
+    realtimeStartPending.current = true;
     try {
-      const parentThreadId = threadId ?? (await createThread());
+      const created = threadId ? undefined : await createThread();
+      if (created && !created.activated) return;
+      const parentThreadId = threadId ?? created?.id;
+      if (!parentThreadId) return;
+      if (realtimeStartGeneration.current !== generation) return;
       await realtimeConversation.start({
         parentThreadId,
         cwd: cwd || undefined,
@@ -822,6 +849,10 @@ export default function App() {
       });
     } catch (e) {
       showError(t("app.realtimeUnavailable"), e);
+    } finally {
+      if (realtimeStartGeneration.current === generation) {
+        realtimeStartPending.current = false;
+      }
     }
   }
   async function toggleDictation() {

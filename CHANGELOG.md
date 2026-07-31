@@ -3,6 +3,39 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.3.17] - 2026-07-31
+
+### Added
+
+- GitHub Actions now runs the deterministic TypeScript, frontend, Electron,
+  build and production-audit checks without requiring an installed Codex
+  binary; App Server contract tests remain an explicit local compatibility
+  check against the contributor's installed version.
+
+### Changed
+
+- Shared-browser activation, shutdown and persistence now run in a serialized
+  native queue, with bounded MCP connection waits and cleanup for interrupted
+  initialization and temporary artifacts.
+- Workspace instructions and generated images reuse the application's modal
+  focus contract for predictable keyboard focus and restoration.
+
+### Fixed
+
+- Realtime startup, stop, remote close and transcript state are isolated by
+  parent conversation, preventing stale asynchronous work from stopping or
+  updating a newer voice session after navigation.
+- Delayed conversation creation, shell commands and turns can no longer select
+  or mutate a conversation that the user has since left.
+- Background App Server activity and unscoped errors no longer alter the busy,
+  terminal or conversation state of the visible thread.
+- App Server startup is now single-flight and cancellation-safe, while native
+  renderer delivery, recovery and navigation reject stale or untrusted states
+  without entering restart loops.
+- Desktop preference updates now accept only allowlisted values with their
+  exact expected types while preserving previously stored forward-compatible
+  fields.
+
 ## [0.3.16] - 2026-07-31
 
 ### Added

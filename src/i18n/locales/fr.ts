@@ -1007,6 +1007,8 @@ export const fr = {
   "settings.config.fallbackFiles.title": "Noms de fichiers de repli",
   "settings.config.fallbackFiles.detail":
     "Liste ordonnée, séparée par des virgules, utilisée lorsqu’AGENTS.md est absent.",
+  "settings.config.fallbackFiles.placeholder":
+    "CLAUDE.md, CONTRIBUTING.md",
   "settings.config.fallbackFiles.save": "Enregistrer les fichiers de repli",
   "settings.config.runtime.title": "Exécution et identifiants",
   "settings.config.runtime.description":

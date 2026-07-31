@@ -1,5 +1,6 @@
 import { createReadStream } from "node:fs";
 import { createServer } from "node:http";
+import { randomUUID } from "node:crypto";
 import {
   chmod,
   mkdir,
@@ -15,6 +16,7 @@ const HOST = "127.0.0.1";
 export class BrowserArtifactServer {
   #directory;
   #server;
+  #starting;
 
   constructor(directory) {
     this.#directory = directory;
@@ -25,7 +27,7 @@ export class BrowserArtifactServer {
     await privateDirectory(this.#directory);
     const file = path.join(
       this.#directory,
-      `generated-${process.pid}-${Date.now()}.html`,
+      `generated-${process.pid}-${randomUUID()}.html`,
     );
     const escaped = dataUrl.replaceAll("'", "&#39;");
     await writeFile(
@@ -40,14 +42,16 @@ export class BrowserArtifactServer {
   }
 
   async stop() {
+    await this.#starting?.catch(() => undefined);
     if (!this.#server) return;
     await new Promise((resolve) => this.#server.close(resolve));
     this.#server = undefined;
   }
 
   async #start() {
-    if (this.#server) return;
-    this.#server = createServer(async (request, response) => {
+    if (this.#server?.listening) return;
+    if (this.#starting) return this.#starting;
+    const server = createServer(async (request, response) => {
       try {
         const name = decodeURIComponent(
           new URL(request.url ?? "/", "http://localhost").pathname.slice(1),
@@ -70,10 +74,19 @@ export class BrowserArtifactServer {
         response.writeHead(404).end();
       }
     });
-    await new Promise((resolve, reject) => {
-      this.#server.once("error", reject);
-      this.#server.listen(0, HOST, resolve);
-    });
+    this.#server = server;
+    this.#starting = new Promise((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(0, HOST, resolve);
+    })
+      .catch((error) => {
+        if (this.#server === server) this.#server = undefined;
+        throw error;
+      })
+      .finally(() => {
+        this.#starting = undefined;
+      });
+    return this.#starting;
   }
 }
 

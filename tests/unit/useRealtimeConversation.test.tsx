@@ -32,6 +32,14 @@ import { useRealtimeConversation } from "../../src/lib/useRealtimeConversation";
 import type { AgentActivity } from "../../src/lib/activity";
 import type { ChatMessage } from "../../src/types";
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((next) => {
+    resolve = next;
+  });
+  return { promise, resolve };
+}
+
 beforeEach(() => {
   requestMock.mockReset().mockResolvedValue({});
   createRealtimeThreadMock
@@ -47,12 +55,302 @@ beforeEach(() => {
 });
 
 describe("cycle de vie de la conversation Realtime", () => {
+  it("refuse un second démarrage pendant l'initialisation", async () => {
+    const creation = deferred<{
+      thread: { id: string };
+      cwd: string;
+    }>();
+    createRealtimeThreadMock.mockReturnValueOnce(creation.promise);
+    const { result } = renderHook(() => {
+      const [, setMessages] = useState<ChatMessage[]>([]);
+      const [, setActivity] = useState<AgentActivity>(null);
+      return useRealtimeConversation({
+        activeParentThreadId: "parent",
+        setActivity,
+        setMessages,
+        showError: vi.fn(),
+        translate: defaultTranslate,
+      });
+    });
+
+    let first!: Promise<boolean>;
+    let second!: Promise<boolean>;
+    act(() => {
+      first = result.current.start({
+        parentThreadId: "parent",
+        model: "gpt-5.4",
+        voice: "juniper",
+      });
+      second = result.current.start({
+        parentThreadId: "parent",
+        model: "gpt-5.4",
+        voice: "juniper",
+      });
+    });
+
+    await expect(second).resolves.toBe(false);
+    expect(createRealtimeThreadMock).toHaveBeenCalledOnce();
+    expect(result.current.starting).toBe(true);
+    creation.resolve({ thread: { id: "realtime-child" }, cwd: "/work" });
+    await act(() => first);
+    expect(result.current.starting).toBe(false);
+    expect(result.current.recording).toBe(true);
+  });
+
+  it("annule un démarrage différé et libère son fork après reset", async () => {
+    const creation = deferred<{
+      thread: { id: string };
+      cwd: string;
+    }>();
+    const showError = vi.fn();
+    createRealtimeThreadMock.mockReturnValueOnce(creation.promise);
+    const { result } = renderHook(() => {
+      const [, setMessages] = useState<ChatMessage[]>([]);
+      const [, setActivity] = useState<AgentActivity>(null);
+      return useRealtimeConversation({
+        activeParentThreadId: "parent",
+        setActivity,
+        setMessages,
+        showError,
+        translate: defaultTranslate,
+      });
+    });
+
+    let pending!: Promise<boolean>;
+    act(() => {
+      pending = result.current.start({
+        parentThreadId: "parent",
+        model: "gpt-5.4",
+        voice: "juniper",
+      });
+    });
+    act(() => result.current.reset());
+    expect(result.current.starting).toBe(true);
+
+    creation.resolve({ thread: { id: "cancelled-child" }, cwd: "/work" });
+    await expect(pending).resolves.toBe(false);
+    await waitFor(() => expect(result.current.starting).toBe(false));
+    expect(startRealtimeMock).not.toHaveBeenCalled();
+    expect(requestMock).toHaveBeenCalledWith("thread/unsubscribe", {
+      threadId: "cancelled-child",
+    });
+    expect(showError).not.toHaveBeenCalled();
+  });
+
+  it("termine un démarrage annulé avant d’autoriser la session suivante", async () => {
+    const firstNativeStart = deferred<void>();
+    createRealtimeThreadMock
+      .mockResolvedValueOnce({ thread: { id: "first-child" }, cwd: "/work" })
+      .mockResolvedValueOnce({ thread: { id: "second-child" }, cwd: "/work" });
+    startRealtimeMock
+      .mockReturnValueOnce(firstNativeStart.promise)
+      .mockResolvedValueOnce(undefined);
+    const { result } = renderHook(() => {
+      const [, setMessages] = useState<ChatMessage[]>([]);
+      const [, setActivity] = useState<AgentActivity>(null);
+      return useRealtimeConversation({
+        activeParentThreadId: "parent",
+        setActivity,
+        setMessages,
+        showError: vi.fn(),
+        translate: defaultTranslate,
+      });
+    });
+
+    let first!: Promise<boolean>;
+    act(() => {
+      first = result.current.start({
+        parentThreadId: "parent",
+        model: "gpt-5.4",
+        voice: "juniper",
+      });
+    });
+    await waitFor(() => expect(startRealtimeMock).toHaveBeenCalledOnce());
+    act(() => result.current.reset());
+    await expect(
+      result.current.start({
+        parentThreadId: "parent",
+        model: "gpt-5.4",
+        voice: "juniper",
+      }),
+    ).resolves.toBe(false);
+
+    firstNativeStart.resolve();
+    await expect(first).resolves.toBe(false);
+    await waitFor(() => expect(result.current.starting).toBe(false));
+    const stopCallsBeforeRestart = stopRealtimeMock.mock.calls.length;
+
+    await act(() =>
+      result.current.start({
+        parentThreadId: "parent",
+        model: "gpt-5.4",
+        voice: "juniper",
+      }),
+    );
+    expect(result.current.recording).toBe(true);
+    expect(startRealtimeMock).toHaveBeenLastCalledWith(
+      "second-child",
+      expect.anything(),
+      expect.anything(),
+      expect.any(Function),
+      expect.any(Array),
+    );
+    expect(stopRealtimeMock).toHaveBeenCalledTimes(stopCallsBeforeRestart);
+  });
+
+  it("tamponne le transcript hors de son parent puis le rattache au retour", async () => {
+    const { result, rerender } = renderHook(
+      ({ activeThreadId }) => {
+        const [messages, setMessages] = useState<ChatMessage[]>([
+          { id: "history-a", role: "assistant", content: "Historique A" },
+        ]);
+        const [activity, setActivity] = useState<AgentActivity>("working");
+        const conversation = useRealtimeConversation({
+          activeParentThreadId: activeThreadId,
+          setActivity,
+          setMessages,
+          showError: vi.fn(),
+          translate: defaultTranslate,
+        });
+        return { activity, conversation, messages, setMessages };
+      },
+      { initialProps: { activeThreadId: "parent-a" } },
+    );
+
+    await act(() =>
+      result.current.conversation.start({
+        parentThreadId: "parent-a",
+        model: "gpt-5.4",
+        voice: "juniper",
+      }),
+    );
+    act(() => {
+      result.current.conversation.handleMessage({
+        method: "thread/realtime/transcript/delta",
+        params: {
+          threadId: "realtime-child",
+          role: "assistant",
+          delta: "Visible A",
+        },
+      });
+    });
+
+    act(() => {
+      result.current.conversation.detachVisibleTranscript("thread-b");
+      result.current.setMessages([
+        { id: "history-b", role: "assistant", content: "Historique B" },
+      ]);
+    });
+    rerender({ activeThreadId: "thread-b" });
+    act(() => {
+      result.current.conversation.handleMessage({
+        method: "thread/realtime/transcript/delta",
+        params: {
+          threadId: "realtime-child",
+          role: "assistant",
+          delta: " puis caché",
+        },
+      });
+    });
+    expect(result.current.messages.map((message) => message.content)).toEqual([
+      "Historique B",
+    ]);
+    const decorate = result.current.conversation.captureMessageDecorator();
+    expect(
+      decorate(result.current.messages, [
+        ...result.current.messages,
+        { id: "text-b", role: "assistant", content: "Texte B" },
+      ]).at(-1)?.modality,
+    ).toBeUndefined();
+
+    act(() => {
+      result.current.conversation.detachVisibleTranscript("parent-a");
+      result.current.setMessages([]);
+    });
+    rerender({ activeThreadId: "parent-a" });
+    act(() => {
+      result.current.setMessages([
+        { id: "history-a", role: "assistant", content: "Historique A" },
+      ]);
+      result.current.conversation.attachVisibleTranscript("parent-a");
+    });
+    expect(result.current.messages.map((message) => message.content)).toEqual([
+      "Historique A",
+      "Visible A puis caché",
+    ]);
+    expect(result.current.messages.at(-1)).toMatchObject({
+      modality: "realtimeVoice",
+      streaming: true,
+    });
+    expect(result.current.activity).toBe("working");
+  });
+
+  it("conserve un transcript finalisé si la session se ferme hors de son parent", async () => {
+    const { result, rerender } = renderHook(
+      ({ activeThreadId }) => {
+        const [messages, setMessages] = useState<ChatMessage[]>([]);
+        const [, setActivity] = useState<AgentActivity>(null);
+        const conversation = useRealtimeConversation({
+          activeParentThreadId: activeThreadId,
+          setActivity,
+          setMessages,
+          showError: vi.fn(),
+          translate: defaultTranslate,
+        });
+        return { conversation, messages, setMessages };
+      },
+      { initialProps: { activeThreadId: "parent-a" } },
+    );
+
+    await act(() =>
+      result.current.conversation.start({
+        parentThreadId: "parent-a",
+        model: "gpt-5.4",
+        voice: "juniper",
+      }),
+    );
+    act(() => {
+      result.current.conversation.handleMessage({
+        method: "thread/realtime/transcript/done",
+        params: {
+          threadId: "realtime-child",
+          role: "assistant",
+          text: "Réponse vocale finalisée",
+        },
+      });
+      result.current.conversation.detachVisibleTranscript("thread-b");
+      result.current.setMessages([
+        { id: "history-b", role: "assistant", content: "Historique B" },
+      ]);
+    });
+    rerender({ activeThreadId: "thread-b" });
+    act(() => {
+      result.current.conversation.handleMessage({
+        method: "thread/realtime/closed",
+        params: { threadId: "realtime-child" },
+      });
+    });
+    expect(result.current.messages.map((message) => message.content)).toEqual([
+      "Historique B",
+    ]);
+
+    act(() => result.current.setMessages([]));
+    rerender({ activeThreadId: "parent-a" });
+    act(() => {
+      result.current.conversation.attachVisibleTranscript("parent-a");
+    });
+    expect(result.current.messages.map((message) => message.content)).toEqual([
+      "Réponse vocale finalisée",
+    ]);
+  });
+
   it("isole le fork, rend les transcriptions et les injecte dans le parent", async () => {
     const showError = vi.fn();
     const { result } = renderHook(() => {
       const [messages, setMessages] = useState<ChatMessage[]>([]);
       const [activity, setActivity] = useState<AgentActivity>(null);
       const conversation = useRealtimeConversation({
+        activeParentThreadId: "persistent-parent",
         setActivity,
         setMessages,
         showError,
@@ -129,6 +427,7 @@ describe("cycle de vie de la conversation Realtime", () => {
       return {
         messages,
         conversation: useRealtimeConversation({
+          activeParentThreadId: "parent",
           setActivity,
           setMessages,
           showError,
@@ -173,6 +472,7 @@ describe("cycle de vie de la conversation Realtime", () => {
       ]);
       const [activity, setActivity] = useState<AgentActivity>("working");
       const conversation = useRealtimeConversation({
+        activeParentThreadId: "other-thread",
         setActivity,
         setMessages,
         showError: vi.fn(),
@@ -233,6 +533,7 @@ describe("cycle de vie de la conversation Realtime", () => {
       ]);
       const [, setActivity] = useState<AgentActivity>(null);
       const conversation = useRealtimeConversation({
+        activeParentThreadId: "headless-parent",
         setActivity,
         setMessages,
         showError: vi.fn(),
@@ -308,6 +609,7 @@ describe("cycle de vie de la conversation Realtime", () => {
       const [, setMessages] = useState<ChatMessage[]>([]);
       const [, setActivity] = useState<AgentActivity>(null);
       return useRealtimeConversation({
+        activeParentThreadId: "persistent-parent",
         setActivity,
         setMessages,
         showError,

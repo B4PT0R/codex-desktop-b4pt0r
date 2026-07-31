@@ -28,12 +28,14 @@ describe("commande shell locale", () => {
       threadId: "thread-1",
       command: "git status",
     });
-    expect(options.onStarted).toHaveBeenCalledWith("git status");
+    expect(options.onStarted).toHaveBeenCalledWith("git status", "thread-1");
     expect(result.current.pending).toBeUndefined();
   });
 
   it("crée un thread au besoin et bloque pendant un tour", async () => {
-    const createThread = vi.fn().mockResolvedValue("thread-new");
+    const createThread = vi
+      .fn()
+      .mockResolvedValue({ id: "thread-new", activated: true });
     const onError = vi.fn();
     const { result, rerender } = renderHook(
       ({ busy }) =>
@@ -58,6 +60,29 @@ describe("commande shell locale", () => {
     expect(onError).toHaveBeenCalledWith(
       "Commande shell indisponible",
       expect.any(String),
+      undefined,
     );
+  });
+
+  it("n’exécute rien lorsqu’une création tardive n’est plus affichée", async () => {
+    const onStarted = vi.fn();
+    const { result } = renderHook(() =>
+      useShellCommand({
+        busy: false,
+        createThread: vi.fn().mockResolvedValue({
+          id: "detached-thread",
+          activated: false,
+        }),
+        onError: vi.fn(),
+        onStarted,
+      }),
+    );
+
+    act(() => result.current.requestExecution("pwd"));
+    await act(() => result.current.confirm());
+
+    expect(requestMock).not.toHaveBeenCalled();
+    expect(onStarted).not.toHaveBeenCalled();
+    expect(result.current.pending).toBeUndefined();
   });
 });

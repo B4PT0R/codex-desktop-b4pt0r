@@ -20,6 +20,7 @@ type RealtimeConversationController = Pick<
   | "attachHeadlessTranscript"
   | "headlessParentThreadId"
   | "recording"
+  | "starting"
   | "start"
   | "stop"
 >;
@@ -120,7 +121,11 @@ export async function handleTrayRealtimeRequest(
   if (!options.connected) {
     throw new Error(options.translate("app.realtimeUnavailable"));
   }
-  if (options.realtimeConversation.recording) return undefined;
+  if (
+    options.realtimeConversation.recording ||
+    options.realtimeConversation.starting
+  )
+    return undefined;
   if (options.dictationActive) {
     throw new Error(options.translate("app.realtimeDictationConflict"));
   }

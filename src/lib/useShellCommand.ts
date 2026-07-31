@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import { request } from "./codex";
 import { threadShellCommandParams } from "./protocol";
+import type { ThreadCreationResult } from "./threadNavigationGuard";
 
 export type ShellCommandController = {
   pending?: string;
@@ -20,9 +21,9 @@ export function useShellCommand({
 }: {
   busy: boolean;
   threadId?: string;
-  createThread: () => Promise<string>;
-  onError: (title: string, error: unknown) => void;
-  onStarted: (command: string) => void;
+  createThread: () => Promise<ThreadCreationResult>;
+  onError: (title: string, error: unknown, threadId?: string) => void;
+  onStarted: (command: string, threadId: string) => void;
 }): ShellCommandController {
   const { t } = useI18n();
   const [pending, setPending] = useState<string>();
@@ -32,16 +33,20 @@ export function useShellCommand({
     (command: string) => {
       const normalized = command.trim().slice(0, 32_768);
       if (!normalized) {
-        onError(t("shellCommand.invalid"), t("shellCommand.empty"));
+        onError(t("shellCommand.invalid"), t("shellCommand.empty"), threadId);
         return;
       }
       if (busy) {
-        onError(t("shellCommand.unavailable"), t("shellCommand.busy"));
+        onError(
+          t("shellCommand.unavailable"),
+          t("shellCommand.busy"),
+          threadId,
+        );
         return;
       }
       setPending(normalized);
     },
-    [busy, onError, t],
+    [busy, onError, t, threadId],
   );
 
   const cancel = useCallback(() => {
@@ -51,16 +56,24 @@ export function useShellCommand({
   const confirm = useCallback(async () => {
     if (!pending || executing) return;
     setExecuting(true);
+    let targetThreadId = threadId;
     try {
-      const resolvedThreadId = threadId ?? (await createThread());
-      onStarted(pending);
+      const created = threadId ? undefined : await createThread();
+      if (created && !created.activated) {
+        setPending(undefined);
+        return;
+      }
+      const resolvedThreadId = threadId ?? created?.id;
+      if (!resolvedThreadId) return;
+      targetThreadId = resolvedThreadId;
+      onStarted(pending, resolvedThreadId);
       await request(
         "thread/shellCommand",
         threadShellCommandParams(resolvedThreadId, pending),
       );
       setPending(undefined);
     } catch (error) {
-      onError(t("shellCommand.startError"), error);
+      onError(t("shellCommand.startError"), error, targetThreadId);
     } finally {
       setExecuting(false);
     }

@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Check TypeScript
+        run: npm run check
+      - name: Run frontend tests
+        run: npm test
+      - name: Run Electron tests
+        run: npm run test:electron
+      - name: Build renderer
+        run: npm run build
+      - name: Audit production dependencies
+        run: npm audit --omit=dev
+
+# `npm run test:contract` intentionally remains a local compatibility check:
+# it generates schemas from the contributor's exact installed Codex binary.

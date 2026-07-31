@@ -68,6 +68,12 @@ Also run:
   packaging behavior;
 - `npm run electron:deb` when Debian packaging changes.
 
+The default test command and continuous-integration workflow are deterministic
+and do not require a local Codex installation. The contract suite remains a
+separate compatibility check because it generates schemas from the exact
+`codex` binary installed on the contributor's machine; report that version with
+its result.
+
 If a check cannot run, state exactly what was skipped and why. A regression fix
 should include a test that would have failed before the fix whenever practical.
 

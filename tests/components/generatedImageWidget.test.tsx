@@ -74,4 +74,35 @@ describe("widget d’image générée", () => {
     fireEvent.click(screen.getByRole("button", { name: "Fermer l’aperçu" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
+
+  it("borne le focus de l’aperçu et le restitue après Escape", async () => {
+    render(
+      <I18nProvider>
+        <GeneratedImageWidget artifacts={[artifact]} />
+      </I18nProvider>,
+    );
+
+    const opener = screen.getAllByRole("button", {
+      name: "Agrandir l’image",
+    })[0];
+    opener.focus();
+    fireEvent.click(opener);
+    const dialog = screen.getByRole("dialog", {
+      name: "Aperçu agrandi de l’image",
+    });
+    const close = screen.getByRole("button", { name: "Fermer l’aperçu" });
+    const save = screen.getAllByRole("button", {
+      name: "Enregistrer l’image",
+    }).at(-1)!;
+    await waitFor(() => expect(close).toHaveFocus());
+
+    fireEvent.keyDown(dialog, { key: "Tab" });
+    expect(save).toHaveFocus();
+    fireEvent.keyDown(dialog, { key: "Tab", shiftKey: true });
+    expect(close).toHaveFocus();
+    fireEvent.keyDown(dialog, { key: "Escape" });
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() => expect(opener).toHaveFocus());
+  });
 });

@@ -41,6 +41,7 @@ import type { ChatMessage, Personality } from "../types";
 import type { Translate } from "../i18n/I18nProvider";
 
 type RealtimeConversationOptions = {
+  activeParentThreadId?: string;
   setActivity: Dispatch<SetStateAction<AgentActivity>>;
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   showError: (title: string, error: unknown) => void;
@@ -62,59 +63,101 @@ type StartRealtimeConversationOptions = {
 type TranscriptUpdate = (messages: ChatMessage[]) => ChatMessage[];
 
 export function useRealtimeConversation({
+  activeParentThreadId,
   setActivity,
   setMessages,
   showError,
   translate,
 }: RealtimeConversationOptions) {
   const [recording, setRecording] = useState(false);
+  const [starting, setStarting] = useState(false);
   const [headlessParentThreadId, setHeadlessParentThreadId] = useState<string>();
   const activeThreadId = useRef<string | undefined>(undefined);
   const parentThreadId = useRef<string | undefined>(undefined);
+  const visibleParentThreadId = useRef(activeParentThreadId);
+  const startGeneration = useRef(0);
+  const startingRef = useRef(false);
+  const startOperation = useRef<Promise<boolean> | undefined>(undefined);
+  const terminationOperation = useRef<Promise<void> | undefined>(undefined);
   const releasingThreadIds = useRef(new Set<string>());
   const transcriptWriteQueue = useRef<Promise<void>>(Promise.resolve());
   const preRealtimeMessageIds = useRef<ReadonlySet<string>>(new Set());
   const assistantMessageId = useRef<string | undefined>(undefined);
   const userMessageId = useRef<string | undefined>(undefined);
-  const displayTranscript = useRef(true);
-  const bufferedTranscript = useRef<ChatMessage[]>([]);
+  const transcriptDisplayRequested = useRef(true);
+  const bufferedTranscripts = useRef(new Map<string, ChatMessage[]>());
   const errorReporter = useRef(showError);
   const defaultErrorReporter = useRef(showError);
   const translateRef = useRef(translate);
   translateRef.current = translate;
   defaultErrorReporter.current = showError;
+  visibleParentThreadId.current = activeParentThreadId;
+
+  const transcriptIsVisible = useCallback(
+    () =>
+      transcriptDisplayRequested.current &&
+      parentThreadId.current !== undefined &&
+      parentThreadId.current === visibleParentThreadId.current,
+    [],
+  );
+
+  const attachBufferedTranscript = useCallback((visibleThreadId?: string) => {
+    const targetThreadId = visibleThreadId ?? visibleParentThreadId.current;
+    if (!transcriptDisplayRequested.current || !targetThreadId) return false;
+    const buffered = bufferedTranscripts.current.get(targetThreadId) ?? [];
+    if (!buffered.length) return false;
+    setMessages((messages) => {
+      preRealtimeMessageIds.current = new Set(
+        messages.map((message) => message.id),
+      );
+      return mergeBufferedTranscript(messages, buffered);
+    });
+    return true;
+  }, [setMessages]);
 
   const updateTranscript = useCallback(
     (update: TranscriptUpdate) => {
-      if (displayTranscript.current) {
+      const transcriptThreadId = parentThreadId.current;
+      if (!transcriptThreadId) return;
+      const buffered = update(
+        bufferedTranscripts.current.get(transcriptThreadId) ?? [],
+      ).slice(-200);
+      bufferedTranscripts.current.delete(transcriptThreadId);
+      bufferedTranscripts.current.set(transcriptThreadId, buffered);
+      while (bufferedTranscripts.current.size > 20) {
+        const oldest = bufferedTranscripts.current.keys().next().value;
+        if (typeof oldest !== "string") break;
+        bufferedTranscripts.current.delete(oldest);
+      }
+      if (transcriptIsVisible()) {
         setMessages(update);
-      } else {
-        bufferedTranscript.current = update(bufferedTranscript.current);
       }
     },
-    [setMessages],
+    [setMessages, transcriptIsVisible],
   );
 
   const finish = useCallback(() => {
     const assistantId = assistantMessageId.current;
     const userId = userMessageId.current;
-    if (displayTranscript.current && (assistantId || userId)) {
-      setMessages((messages) =>
+    const transcriptVisible = transcriptIsVisible();
+    if (assistantId || userId) {
+      updateTranscript((messages) =>
         finalizeInterruptedRealtimeMessages(messages, assistantId, userId),
       );
     }
-    if (displayTranscript.current) setActivity(null);
+    if (transcriptVisible) setActivity(null);
     setRecording(false);
+    startingRef.current = false;
+    setStarting(false);
     activeThreadId.current = undefined;
     parentThreadId.current = undefined;
     assistantMessageId.current = undefined;
     userMessageId.current = undefined;
     preRealtimeMessageIds.current = new Set();
-    bufferedTranscript.current = [];
-    displayTranscript.current = true;
+    transcriptDisplayRequested.current = true;
     setHeadlessParentThreadId(undefined);
     errorReporter.current = defaultErrorReporter.current;
-  }, [setActivity, setMessages]);
+  }, [setActivity, transcriptIsVisible, updateTranscript]);
 
   const releaseFork = useCallback(
     async (
@@ -170,39 +213,53 @@ export function useRealtimeConversation({
     [],
   );
 
-  const stop = useCallback(async () => {
-    const threadId = activeThreadId.current;
-    const reportError = errorReporter.current;
-    let stopError: unknown;
-    try {
-      await stopRealtime();
-    } catch (error) {
-      stopError = error;
-    }
-    await releaseFork(threadId);
-    finish();
-    if (stopError) {
-      reportError(translateRef.current("app.audioInterrupted"), stopError);
-    }
-  }, [finish, releaseFork]);
-
-  const reset = useCallback(() => {
+  const terminate = useCallback((notifyRemote = true) => {
+    if (terminationOperation.current) return terminationOperation.current;
+    startGeneration.current += 1;
+    startingRef.current = true;
+    setStarting(true);
+    const pendingStart = startOperation.current;
     const threadId = activeThreadId.current;
     const reportError = errorReporter.current;
     activeThreadId.current = undefined;
-    void stopRealtime()
-      .catch((error) =>
-        reportError(translateRef.current("app.audioInterrupted"), error),
-      )
-      .then(() => releaseFork(threadId, reportError))
-      .catch(() => undefined);
-    finish();
+    const operation = (async () => {
+      let stopError: unknown;
+      try {
+        await stopRealtime(notifyRemote);
+      } catch (error) {
+        stopError = error;
+      }
+      await pendingStart?.catch(() => false);
+      await releaseFork(threadId, reportError);
+      finish();
+      if (stopError) {
+        reportError(translateRef.current("app.audioInterrupted"), stopError);
+      }
+    })().finally(() => {
+      if (terminationOperation.current === operation) {
+        terminationOperation.current = undefined;
+      }
+    });
+    terminationOperation.current = operation;
+    return operation;
   }, [finish, releaseFork]);
+
+  const stop = useCallback(() => terminate(true), [terminate]);
+
+  const reset = useCallback(() => {
+    void terminate(true);
+  }, [terminate]);
 
   const start = useCallback(
     async (options: StartRealtimeConversationOptions) => {
-      displayTranscript.current = options.displayTranscript !== false;
-      bufferedTranscript.current = [];
+      if (startingRef.current || activeThreadId.current || recording) {
+        return false;
+      }
+      const generation = startGeneration.current + 1;
+      startGeneration.current = generation;
+      startingRef.current = true;
+      setStarting(true);
+      transcriptDisplayRequested.current = options.displayTranscript !== false;
       setHeadlessParentThreadId(
         options.displayTranscript === false
           ? options.parentThreadId
@@ -210,75 +267,128 @@ export function useRealtimeConversation({
       );
       errorReporter.current =
         options.reportError ?? defaultErrorReporter.current;
-      try {
-        const started = await createRealtimeThread(request, options);
-        const threadId = started.thread.id as string;
-        activeThreadId.current = threadId;
-        parentThreadId.current = options.parentThreadId;
-        const initialItems = await realtimeInstructionItems(
-          threadId,
-          started.cwd ?? options.cwd,
-        );
-        if (displayTranscript.current) {
-          setMessages((messages) => {
-            preRealtimeMessageIds.current = new Set(
-              messages.map((message) => message.id),
-            );
-            return messages;
-          });
-        }
-        await startRealtime(
-          threadId,
-          options.voice,
-          "conversation",
-          (error) => {
-            const failedThreadId = activeThreadId.current;
-            const reportError = errorReporter.current;
+      const reportError = errorReporter.current;
+      let createdThreadId: string | undefined;
+      const operation = (async () => {
+        try {
+          const started = await createRealtimeThread(request, options);
+          const threadId = started.thread.id as string;
+          createdThreadId = threadId;
+          if (startGeneration.current !== generation) {
+            await releaseFork(threadId, reportError);
+            return false;
+          }
+          activeThreadId.current = threadId;
+          parentThreadId.current = options.parentThreadId;
+          const initialItems = await realtimeInstructionItems(
+            threadId,
+            started.cwd ?? options.cwd,
+          );
+          if (startGeneration.current !== generation) {
+            return false;
+          }
+          if (options.displayTranscript !== false) {
+            attachBufferedTranscript(options.parentThreadId);
+          }
+          await startRealtime(
+            threadId,
+            options.voice,
+            "conversation",
+            (error) => {
+              if (
+                startGeneration.current !== generation ||
+                activeThreadId.current !== threadId
+              ) {
+                void releaseFork(threadId, reportError);
+                return;
+              }
+              void terminate(false).then(() =>
+                reportError(
+                  translateRef.current("app.audioInterrupted"),
+                  error,
+                ),
+              );
+            },
+            initialItems,
+          );
+          if (startGeneration.current !== generation) {
+            await stopRealtime().catch(() => undefined);
+            return false;
+          }
+          setRecording(true);
+          return true;
+        } catch (error) {
+          if (startGeneration.current === generation) {
             finish();
-            reportError(translateRef.current("app.audioInterrupted"), error);
-            void releaseFork(failedThreadId, reportError);
-          },
-          initialItems,
-        );
-        setRecording(true);
-        return true;
-      } catch (error) {
-        const failedThreadId = activeThreadId.current;
-        const reportError = errorReporter.current;
-        finish();
-        reportError(translateRef.current("app.realtimeUnavailable"), error);
-        void releaseFork(failedThreadId, reportError);
-        return false;
+            reportError(translateRef.current("app.realtimeUnavailable"), error);
+            void releaseFork(createdThreadId, reportError);
+          }
+          return false;
+        } finally {
+          if (startGeneration.current === generation) {
+            startingRef.current = false;
+            setStarting(false);
+          }
+        }
+      })();
+      startOperation.current = operation;
+      try {
+        return await operation;
+      } finally {
+        if (startOperation.current === operation) {
+          startOperation.current = undefined;
+        }
       }
     },
-    [finish, releaseFork, setMessages],
+    [
+      attachBufferedTranscript,
+      finish,
+      recording,
+      releaseFork,
+      terminate,
+      transcriptIsVisible,
+    ],
   );
 
   const attachHeadlessTranscript = useCallback(() => {
     if (
-      displayTranscript.current ||
+      transcriptDisplayRequested.current ||
       !activeThreadId.current ||
       !parentThreadId.current
     ) {
       return false;
     }
-    displayTranscript.current = true;
+    transcriptDisplayRequested.current = true;
     errorReporter.current = defaultErrorReporter.current;
     setHeadlessParentThreadId(undefined);
-    const buffered = bufferedTranscript.current;
-    bufferedTranscript.current = [];
-    setMessages((messages) => {
-      preRealtimeMessageIds.current = new Set(
-        messages.map((message) => message.id),
-      );
-      return mergeBufferedTranscript(messages, buffered);
-    });
+    attachBufferedTranscript(visibleParentThreadId.current);
     return true;
-  }, [setMessages]);
+  }, [attachBufferedTranscript]);
+
+  const attachVisibleTranscript = useCallback(
+    (threadId: string) => {
+      visibleParentThreadId.current = threadId;
+      return attachBufferedTranscript(threadId);
+    },
+    [attachBufferedTranscript],
+  );
+
+  const detachVisibleTranscript = useCallback(
+    (nextThreadId?: string) => {
+      visibleParentThreadId.current = nextThreadId;
+      if (
+        !transcriptDisplayRequested.current ||
+        !parentThreadId.current ||
+        nextThreadId === parentThreadId.current
+      )
+        return;
+    },
+    [],
+  );
 
   const captureMessageDecorator = useCallback(() => {
     const active =
-      activeThreadId.current !== undefined && displayTranscript.current;
+      activeThreadId.current !== undefined && transcriptIsVisible();
     const preexistingMessageIds = preRealtimeMessageIds.current;
     return (previous: ChatMessage[], next: ChatMessage[]) =>
       markRealtimeTextUpdates(
@@ -287,7 +397,7 @@ export function useRealtimeConversation({
         active,
         preexistingMessageIds,
       );
-  }, []);
+  }, [transcriptIsVisible]);
 
   const handleMessage = useCallback(
     (message: AppServerMessage) => {
@@ -367,28 +477,33 @@ export function useRealtimeConversation({
         message.method === "thread/realtime/closed" ||
         message.method === "thread/realtime/error"
       ) {
-        const closedThreadId = activeThreadId.current;
         const reportError = errorReporter.current;
-        finish();
-        void stopRealtime(false).catch(() => undefined);
-        void releaseFork(closedThreadId, reportError);
-        if (message.method === "thread/realtime/error") {
-          reportError(
-            translateRef.current("app.audioInterrupted"),
-            appServerString(params?.message) ??
-              translateRef.current("app.realtimeUnavailable"),
-          );
-        }
+        const realtimeError =
+          message.method === "thread/realtime/error"
+            ? (appServerString(params?.message) ??
+              translateRef.current("app.realtimeUnavailable"))
+            : undefined;
+        void terminate(false).then(() => {
+          if (realtimeError) {
+            reportError(
+              translateRef.current("app.audioInterrupted"),
+              realtimeError,
+            );
+          }
+        });
       }
       return true;
     },
-    [finish, persistTranscript, releaseFork, updateTranscript],
+    [persistTranscript, terminate, updateTranscript],
   );
 
   return {
     recording,
+    starting,
     headlessParentThreadId,
     attachHeadlessTranscript,
+    attachVisibleTranscript,
+    detachVisibleTranscript,
     captureMessageDecorator,
     handleMessage,
     reset,

@@ -100,6 +100,45 @@ describe("éditeur AGENTS.md du workspace", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it("borne le focus clavier et le rend au bouton après Escape", async () => {
+    vi.mocked(invoke).mockResolvedValue({
+      content: "# Règles\n",
+      exists: true,
+      filePath: "/work/project/AGENTS.md",
+      version: "current",
+    });
+    render(
+      <I18nProvider>
+        <WorkspaceAgentsButton cwd="/work/project" nativeApp />
+      </I18nProvider>,
+    );
+
+    const opener = screen.getByRole("button", {
+      name: "Modifier le AGENTS.md du projet",
+    });
+    opener.focus();
+    fireEvent.click(opener);
+    const dialog = await screen.findByRole("dialog");
+    const editor = await screen.findByRole("textbox", {
+      name: "Contenu de AGENTS.md",
+    });
+    await waitFor(() => expect(editor).toHaveFocus());
+    const close = screen.getByRole("button", {
+      name: "Fermer l’éditeur AGENTS.md",
+    });
+    const reload = screen.getByRole("button", { name: "Recharger" });
+
+    reload.focus();
+    fireEvent.keyDown(dialog, { key: "Tab" });
+    expect(close).toHaveFocus();
+    fireEvent.keyDown(dialog, { key: "Tab", shiftKey: true });
+    expect(reload).toHaveFocus();
+    fireEvent.keyDown(dialog, { key: "Escape" });
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() => expect(opener).toHaveFocus());
+  });
+
   it("reste absent tant qu’aucun workspace n’est sélectionné", () => {
     render(
       <I18nProvider>

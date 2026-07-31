@@ -20,7 +20,15 @@ import { readSettings, settingsPath, updateSettings } from "./settings.mjs";
 import { transcribeDictation } from "./transcription.mjs";
 import { SharedBrowserManager, stopManagedChromium } from "./chromium.mjs";
 import { openFileReference } from "./file-reference.mjs";
-import { createMainWindow, observeWindowShown } from "./window.mjs";
+import {
+  createMainWindow,
+  isTrustedMainWindowNavigation,
+  observeRendererGone,
+  observeWindowShown,
+  RendererRecoveryBudget,
+  sendToRenderer,
+  shouldRecoverRenderer,
+} from "./window.mjs";
 import {
   codexConfigPath,
   readCodexConfig,
@@ -47,6 +55,7 @@ import {
 } from "./autostart.mjs";
 import { bundledSkillsRoot } from "./bundled-skills.mjs";
 import { AutomationScheduler } from "./automation-scheduler.mjs";
+import { OperationQueue } from "./operation-queue.mjs";
 import {
   pendingRealtimeState,
   realtimeToggleAction,
@@ -65,11 +74,11 @@ let automationScheduler;
 let appServerHealthMonitor;
 let trayRealtimeState = "unavailable";
 let appUpdateManager;
+const sharedBrowserOperations = new OperationQueue();
+const rendererRecoveryBudget = new RendererRecoveryBudget();
 
 function send(event, payload) {
-  if (!mainWindow?.isDestroyed()) {
-    mainWindow.webContents.send(`desktop:${event}`, payload);
-  }
+  return sendToRenderer(mainWindow, `desktop:${event}`, payload);
 }
 
 function sendAppServerEvent(event, payload) {
@@ -250,18 +259,22 @@ function registerIpc() {
     if (args?.confirmed !== true) {
       throw new Error("Chromium installation requires explicit confirmation");
     }
-    const status = await sharedBrowser.activate();
-    await updateSettings(settingsPath(app.getPath("home")), {
-      sharedBrowserEnabled: true,
+    return sharedBrowserOperations.run(async () => {
+      const status = await sharedBrowser.activate();
+      await updateSettings(settingsPath(app.getPath("home")), {
+        sharedBrowserEnabled: true,
+      });
+      return status;
     });
-    return status;
   });
   ipcMain.handle("desktop:disable_chromium", async (event) => {
     trusted(event);
-    await updateSettings(settingsPath(app.getPath("home")), {
-      sharedBrowserEnabled: false,
+    return sharedBrowserOperations.run(async () => {
+      await updateSettings(settingsPath(app.getPath("home")), {
+        sharedBrowserEnabled: false,
+      });
+      return sharedBrowser.deactivate();
     });
-    return sharedBrowser.deactivate();
   });
   ipcMain.handle("desktop:cancel_chromium_install", (event) => {
     trusted(event);
@@ -350,10 +363,29 @@ function createWindow() {
   });
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   mainWindow.webContents.on("will-navigate", (event, url) => {
-    const allowed = isDevelopment
-      ? url.startsWith("http://localhost:1420/")
-      : url.startsWith("file://");
-    if (!allowed) event.preventDefault();
+    if (
+      !isTrustedMainWindowNavigation(url, {
+        development: isDevelopment,
+        root,
+      })
+    ) {
+      event.preventDefault();
+    }
+  });
+  observeRendererGone(mainWindow, (details) => {
+    if (!shouldRecoverRenderer(details)) return;
+    automationScheduler?.notReady();
+    trayRealtimeState = "unavailable";
+    updateTrayMenu();
+    if (app.isQuitting || mainWindow.isDestroyed()) return;
+    if (rendererRecoveryBudget.claim()) {
+      mainWindow.reload();
+      return;
+    }
+    dialog.showErrorBox(
+      "Codex Desktop stopped responding",
+      "Automatic recovery was paused after repeated renderer failures. Restart the application to try again.",
+    );
   });
   mainWindow.on("close", (event) => {
     if (!app.isQuitting) {

@@ -60,14 +60,21 @@ export function routeAppNotification(
   const method = message.method ?? "";
   const params = appServerRecord(message.params);
   const item = appServerRecord(params?.item);
-  const activity = activityFromEvent(method, appServerString(item?.type));
-  const terminalError = method === "error" && params?.willRetry !== true;
   const threadId = appServerString(params?.threadId);
+  const activity = threadId
+    ? activityFromEvent(method, appServerString(item?.type))
+    : undefined;
+  const terminalError = method === "error" && params?.willRetry !== true;
+  const scopedTerminalError = Boolean(threadId) && terminalError;
   const result: AppNotificationRouting = {
-    clearsActivity: terminalError,
-    completesTurn: method === "turn/completed" || terminalError,
-    conversationEvent: !method.startsWith("thread/realtime/"),
-    startsTurn: method === "turn/started",
+    clearsActivity: scopedTerminalError,
+    completesTurn:
+      Boolean(threadId) &&
+      (method === "turn/completed" || scopedTerminalError),
+    conversationEvent:
+      !method.startsWith("thread/realtime/") &&
+      !(method === "error" && !threadId),
+    startsTurn: Boolean(threadId) && method === "turn/started",
     ...(activity !== undefined ? { activity } : {}),
     ...(threadId ? { threadId } : {}),
   };

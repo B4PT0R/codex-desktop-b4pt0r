@@ -169,6 +169,94 @@ test("keeps the MCP event stream open until the client closes it", async (t) => 
   assert.equal(responseClosed, true);
 });
 
+test("bounds a silent MCP HTTP request", async () => {
+  const client = new PlaywrightMcpClient(
+    "http://localhost:8931/mcp",
+    "test",
+    async (_url, options) =>
+      new Promise((_resolve, reject) => {
+        options.signal.addEventListener("abort", () =>
+          reject(new Error("aborted")),
+        );
+      }),
+    async () => ({ close() {} }),
+    20,
+  );
+
+  await assert.rejects(client.connect(), /Timed out while contacting/);
+});
+
+test("bounds a response whose body never completes", async () => {
+  const client = new PlaywrightMcpClient(
+    "http://localhost:8931/mcp",
+    "test",
+    async (_url, options) =>
+      new Response(
+        new ReadableStream({
+          start(controller) {
+            options.signal.addEventListener("abort", () =>
+              controller.error(new Error("aborted")),
+            );
+          },
+        }),
+        { headers: { "content-type": "application/json" } },
+      ),
+    async () => ({ close() {} }),
+    20,
+  );
+
+  await assert.rejects(client.connect(), /Timed out while contacting/);
+});
+
+test("cleans up a partially initialized MCP session", async () => {
+  const calls = [];
+  let streamClosed = false;
+  const responses = [
+    jsonResponse({ jsonrpc: "2.0", id: 1, result: {} }, "session-partial"),
+    new Response("initialization rejected", { status: 500 }),
+    new Response(null, { status: 202 }),
+  ];
+  const client = new PlaywrightMcpClient(
+    "http://localhost:8931/mcp",
+    "test",
+    async (_url, options) => {
+      calls.push({
+        method: options.method,
+        sessionId: options.headers?.["mcp-session-id"],
+      });
+      return responses.shift();
+    },
+    async () => ({ close: () => (streamClosed = true) }),
+  );
+
+  await assert.rejects(client.connect(), /initialization rejected/);
+  assert.equal(streamClosed, true);
+  assert.deepEqual(calls.at(-1), {
+    method: "DELETE",
+    sessionId: "session-partial",
+  });
+});
+
+test("bounds a silent MCP event-stream handshake", async (t) => {
+  const server = createServer(() => undefined);
+  t.after(() => server.close());
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const address = server.address();
+  assert.notEqual(address, null);
+  assert.equal(typeof address, "object");
+
+  await assert.rejects(
+    openMcpEventStream(
+      `http://127.0.0.1:${address.port}/mcp`,
+      "session-1",
+      undefined,
+      20,
+    ),
+    /Timed out while connecting/,
+  );
+});
+
 function jsonResponse(body, sessionId) {
   return new Response(JSON.stringify(body), {
     headers: {

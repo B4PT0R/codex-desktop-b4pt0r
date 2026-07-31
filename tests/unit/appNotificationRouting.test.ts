@@ -19,7 +19,7 @@ describe("routeAppNotification", () => {
     });
   });
 
-  it("keeps retrying errors busy and completes terminal errors", () => {
+  it("keeps incomplete global errors out of the active turn lifecycle", () => {
     expect(
       routeAppNotification({
         method: "error",
@@ -31,7 +31,27 @@ describe("routeAppNotification", () => {
         method: "error",
         params: { willRetry: false },
       }),
-    ).toMatchObject({ clearsActivity: true, completesTurn: true });
+    ).toMatchObject({
+      clearsActivity: false,
+      completesTurn: false,
+      conversationEvent: false,
+    });
+    expect(
+      routeAppNotification({
+        method: "error",
+        params: { threadId: "thread-1", willRetry: false },
+      }),
+    ).toMatchObject({
+      clearsActivity: true,
+      completesTurn: true,
+      threadId: "thread-1",
+    });
+    expect(
+      routeAppNotification({
+        method: "turn/started",
+        params: { turn: { id: "turn-without-thread" } },
+      }),
+    ).toMatchObject({ startsTurn: false });
   });
 
   it("normalizes thread updates and ignores incomplete notifications", () => {

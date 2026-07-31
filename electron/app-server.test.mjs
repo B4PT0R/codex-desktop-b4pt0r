@@ -101,6 +101,56 @@ test("writes exactly one JSON object per renderer command", async () => {
   transport.stop();
 });
 
+test("shares one in-flight start without spawning an orphaned process", async () => {
+  const child = fakeChild();
+  let resolveExecutable;
+  let spawnCount = 0;
+  const executable = new Promise((resolve) => {
+    resolveExecutable = resolve;
+  });
+  const transport = new AppServerTransport(() => undefined, {
+    resolveExecutable: () => executable,
+    spawnProcess: () => {
+      spawnCount += 1;
+      return child;
+    },
+  });
+
+  const first = transport.start();
+  const second = transport.start();
+  resolveExecutable("/opt/codex/bin/codex");
+
+  assert.equal(await first, true);
+  assert.equal(await second, true);
+  assert.equal(spawnCount, 1);
+  transport.stop();
+});
+
+test("cancels a pending start before restart creates the replacement", async () => {
+  const children = [fakeChild(), fakeChild()];
+  const resolvers = [];
+  let spawnCount = 0;
+  const transport = new AppServerTransport(() => undefined, {
+    resolveExecutable: () =>
+      new Promise((resolve) => {
+        resolvers.push(resolve);
+      }),
+    spawnProcess: () => children[spawnCount++],
+  });
+
+  const staleStart = transport.start();
+  await new Promise((resolve) => setImmediate(resolve));
+  const replacement = transport.restart();
+  await new Promise((resolve) => setImmediate(resolve));
+  resolvers[0]("/opt/codex/bin/codex");
+  resolvers[1]("/opt/codex/bin/codex");
+
+  assert.equal(await staleStart, false);
+  assert.equal(await replacement, true);
+  assert.equal(spawnCount, 1);
+  transport.stop();
+});
+
 test("probes App Server through stdio without leaking the response to the renderer", async () => {
   const child = fakeChild();
   const events = [];

@@ -2,7 +2,7 @@
   "name": "codex-desktop-linux",
   "productName": "Codex Desktop",
   "desktopName": "codex-desktop.desktop",
-  "version": "0.3.16",
+  "version": "0.3.17",
   "description": "Independent desktop client for Codex on Linux",
   "license": "MIT",
   "author": {
@@ -23,8 +23,8 @@
     "electron:pack": "npm run build && electron-builder --dir",
     "electron:deb": "npm run build && electron-builder --linux deb",
     "check": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "vitest run --exclude 'tests/contract/**'",
+    "test:watch": "vitest --exclude 'tests/contract/**'",
     "test:contract": "vitest run tests/contract",
     "test:electron": "node --test electron-spike/*.test.mjs electron/*.test.mjs"
   },

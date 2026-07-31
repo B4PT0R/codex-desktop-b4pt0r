@@ -115,9 +115,9 @@ codex-desktop
 
 The version panel under **Settings > General** can check GitHub Releases for a
 new stable package. The app verifies the downloaded file's published size and
-SHA-256 digest before opening the system package installer; it never runs a
-privileged installation command itself. Restart the app after the installer
-finishes.
+SHA-256 digest and Debian metadata, then asks Polkit to authorize an explicit
+APT upgrade. The package is installed only after that authorization succeeds.
+Restart the app when the update panel reports that installation is complete.
 
 ## Build from source
 

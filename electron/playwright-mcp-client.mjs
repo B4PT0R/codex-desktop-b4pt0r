@@ -1,5 +1,7 @@
 import { request as httpRequest } from "node:http";
 
+const DEFAULT_REQUEST_TIMEOUT_MS = 15_000;
+
 export class PlaywrightMcpClient {
   #eventStream;
   #eventStreamFactory;
@@ -7,6 +9,7 @@ export class PlaywrightMcpClient {
   #id = 0;
   #reconnecting;
   #sessionId;
+  #timeoutMs;
   #url;
   #version;
 
@@ -15,33 +18,40 @@ export class PlaywrightMcpClient {
     version,
     fetchImpl = fetch,
     eventStreamFactory = openMcpEventStream,
+    timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS,
   ) {
     this.#url = url;
     this.#version = version;
     this.#fetch = fetchImpl;
     this.#eventStreamFactory = eventStreamFactory;
+    this.#timeoutMs = timeoutMs;
   }
 
   async connect() {
-    const response = await this.#post({
-      jsonrpc: "2.0",
-      id: ++this.#id,
-      method: "initialize",
-      params: {
-        protocolVersion: "2025-06-18",
-        capabilities: {},
-        clientInfo: {
-          name: "codex-desktop-linux",
-          version: this.#version,
+    try {
+      const { response } = await this.#post({
+        jsonrpc: "2.0",
+        id: ++this.#id,
+        method: "initialize",
+        params: {
+          protocolVersion: "2025-06-18",
+          capabilities: {},
+          clientInfo: {
+            name: "codex-desktop-linux",
+            version: this.#version,
+          },
         },
-      },
-    });
-    this.#sessionId = response.headers.get("mcp-session-id") ?? undefined;
-    await this.#openEventStream();
-    await this.#post(
-      { jsonrpc: "2.0", method: "notifications/initialized" },
-      false,
-    );
+      });
+      this.#sessionId = response.headers.get("mcp-session-id") ?? undefined;
+      await this.#openEventStream();
+      await this.#post(
+        { jsonrpc: "2.0", method: "notifications/initialized" },
+        false,
+      );
+    } catch (error) {
+      await this.#closeSession();
+      throw error;
+    }
   }
 
   async callTool({ name, arguments: args }) {
@@ -55,61 +65,87 @@ export class PlaywrightMcpClient {
   }
 
   async #callTool({ name, arguments: args }) {
-    const response = await this.#post({
+    const { message } = await this.#post({
       jsonrpc: "2.0",
       id: ++this.#id,
       method: "tools/call",
       params: { name, arguments: args },
     });
-    const message = await responseMessage(response);
     if (message.error) throw new Error(message.error.message ?? "MCP tool failed");
     return message.result;
   }
 
   async close() {
-    if (!this.#sessionId) return;
-    await this.#fetch(this.#url, {
-      method: "DELETE",
-      headers: { "mcp-session-id": this.#sessionId },
-    }).catch(() => undefined);
+    await this.#closeSession();
+  }
+
+  async #closeSession() {
+    const sessionId = this.#sessionId;
     this.#stopEventStream();
     this.#sessionId = undefined;
+    if (!sessionId) return;
+    await this.#requestWithTimeout({
+      method: "DELETE",
+      headers: { "mcp-session-id": sessionId },
+    }).catch(() => undefined);
   }
 
   async #post(message, expectBody = true) {
     const requestSessionId = this.#sessionId;
-    const response = await this.#fetch(this.#url, {
-      method: "POST",
-      headers: {
-        Accept: "application/json, text/event-stream",
-        "Content-Type": "application/json",
-        ...(this.#sessionId
-          ? { "mcp-session-id": this.#sessionId }
-          : {}),
+    return this.#requestWithTimeout(
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json, text/event-stream",
+          "Content-Type": "application/json",
+          ...(this.#sessionId
+            ? { "mcp-session-id": this.#sessionId }
+            : {}),
+        },
+        body: JSON.stringify(message),
       },
-      body: JSON.stringify(message),
-    });
-    if (!response.ok) {
-      const detail =
-        (await response.text()).slice(0, 2_000) ||
-        `Playwright MCP returned HTTP ${response.status}`;
-      if (response.status === 404 && /session not found/i.test(detail)) {
-        throw new PlaywrightMcpSessionExpiredError(
-          detail,
-          requestSessionId,
-        );
+      async (response) => {
+        if (!response.ok) {
+          const detail =
+            (await response.text()).slice(0, 2_000) ||
+            `Playwright MCP returned HTTP ${response.status}`;
+          if (response.status === 404 && /session not found/i.test(detail)) {
+            throw new PlaywrightMcpSessionExpiredError(
+              detail,
+              requestSessionId,
+            );
+          }
+          throw new Error(detail);
+        }
+        const parsed = expectBody ? await responseMessage(response) : undefined;
+        if (parsed?.error) {
+          throw new Error(
+            parsed.error.message ?? "Playwright MCP request failed",
+          );
+        }
+        return { response, message: parsed };
       }
-      throw new Error(detail);
+    );
+  }
+
+  async #requestWithTimeout(options, consume = async (response) => response) {
+    const controller = new AbortController();
+    let timer;
+    try {
+      return await Promise.race([
+        this.#fetch(this.#url, { ...options, signal: controller.signal }).then(
+          consume,
+        ),
+        new Promise((_, reject) => {
+          timer = setTimeout(() => {
+            reject(new Error("Timed out while contacting Playwright MCP"));
+            controller.abort();
+          }, this.#timeoutMs);
+        }),
+      ]);
+    } finally {
+      clearTimeout(timer);
     }
-    if (expectBody) {
-      const parsed = await responseMessage(response.clone());
-      if (parsed.error) {
-        throw new Error(
-          parsed.error.message ?? "Playwright MCP request failed",
-        );
-      }
-    }
-    return response;
   }
 
   async #reconnect(expiredSessionId) {
@@ -133,6 +169,7 @@ export class PlaywrightMcpClient {
       this.#url,
       this.#sessionId,
       (message) => this.#handleServerMessage(message),
+      this.#timeoutMs,
     );
   }
 
@@ -188,7 +225,12 @@ export async function responseMessage(response) {
   return text ? JSON.parse(text) : {};
 }
 
-export function openMcpEventStream(endpoint, sessionId, onMessage = () => {}) {
+export function openMcpEventStream(
+  endpoint,
+  sessionId,
+  onMessage = () => {},
+  timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS,
+) {
   return new Promise((resolve, reject) => {
     const request = httpRequest(endpoint, {
       method: "GET",
@@ -198,12 +240,24 @@ export function openMcpEventStream(endpoint, sessionId, onMessage = () => {}) {
       },
     });
     let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      request.destroy();
+      reject(new Error("Timed out while connecting to Playwright MCP"));
+    }, timeoutMs);
     request.once("response", (response) => {
+      if (settled) {
+        response.destroy();
+        return;
+      }
+      clearTimeout(timer);
       if (
         response.statusCode === undefined ||
         response.statusCode < 200 ||
         response.statusCode >= 300
       ) {
+        settled = true;
         response.resume();
         reject(
           new Error(
@@ -242,7 +296,11 @@ export function openMcpEventStream(endpoint, sessionId, onMessage = () => {}) {
       });
     });
     request.once("error", (error) => {
-      if (!settled) reject(error);
+      if (!settled) {
+        settled = true;
+        clearTimeout(timer);
+        reject(error);
+      }
     });
     request.end();
   });

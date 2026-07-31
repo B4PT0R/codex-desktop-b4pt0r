@@ -5,10 +5,11 @@ import {
   Image as ImageIcon,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useI18n } from "../i18n/I18nProvider";
 import { invoke, isDesktopApp } from "../lib/nativeBridge";
+import { useDialogFocus } from "../lib/useDialogFocus";
 import type { ToolArtifact } from "../types";
 import "../generated-image.css";
 import { RoundIconButton } from "./RoundIcon";
@@ -29,14 +30,11 @@ export function GeneratedImageWidget({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
 
-  useEffect(() => {
-    if (!expanded) return;
-    const close = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setExpanded(undefined);
-    };
-    document.addEventListener("keydown", close);
-    return () => document.removeEventListener("keydown", close);
-  }, [expanded]);
+  const { dialogRef, onDialogKeyDown } = useDialogFocus<HTMLDivElement>({
+    active: Boolean(expanded),
+    initialFocusSelector: "[data-image-lightbox-close]",
+    onEscape: () => setExpanded(undefined),
+  });
 
   async function save(artifact: GeneratedImageArtifact) {
     setSaveError(false);
@@ -143,28 +141,12 @@ export function GeneratedImageWidget({
       {expanded?.dataUrl &&
         createPortal(
           <div
+            ref={dialogRef}
             className="generated-image-lightbox"
             role="dialog"
             aria-modal="true"
             aria-label={t("imageWidget.expanded")}
-            onKeyDown={(event) => {
-              if (event.key !== "Tab") return;
-              const buttons = Array.from(
-                event.currentTarget.querySelectorAll<HTMLButtonElement>(
-                  "button:not(:disabled)",
-                ),
-              );
-              if (buttons.length < 2) return;
-              const first = buttons[0];
-              const last = buttons[buttons.length - 1];
-              if (event.shiftKey && document.activeElement === first) {
-                event.preventDefault();
-                last.focus();
-              } else if (!event.shiftKey && document.activeElement === last) {
-                event.preventDefault();
-                first.focus();
-              }
-            }}
+            onKeyDown={onDialogKeyDown}
             onMouseDown={(event) => {
               if (event.target === event.currentTarget) setExpanded(undefined);
             }}
@@ -182,8 +164,8 @@ export function GeneratedImageWidget({
                 variant="tertiary"
               />
               <RoundIconButton
-                autoFocus
                 aria-label={t("imageWidget.close")}
+                data-image-lightbox-close
                 icon={X}
                 onClick={() => setExpanded(undefined)}
                 variant="tertiary"

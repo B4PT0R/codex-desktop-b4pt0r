@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, stat } from "node:fs/promises";
+import { mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -20,7 +20,11 @@ test("uses the existing Codex desktop settings location", () => {
 test("atomically updates known preferences and preserves unknown fields", async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "codex-settings-"));
   const file = path.join(directory, "settings.json");
-  await updateSettings(file, { locale: "fr", futureField: { enabled: true } });
+  await writeFile(
+    file,
+    JSON.stringify({ version: 1, futureField: { enabled: true } }),
+  );
+  await updateSettings(file, { locale: "fr" });
   const updated = await updateSettings(file, { theme: "dark" });
   assert.deepEqual(updated.futureField, { enabled: true });
   assert.equal(updated.locale, "fr");
@@ -32,11 +36,15 @@ test("atomically updates known preferences and preserves unknown fields", async 
 test("does not rewrite preferences when a repeated patch changes nothing", async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "codex-settings-"));
   const file = path.join(directory, "settings.json");
-  await updateSettings(file, {
-    locale: "fr",
-    theme: "dark",
-    futureField: { enabled: true },
-  });
+  await writeFile(
+    file,
+    JSON.stringify({
+      version: 1,
+      locale: "fr",
+      theme: "dark",
+      futureField: { enabled: true },
+    }),
+  );
   const before = await stat(file);
   const content = await readFile(file, "utf8");
 
@@ -48,6 +56,34 @@ test("does not rewrite preferences when a repeated patch changes nothing", async
   assert.equal((await stat(file)).ino, before.ino);
   assert.equal(await readFile(file, "utf8"), content);
   assert.deepEqual(unchanged.futureField, { enabled: true });
+});
+
+test("rejects renderer-created settings keys while preserving future fields", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "codex-settings-"));
+  const file = path.join(directory, "settings.json");
+
+  await assert.rejects(
+    updateSettings(file, { futureField: { enabled: true } }),
+    /Unsupported desktop settings key/,
+  );
+});
+
+test("rejects malformed values even when they are falsy", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "codex-settings-"));
+  const file = path.join(directory, "settings.json");
+  const malformed = [
+    { locale: "" },
+    { theme: "" },
+    { fontSize: null },
+    { lastWorkspace: {} },
+    { realtimeVoice: 0 },
+    { sharedBrowserEnabled: null },
+  ];
+
+  for (const patch of malformed) {
+    await assert.rejects(updateSettings(file, patch), /Unsupported|too long/);
+  }
+  assert.deepEqual(await readSettings(file), { version: SETTINGS_VERSION });
 });
 
 test("serializes concurrent patches without losing either preference", async () => {

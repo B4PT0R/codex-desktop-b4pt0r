@@ -2,166 +2,113 @@
 
 Last updated: 2026-07-31
 
-Read `AGENTS.md` before contributing. Durable protocol and UI decisions belong
-in `APP_SERVER_COVERAGE.md` and `UI_ARCHITECTURE.md`; completed release detail
+Read `AGENTS.md` before contributing. Durable protocol and interface decisions
+belong in `APP_SERVER_COVERAGE.md` and `UI_ARCHITECTURE.md`; release history
 belongs in `CHANGELOG.md` and Git.
 
 ## Baseline
 
 Codex Desktop Linux is a functional independent Electron client for the
-official `codex app-server`. The current public release is v0.3.16.
+official `codex app-server`. The current public release is v0.3.17.
 
-The daily workflow covers conversations and replay, concurrent thread activity,
+The daily workflow covers conversation replay and concurrent activity,
 streaming Markdown/LaTeX, reasoning, plans, tools, approvals, diffs, files,
 images, permissions, models, quotas, goals, dictation, Realtime voice, global
 configuration, skills, Apps, MCP, memory, remote control, scheduled tasks and a
 shared Playwright Chromium session.
 
-Compatibility is anchored to installed `codex-cli 0.145.0`. The protocol
-boundary also accepts the additive metadata audited in official Codex
-`1def0a892`, but emits no unpublished request.
+Compatibility is currently verified against installed `codex-cli 0.145.0`.
 
-## Active objective
+## Latest release
 
-Reduce maintenance debt in focused, behavior-preserving lots. Prefer extracting
-one clear responsibility from a concentration point over moving code into
-generic helpers.
+Release v0.3.17 is a focused lifecycle and concurrency stabilization lot. It:
 
-Completed in the current working tree:
+- isolates Realtime startup and transcript state by parent conversation, keeps
+  bounded voice transcript caches across temporary navigation, and serializes
+  reset/stop/remote-close so a stale start cannot stop the next session;
+- prevents delayed thread creation, shell commands, turns and voice startup
+  from stealing or mutating a newer visible conversation;
+- ignores unscoped App Server errors in the conversation queue and keeps busy,
+  activity and terminal transitions strictly thread-scoped;
+- makes App Server startup single-flight and cancellation-safe;
+- serializes shared-browser enable/disable through persistence, isolates stale
+  Chromium promises, bounds MCP header/body/SSE waits, and cleans partially
+  initialized MCP sessions and temporary browser artifacts;
+- restricts renderer navigation to the exact app entry point, makes native
+  event delivery non-throwing, and limits automatic renderer recovery to two
+  attempts per minute before presenting a stable restart message;
+- accepts only allowlisted, exactly typed desktop preference patches while
+  preserving unknown fields already stored for forward compatibility;
+- adds deterministic GitHub CI, separates installed-Codex contract tests from
+  the default suite, corrects updater documentation, localizes the remaining
+  config placeholder and reuses the modal focus contract for AGENTS.md and
+  generated-image dialogs.
 
-- centralize optimistic thread-runtime setting writes outside `App.tsx`;
-- ignore stale failures after a newer choice or conversation switch;
-- use one application-error presentation for native and connection failures;
-- make unused TypeScript locals and parameters fail CI;
-- keep turn coordination state bounded to relevant active/queued work and route
-  every failed reservation through one release/drain path;
-- ship an AppArmor profile attached to the actual packaged executable instead
-  of documenting a nonexistent binary path;
-- keep synthetic browser-preview fixtures and cancellable timers in the demo
-  controller rather than the production submission path;
-- let scheduled tasks target the logical default conversation, resolve its
-  current identifier at wake-up and wait for preference hydration before
-  arming the scheduler;
-- show the client and Codex versions in General, check the latest stable GitHub
-  release on demand and install only a size-, SHA-256- and metadata-verified
-  matching `.deb` as an explicit authenticated APT upgrade;
-- clearly ask the user to restart Codex Desktop after the verified package
-  upgrade succeeds;
-- allow the native window to shrink to a focused 520 px chat column when the
-  sidebar is collapsed, with compact responsive gutters;
-- align composer commands with the CLI's keyboard contract: prefix filtering,
-  Enter dispatch, Tab or `/` completion, flat follow-up choices, and a joined
-  surface that preserves the composer border;
-- keep the composer command catalog deliberately focused on 16 frequent
-  conversation actions, with separate model/reasoning and
-  permissions/approvals pickers, exact Fast and auto-review semantics, and no
-  duplication of terminal-only or advanced Settings controls;
-- keep command orchestration and auto-review normalization outside `App.tsx`,
-  and discard asynchronous command results after the user changes conversation;
-- render one explicit command-result item after every validated composer
-  command, including selections and modal-opening shortcuts;
-- keep each spawned subagent as an ordinary action in its parent group while
-  streaming the bounded child-thread transcript inside that action, including
-  nested messages and tool groups, replay hydration and strict thread routing;
-- reconstruct that action from `subAgentActivity.started` when App Server does
-  not emit a distinct live `spawnAgent` item, while merging both forms when it
-  does;
-- treat `item/completed` as terminal for status-less tool items so web searches
-  and other partial lifecycle deliveries cannot retain a stale spinner;
-- seed Realtime v3 with effective `developer_instructions` followed by the
-  AGENTS.md hierarchy reported for its ephemeral fork, through a bounded
-  App Server-attested native read, so voice and text start from the same
-  durable guidance without either source overwriting the other;
-- expose `developer_instructions` in Advanced Configuration through the shared
-  document editor and typed `config/value/write`, while preserving the raw TOML
-  editor as a separate escape hatch;
-- keep this handoff concise instead of accumulating completed release history.
+## Durable constraints
 
-## Recent constraints
-
-- Server-hydrated thread state is the source of truth. A partial resume must not
-  erase confirmed conversation metadata or effective runtime settings.
-- Notifications and active-turn state are isolated by `threadId`; background
-  activity may update catalogs but not the visible conversation.
-- The general default conversation is read through authoritative App Server
-  metadata when absent from the recent catalog. Realtime-only parents remain
-  visible even without replayable turns, and user names are never fabricated or
-  overwritten.
-- Install, upgrade and ordinary startup are idempotent for `config.toml`,
-  desktop preferences and server-owned thread metadata.
-- Scheduled turns are ordinary App Server turns serialized per target thread.
-  Unattended mode temporarily uses Full access/Never ask and must restore the
-  previous security state before releasing the queue.
+- Server-hydrated thread state is authoritative. Background notifications may
+  update catalogs but never the visible conversation unless their `threadId`
+  matches.
 - Realtime uses ephemeral voice forks and injects finalized exchanges into the
-  persistent parent in order.
-- The shared browser uses the app-owned Playwright/MCP pair and managed
+  persistent parent in order. App Server still does not replay those injected
+  voice items as ordinary chat items, so the client cache is intentionally
+  bounded and session-local.
+- Installation, update and ordinary startup are idempotent for `config.toml`,
+  desktop preferences and server-owned thread metadata.
+- Scheduled turns are serialized per target thread. Unattended mode must
+  restore the prior security state before releasing its queue reservation.
+- The shared browser uses only the app-owned Playwright/MCP pair and managed
   open-source Chromium. Never assume a system Chromium.
 
 ## Known limitations
 
 - Scheduled tasks require the app to remain running in the tray and the machine
-  to stay awake. Missed intervals are not replayed in a burst.
-- A different App Server client can race between an idle observation and
-  `turn/start`; App Server 0.145 has no conditional start-if-idle request.
-- Quitting the app interrupts an active scheduled run. Closing the window keeps
-  the hidden renderer and App Server alive.
-- Threads created before v0.3.4 need a new fork or conversation before the
-  agent can receive the scheduler's experimental dynamic tools.
-- App Server preserves injected Realtime context but does not project those
-  standalone voice items into ordinary visual replay.
+  to stay awake; missed intervals are not replayed in a burst.
+- A separate App Server client can still race between idle observation and
+  `turn/start`; App Server 0.145 exposes no conditional start-if-idle request.
+- Quitting interrupts scheduled work; closing the window preserves the hidden
+  renderer and App Server.
 - Linux/Ubuntu is the only regularly packaged environment. The `.deb` still
   needs a clean second-machine or VM lifecycle pass.
-- The lazy Markdown/KaTeX chunk remains large but is not a release blocker.
-- Clients through v0.3.14 delegate updates to Ubuntu App Center, whose local
-  package upgrade path is unreliable. One manual installation of the first
-  release containing the native APT upgrader is required before later updates
-  can validate the corrected end-to-end flow.
+- The lazy Markdown/KaTeX chunk remains large, but is isolated and not a release
+  blocker.
 
 ## Next bounded work
 
 1. Exercise long-idle and suspend/resume recovery in packaged Electron with a
-   scheduled task, approval gating and hidden-window delivery.
-2. Add a concise public App Server compatibility guide and
-   `SECURITY.md`.
+   scheduled task, approval gating, hidden-window delivery and Realtime active.
+2. Add a concise public App Server compatibility guide and `SECURITY.md`.
 3. Add user-controlled diagnostic export with redaction and preview.
-4. Define a documented rollback strategy for package updates.
+4. Define and test a documented package-update rollback strategy.
+5. Revisit `App.tsx`, `useDemoPlayback.ts` and `electron/chromium.mjs` only when
+   the next feature supplies a concrete ownership seam; line count alone does
+   not justify another extraction.
 
 Defer generic RPC/filesystem consoles, unstable marketplace production support
 and Git/worktree management without a stable App Server product contract.
 
-## Latest verified baseline
+## Latest verification
 
-- Frontend/unit/contract: 649 tests across 121 files, including 51 installed
-  App Server contract cases.
-- Electron/Node: 99 tests, including explicit APT upgrade, metadata mismatch
-  and denied-authorization coverage for the native updater.
-- Strict TypeScript, production Vite build and production dependency audit:
-  passing; zero production vulnerabilities.
-- Main JS: 624.16 kB, 179.71 kB gzip.
-- Electron directory and Debian packaging: passing with the native update
-  manager included; the generated package declares `pkexec` explicitly.
-- Live release check: an installed v0.3.12 client detects v0.3.13 and its
-  matching amd64 asset through the same native update boundary used by the app.
-- Shared-browser scheduler pass: the default-conversation target fits the
-  existing two-column editor grid and remains selectable without layout shift.
-- Shared-browser update pass: General at 1164×860 and light theme at 840×620;
-  version rows and the update action remain aligned without horizontal overflow.
-- Shared-browser command pass: flat CLI-style command and follow-up choices at
-  840×620 and 1240×820, including the complete 16-command catalog and separate
-  reasoning picker, fully keyboard-operable with no console errors after a
-  clean reload.
-- Shared-browser subagent pass: nested transcript and child action group at
-  1240×820 and 840×620 in light and dark themes, with no console errors.
-- Current working-tree Debian package: passing; the packaged AppArmor profile
-  is byte-identical to its source and present under `resources/apparmor/`.
-- Debian v0.3.15:
-  `sha256:f5f4a6709c68fdd8d4f2f019e4e1c6f3de41b6946a9f38f26c790ad32eed2b0b`.
-  The package contains the authenticated APT update manager and matching
-  AppArmor profile.
-  Earlier upgrade and same-version reinstall checks preserved both persistence
-  files byte-for-byte, including inode, timestamps, mode and ownership.
+- Strict TypeScript: passing.
+- Deterministic frontend/unit suite: 609 tests across 121 files, passing.
+- Installed App Server contract: 51 tests, passing against
+  `codex-cli 0.145.0` (660 tests across 122 files including contract).
+- Electron/Node: 114 tests, passing.
+- Production Vite build: passing; main JS 626.27 kB, 180.50 kB gzip.
+- Production dependency audit: zero vulnerabilities.
+- `git diff --check`: passing.
+- Shared-browser visual preview: skipped because the configured MCP session
+  reported its page/context closed; no alternate browser stack was substituted.
+- Debian package: built successfully as `codex-desktop-linux 0.3.17` (amd64),
+  SHA-256
+  `000b0c655a172d4675989a6a869975a3dbce6cfacde10bce659a9bec7812aefd`;
+  package metadata, dependencies, bundled skill and AppArmor resources were
+  inspected directly.
+- Packaged Electron interaction check: not rerun for v0.3.17; the release lot
+  changes native lifecycle behavior and still needs the long-idle manual pass
+  listed below.
 
-Run for every completed lot:
+Standard verification:
 
 ```bash
 npm run check
@@ -172,8 +119,5 @@ npm audit --omit=dev
 ```
 
 Also run `npm run test:contract` for protocol changes, `npm run electron:dev`
-for native UI/lifecycle changes, and `npm run electron:deb` for packaging.
-Meaningful UI changes require the shared Playwright pass at 1240×820 and
-840×620.
-
-No active blocker is known.
+for native lifecycle changes, and `npm run electron:deb` before shipping a
+package.

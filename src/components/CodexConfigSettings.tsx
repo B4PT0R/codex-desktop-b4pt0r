@@ -107,7 +107,7 @@ export function CodexConfigSettings({
                 aria-label={t("settings.config.fallbackFiles.title")}
                 value={fallbackDraft}
                 disabled={globalSettings.loading}
-                placeholder="CLAUDE.md, CONTRIBUTING.md"
+                placeholder={t("settings.config.fallbackFiles.placeholder")}
                 onChange={(event) => setFallbackDraft(event.target.value)}
               />
               <RoundIconButton

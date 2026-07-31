@@ -973,6 +973,11 @@ describe("centre de réglages", () => {
   it("modifie les réglages TOML avancés depuis Config", () => {
     const props = renderSettings({ section: "config" });
 
+    expect(screen.getByLabelText("Noms de fichiers de repli")).toHaveAttribute(
+      "placeholder",
+      "CLAUDE.md, CONTRIBUTING.md",
+    );
+
     fireEvent.change(screen.getByLabelText("Seuil de compactage"), {
       target: { value: "64000" },
     });

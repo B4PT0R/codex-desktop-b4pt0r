@@ -1,6 +1,7 @@
 import { FileText, RotateCcw, Save, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
+import { useDialogFocus } from "../lib/useDialogFocus";
 import { useWorkspaceAgents } from "../lib/useWorkspaceAgents";
 import "../workspace-agents.css";
 import { RoundIconButton } from "./RoundIcon";
@@ -26,7 +27,6 @@ export function WorkspaceAgentsButton({
     onOpenChange?.(next);
   };
   const [confirmingClose, setConfirmingClose] = useState(false);
-  const opener = useRef<HTMLButtonElement>(null);
   const editor = useRef<HTMLTextAreaElement>(null);
   const agents = useWorkspaceAgents({
     enabled: open,
@@ -42,14 +42,10 @@ export function WorkspaceAgentsButton({
     setOpen(false);
   }
 
-  useEffect(() => {
-    if (!open) return;
-    const previousFocus =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : undefined;
-    return () => previousFocus?.focus();
-  }, [open]);
+  const { dialogRef, onDialogKeyDown } = useDialogFocus<HTMLElement>({
+    active: open,
+    onEscape: requestClose,
+  });
 
   useEffect(() => {
     if (!open || agents.loading || !agents.document) return;
@@ -67,7 +63,6 @@ export function WorkspaceAgentsButton({
     <>
       {!hideTrigger && (
         <RoundIconButton
-          ref={opener}
           className="workspace-agents-trigger"
           aria-expanded={open}
           aria-haspopup="dialog"
@@ -87,15 +82,14 @@ export function WorkspaceAgentsButton({
           }}
         >
           <section
+            ref={dialogRef}
             className="workspace-agents-dialog"
             role="dialog"
             aria-modal="true"
             aria-label={t("agents.title")}
             onKeyDown={(event) => {
-              if (event.key === "Escape") {
-                event.preventDefault();
-                requestClose();
-              }
+              onDialogKeyDown(event);
+              if (event.defaultPrevented) return;
               if (
                 (event.ctrlKey || event.metaKey) &&
                 event.key.toLowerCase() === "s"
@@ -130,6 +124,7 @@ export function WorkspaceAgentsButton({
               ) : (
                 <textarea
                   ref={editor}
+                  data-workspace-agents-editor
                   aria-label={t("agents.editor")}
                   disabled={!agents.document || agents.saving}
                   placeholder={t("agents.placeholder")}
