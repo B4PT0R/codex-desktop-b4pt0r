@@ -31,6 +31,15 @@ export function useDefaultThreadCatalogEntry({
   const attemptedThreadId = useRef<string | undefined>(undefined);
   const resolvedThreadId = useRef<string | undefined>(undefined);
   const currentThreadId = useRef(defaultThreadId);
+  const currentConnected = useRef(connected);
+  const requestVersion = useRef(0);
+  if (
+    currentConnected.current !== connected ||
+    currentThreadId.current !== defaultThreadId
+  ) {
+    requestVersion.current += 1;
+    currentConnected.current = connected;
+  }
   currentThreadId.current = defaultThreadId;
 
   useEffect(() => {
@@ -41,6 +50,7 @@ export function useDefaultThreadCatalogEntry({
     }
     const present = threads.some((thread) => thread.id === defaultThreadId);
     if (present) {
+      requestVersion.current += 1;
       resolvedThreadId.current = defaultThreadId;
       return;
     }
@@ -58,9 +68,15 @@ export function useDefaultThreadCatalogEntry({
     }
 
     attemptedThreadId.current = defaultThreadId;
+    const version = ++requestVersion.current;
     void readDefaultThreadCatalogEntry(defaultThreadId)
       .then((summary) => {
-        if (currentThreadId.current !== defaultThreadId) return;
+        if (
+          currentThreadId.current !== defaultThreadId ||
+          requestVersion.current !== version
+        ) {
+          return;
+        }
         resolvedThreadId.current = defaultThreadId;
         setThreads((current) => restoreThread(current, summary));
       })

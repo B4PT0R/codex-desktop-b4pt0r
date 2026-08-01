@@ -9,6 +9,14 @@ vi.mock("../../src/lib/codex", () => ({ request: requestMock }));
 
 import { useDefaultThreadCatalogEntry } from "../../src/lib/useDefaultThreadCatalogEntry";
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+
 function useHarness(initialThreads: ThreadSummary[] = []) {
   const [threads, setThreads] = useState(initialThreads);
   useDefaultThreadCatalogEntry({
@@ -82,5 +90,56 @@ describe("catalogue de la conversation par défaut", () => {
     await waitFor(() =>
       expect(result.current.threads[0]?.name).toBe("Mon titre conservé"),
     );
+  });
+
+  it("ignore une ancienne lecture après un aller-retour de sélection", async () => {
+    const firstA = deferred<{ thread: Record<string, unknown> }>();
+    const threadB = deferred<{ thread: Record<string, unknown> }>();
+    const secondA = deferred<{ thread: Record<string, unknown> }>();
+    requestMock
+      .mockReturnValueOnce(firstA.promise)
+      .mockReturnValueOnce(threadB.promise)
+      .mockReturnValueOnce(secondA.promise);
+
+    function useChangingDefault(defaultThreadId: string) {
+      const [threads, setThreads] = useState<ThreadSummary[]>([]);
+      useDefaultThreadCatalogEntry({
+        connected: true,
+        defaultThreadId,
+        setThreads,
+        threads,
+      });
+      return threads;
+    }
+
+    const { result, rerender } = renderHook(
+      ({ threadId }) => useChangingDefault(threadId),
+      { initialProps: { threadId: "thread-a" } },
+    );
+    rerender({ threadId: "thread-b" });
+    rerender({ threadId: "thread-a" });
+    expect(requestMock).toHaveBeenCalledTimes(3);
+
+    secondA.resolve({
+      thread: {
+        id: "thread-a",
+        name: "Métadonnées récentes",
+        cwd: "/recent",
+      },
+    });
+    await act(async () => secondA.promise);
+    await waitFor(() =>
+      expect(result.current[0]?.name).toBe("Métadonnées récentes"),
+    );
+
+    firstA.resolve({
+      thread: {
+        id: "thread-a",
+        name: "Métadonnées obsolètes",
+        cwd: "/old",
+      },
+    });
+    await act(async () => firstA.promise);
+    expect(result.current[0]?.name).toBe("Métadonnées récentes");
   });
 });
