@@ -141,6 +141,13 @@ npm run electron:linux
 RPM packaging requires `rpmbuild` (`rpm` on Ubuntu/Debian) on the build host.
 The AppImage build needs no additional distribution packaging tool.
 
+To validate the RPM installation and a short headless Electron launch in a
+clean current Fedora container (Podman or Docker):
+
+```bash
+packaging/smoke-fedora.sh dist/codex-desktop-linux_*_x86_64.rpm
+```
+
 The updater detects Debian, RPM and AppImage installations and selects only the
 matching release asset. Debian retains its verified Polkit/APT installation;
 RPM and AppImage updates open the validated release for manual installation.

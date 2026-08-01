@@ -50,7 +50,10 @@ failure-path, simplification and maintainability passes across existing sectors.
 
 Multi-distribution packaging is the active portability objective. The manifest
 now owns Debian, RPM and AppImage targets with explicit RPM runtime dependencies;
-CI builds and inspects all three formats, installing `rpmbuild` explicitly;
+CI builds and inspects all three formats, installing `rpmbuild` explicitly. A
+clean current Fedora container then installs the RPM, checks its desktop entry,
+bundled shared-browser skill and linked libraries, and verifies that packaged
+Electron remains alive during a short unprivileged Xvfb launch;
 the updater detects AppImage directly and Debian/RPM families through
 `/etc/os-release`, selects only the matching architecture-specific asset and
 validates its GitHub URL, size and SHA-256. Debian retains automatic Polkit/APT
@@ -374,8 +377,9 @@ reads and clears their loading state.
   `turn/start`; App Server 0.145 exposes no conditional start-if-idle request.
 - Quitting interrupts scheduled work; closing the window preserves the hidden
   renderer and App Server.
-- Debian, RPM and AppImage artifacts build on Ubuntu CI, but runtime validation
-  still needs clean Debian/Fedora GNOME and KDE/Wayland VM lifecycle passes.
+- Debian, RPM and AppImage artifacts build on Ubuntu CI, and the RPM has a clean
+  Fedora container installation/headless-launch smoke check. Full lifecycle
+  validation still needs Debian/Fedora GNOME and KDE/Wayland VM passes.
 - The lazy Markdown/KaTeX chunk remains large, but is isolated and not a release
   blocker.
 
@@ -415,7 +419,10 @@ and Git/worktree management without a stable App Server product contract.
 - Production Vite build: passing; main JS 660.78 kB, 189.61 kB gzip.
 - Linux packaging: Debian (`amd64`), RPM (`x86_64`) and AppImage (`x86_64`)
   build in one pass; package metadata and embedded desktop/Skill resources were
-  inspected locally. RPM builds require the `rpmbuild` executable.
+  inspected locally. RPM builds require the `rpmbuild` executable. The RPM was
+  installed and launched as an unprivileged user under Xvfb in a clean Fedora
+  44 container; `packaging/smoke-fedora.sh` makes the check reproducible with
+  Podman or Docker.
 - Updater format safety: Debian, Fedora/RHEL/SUSE, AppImage and unknown-family
   detection, per-format asset selection, trusted release metadata and the
   non-installing manual path have focused native, hook and component coverage.
