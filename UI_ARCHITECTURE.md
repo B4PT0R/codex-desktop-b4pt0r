@@ -1,626 +1,301 @@
-# Architecture UI cible
+# Architecture UI
 
-Ce document fixe la structure produit avant d’étendre davantage l’intégration
-App Server. Il sert de guide de migration : une capacité du protocole ne doit pas
-être ajoutée à l’endroit le plus facile techniquement, mais à la surface qui lui
-donne un sens pour l’utilisateur.
+Ce document décrit l’architecture produit stabilisée de Codex Desktop Linux.
+Il fixe les responsabilités des surfaces, la propriété des états et les
+invariants d’interaction. L’historique des migrations appartient au changelog et
+à Git ; la couverture détaillée du protocole appartient à
+`APP_SERVER_COVERAGE.md`.
 
-L’objectif n’est pas d’exposer chaque méthode JSON-RPC. Les méthodes de transport,
-de lecture de fichiers ou d’exécution peuvent soutenir une expérience sans devenir
-des boutons génériques dans l’interface.
+## Principes
 
-## Principes de structure
+- Le fil de conversation montre l’intention, les décisions et le résultat, pas
+  une transcription brute du protocole.
+- App Server reste la source de vérité pour les threads, tours, catalogues,
+  permissions, comptes et capacités. Les états clients servent uniquement la
+  présentation ou une préférence explicitement possédée par l’application.
+- Les actions fréquentes restent dans leur contexte. Les détails volumineux
+  utilisent la divulgation progressive ou le panneau de travail.
+- Les réglages persistants globaux vivent dans Settings ; les réglages effectifs
+  du thread restent près du compositeur.
+- Une capacité absente ou expérimentale échoue proprement. L’interface ne simule
+  pas une mutation qu’App Server n’expose pas.
+- L’application reste utilisable au clavier, à la largeur minimale configurée et
+  sous les facteurs d’échelle Linux courants.
 
-- Le fil reste la surface principale. Il montre l’intention, les décisions et le
-  résultat, pas toute la télémétrie disponible.
-- Les actions fréquentes restent à un clic du contexte où elles s’appliquent.
-- Les détails volumineux ou spécialisés utilisent une divulgation progressive ou
-  un inspecteur, jamais une succession de modales.
-- Les réglages distinguent les préférences globales des réglages du thread courant.
-- Une surface future peut être représentée dans la navigation pour valider
-  l’architecture, mais elle doit être étiquetée comme indisponible tant que son
-  comportement réel n’est pas branché.
-- Les capacités expérimentales restent regroupées et ne dictent pas la navigation
-  principale.
-
-## Shell cible
+## Shell de l’application
 
 ```text
 ┌──────────────────┬────────────────────────────────┬──────────────────────┐
-│ Navigation       │ Conversation                   │ Panneau contextuel   │
-│                  │                                │ (repliable)          │
-│ Nouveau chat     │ En-tête du thread              │ Diff / aperçu / web  │
-│ Recherche        │ Messages / activité            │ selon l’action       │
+│ Navigation       │ Conversation                   │ Panneau de travail   │
+│                  │                                │ repliable            │
+│ Nouveau thread   │ En-tête du thread              │ Diff / média /       │
+│ Recherche        │ Messages et activité           │ aperçu contextuel    │
 │ Projets/threads  │                                │                      │
 │                  │ Compositeur                    │                      │
-│ Espace de travail│ Barre de session               │                      │
-│ Compte/Réglages  │                                │                      │
+│ Compte/Settings  │ Barre de session               │                      │
 └──────────────────┴────────────────────────────────┴──────────────────────┘
 ```
 
-À largeur réduite, le panneau contextuel devient superposé. La conversation ne
-descend jamais sous trois colonnes comprimées.
+La navigation, la conversation et le panneau de travail sont trois régions
+autonomes. À largeur réduite, la navigation se replie et le panneau de travail
+devient superposé ; la conversation n’est jamais comprimée entre trois colonnes.
+Settings remplace temporairement l’espace de travail plutôt que de s’ouvrir dans
+une grande modale.
 
-### 1. Navigation globale
+## Propriété des états
 
-Responsabilités :
+### Frontière native
 
-- créer, rechercher, reprendre et organiser les conversations ;
-- regrouper les threads par espace de travail ;
-- montrer uniquement les états nécessitant une lecture rapide : actif, erreur ;
-- ouvrir le sélecteur d’espace de travail, le compte et les réglages.
+`electron/` possède le processus App Server, le tray, les fenêtres, les fichiers
+bornés, les préférences desktop, les mises à jour, l’audio et le Chromium
+partagé. Le renderer n’accède à ces fonctions qu’à travers le preload et des IPC
+spécialisés.
 
-Les workspaces forment un accordéon compact : le groupe du thread actif
-s’ouvre automatiquement, un seul groupe reste déplié lors de la navigation
-ordinaire, et tous les groupes contenant des résultats s’ouvrent pendant une
-recherche. Le repli reste une préférence de présentation locale et ne modifie
-aucun état App Server.
+Le transport App Server survit à un rechargement du renderer. Electron conserve
+l’état du handshake initial ; chaque session frontend utilise ses propres
+identifiants de requête afin qu’une réponse tardive ne puisse pas atteindre une
+nouvelle WebView.
 
-App Server : `thread/list`, `thread/search`, `thread/start`, `thread/resume`,
-`thread/archive`, `thread/unarchive`, `thread/status/changed`,
-`thread/name/updated`. La page récente reste bornée tandis que la recherche interroge
-l’historique persistant complet et présente les extraits correspondants.
+### Frontière protocolaire
 
-### 2. En-tête du thread
+`src/lib/codex.ts` possède le cycle de vie JSON-RPC et
+`src/lib/protocol.ts` la construction et la normalisation des payloads. Les hooks
+de domaine transforment les événements App Server en modèles de présentation ;
+les composants ne devinent pas les formes du fil.
 
-Responsabilités :
+Les événements portant un `threadId` ne modifient que leur propriétaire. Le
+thread visible est réhydraté depuis App Server au retour ; l’interface ne garde
+pas une copie complète de chaque transcript actif.
 
-- identité du thread et état de connexion ;
-- objectif autonome persistant, progression et budget facultatif ;
-- menu contextuel : renommer, créer une branche, compacter, archiver ;
-- actions destructrices séparées : supprimer avec confirmation ;
-- ouvrir ou fermer le panneau contextuel.
+### État client
 
-App Server : `thread/name/set`, `thread/fork`, `thread/compact/start`,
-`thread/archive`, `thread/delete`, `thread/goal/*`. Le `thread/rollback` déprécié
-n’est pas prévu.
+Les préférences purement desktop sont persistées par Electron dans
+`~/.codex/codex-desktop-linux.json`. La configuration officielle reste dans
+`config.toml`. Les états de brouillon, focus, ouverture et animation restent
+locaux à la surface qui les rend.
 
-### 3. Conversation
+Toute mutation asynchrone définit son propriétaire, sérialise les opérations
+incompatibles et invalide les lectures antérieures. Une réponse obsolète ne peut
+ni restaurer un choix remplacé, ni ressusciter un élément supprimé.
 
-Responsabilités :
+## Surfaces principales
 
-- messages utilisateur et agent ;
-- raisonnement résumé, plan, revue et avertissements ;
-- outils sous forme de résumés compacts avec détails repliables ;
-- demandes bloquantes : approbations et questions ;
-- historique paginé et états streaming/échec/interruption.
+### Navigation
 
-App Server : `turn/*`, `item/*`, `review/start`, demandes serveur, warnings,
-compaction, collaboration et outils MCP.
+La sidebar crée, recherche, reprend et organise les conversations par workspace.
+La page récente reste bornée ; la recherche interroge l’historique persistant.
+Les groupes fonctionnent comme un accordéon, sauf pendant une recherche où tous
+les groupes pertinents peuvent être ouverts.
 
-Une vague d’outils conserve un en-tête de groupe stable dès le premier appel.
-Chaque action n’a que trois états visuels : ouverte, repliée sur le même en-tête
-monoligne, ou masquée dans l’historique du groupe. La fermeture anime uniquement
-le panneau de détail ; l’appel suivant attend la fin de cette animation. Quand
-la limite globale réglée dans Chat serait dépassée, l’action visible la plus
-ancienne disparaît avant l’arrivée de la suivante. Des steps agentiques
-silencieux restent agrégés ; un item non-action ou du nouveau texte crée une
-frontière. Le groupe entier ne se replie qu’une fois toutes ses actions résolues
-et cette frontière atteinte, ou le tour terminé.
-Un `agentMessage` vide ne constitue jamais une frontière : ces placeholders
-sont éliminés au live et au replay avant l’agrégation de l’appel suivant.
-Il en va de même pour un item de raisonnement sans résumé ; si un résumé
-apparaît plus tard, son premier delta visible crée alors la frontière.
-Une commande identifiée par `thread/backgroundTerminals/list` constitue
-l’exception : son processus reste réellement actif et continue d’alimenter ses
-détails, mais sa carte se replie après un court délai et ne retient pas les
-appels suivants. Son statut reste « en arrière-plan » jusqu’à sa terminaison.
-Un `spawnAgent` reste lui aussi une action ordinaire de ce groupe parent. Son
-panneau de détail contient le fil borné du thread enfant, y compris ses messages
-et ses propres groupes d’outils. Il peut céder visuellement la place à l’action
-parent suivante et se comporte alors comme un job d’arrière-plan : le groupe
-peut se refermer à sa frontière normale tout en conservant dans son résumé le
-nombre d’actions encore actives. L’utilisateur peut rouvrir ce groupe puis la
-carte du sous-agent à tout moment pour consulter son transcript vivant. Les
-descendants sont réhydratés au replay et toutes les notifications restent
-isolées par thread.
+La conversation par défaut possède une section compacte dédiée et n’est pas
+dupliquée dans son groupe de workspace. Les indicateurs se limitent aux états
+actionnables : activité, erreur et sélection.
 
-### 4. Compositeur et barre de session
+### En-tête du thread
 
-Responsabilités :
+L’en-tête porte l’identité du thread et son objectif autonome. Son menu regroupe
+renommage, fork, compaction, archivage, suppression confirmée et édition du
+`AGENTS.md` du workspace. Les contrôles de modèle ou de sécurité n’y sont pas
+dupliqués.
 
-- texte, images/fichiers, mentions et audio ;
-- commandes shell locales préfixées par `!`, toujours confirmées car exécutées sans
-  sandbox sur l’hôte App Server ;
-- envoyer, diriger un tour actif et interrompre ;
-- accès rapide au modèle, tier de service, mode de travail, profil de
-  permissions et politique d’approbation ; ces deux derniers réglages restent distincts et reflètent
-  l’état effectif renvoyé par App Server ;
-- contexte restant et reroutage de modèle sans polluer le fil ;
-- palette de commandes issue des capacités réellement disponibles.
+### Conversation
 
-App Server : `turn/start`, `turn/steer`, `turn/interrupt`, Realtime,
-`thread/settings/update`, `model/list`, `permissionProfile/list`,
-`thread/tokenUsage/updated`, `model/rerouted`, `thread/shellCommand`, recherche floue
-de fichiers.
+Le fil rend les messages, raisonnements résumés, plans, outils, approbations,
+questions, avertissements, diffs et médias avec des traitements distincts. Les
+erreurs de l’application utilisent une carte d’alerte et ne se présentent jamais
+comme une réponse de l’agent.
 
-### 5. Détails de travail et panneau contextuel
+Les outils d’une même vague partagent un groupe stable. Les cartes restent
+repliables et les jobs de fond conservent leur statut sans bloquer visuellement
+les actions suivantes. Les sous-agents sont des actions ordinaires dont le détail
+contient un transcript enfant borné et réhydratable.
 
-L’app officielle conserve les résumés de commandes et de changements directement
-dans le fil, avec des actions telles que « Review ». Un bouton d’en-tête ouvre un
-panneau latéral générique quand une ressource mérite une surface persistante. Nous
-reprenons cette organisation plutôt que d’inventer un inspecteur permanent à trois
-onglets.
+L’historique est paginé. Les deltas fréquents sont regroupés dans des mises à
+jour React interruptibles ; le compositeur, les demandes bloquantes et la
+navigation gardent la priorité.
 
-- changements, plan et commandes restent résumés dans le fil ;
-- une image générée quitte l’accordéon technique dès qu’elle est disponible :
-  son widget média reste ouvert dans le fil jusqu’à un repli explicite et
-  propose un overlay plein écran ainsi qu’un enregistrement local borné ;
-- « Revoir » ouvre le diff dans le panneau contextuel ;
-- navigateur, ressource MCP ou aperçu peuvent réutiliser le même panneau ;
-- un futur terminal persistant utilise un panneau inférieur distinct, comme la
-  convention prévue dans les réglages de l’app officielle ;
-- contexte et modèle effectif restent dans la barre de session et les détails du
-  thread, sans onglet permanent vide.
+### Compositeur et barre de session
 
-Le panneau contextuel devient la vue persistante quand les détails dépassent une
-carte, sans dupliquer systématiquement le contenu du fil.
+Le compositeur accepte texte, images, références de fichiers, Apps, Skills,
+dictée et commandes reconnues. Il envoie un nouveau tour, dirige un tour actif
+ou l’interrompt selon l’état autoritaire du thread.
 
-App Server : `turn/diff/updated`, `item/fileChange/*`, `command/exec/*`,
-`process/*`, `review/start`, token usage, instructions et environnement du thread.
+La barre de session expose les réglages fréquents et effectifs : modèle, effort,
+tier de service, collaboration, permissions et approbations. Les quotas et le
+contexte restant restent des indicateurs discrets, pas un second panneau de
+réglages.
 
-### 6. Centre de réglages
+### Panneau de travail
 
-Toutes les pages du centre utilisent `SettingsPageHeader` pour leur description
-et leur badge de portée ou d’expérimentation. Les contrôles opérationnels
-d’inventaire restent hors du header : `SettingsControlsBar` les attache au bloc
-qu’ils pilotent, avec titre ou statut à gauche et actions rapides à droite.
-`SettingsPageHeader` neutralise les styles du header de conversation et possède
-seul l’espacement, le reflow et la palette clair/sombre de cette zone. Il possède un séparateur discret et un
-espacement vertical symétrique, indépendants du header de conversation.
-`SettingsPageHeaderBadge` réutilise le même
-cartouche dans les sous-sections globales ; une page ne recrée pas localement ces
-classes.
+Les résumés de commandes et changements restent dans le fil. Une ressource qui
+demande une lecture persistante — diff, image, PDF, HTML ou aperçu pris en
+charge — peut s’ouvrir dans le panneau de travail. Le panneau ne duplique pas un
+inspecteur permanent vide et devient superposé à faible largeur.
 
-`IconSubheader` introduit les groupes de contrôles avec une icône facultative,
-un titre et un sous-titre facultatif, sans contour ni séparateur. L’icône reste
-centrée sur toute la colonne typographique ; les pages ne reconstruisent pas ce
-motif avec des blocs `settings-explanation` ou des titres locaux.
+Les commandes réellement persistantes utilisent une surface inférieure dédiée,
+distincte du panneau contextuel.
 
-`Note` porte les explications éditoriales qui ne structurent pas un groupe de
-contrôles. Son traitement de citation Markdown — barre verticale, fond discret,
-titre facultatif — reste distinct des subheaders, cartes et alertes sémantiques.
-Les recommandations de portée, comme le rappel que les règles durables vivent
-dans `AGENTS.md`, appartiennent à cette catégorie.
+## Settings
 
-`Alert` porte tous les états opérationnels de Settings. Il centralise les tons
-warning, error, neutral et success ainsi que leurs rôles accessibles ; les pages
-fournissent le contenu sans reconstruire le markup ou les palettes par thème.
+Settings est une vue dédiée avec retour à l’application, recherche, navigation
+catégorisée et contenu scrollable. Ses sections configurent des préférences
+globales :
 
-Les lignes de contenu structurées utilisent `IconCard` : icône gauche
-optionnelle, titre, sous-titre optionnel, détails secondaires et slot de widgets
-à droite. Apps, Skills, MCP, Hooks, tâches planifiées, compte, crédits de reset,
-Remote Control, appareils associés, documents de configuration, catalogue de
-plugins, migrations externes et états planifiés partagent ainsi la même grille,
-les mêmes séparateurs et la même palette ; leurs styles spécifiques ne portent
-que les widgets métier. Une carte dont le contenu ouvre un dialogue transmet
-ses attributs accessibles au bouton interne sans rendre le slot de contrôles
-imbriqué.
-La variante `density="compact"` conserve cette hiérarchie pour les inventaires
-volumineux sans imposer la hauteur des cartes de réglages ordinaires ; le
-catalogue d’Apps l’utilise pour rendre plusieurs entrées parcourables par écran.
+1. **Application** — General, Account & Usage, Appearance & Display, Remote
+   Control ;
+2. **Agents & Capabilities** — Agents, Permissions, Web, Voice, Memory,
+   Scheduler ;
+3. **Extensions** — Skills, Apps, MCP Servers, Plugins, Hooks ;
+4. **Advanced** — Configuration, Import from Another Agent.
 
-`CardStack` joint ces lignes en un groupe unique et possède seul le contour, le
-fond, les coins, l’ombre et les séparateurs externes. Son slot `controlBar`
-accueille facultativement `SettingsControlsBar`. Les groupes General, Agent,
-Subagents, Permissions, les inventaires et le flux d’import externe utilisent
-la même composition ; une page ne juxtapose pas manuellement des cartes pour
-simuler une liste.
-Un subheader parent suffit pour une série homogène de documents éditables ;
-chaque carte ne répète pas localement titre de section, description et badge de
-portée. Réciproquement, un subheader qui paraphrase seulement le header de page
-est omis.
+La navigation Settings défile indépendamment et conserve une taille de cible
+confortable. Ses catégories sont sémantiques et se masquent lorsqu’une recherche
+n’en conserve aucun élément.
 
-Les feuilles Settings ne conservent pas les anciennes implémentations après
-migration vers ces primitives. Les sélecteurs partagés définissent géométrie,
-palette et responsive ; les classes de feature restantes ne décrivent que les
-widgets ou états métier. Un audit de CSS mort doit vérifier séparément les
-classes littérales et les variantes construites dynamiquement avant suppression.
+### Primitives communes
 
-L’app officielle utilise une vue dédiée qui remplace temporairement l’espace de
-travail, avec « Retour à l’app », recherche, groupes de navigation et contenu
-scrollable. Cette structure est retenue à la place d’une grande modale.
+- `SettingsPageHeader` possède le titre, la description, le badge de portée et
+  le séparateur de page. Les actions opérationnelles n’y vivent pas.
+- `SettingsControlsBar` attache statut et actions rapides à la liste ou carte
+  qu’ils pilotent.
+- `IconSubheader` introduit un groupe sans créer de carte ni de séparateur.
+- `Note` porte une recommandation éditoriale ; `Alert` porte un état
+  opérationnel avec ton et rôle accessibles.
+- `IconCard` définit icône, hiérarchie titre/sous-titre, détail et widgets de
+  droite. Sa variante compacte sert aux grands inventaires.
+- `CardStack` possède contour, fond, coins, ombre et séparateurs d’un groupe de
+  cartes ainsi qu’une barre de contrôle facultative.
+- `RoundIcon` et `RoundIconButton` centralisent géométrie, niveaux visuels,
+  libellés et états désactivés des actions compactes.
 
-Le centre utilise une frontière de portée stricte : toutes ses sections
-configurent exclusivement des préférences persistantes globales. Le modèle,
-l’effort et le mode Plan du thread restent dans le popover Modèle ; permissions
-et approbations partagent le popover Security sous le composer.
+Les styles de feature décrivent uniquement les widgets et états métier. Ils ne
+reconstruisent ni carte, ni bouton, ni palette par thème. Le bloc titre d’une
+`IconCard` cède l’espace avec ellipse ; les widgets restent utilisables et sont
+bornés à deux tiers de la largeur.
 
-Le centre utilise quatre rubriques stables :
+### Extensions
 
-1. **Application** — Général, Compte et utilisation, Apparence et affichage,
-   Contrôle à distance ;
-2. **Agents & Capabilities** — Agents, Permissions, Web, Voix, Mémoire,
-   Planificateur ;
-3. **Extensions** — Skills, Apps, Serveurs MCP, Plugins et Hooks ;
-4. **Advanced** — Configuration et import depuis un autre agent.
+Les inventaires sont relus depuis App Server après chaque mutation. Aucun cache
+client n’est présenté comme autoritaire.
 
-Les titres de rubrique sont des
-régions sémantiques et disparaissent lorsqu’une recherche ne conserve aucun de
-leurs éléments. Hooks reste classé avec les extensions ; la liste utilise le
-gabarit compact commun et défile indépendamment aux faibles hauteurs.
+- **Skills** : `skills/list` et `skills/config/write` gouvernent découverte et
+  activation. La création guidée passe par un IPC borné à un nouveau
+  `SKILL.md` personnel ou de workspace.
+- **Apps** : l’inventaire distingue état accessible, installé et callable. Les
+  défauts globaux et politiques par App/outils écrivent la configuration typée.
+  Le catalogue consomme la pagination sous limites défensives, puis combine
+  recherche, catégorie et index alphabétique. Une connexion ouvre uniquement
+  l’`installUrl` HTTP(S) fourni par App Server.
+- **MCP** : l’ajout guidé expose les champs courants puis les options avancées
+  utiles, directement traduites vers `mcp_servers`. Les réglages rares restent
+  dans `config.toml`. La suppression n’est proposée que pour une table utilisateur
+  modifiable ; OAuth et startup restent App Server-owned.
+- **Plugins** : un Plugin agrège potentiellement Apps, Skills et MCP. Le
+  catalogue reste en lecture seule tant que les mutations marketplace sont
+  interdites aux clients de production.
+- **Hooks** : l’interface expose origine, confiance et commande effectives sans
+  inventer d’API d’édition.
 
-État actuel : les inventaires stables `skills/list`, `mcpServerStatus/list` et
-`hooks/list` sont branchés, ainsi que l’activation des skills, la connexion OAuth
-MCP complète et les états de démarrage MCP du thread courant. Ces derniers restent
-transitoires, sont attribués par `threadId` puis purgés au changement de thread ;
-ils ne sont jamais présentés comme une santé globale persistante. Les hooks effectifs
-du projet restent volontairement en lecture seule :
-leur origine, confiance et commande sont consultables, sans simuler une API de mutation.
-Skills et Plugins sont deux sections Settings de premier niveau : un Plugin est
-un bundle susceptible d'agréger Apps, Skills et intégrations MCP, et non un
-sous-type de Skill. Chaque page débute directement avec sa pile de contenu,
-sans sous-titre répétant son nom. La création
-d’un skill passe par une modale progressive puis un IPC Electron spécialisé qui
-ne peut créer qu’un nouveau `SKILL.md` sous la racine personnelle ou celle du
-workspace courant. L’inventaire est ensuite relu avec `skills/list(forceReload)` ;
-le client ne maintient aucun catalogue parallèle et n’expose pas d’écriture de
-fichier arbitraire.
-Les apps accessibles de `app/list` apparaissent dans les réglages avec leur
-activation globale effective, écrite par le contrôle borné
-`apps."<id>".enabled`. Seules les apps accessibles et activées sont proposées
-au compositeur comme mentions structurées `app://`; le catalogue complet n'est
-pas chargé dans la navigation quotidienne. Les skills actives peuvent être jointes depuis le
-menu d’ajout : le compositeur envoie alors l’item App Server structuré
-`{ type: "skill", name, path }` et le message utilisateur affiche un indicateur
-discret, restauré depuis le même item lors du replay. Une invocation implicite
-reste volontairement sans indicateur, App Server ne publiant aucun événement
-stable qui permettrait de l’attribuer avec certitude. Le catalogue et l’installation de
-plugins restent isolés tant que la documentation officielle les interdit aux
-clients de production.
-L’ajout d’un serveur MCP part de la barre de contrôle de son inventaire et ouvre
-une modale à deux onglets. **Essentiel** garde les champs propres au transport
-immédiatement visibles ; **Avancé** regroupe les délais, filtres d’outils,
-approbation par défaut et options d’environnement ou d’en-têtes les plus utiles.
-La modale traduit ces valeurs directement vers les clés App Server documentées,
-sans modèle de configuration client parallèle. Les champs très minoritaires
-restent accessibles dans l’éditeur `config.toml`.
-Les états de démarrage et d’authentification restent des métadonnées textuelles
-sur la ligne de sous-titre, après outils et version ; seules les actions occupent
-la colonne droite. La suppression exige une confirmation et n’est proposée que
-si `config/read` attribue la table MCP à la couche utilisateur de base modifiable.
-Un serveur intégré, administré, système ou fourni uniquement par un profil ne
-reçoit jamais cette action.
-Les surfaces propres à un plugin ne deviennent pas des catégories globales :
-Git et la gestion de workspaces restent exposés par les workflows ou plugins
-qui les possèdent, pas par une section native vide du centre de réglages.
+Les Apps et Skills sont envoyées au compositeur sous leurs formes structurées
+App Server. Aucun override persistant par thread n’est présenté sans contrat de
+mutation correspondant.
 
-La finition ergonomique des intégrations suit les contrats App Server, dans cet
-ordre :
+## Navigateur partagé et liens
 
-1. **Apps globales** — inventaire accessible, état callable, activation
-   effective et invocation structurée ; aucun état optimiste ne remplace les
-   vues App Server. La carte garde l'activation rapide et ouvre une modale de
-   réglages progressive : politique essentielle d'abord, overrides par outil
-   ensuite. Les valeurs par défaut globales forment une section directe sous
-   l'inventaire, introduite par `IconSubheader` puis composée avec le même
-   `CardStack` / `IconCard` que les autres réglages. Elles sont enregistrées
-   automatiquement et ne surchargent donc pas la barre d'actions des connecteurs.
-   Les écritures apparentées sont regroupées par `config/batchWrite` puis
-   relues ; l'édition experte de TOML reste le recours pour les rares champs
-   volontairement non exposés. L'inventaire opérationnel reste distinct d'une
-   modale de découverte recherchable : celle-ci présente les Apps accessibles
-   et disponibles, parcourt `app/list` jusqu'à épuisement du curseur, puis les
-   organise par catégories App Server et groupes alphabétiques. Une barre dense
-   réunit recherche et déroulants de catégorie et d'initiale ; disponibilité,
-   catégorie et initiale se composent sans dupliquer le catalogue.
-   La fiche dévoile ses outils à la demande, puis remet la connexion au
-   `installUrl` HTTP(S) fourni par Codex. Comme App Server
-   n'expose pas `app/install`, le client ne simule pas cette mutation et propose
-   une relecture explicite au retour du parcours hébergé.
-2. **MCP global** — fournir des contrôles bornés pour les champs de configuration officiellement
-   documentés ; les tables MCP arbitraires restent dans l’éditeur TOML.
-3. **Contexte du thread** — comparer l’état global à l’état effectif évalué avec
-   `threadId`, en utilisant notamment `app/installed` lorsqu’il apporte un état
-   callable fiable. Aucun override local n’est proposé tant qu’App Server
-   n’expose pas de mutation persistante correspondante.
-4. **Plugins** — catalogue, détail, installation, authentification et
-   désinstallation forment un seul cycle produit. Cette surface reste absente
-   des clients de production tant que la documentation App Server la marque en
-   développement.
+L’application ne contient pas une seconde WebView générale. Après activation
+explicite, elle télécharge le Chromium correspondant aux versions embarquées de
+Playwright et Playwright MCP dans les données utilisateur de l’application.
+Electron possède le processus, le profil persistant, le serveur MCP loopback et
+la récupération d’un processus résiduel strictement identifié.
 
-Les profils nommés de `permissionProfile/list`, les presets de
-`collaborationMode/list`, l’identité `account/read` et l’activité
-`account/usage/read` alimentent également leurs réglages respectifs. Les actions
-de connexion/déconnexion restent séparées de cette vue informative afin qu’un
-simple passage dans les réglages ne puisse pas modifier le compte.
+L’UI et App Server se connectent au même contexte visible. La session MCP de
+l’UI maintient son flux d’événements, répond aux heartbeats et refait une fois le
+handshake si Playwright expire la session. En cas d’indisponibilité, les liens
+HTTP(S) utilisent le navigateur système.
 
-Les tickets gagnés de `account/rateLimits/read` apparaissent uniquement quand le
-backend les annonce. Leur consommation demande une confirmation, utilise une clé
-idempotente et relit ensuite les quotas ; aucun ticket absent n’est simulé dans
-l’interface.
+Le client désactive localement les capacités Browser/Computer Use officielles
+qui entreraient en concurrence avec ce parcours, sans modifier `config.toml`.
+La Skill embarquée `use-shared-browser` est enregistrée comme racine en lecture
+seule propre au client.
 
-Les messages actifs de `account/workspaceMessages/read` restent dans cette surface
-globale, bornés aux vingt plus récents. L’e-mail au propriétaire n’est proposé que
-si `rateLimitReachedType` signale explicitement des crédits workspace épuisés ou
-une limite workspace atteinte ; un simple quota personnel ne déclenche pas cette
-action.
+Les liens du transcript passent par un routeur explicite. Les chemins de fichiers
+sont canonicalisés par Electron puis ouverts sans construire de commande shell ;
+les protocoles inconnus et chemins absents sont refusés avec une erreur visible.
 
-Les réglages courants du thread ne sont jamais répétés dans les sections
-globales. Le mode Plan est une section du sélecteur de modèle ; permissions et
-approbations sont regroupées dans Security ; la personnalité reste un défaut
-global dans Agent.
+## Realtime, tray et Scheduler
 
-Les tâches planifiées sont une capacité native du client, pas une API App
-Server inventée. Electron persiste et réclame les échéances récurrentes ou
-datées une seule fois, puis le contrôleur renderer démarre ou reprend un thread
-et lance un tour ordinaire. La cible peut être le thread existant choisi, un
-nouveau thread persistant visible dans la navigation, ou un nouveau thread
-éphémère adapté aux tâches dont seul l’effet compte. Une échéance unique se
-désactive atomiquement dès sa réclamation pour ne jamais être rejouée après un
-redémarrage.
+Realtime crée un fork vocal éphémère et injecte les échanges finalisés dans le
+parent persistant dans l’ordre. Le hook de domaine possède les deltas, la
+finalisation, l’injection et tous les chemins d’arrêt. Une session lancée depuis
+le tray garde le renderer caché vivant ; montrer la fenêtre rattache la
+présentation sans recréer la session WebRTC.
 
-Un coordinateur commun réserve les opérations qui produisent un tour. Un réveil
-ciblant un thread actif attend sa prochaine frontière inactive ; plusieurs
-réveils du même thread restent ordonnés, tandis que des threads différents
-travaillent en parallèle. Le prompt planifié porte une enveloppe stable
-`Codex Desktop Scheduler` : le modèle comprend qu’il ne s’agit pas d’un
-steering utilisateur et le fil la restitue, y compris au replay, dans une carte
-de réveil identifiable.
+Le Scheduler persiste des tâches ponctuelles, périodiques ou hebdomadaires et
+cible le thread courant, le thread par défaut, un nouveau thread ou un thread
+éphémère. Les tours sont sérialisés par cible. Une tâche sans surveillance
+applique Full Access/Never Ask uniquement pendant son exécution puis restaure
+l’état capturé avant de libérer la file.
 
-Par défaut, la tâche conserve les permissions et approbations ordinaires. Le
-formulaire propose séparément une exécution sans surveillance, volontairement
-alarmante : Full access et Never ask ne sont alors appliqués qu’au réveil, puis
-les réglages effectifs capturés avant le tour sont restaurés avant de libérer la
-file du thread. Cet opt-in dangereux ne doit jamais devenir le défaut.
+Les outils dynamiques Scheduler sont enregistrés uniquement sur les nouveaux
+threads textuels compatibles. Suppression et opérations destructives attendent
+une confirmation UI. La fermeture de fenêtre conserve les tâches dans le tray ;
+quitter l’application interrompt explicitement le travail en cours.
 
-Les nouveaux threads textuels déclarent en outre un namespace App Server
-`scheduler` via `dynamicTools`. L’agent peut ainsi utiliser le même contrôleur
-borné pour lister, créer, modifier, activer, désactiver ou lancer une tâche sans
-plugin ni accès arbitraire aux réglages natifs. La suppression suspend la
-réponse `item/tool/call` jusqu’à confirmation dans un dialogue destructif. App
-Server restaure les définitions avec le rollout au `thread/resume`; la version
-0.145 ne permet pas de les greffer rétroactivement aux anciens threads. Les
-forks Realtime et les threads d’exécution planifiée n’enregistrent pas ces
-outils, afin de garder leurs responsabilités fermées.
+## Lifecycle natif et mises à jour
 
-Les événements de ce travail restent routés par `threadId` : ils mettent à jour
-la navigation sans polluer la conversation consultée. La fermeture de la fenêtre
-conserve le renderer et App Server en tâche de fond ; quitter réellement
-l’application interrompt les exécutions, qui sont marquées en échec au
-redémarrage. Cette frontière permet d’adopter ultérieurement le daemon Unix
-expérimental sans changer le modèle produit.
+Electron sonde le transport JSON-RPC, pas seulement l’existence du processus.
+Une défaillance confirmée remplace App Server ; le renderer réattache ses
+listeners, recharge les catalogues et réhydrate le thread visible avant que le
+Scheduler ne réclame de nouveau travail.
 
-La disponibilité du processus ne suffit pas à déclarer le transport sain.
-Electron sonde périodiquement le canal stdio JSON-RPC réel, avec un contrôle
-supplémentaire après reprise ou déverrouillage du système. Une défaillance
-confirmée remplace le processus ; le renderer réinstalle alors ses abonnements,
-réhydrate les catalogues et reprend le thread actif. Le scheduler ne réclame
-aucun réveil pendant cette fenêtre et ne reprend qu’une fois son listener de
-livraison réattaché. Comme ce renderer reste propriétaire de la réduction des
-événements, du contrôle distant et des tours planifiés quand la fenêtre est
-cachée dans le tray, Electron désactive explicitement son throttling
-d’arrière-plan.
+La recherche de mise à jour est explicite. Le processus natif détecte AppImage
+ou la famille de distribution via `/etc/os-release`, sélectionne uniquement
+l’artefact de même format et architecture, puis valide URL GitHub, taille et
+SHA-256. Seul le DEB suit l’installation Polkit/APT après validation de ses
+métadonnées. RPM, AppImage et familles inconnues ouvrent la release validée sans
+exécuter d’installation privilégiée.
 
-Les icônes circulaires statiques et interactives utilisent la primitive commune
-`RoundIcon`/`RoundIconButton`. Ses variantes `primary`, `secondary` et
-`tertiary` définissent le niveau d’accent, de fond et de bordure ; les features
-ne surchargent que les couleurs sémantiques. Les tailles `small`, `medium` et
-`large` ainsi que le label texte optionnel appartiennent aussi à la primitive ;
-les composants ne recréent pas leur propre géométrie d’icône. Les actions
-compactes des cartes Settings, barres de contrôle et pieds de modale utilisent
-également `RoundIconButton`; les boutons HTML ordinaires sont réservés aux
-surfaces interactives complètes, comme une carte de choix.
+Installation, mise à jour et démarrage ne réécrivent pas les préférences,
+`config.toml` ou les métadonnées de thread sans action explicite ou migration
+documentée.
 
-La connexion ChatGPT gérée par Codex ouvre le navigateur système, conserve le
-`loginId` pour permettre réouverture et annulation, et attend la notification de
-fin avant de relire le compte. La déconnexion d’une identité gérée est confirmée ;
-les identifiants Bedrock externes restent administrés hors de l’application.
+## Responsive, thèmes et accessibilité
+
+- Le shell, Settings et les modales restent utilisables à la taille minimale et
+  avec les textes localisés longs.
+- Les colonnes de widgets ne sont jamais rognées ; le texte secondaire cède
+  l’espace et utilise l’ellipse lorsque nécessaire.
+- Les thèmes clair et sombre partagent les mêmes primitives et contrastes
+  sémantiques. Les bordures utilisent des gris discrets, jamais un noir hérité.
+- Les dialogues gèrent focus initial, piège de focus, fermeture clavier et
+  restauration. Les actions portent des noms accessibles et les états ne sont
+  pas communiqués par la couleur seule.
+- Toute modification visuelle est contrôlée par des captures avant/après
+  comparables et, lorsqu’elle est matérielle, actualise `screenshots/`.
 
 ## Carte des capacités
 
-| Domaine App Server                | Surface principale                               | Traitement UI                                                   |
-| --------------------------------- | ------------------------------------------------ | --------------------------------------------------------------- |
-| Threads et tours                  | Navigation, en-tête, conversation                | Produit principal                                               |
-| Modèles et collaboration          | Barre de session, réglages                       | Contrôles fréquents + détail                                    |
-| Permissions et approbations       | Barre de session, réglages, dialogue             | Choix explicites et sûrs                                        |
-| Outils, commandes et fichiers     | Conversation, panneau contextuel                 | Résumé inline, détail persistant                                |
-| Revue                             | Carte de changement, panneau contextuel          | Flux guidé, pas un réglage                                      |
-| MCP, apps, plugins, skills, hooks | Réglages Intégrations, mentions                  | Catalogue et état de connexion                                  |
-| Compte, quotas, usage, messages   | Réglages Compte, indicateurs discrets            | Global, jamais mélangé au contexte                              |
-| Realtime                          | Compositeur et conversation                      | Action directe, parole streamée dans le message vocal principal |
-| Configuration                     | Réglages globaux par domaine, éditeur TOML borné | Guidage courant + échappatoire avancée                          |
-| Expérimental et import            | Réglages Avancé                                  | Isolé et clairement signalé                                     |
-| FS, process, exec, ressources MCP | Infrastructure/panneaux                          | Pas de console RPC générique                                    |
-| Warnings, diagnostics, feedback   | Conversation ou Avancé selon portée              | Actionnable, dédupliqué                                         |
+| Domaine | Surface principale | Convention |
+| --- | --- | --- |
+| Threads et tours | Navigation, en-tête, conversation | Produit principal, état isolé par thread |
+| Modèles et collaboration | Barre de session, Settings | Contrôles fréquents près du thread |
+| Permissions et approbations | Barre de session, Settings, dialogues | Choix explicites, jamais coercitifs |
+| Outils, commandes et fichiers | Conversation, panneau de travail | Résumé inline, détail progressif |
+| Apps, Skills, MCP, Plugins, Hooks | Settings, compositeur | Inventaires App Server-owned |
+| Compte, quotas et messages | Account, indicateurs discrets | Portée globale |
+| Realtime | Compositeur, conversation, tray | Fork éphémère et parent persistant |
+| Scheduler | Settings, cartes de réveil | File par thread et sécurité restaurée |
+| Configuration | Settings, éditeurs bornés | Guidage courant et échappatoire TOML |
+| Web et médias | Panneau de travail, fenêtre Chromium | Contexte Playwright partagé |
+| FS, process et transport | Infrastructure native | Aucune console RPC générique |
 
-Les workflows navigateur ne chargent pas une seconde WebView générale dans le
-shell Electron. L’application embarque des versions épinglées de
-`playwright-core` et de Playwright MCP, mais télécharge leur Chromium compatible
-uniquement après activation explicite. Le navigateur, son profil persistant,
-les sorties MCP et les artefacts servis localement appartiennent aux données
-utilisateur de Codex Desktop sous `~/.local/share/codex-desktop/`.
-L’activation, les versions installées, l’état de partage et la réparation sont
-regroupés dans la section autonome **Web** plutôt que dans les
-préférences générales.
-La désactivation arrête le serveur local et retire l’entrée MCP `playwright`
-uniquement si elle correspond encore à celle que l’application possède ; une
-configuration Playwright personnalisée créée ensuite par l’utilisateur est
-préservée.
+## Exclusions intentionnelles
 
-La couche native possède le serveur Playwright MCP HTTP lié au loopback. L’UI
-est un client minimal de ce serveur pour ouvrir les liens ; App Server reçoit
-automatiquement la même URL via la commande officielle `codex mcp`, puis recharge
-sa configuration. `--shared-browser-context` garantit que l’utilisateur et
-l’agent manipulent les mêmes onglets visibles. Aucune installation Chromium
-système, détection Snap/Flatpak ou élévation de privilèges n’appartient au chemin
-normal. Lorsque la fonction est inactive, incomplète ou indisponible, les URL
-HTTP(S) sont confiées au navigateur par défaut du système.
-La session MCP interne utilisée par l’UI est indépendante de celle d’App Server.
-Elle conserve son canal d’événements HTTP ouvert afin que Playwright maintienne
-le contexte partagé même sans tour agent actif. Le flux est attaché dès que
-`initialize` fournit l’identifiant de session, avant la notification
-`initialized`, puis le client répond aux heartbeats JSON-RPC reçus sur ce flux.
-Si Playwright expire la session, le client natif refait une fois son handshake
-et rejoue la navigation ; les autres erreurs restent visibles et suivent le
-repli normal. Le serveur enfant est signalé avant la fin d’Electron. Une reprise
-après fermeture anormale ne termine un PID résiduel qu’après validation de son
-propriétaire, de sa commande, de son port et du profil applicatif.
-
-Le processus App Server de ce client neutralise localement `browser_use`,
-`browser_use_external`, `in_app_browser` et `computer_use`. Le Browser officiel
-et son skill ne sont pas pris en charge par cette interface et ne doivent pas
-être proposés en concurrence avec Playwright MCP. Ces surcharges ne sont pas
-écrites dans `config.toml` et n’affectent donc ni la CLI ni les autres clients.
-
-L’application embarque en complément la skill `use-shared-browser` comme
-ressource externe à l’archive ASAR. À chaque nouveau processus App Server, le
-renderer enregistre ce répertoire en lecture seule avec
-`skills/extraRoots/set`. La skill reste ainsi propre à ce client : elle n’est
-copiée ni dans `~/.codex/skills`, ni dans le workspace, et ne modifie pas le
-comportement de la CLI. Sa dépendance MCP `playwright` et ses instructions
-orientent les demandes de navigation vers la fenêtre partagée, expliquent
-l’indisponibilité des surfaces Browser de l’application officielle et
-interdisent d’installer une pile de navigation concurrente.
-
-Les liens du transcript passent par un routeur explicite plutôt que par la
-navigation de la WebView Electron. Les URL HTTP(S) ouvrent la session Playwright partagée,
-avec le navigateur système comme repli. Les références de fichiers sont
-résolues et canonicalisées par Electron : un chemin relatif part du workspace,
-alors qu’un chemin absolu peut viser un checkout voisin, la configuration Codex
-ou un artefact temporaire. Un fichier est ouvert par le schéma d’éditeur
-configuré sans commande shell lorsqu’il contient du texte UTF-8. Les fichiers
-non-UTF-8 ou binaires utilisent l’application système par défaut, et un dossier
-est délégué à l’explorateur de fichiers du système. Les protocoles inconnus et
-les chemins absents sont refusés avec une erreur visible dans la conversation.
-
-L’objectif autonome et `AGENTS.md` sont des actions de configuration contextuelle
-du thread ou du workspace. Elles sont regroupées dans le menu ouvert par le titre
-de la conversation afin de garder la barre supérieure calme, tout en restant
-accessibles au même endroit que les autres actions du thread. `AGENTS.md` ouvre
-un grand éditeur modal adapté aux instructions longues. La couche native ne
-fournit pas un accès générique aux fichiers : elle borne lecture et écriture au
-seul `<workspace>/AGENTS.md`, détecte les conflits externes, refuse les liens
-symboliques et remplace le fichier atomiquement.
-
-Le `AGENTS.md` personnel appartient en revanche à la section **Agent**, car sa
-portée est globale à Codex plutôt que liée au workspace courant. Son éditeur
-suit les mêmes garanties natives sur le seul chemin
-`$CODEX_HOME/AGENTS.md` et signale explicitement un `AGENTS.override.md` global
-non vide, qui prend priorité selon les règles de découverte Codex.
-`developer_instructions` dispose d’un éditeur ciblé dans **Configuration
-avancée** : il partage la lecture `config/read` et l’écriture typée
-`config/value/write` avec les contrôles guidés, sans réécrire le document TOML
-complet. Une valeur vide retire explicitement la clé. L’éditeur TOML brut reste
-une échappatoire distincte. Ces surfaces utilisent la même modale afin que
-focus, raccourci d’enregistrement et protection des brouillons suivent un seul
-contrat d’interaction.
-
-Le **Contrôle à distance** possède une section personnelle distincte, placée à
-côté de Memory plutôt que dans Config ou Permissions. Elle reflète l’état
-autoritaire d’App Server : activation persistante du relais, connexion,
-association par code temporaire, liste paginée des appareils et révocation
-confirmée. L’interface n’émule aucun de ces états côté client et rend
-explicitement les cas aperçu navigateur, politique administrée et erreur. La
-désactivation interrompt le relais mais ne prétend pas supprimer les
-autorisations déjà accordées.
-
-## Audit de l’UI actuelle
-
-### Conserver
-
-- La structure sidebar / conversation / compositeur et son comportement à 840 px.
-- Le regroupement des threads par espace de travail, la recherche et l’archivage.
-- Le fil typé : messages, signaux, outils, historique paginé et streaming.
-- Les erreurs produites par l’application utilisent une carte d’alerte dédiée
-  avec titre et détail technique ; elles ne se font jamais passer pour une
-  réponse ordinaire de l’agent.
-- Les dialogues d’approbation et de question avec gestion du focus.
-- Le menu de thread et ses actions stables.
-- La séparation Electron/IPC / transport JSON-RPC / normalisation / présentation.
-
-### Restructurer avant d’étendre
-
-- L’ancien `SettingsDialog` devient une vue dédiée catégorisée ; son formulaire est réparti
-  entre « Agent et modèles » et « Permissions ».
-- `ChatFooter` devient la composition de `Composer` et d’une barre de session ;
-  quotas globaux et contexte du thread ne doivent plus partager le même bloc.
-- Les détails de diff, navigateur et ressources utilisent un panneau contextuel dès
-  que leur persistance dépasse les cartes inline ; un terminal persistant reste une
-  surface inférieure séparée.
-- Le menu de commandes `/` est une palette pilotée par un registre déclaré et
-  testé. Il reprend les raccourcis de conversation utiles de la CLI sans
-  dupliquer les réglages avancés ni les commandes propres au terminal. Les
-  choix suivants restent des listes plates au clavier et à la souris ; la
-  palette défile au-dessus du composer sans recouvrir la saisie.
-- Pendant une session Realtime, les deltas du transcript assistant alimentent
-  directement le message vocal principal dans la conversation. La finalisation
-  remplace l’assemblage provisoire en place ; le composer ne porte aucune
-  surface de transcript redondante.
-- Le hook de conversation Realtime possède le fork éphémère, filtre les
-  notifications tardives, sérialise l’injection des transcriptions dans le
-  parent et centralise tous les chemins d’arrêt. `App.tsx` ne coordonne que le
-  déclenchement depuis le compositeur.
-- La conversation par défaut est une préférence générale du client, pas un
-  réglage propre à Realtime. Elle est sélectionnable dans Général et depuis le
-  menu du thread ; les actions rapides peuvent la consommer sans charger son
-  transcript dans la conversation visible.
-- Les versions du client et de Codex restent visibles dans Général. Une
-  recherche de mise à jour est toujours explicite : le processus natif consulte
-  la dernière release GitHub stable, conserve seul l’URL du paquet, vérifie sa
-  taille et son digest SHA-256, puis délègue l’installation du `.deb` au
-  gestionnaire de paquets du système sans exécuter de commande privilégiée.
-- Le tray peut lancer une session Realtime sans montrer la fenêtre. Le renderer
-  caché conserve la capture WebRTC, crée un fork vocal éphémère depuis la
-  conversation par défaut et injecte les tours finalisés dans ce parent. Si la
-  préférence est absente ou vise un thread supprimé, un parent persistant est
-  créé dans le dossier utilisateur puis mémorisé. Une erreur transitoire ne doit
-  jamais créer silencieusement un second parent.
-- Si la fenêtre devient visible pendant cette session, elle reprend d’abord le
-  parent persistant puis rattache le transcript accumulé au fil courant. Les
-  deltas suivants utilisent alors exactement la présentation Realtime normale ;
-  la session WebRTC et son fork ne sont ni interrompus ni recréés.
-- La sidebar promeut la conversation par défaut dans une section compacte
-  dédiée au-dessus des projets récents. Elle est retirée de son groupe de
-  workspace tant qu’elle occupe cette position afin d’éviter un doublon
-  visuel, sans modifier son cwd ni son appartenance réelle.
-- Le menu natif ne suppose pas que le renderer est prêt : Realtime reste
-  indisponible jusqu’à l’attachement de son listener, puis expose des états
-  déterministes démarrage, actif et arrêt. Les échecs headless utilisent une
-  notification native et rendent immédiatement le contrôle réutilisable.
-- Les rafales de notifications qui modifient le fil sont réduites dans l’ordre
-  à une mise à jour React non urgente par fenêtre de 16 ms. Les interactions
-  du compositeur, la dictée et les demandes bloquantes gardent ainsi la
-  priorité. Un changement de thread remplace le scope visible immédiatement :
-  les événements tardifs de l’ancien thread sont exclus, tandis que ceux du
-  nouveau sont tamponnés jusqu’à la fin de son hydratation.
-- Plusieurs threads peuvent rester actifs en parallèle côté App Server. Le
-  renderer ne duplique pas leur transcript en mémoire : `thread/resume`
-  réhydrate au retour les items produits en arrière-plan, le dernier item
-  partiel, le statut du tour et son identifiant. Messages, activité, état
-  `busy` et steering ne sont ensuite modifiés que par le thread affiché.
-- Les réponses finalisées de l’agent vocal restent le flux principal du chat et
-  portent l’accent rose Realtime. Les messages produits en parallèle par
-  l’agent textuel utilisent une surface bleue secondaire : visible pendant le
-  streaming, elle se replie automatiquement tout en restant réouvrable. Les
-  actions techniques conservent leur présentation autonome.
-- `styles.css` (près de 1 000 lignes) doit être découpé par surface lors de la
-  restructuration correspondante, sans extraction CSS purement mécanique.
-- `App.tsx` doit céder la connexion/session et les états de surfaces avant d’ajouter
-  le chargement des intégrations et du compte.
-- Les composants encore minifiés (`SignalCards`, `AgentStatus`, `Markdown`) doivent
-  être remis en forme lorsqu’ils gagnent leur prochaine responsabilité.
-
-### Supprimer ou remplacer
-
-- Le bouton « Mentionner un fichier » qui appelait le simple sélecteur de pièce
-  jointe est retiré ; il reviendra avec la vraie recherche floue avant d’être
-  présenté comme une mention.
-- Le mini-affichage de quotas caché arbitrairement sous 850 px sera remplacé par un
-  résumé de compte accessible dans les réglages ; seule l’alerte utile restera dans
-  la barre de session.
-- Aucune commande slash non raccordée à un comportement réel ne doit être
-  annoncée ; disponibilité du thread, tour actif et capacités du modèle sont
-  vérifiées avant exécution.
-- Les futurs appels FS/process/MCP bruts ne recevront pas de boutons génériques dans
-  le seul but d’augmenter la couverture protocolaire.
-
-## Ordre de migration
-
-1. Reprendre les conventions validées dans l’app officielle : réglages en vue dédiée,
-   cartes de travail inline et panneau latéral contextuel générique.
-2. Construire le centre de réglages et séparer portée globale / portée thread.
-3. Introduire le panneau contextuel sans dupliquer les données du fil.
-4. Remplacer le menu slash et la fausse mention par leurs architectures cibles.
-5. Décomposer connexion/session dans `App.tsx`.
-6. Brancher ensuite les domaines fonctionnels par fréquence d’usage.
+- Pas de navigateur général embarqué ni de concurrence entre Chromium partagé
+  et Browser/Computer Use officiel.
+- Pas de console brute pour JSON-RPC, filesystem ou processus.
+- Pas de mutation marketplace Plugins avant stabilisation officielle.
+- Pas de réglage par thread inventé lorsque seul un état effectif en lecture est
+  disponible.
+- Pas de dépendance à un gestionnaire de paquets particulier hors du parcours
+  explicitement détecté.

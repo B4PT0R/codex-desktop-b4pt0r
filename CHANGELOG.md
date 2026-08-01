@@ -3,6 +3,31 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.5.0] - 2026-08-01
+
+### Added
+
+- Releases now provide native RPM and portable AppImage artifacts alongside the
+  Debian package, with explicit x86-64 package naming and runtime dependencies.
+- CI installs the native packages in clean Debian stable and Fedora containers,
+  checks their desktop and bundled resources, verifies linked libraries, and
+  launches both native and AppImage builds as an unprivileged user under
+  Xvfb/D-Bus.
+- Reproducible Podman/Docker smoke scripts cover the same Debian and Fedora
+  package paths locally.
+
+### Changed
+
+- Update checks detect Debian, RPM, AppImage, and unknown installations, then
+  select only the matching architecture-specific GitHub release asset.
+- Debian retains its verified Polkit/APT upgrade; RPM and AppImage installations
+  use an explicit manual release path instead of assuming APT is available.
+
+### Fixed
+
+- The Debian package now declares its ALSA runtime dependency, preventing a
+  missing `libasound.so.2` failure on minimal installations.
+
 ## [0.4.1] - 2026-08-01
 
 ### Fixed

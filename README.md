@@ -70,8 +70,8 @@ remains the fallback when the shared browser is disabled or unavailable.
 - Light, dark, and system themes with adjustable interface scale.
 - Responsive layouts, including a compact chat-column window.
 - Keyboard-accessible menus, dialogs, and focus handling.
-- System tray, single-instance behavior, optional launch at login, and Debian
-  packaging.
+- System tray, single-instance behavior, optional launch at login, and DEB,
+  RPM, and AppImage distribution.
 
 ![Realtime voice, text activity, and Plan in the dark theme](screenshots/showcase-dark-1240x820.png)
 
@@ -83,14 +83,16 @@ conversations, models, permissions, approvals, account state, and agent events.
 The renderer is sandboxed and accesses native features through focused IPC
 boundaries.
 
-Linux is the primary target. Packaged testing currently focuses on Ubuntu and
-the amd64 Debian package; broader Debian-family coverage and other package
-formats remain future work. Experimental backend features are isolated and
-degrade gracefully when unavailable.
+Linux is the primary target. CI builds x86-64 DEB, RPM, and AppImage artifacts;
+clean Debian stable and Fedora containers install the native packages and launch
+both the installed application and AppImage. Full GNOME, KDE, Wayland, tray,
+audio, and suspend/resume coverage still requires real desktop sessions.
+Experimental backend features are isolated and degrade gracefully when
+unavailable.
 
 ## Requirements
 
-- A recent Linux desktop environment.
+- A recent x86-64 Linux desktop environment with GTK 3, NSS, and ALSA.
 - An installed and authenticated Codex CLI available as `codex` in `PATH`.
 - Node.js 22.12 or newer when building from source.
 
@@ -99,13 +101,39 @@ discovery is not suitable.
 
 ## Install
 
-Download the current `.deb` from
-[GitHub Releases](https://github.com/B4PT0R/codex-desktop-b4pt0r/releases/latest),
-then run:
+Download the package for your system from
+[GitHub Releases](https://github.com/B4PT0R/codex-desktop-b4pt0r/releases/latest).
+
+### Debian and Ubuntu
 
 ```bash
-sudo apt install ./codex-desktop-linux_0.4.1_amd64.deb
+sudo apt install ./codex-desktop-linux_0.5.0_amd64.deb
 ```
+
+### Fedora and RPM distributions
+
+```bash
+sudo dnf install ./codex-desktop-linux_0.5.0_x86_64.rpm
+```
+
+Use the distribution's ordinary local-RPM installation command when it does
+not use DNF.
+
+### AppImage
+
+```bash
+chmod +x codex-desktop-linux_0.5.0_x86_64.AppImage
+./codex-desktop-linux_0.5.0_x86_64.AppImage
+```
+
+AppImage normally uses FUSE. On a system where FUSE is unavailable, use its
+built-in extraction path:
+
+```bash
+APPIMAGE_EXTRACT_AND_RUN=1 ./codex-desktop-linux_0.5.0_x86_64.AppImage
+```
+
+The AppImage is portable and does not install a desktop-menu entry automatically.
 
 Launch **Codex Desktop** from the application menu or run:
 
@@ -113,11 +141,21 @@ Launch **Codex Desktop** from the application menu or run:
 codex-desktop
 ```
 
-The version panel under **Settings > General** can check GitHub Releases for a
-new stable package. The app verifies the downloaded file's published size and
-SHA-256 digest and Debian metadata, then asks Polkit to authorize an explicit
-APT upgrade. The package is installed only after that authorization succeeds.
-Restart the app when the update panel reports that installation is complete.
+## Update
+
+The version panel under **Settings > General** checks GitHub Releases for the
+matching architecture and installation format. Release asset URLs, sizes, and
+SHA-256 digests are validated before an update is offered.
+
+- **Debian/Ubuntu:** the app can download the DEB, verify its package metadata,
+  and ask Polkit to authorize an explicit APT upgrade. Restart after it reports
+  a successful installation.
+- **RPM and AppImage:** the app opens the validated release so the user can
+  install or replace the matching artifact explicitly. Automatic privileged
+  RPM installation and in-place AppImage replacement are intentionally not
+  performed.
+- **Unknown package family:** the app stays on the same non-installing release
+  path rather than guessing a package manager.
 
 ## Build from source
 
@@ -126,7 +164,7 @@ Install the locked dependencies and build the Debian package:
 ```bash
 npm ci
 npm run electron:deb
-sudo apt install ./dist/codex-desktop-linux_0.4.1_amd64.deb
+sudo apt install ./dist/codex-desktop-linux_0.5.0_amd64.deb
 ```
 
 The packaging manifest also supports native RPM and portable AppImage builds:
@@ -153,10 +191,6 @@ packaging/smoke-debian.sh \
   dist/codex-desktop-linux_*_amd64.deb \
   dist/codex-desktop-linux_*_x86_64.AppImage
 ```
-
-The updater detects Debian, RPM and AppImage installations and selects only the
-matching release asset. Debian retains its verified Polkit/APT installation;
-RPM and AppImage updates open the validated release for manual installation.
 
 Run the complete desktop environment during development with:
 

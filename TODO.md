@@ -9,7 +9,7 @@ belongs in `CHANGELOG.md` and Git.
 ## Baseline
 
 Codex Desktop Linux is a functional independent Electron client for the
-official `codex app-server`. The current public release is v0.4.1.
+official `codex app-server`. The current public release is v0.5.0.
 
 The daily workflow covers conversation replay and concurrent activity,
 streaming Markdown/LaTeX, reasoning, plans, tools, approvals, diffs, files,
@@ -21,11 +21,13 @@ Compatibility is currently verified against installed `codex-cli 0.145.0`.
 
 ## Latest release
 
-Release v0.4.1 is a stabilization release for the v0.4.0 surface. Async
-controllers across Settings now serialize conflicting mutations and invalidate
-stale reads, preventing late responses from restoring obsolete state in Apps,
-integrations, account, browser, configuration, Voice, Memory, capabilities,
-thread metadata and Scheduled Tasks.
+Release v0.5.0 establishes the multi-distribution baseline: x86-64 DEB, RPM and
+AppImage artifacts, format-aware update selection, automatic verified APT
+upgrades only for Debian-family installations, and explicit manual release
+handoff for RPM, AppImage and unknown families. Clean Debian stable and Fedora
+container checks cover native installation, linked libraries and non-root
+native/AppImage startup; a local Debian pass also confirmed discovery and
+liveness of `codex app-server` 0.145.0.
 
 ## Durable constraints
 
@@ -45,7 +47,7 @@ thread metadata and Scheduled Tasks.
 
 ## Active objective
 
-Keep the v0.4.0 functional surface frozen while running bounded stabilization,
+Keep the v0.5.0 functional surface frozen while running bounded stabilization,
 failure-path, simplification and maintainability passes across existing sectors.
 
 Multi-distribution packaging is the active portability objective. The manifest
