@@ -50,11 +50,11 @@ failure-path, simplification and maintainability passes across existing sectors.
 
 Multi-distribution packaging is the active portability objective. The manifest
 now owns Debian, RPM and AppImage targets with explicit RPM runtime dependencies;
-CI builds and inspects all three formats, installing `rpmbuild` explicitly. A
-clean current Fedora container then installs the RPM, checks its desktop entry,
-bundled shared-browser skill and linked libraries, and verifies that packaged
-Electron from both the RPM and AppImage remains alive during a short
-unprivileged Xvfb/D-Bus launch;
+CI builds and inspects all three formats, installing `rpmbuild` explicitly.
+Clean current Fedora and Debian stable containers install their native package,
+check its desktop entry, bundled shared-browser skill and linked libraries, and
+verify that packaged Electron from the native package and AppImage remains
+alive during a short unprivileged Xvfb/D-Bus launch;
 the updater detects AppImage directly and Debian/RPM families through
 `/etc/os-release`, selects only the matching architecture-specific asset and
 validates its GitHub URL, size and SHA-256. Debian retains automatic Polkit/APT
@@ -378,10 +378,10 @@ reads and clears their loading state.
   `turn/start`; App Server 0.145 exposes no conditional start-if-idle request.
 - Quitting interrupts scheduled work; closing the window preserves the hidden
   renderer and App Server.
-- Debian, RPM and AppImage artifacts build on Ubuntu CI. The RPM installs in a
-  clean Fedora container and both its executable and the AppImage have a
-  headless Xvfb/D-Bus smoke check. Full lifecycle validation still needs
-  Debian/Fedora GNOME and KDE/Wayland VM passes.
+- Debian, RPM and AppImage artifacts build on Ubuntu CI. The DEB and RPM install
+  in clean Debian/Fedora containers, and both native executables plus the
+  AppImage have headless Xvfb/D-Bus smoke checks. Full lifecycle validation
+  still needs Debian/Fedora GNOME and KDE/Wayland VM passes.
 - The lazy Markdown/KaTeX chunk remains large, but is isolated and not a release
   blocker.
 
@@ -421,11 +421,15 @@ and Git/worktree management without a stable App Server product contract.
 - Production Vite build: passing; main JS 660.78 kB, 189.61 kB gzip.
 - Linux packaging: Debian (`amd64`), RPM (`x86_64`) and AppImage (`x86_64`)
   build in one pass; package metadata and embedded desktop/Skill resources were
-  inspected locally. RPM builds require the `rpmbuild` executable. The RPM was
-  installed and launched as an unprivileged user under Xvfb/D-Bus in a clean
-  Fedora 44 container; the AppImage passed the same launch check through its
-  FUSE-independent extraction path. `packaging/smoke-fedora.sh` makes both
-  checks reproducible with Podman or Docker.
+  inspected locally. RPM builds require the `rpmbuild` executable. The native
+  packages install and launch as an unprivileged user under Xvfb/D-Bus in clean
+  Fedora 44 and Debian stable containers; the AppImage passes the same checks
+  through its FUSE-independent extraction path. The Debian pass exposed and
+  fixed a missing `libasound2` dependency. `packaging/smoke-fedora.sh` and
+  `packaging/smoke-debian.sh` make these checks reproducible with Podman or
+  Docker. A further local Debian pass with `CODEX_EXECUTABLE` confirmed that the
+  packaged client discovers `codex-cli 0.145.0` and keeps its real
+  `codex app-server --stdio` child running.
 - Updater format safety: Debian, Fedora/RHEL/SUSE, AppImage and unknown-family
   detection, per-format asset selection, trusted release metadata and the
   non-installing manual path have focused native, hook and component coverage.

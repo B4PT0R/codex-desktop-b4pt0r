@@ -39,6 +39,16 @@ test("builds native packages and a portable image for Linux", () => {
     "at-spi2-core",
     "util-linux",
   ]);
+  assert.deepEqual(manifest.build.deb.depends, [
+    "libasound2",
+    "libgtk-3-0",
+    "libnotify4",
+    "libnss3",
+    "libxss1",
+    "libxtst6",
+    "pkexec",
+    "xdg-utils",
+  ]);
 });
 
 test("ships host skills outside the ASAR at the path used in production", async () => {

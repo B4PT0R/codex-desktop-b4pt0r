@@ -66,6 +66,13 @@ jobs:
           packaging/smoke-fedora.sh
           dist/codex-desktop-linux_*_x86_64.rpm
           dist/codex-desktop-linux_*_x86_64.AppImage
+      - name: Smoke test DEB and AppImage on Debian
+        env:
+          CONTAINER_RUNTIME: docker
+        run: >-
+          packaging/smoke-debian.sh
+          dist/codex-desktop-linux_*_amd64.deb
+          dist/codex-desktop-linux_*_x86_64.AppImage
 
 # `npm run test:contract` intentionally remains a local compatibility check:
 # it generates schemas from the contributor's exact installed Codex binary.
