@@ -13,6 +13,8 @@ follows semantic versioning while the public interface is taking shape.
   checks their desktop and bundled resources, verifies linked libraries, and
   launches both native and AppImage builds as an unprivileged user under
   Xvfb/D-Bus.
+- Packaging scripts explicitly disable electron-builder publication so CI can
+  build and inspect artifacts without requiring a repository write token.
 - Reproducible Podman/Docker smoke scripts cover the same Debian and Fedora
   package paths locally.
 

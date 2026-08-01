@@ -27,8 +27,16 @@ test("builds native packages and a portable image for Linux", () => {
   assert.deepEqual(manifest.build.linux.target, ["deb", "rpm", "AppImage"]);
   assert.equal(
     manifest.scripts["electron:linux"],
-    "npm run build && electron-builder --linux deb rpm AppImage",
+    "npm run build && electron-builder --linux deb rpm AppImage --publish never",
   );
+  for (const script of [
+    "electron:deb",
+    "electron:rpm",
+    "electron:appimage",
+    "electron:linux",
+  ]) {
+    assert.match(manifest.scripts[script], /--publish never$/);
+  }
   assert.deepEqual(manifest.build.rpm.depends, [
     "gtk3",
     "libnotify",
