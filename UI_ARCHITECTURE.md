@@ -196,6 +196,9 @@ les mêmes séparateurs et la même palette ; leurs styles spécifiques ne porte
 que les widgets métier. Une carte dont le contenu ouvre un dialogue transmet
 ses attributs accessibles au bouton interne sans rendre le slot de contrôles
 imbriqué.
+La variante `density="compact"` conserve cette hiérarchie pour les inventaires
+volumineux sans imposer la hauteur des cartes de réglages ordinaires ; le
+catalogue d’Apps l’utilise pour rendre plusieurs entrées parcourables par écran.
 
 `CardStack` joint ces lignes en un groupe unique et possède seul le contour, le
 fond, les coins, l’ombre et les séparateurs externes. Son slot `controlBar`
@@ -297,8 +300,12 @@ ordre :
    relues ; l'édition experte de TOML reste le recours pour les rares champs
    volontairement non exposés. L'inventaire opérationnel reste distinct d'une
    modale de découverte recherchable : celle-ci présente les Apps accessibles
-   et disponibles, dévoile leur fiche et leurs outils à la demande, puis remet
-   la connexion au `installUrl` HTTP(S) fourni par Codex. Comme App Server
+   et disponibles, parcourt `app/list` jusqu'à épuisement du curseur, puis les
+   organise par catégories App Server et groupes alphabétiques. Une barre dense
+   réunit recherche et déroulants de catégorie et d'initiale ; disponibilité,
+   catégorie et initiale se composent sans dupliquer le catalogue.
+   La fiche dévoile ses outils à la demande, puis remet la connexion au
+   `installUrl` HTTP(S) fourni par Codex. Comme App Server
    n'expose pas `app/install`, le client ne simule pas cette mutation et propose
    une relecture explicite au retour du parcours hébergé.
 2. **MCP global** — fournir des contrôles bornés pour les champs de configuration officiellement

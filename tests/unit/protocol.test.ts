@@ -58,7 +58,7 @@ import {
 describe("constructeurs JSON-RPC", () => {
   it("construit la lecture et l'écriture atomique de la configuration Apps", () => {
     expect(appsInstalledParams("thread-1", true)).toEqual({ threadId: "thread-1", forceRefresh: true });
-    expect(appsListParams("thread-1", true, "next-page")).toEqual({ cursor: "next-page", limit: 50, threadId: "thread-1", forceRefetch: true });
+    expect(appsListParams("thread-1", true, "next-page")).toEqual({ cursor: "next-page", limit: 200, threadId: "thread-1", forceRefetch: true });
     expect(appsReadParams(["github"])).toEqual({ appIds: ["github"], includeTools: true });
     expect(appsConfigBatchWriteParams({
       appId: 'drive.team"one',

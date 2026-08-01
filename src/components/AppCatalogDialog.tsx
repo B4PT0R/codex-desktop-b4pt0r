@@ -22,6 +22,8 @@ export function AppCatalogDialog({
   const { t } = useI18n();
   const [filter, setFilter] = useState<CatalogFilter>("all");
   const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("all");
+  const [initial, setInitial] = useState("all");
   const [selected, setSelected] = useState<AppInfo>();
   const [details, setDetails] = useState<AppConfigurationEditorData>();
   const [openedInstall, setOpenedInstall] = useState<string>();
@@ -29,16 +31,28 @@ export function AppCatalogDialog({
     initialFocusSelector: "[data-dialog-initial-focus]",
     onEscape: onCancel,
   });
-  const visibleApps = useMemo(() => {
+  const categories = useMemo(() => Array.from(new Set(
+    apps.catalogApps.flatMap(appCategories),
+  )).sort((left, right) => left.localeCompare(right)), [apps.catalogApps]);
+  const matchingApps = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
     return apps.catalogApps.filter((app) => {
       if (filter === "connected" && !app.isAccessible) return false;
       if (filter === "available" && app.isAccessible) return false;
       if (!normalized) return true;
-      return [app.name, app.description, app.branding?.category, app.branding?.developer]
+      return [app.name, app.description, app.branding?.developer, ...appCategories(app)]
         .some((value) => value?.toLocaleLowerCase().includes(normalized));
     });
   }, [apps.catalogApps, filter, query]);
+  const categoryApps = useMemo(() => matchingApps.filter((app) =>
+    category === "all" || appCategories(app).includes(category)
+  ), [category, matchingApps]);
+  const initials = useMemo(() => Array.from(new Set(categoryApps.map(appInitial))).sort(), [categoryApps]);
+  const effectiveInitial = initial === "all" || initials.includes(initial) ? initial : "all";
+  const visibleApps = useMemo(() => categoryApps
+    .filter((app) => effectiveInitial === "all" || appInitial(app) === effectiveInitial)
+    .sort((left, right) => left.name.localeCompare(right.name)), [categoryApps, effectiveInitial]);
+  const groups = useMemo(() => groupAppsByInitial(visibleApps), [visibleApps]);
 
   const openDetails = (app: AppInfo) => {
     setSelected(app);
@@ -81,44 +95,72 @@ export function AppCatalogDialog({
             setDetails(undefined);
           }}
         /> : <>
-          <div className="app-catalog-search">
-            <Search aria-hidden="true" />
-            <input
-              aria-label={t("integrations.apps.search")}
-              data-dialog-initial-focus
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={t("integrations.apps.searchPlaceholder")}
-              type="search"
-              value={query}
-            />
-          </div>
-          <div aria-label={t("integrations.apps.catalogFilter")} className="settings-dialog-tabs" role="tablist">
-            {(["all", "connected", "available"] as const).map((value) => <button
-              aria-selected={filter === value}
-              className={filter === value ? "active" : undefined}
-              key={value}
-              onClick={() => setFilter(value)}
-              role="tab"
-              type="button"
-            >{t(`integrations.apps.filter.${value}`)}</button>)}
-          </div>
-          <CardStack className="app-catalog-list">
-            {visibleApps.length === 0 ? <div className="inventory-empty">{t("integrations.apps.catalogEmpty")}</div> : visibleApps.map((app) => <IconCard
-              icon={<Sparkles />}
-              key={app.id}
-              subtitle={app.description ?? t("integrations.apps.fallback")}
-              title={app.name}
-              trailing={<div className="app-catalog-card-actions">
-                <span className={`app-catalog-status ${app.isAccessible ? "connected" : "available"}`}>
-                  {app.isAccessible ? <Check aria-hidden="true" /> : null}
-                  {t(app.isAccessible ? "integrations.apps.connected" : "integrations.apps.availableToConnect")}
-                </span>
-                <RoundIconButton label={t("integrations.apps.viewDetails")} onClick={() => openDetails(app)} size="medium" variant="secondary" />
-              </div>}
+          <div className="app-catalog-toolbar">
+            <div className="app-catalog-search">
+              <Search aria-hidden="true" />
+              <input
+                aria-label={t("integrations.apps.search")}
+                data-dialog-initial-focus
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={t("integrations.apps.searchPlaceholder")}
+                type="search"
+                value={query}
+              />
+            </div>
+            <select
+              aria-label={t("integrations.apps.categories")}
+              onChange={(event) => { setCategory(event.target.value); setInitial("all"); }}
+              value={category}
             >
-              {(app.branding?.category || app.branding?.developer) && <small className="app-catalog-meta">{[app.branding?.category, app.branding?.developer].filter(Boolean).join(" · ")}</small>}
-            </IconCard>)}
-          </CardStack>
+              <option value="all">{t("integrations.apps.categoryAll")}</option>
+              {categories.map((value) => <option key={value} value={value}>{formatCategory(value)}</option>)}
+            </select>
+            <select
+              aria-label={t("integrations.apps.alphabeticalIndex")}
+              className="app-catalog-initial-picker"
+              onChange={(event) => setInitial(event.target.value)}
+              value={effectiveInitial}
+            >
+              <option value="all">{t("integrations.apps.alphabetLabel")}</option>
+              {initials.map((value) => <option key={value} value={value}>{value}</option>)}
+            </select>
+          </div>
+          <div className="app-catalog-filter-row">
+            <div aria-label={t("integrations.apps.catalogFilter")} className="settings-dialog-tabs" role="tablist">
+              {(["all", "connected", "available"] as const).map((value) => <button
+                aria-selected={filter === value}
+                className={filter === value ? "active" : undefined}
+                key={value}
+                onClick={() => setFilter(value)}
+                role="tab"
+                type="button"
+              >{t(`integrations.apps.filter.${value}`)}</button>)}
+            </div>
+            <div className="app-catalog-results-summary">
+              {t(visibleApps.length === 1 ? "integrations.apps.resultOne" : "integrations.apps.resultMany", { count: visibleApps.length })}
+            </div>
+          </div>
+          <div className="app-catalog-list">
+            {visibleApps.length === 0 ? <div className="inventory-empty">{t("integrations.apps.catalogEmpty")}</div> : groups.map(([letter, groupedApps]) => <section className="app-catalog-letter-group" key={letter}>
+              <h3><span>{letter}</span><small>{groupedApps.length}</small></h3>
+              <CardStack>
+                {groupedApps.map((app) => <IconCard
+                  density="compact"
+                  icon={<Sparkles />}
+                  key={app.id}
+                  subtitle={app.description ?? t("integrations.apps.fallback")}
+                  title={app.name}
+                  trailing={<div className="app-catalog-card-actions">
+                    <span className={`app-catalog-status ${app.isAccessible ? "connected" : "available"}`}>
+                      {app.isAccessible ? <Check aria-hidden="true" /> : null}
+                      {t(app.isAccessible ? "integrations.apps.connected" : "integrations.apps.availableToConnect")}
+                    </span>
+                    <RoundIconButton label={t("integrations.apps.viewDetails")} onClick={() => openDetails(app)} size="small" variant="secondary" />
+                  </div>}
+                />)}
+              </CardStack>
+            </section>)}
+          </div>
         </>}
       </div>
       <div className="modal-actions">
@@ -126,6 +168,32 @@ export function AppCatalogDialog({
       </div>
     </div>
   </div>;
+}
+
+function appCategories(app: AppInfo) {
+  return Array.from(new Set([
+    ...(app.appMetadata?.categories ?? []),
+    ...(app.branding?.category ? [app.branding.category] : []),
+  ].map((value) => value.trim()).filter(Boolean)));
+}
+
+function appInitial(app: AppInfo) {
+  const normalized = app.name.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLocaleUpperCase();
+  return normalized.match(/[A-Z0-9]/)?.[0] ?? "#";
+}
+
+function groupAppsByInitial(apps: AppInfo[]): Array<[string, AppInfo[]]> {
+  const groups = new Map<string, AppInfo[]>();
+  for (const app of apps) {
+    const key = appInitial(app);
+    groups.set(key, [...(groups.get(key) ?? []), app]);
+  }
+  return Array.from(groups.entries());
+}
+
+function formatCategory(value: string) {
+  const label = value.replace(/[-_]+/g, " ");
+  return label.charAt(0).toLocaleUpperCase() + label.slice(1);
 }
 
 function AppDetails({ app, details, openedInstall, onBack, onConfigure, onInstall, onRefresh }: {

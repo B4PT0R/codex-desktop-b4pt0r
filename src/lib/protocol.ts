@@ -527,7 +527,7 @@ export function collaborationModeListParams() {
 export function appsListParams(threadId?: string, forceRefetch = false, cursor?: string) {
   return {
     cursor: cursor ?? null,
-    limit: 50,
+    limit: 200,
     threadId: threadId ?? null,
     forceRefetch,
   };

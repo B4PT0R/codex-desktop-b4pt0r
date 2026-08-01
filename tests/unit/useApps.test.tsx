@@ -19,17 +19,21 @@ beforeEach(() => {
 });
 
 describe("apps connectées", () => {
-  it("parcourt le catalogue paginé dans une limite bornée", async () => {
+  it("parcourt tout le catalogue au-delà des quatre premières pages", async () => {
     requestMock.mockImplementation((method: string, params: { cursor?: string | null }) => {
       if (method === "app/installed") return Promise.resolve({ apps: [] });
-      return Promise.resolve(params.cursor
-        ? { data: [app("second", false, true)], nextCursor: null }
-        : { data: [app("first", true, true)], nextCursor: "page-2" });
+      const page = params.cursor ? Number(params.cursor) : 0;
+      return Promise.resolve({
+        data: [app(`app-${page}`, page === 0, true)],
+        nextCursor: page < 5 ? String(page + 1) : null,
+      });
     });
     const { result } = renderHook(() => useApps({ enabled: true }));
     await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.catalogApps.map(({ id }) => id)).toEqual(["first", "second"]);
-    expect(requestMock).toHaveBeenCalledWith("app/list", expect.objectContaining({ cursor: "page-2", forceRefetch: false }));
+    expect(result.current.catalogApps.map(({ id }) => id)).toEqual([
+      "app-0", "app-1", "app-2", "app-3", "app-4", "app-5",
+    ]);
+    expect(requestMock).toHaveBeenCalledWith("app/list", expect.objectContaining({ cursor: "5", forceRefetch: false, limit: 200 }));
   });
 
   it("sépare les Apps configurables de celles proposées au compositeur", async () => {
@@ -49,7 +53,7 @@ describe("apps connectées", () => {
     ]);
     expect(requestMock).toHaveBeenCalledWith("app/list", {
       cursor: null,
-      limit: 50,
+      limit: 200,
       threadId: "thr",
       forceRefetch: true,
     });
@@ -112,33 +116,19 @@ describe("apps connectées", () => {
         method: "app/list/updated",
         params: {
           data: [
-            {
-              id: "docs",
-              name: "Documents",
+            ...Array.from({ length: 150 }, (_, index) => ({
+              id: `docs-${index}`,
+              name: `Documents ${index}`,
               isAccessible: true,
               isEnabled: true,
-            },
+            })),
             { id: 42 },
           ],
         },
       }),
     );
-    expect(result.current.configurableApps).toEqual([
-      {
-        id: "docs",
-        name: "Documents",
-        description: null,
-        logoUrl: null,
-        logoUrlDark: null,
-        distributionChannel: null,
-        branding: null,
-        appMetadata: null,
-        installUrl: null,
-        isAccessible: true,
-        isEnabled: true,
-        pluginDisplayNames: [],
-      },
-    ]);
+    expect(result.current.catalogApps).toHaveLength(150);
+    expect(result.current.catalogApps[149].id).toBe("docs-149");
   });
 
   it("lit la politique et les outils puis enregistre une configuration atomique", async () => {

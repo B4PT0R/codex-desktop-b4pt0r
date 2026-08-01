@@ -14,7 +14,8 @@ every visual iteration. Historical captures remain available through Git.
 - `settings-apps-light-1164x860.png` — light-theme Apps baseline showing runtime
   availability, quick activation, shared defaults and per-connector settings.
 - `settings-apps-catalog-light-1164x860.png` — light-theme Apps discovery modal
-  showing search, connection state and progressive access to connector details.
+  showing search, category and alphabetical navigation, connection state and
+  progressive access to connector details.
 - `settings-memory-light-1164x860.png` — light-theme Settings baseline showing
   shared icon subheaders, joined option cards and the local-memory reset action.
 - `settings-navigation-light-1164x860.png` — light-theme Settings navigation

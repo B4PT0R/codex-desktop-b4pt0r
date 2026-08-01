@@ -6,6 +6,7 @@ export function IconCard({
   className = "",
   contentDisabled = false,
   contentButtonProps,
+  density = "regular",
   icon,
   onContentClick,
   subtitle,
@@ -20,6 +21,7 @@ export function IconCard({
     ButtonHTMLAttributes<HTMLButtonElement>,
     "children" | "className" | "disabled" | "onClick"
   >;
+  density?: "compact" | "regular";
   icon?: ReactNode;
   onContentClick?: () => void;
   subtitle?: ReactNode;
@@ -39,7 +41,7 @@ export function IconCard({
 
   return (
     <Component
-      className={`icon-card${icon !== undefined ? " has-icon" : ""} ${className}`.trim()}
+      className={`icon-card${icon !== undefined ? " has-icon" : ""}${density === "compact" ? " compact" : ""} ${className}`.trim()}
     >
       {icon !== undefined && <span className="icon-card-icon">{icon}</span>}
       {onContentClick ? (

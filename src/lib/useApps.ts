@@ -23,6 +23,9 @@ import {
 } from "./protocol";
 import { useI18n } from "../i18n/I18nProvider";
 
+const MAX_APP_CATALOG_ENTRIES = 5_000;
+const MAX_APP_CATALOG_PAGES = 25;
+
 export type AppConfigurationEditorData = {
   app?: AppInfo;
   config: AppConfiguration;
@@ -99,7 +102,7 @@ export function useApps({
     return subscribeAppServerMessages((message) => {
       if (message.method !== "app/list/updated") return;
       const data = appListFromNotification(message.params);
-      if (data) setApps(data.slice(0, 100));
+      if (data) setApps(data.slice(0, MAX_APP_CATALOG_ENTRIES));
     });
   }, [enabled]);
 
@@ -207,16 +210,22 @@ export function useApps({
 async function readAppsCatalog(threadId?: string) {
   const result: AppInfo[] = [];
   let cursor: string | undefined;
-  for (let page = 0; page < 4; page += 1) {
+  const visitedCursors = new Set<string>();
+  for (let page = 0; page < MAX_APP_CATALOG_PAGES; page += 1) {
     const response = await request<AppsListResponse>(
       "app/list",
       appsListParams(threadId, page === 0, cursor),
     );
     result.push(...response.data.flatMap(normalizeAppInfo));
-    if (!response.nextCursor || result.length >= 200) break;
+    if (
+      !response.nextCursor ||
+      result.length >= MAX_APP_CATALOG_ENTRIES ||
+      visitedCursors.has(response.nextCursor)
+    ) break;
+    visitedCursors.add(response.nextCursor);
     cursor = response.nextCursor;
   }
-  return result.slice(0, 200);
+  return result.slice(0, MAX_APP_CATALOG_ENTRIES);
 }
 
 function selectActive(apps: AppInfo[]) {

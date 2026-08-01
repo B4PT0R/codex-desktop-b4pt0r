@@ -234,6 +234,22 @@ describe("réglages des intégrations", () => {
       isEnabled: true,
       pluginDisplayNames: [],
     };
+    const asana = {
+      ...drive,
+      id: "asana",
+      name: "Asana",
+      description: "Organiser des projets",
+      branding: { ...drive.branding, category: "Gestion de projet", developer: "Asana" },
+      appMetadata: { categories: ["Gestion de projet"], seoDescription: null, developer: "Asana", version: "1.0" },
+    };
+    const zoom = {
+      ...drive,
+      id: "zoom",
+      name: "Zoom",
+      description: "Consulter des réunions",
+      branding: { ...drive.branding, category: "Communication", developer: "Zoom" },
+      appMetadata: { categories: ["Communication"], seoDescription: null, developer: "Zoom", version: "1.0" },
+    };
     const openInstall = vi.fn().mockResolvedValue(true);
     const readConfiguration = vi.fn().mockResolvedValue({
       app: drive,
@@ -242,15 +258,26 @@ describe("réglages des intégrations", () => {
       tools: [{ name: "search", title: "Rechercher", description: "Recherche Drive", isEnabled: true, disabledReason: null, isReadOnly: true }],
     });
     render(<AppsSettings apps={appsController({
-      catalogApps: [drive],
+      catalogApps: [zoom, drive, asana],
       openInstall,
       readConfiguration,
     })} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Parcourir les Apps" }));
     expect(screen.getByRole("dialog", { name: "Parcourir les Apps" })).toBeVisible();
+    expect(screen.getByRole("combobox", { name: "Catégories d’Apps" })).toBeVisible();
+    expect(screen.getByRole("combobox", { name: "Index alphabétique" })).toBeVisible();
+    expect(screen.getByText("3 Apps")).toBeVisible();
+    fireEvent.change(screen.getByRole("combobox", { name: "Catégories d’Apps" }), { target: { value: "Productivité" } });
+    expect(screen.getByText("Google Drive")).toBeVisible();
+    expect(screen.queryByText("Asana")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole("combobox", { name: "Catégories d’Apps" }), { target: { value: "all" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Index alphabétique" }), { target: { value: "Z" } });
+    expect(screen.getByText("Zoom")).toBeVisible();
+    expect(screen.queryByText("Google Drive")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole("combobox", { name: "Index alphabétique" }), { target: { value: "all" } });
     fireEvent.click(screen.getByRole("tab", { name: "Disponibles" }));
-    fireEvent.click(screen.getByRole("button", { name: "Détails" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Détails" })[1]);
     expect(await screen.findByText("Recherche Drive")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Connecter" }));
     await waitFor(() => expect(openInstall).toHaveBeenCalledWith(drive));

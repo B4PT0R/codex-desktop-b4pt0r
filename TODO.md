@@ -9,7 +9,7 @@ belongs in `CHANGELOG.md` and Git.
 ## Baseline
 
 Codex Desktop Linux is a functional independent Electron client for the
-official `codex app-server`. The current public release is v0.3.17.
+official `codex app-server`. The current public release is v0.4.0.
 
 The daily workflow covers conversation replay and concurrent activity,
 streaming Markdown/LaTeX, reasoning, plans, tools, approvals, diffs, files,
@@ -21,28 +21,12 @@ Compatibility is currently verified against installed `codex-cli 0.145.0`.
 
 ## Latest release
 
-Release v0.3.17 is a focused lifecycle and concurrency stabilization lot. It:
-
-- isolates Realtime startup and transcript state by parent conversation, keeps
-  bounded voice transcript caches across temporary navigation, and serializes
-  reset/stop/remote-close so a stale start cannot stop the next session;
-- prevents delayed thread creation, shell commands, turns and voice startup
-  from stealing or mutating a newer visible conversation;
-- ignores unscoped App Server errors in the conversation queue and keeps busy,
-  activity and terminal transitions strictly thread-scoped;
-- makes App Server startup single-flight and cancellation-safe;
-- serializes shared-browser enable/disable through persistence, isolates stale
-  Chromium promises, bounds MCP header/body/SSE waits, and cleans partially
-  initialized MCP sessions and temporary browser artifacts;
-- restricts renderer navigation to the exact app entry point, makes native
-  event delivery non-throwing, and limits automatic renderer recovery to two
-  attempts per minute before presenting a stable restart message;
-- accepts only allowlisted, exactly typed desktop preference patches while
-  preserving unknown fields already stored for forward compatibility;
-- adds deterministic GitHub CI, separates installed-Codex contract tests from
-  the default suite, corrects updater documentation, localizes the remaining
-  config placeholder and reuses the modal focus contract for AGENTS.md and
-  generated-image dialogs.
+Release v0.4.0 completes the first ergonomic Extensions surface: guided MCP
+server management, Apps defaults/configuration/discovery, Skills creation and a
+dedicated Plugin inventory. Settings now uses a shared component hierarchy and
+grouped navigation across all pages, with consistent responsive behavior and
+light-theme styling. App discovery consumes the authoritative paginated App
+Server catalog and remains dense enough for hundreds of entries.
 
 ## Durable constraints
 
@@ -62,8 +46,8 @@ Release v0.3.17 is a focused lifecycle and concurrency stabilization lot. It:
 
 ## Active objective
 
-Finish ergonomic Apps, MCP and Plugin support while keeping App Server as the
-sole capability and configuration authority.
+Validate v0.4.0 in packaged Electron and continue capability-driven per-thread
+extension controls while keeping App Server as the sole authority.
 
 Visual-work invariant: every frontend style or layout change starts with a real
 before screenshot and ends with a comparable after screenshot at the same
@@ -193,9 +177,20 @@ request that the installed protocol does not provide. Catalog cards distinguish
 connected and available Apps, progressively reveal `app/read` tool metadata,
 and open only the App Server-provided HTTP(S) `installUrl` through the existing
 managed-browser/system-browser boundary. Returning users explicitly refresh the
-authoritative `app/list` / `app/installed` state. Pagination is bounded to four
-pages / 200 entries. The inventory, catalog, detail and 840px layouts were
-reviewed in the live light-theme preview; both curated Apps captures are current.
+authoritative `app/list` / `app/installed` state. The catalog now consumes
+App Server pagination until cursor exhaustion, with repeated-cursor, 25-page and
+5,000-entry safety bounds instead of truncating the alphabetical inventory at
+200 entries. Search, connection state, source categories and an alphabetical
+index compose before letter-grouped cards; their compact toolbar keeps search,
+category and initial on one row, with category and A-Z exposed as dropdowns.
+The inventory, catalog, detail and
+840px layouts were reviewed in the live light-theme preview; both curated Apps
+captures are current.
+Catalog entries use the shared compact `IconCard` density: two-line rows retain
+icons, descriptions and trailing actions while avoiding full Settings-card
+height across inventories that may contain hundreds of Apps. Light-theme
+`CardStack` shadows now remain at contact depth so compact stacks do not leave
+grey halos around their lower corners.
 
 Completed Skills creation lot: retain App Server `skills/list` and
 `skills/config/write` as the discovery and activation authority, while adding a
@@ -374,14 +369,13 @@ and Git/worktree management without a stable App Server product contract.
   destinations fit at 1164x860 with compact shared buttons; the 840x620 layout
   scrolls the sidebar independently without clipping the page or controls.
   Search removes empty group headings and the console remains error-free.
-- Debian package: built successfully as `codex-desktop-linux 0.3.17` (amd64),
+- Debian package: built successfully as `codex-desktop-linux 0.4.0` (amd64),
   SHA-256
-  `0a50e029f683e66e7d8191e9a5f376efb3bad12b756a28dd80540f4d59ead681`;
-  package metadata, dependencies, bundled skill and AppArmor resources were
-  inspected directly.
-- Packaged Electron interaction check: not rerun for v0.3.17; the release lot
-  changes native lifecycle behavior and still needs the long-idle manual pass
-  listed below.
+  `ea614d2fd169bd91fc2755fbc0f1a6023127107cb7cc74817359d29b45db2893`;
+  package name, version, architecture and dependencies were inspected directly.
+- Packaged Electron interaction check: the preceding Apps-catalog build was
+  exercised after reinstalling v0.3.17; the version-only v0.4.0 artifact was not
+  relaunched because the active App Server is coupled to this session.
 
 Standard verification:
 

@@ -51,6 +51,14 @@ describe("carte à icône commune", () => {
     expect(open).toHaveBeenCalledOnce();
   });
 
+  it("expose une densité compacte pour les grands inventaires", () => {
+    const { container } = render(
+      <IconCard density="compact" title="Entrée de catalogue" />,
+    );
+
+    expect(container.firstChild).toHaveClass("icon-card", "compact");
+  });
+
   it("joint plusieurs cartes et accepte une barre de contrôle", () => {
     const { container } = render(
       <CardStack controlBar={<div className="settings-controls-bar">État</div>}>
