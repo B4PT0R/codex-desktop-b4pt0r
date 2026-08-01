@@ -30,6 +30,11 @@ describe("réglages des hooks", () => {
 
 function controller(): IntegrationsController {
   return {
+    addMcpServer: vi.fn(),
+    addingMcpServer: false,
+    removeMcpServer: vi.fn(),
+    removingMcpServers: [],
+    removableMcpServers: [],
     authenticateMcp: vi.fn(),
     authenticatingMcp: [],
     hooks: {
@@ -56,6 +61,7 @@ function controller(): IntegrationsController {
       warnings: [],
     },
     mcpServers: { data: [], loading: false },
+    mcpStartup: {},
     skills: { data: [], loading: false },
     refreshHooks: vi.fn(),
     refreshMcp: vi.fn(),

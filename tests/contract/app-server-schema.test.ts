@@ -5,6 +5,9 @@ import { join } from "node:path";
 import Ajv from "ajv";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
+  appEnabledConfigWriteParams,
+  appsConfigBatchWriteParams,
+  appsInstalledParams,
   automationThreadResumeParams,
   subagentDescendantsListParams,
   threadReadParams,
@@ -14,6 +17,7 @@ import {
   automationTurnStartParams,
   accountReadParams,
   appsListParams,
+  appsReadParams,
   backgroundTerminalsListParams,
   backgroundTerminalTerminateParams,
   collaborationModeListParams,
@@ -34,6 +38,8 @@ import {
   realtimeThreadForkParams,
   mcpServerStatusListParams,
   mcpServerOauthLoginParams,
+  mcpServerConfigWriteParams,
+  mcpServerConfigRemoveParams,
   hooksListParams,
   permissionProfileListParams,
   skillsConfigWriteParams,
@@ -225,13 +231,42 @@ describe("contrat Codex installé", () => {
       "properties.requirements",
     );
     expect(schema("McpServerRefreshResponse")).toBeDefined();
+    validates(
+      "ConfigValueWriteParams",
+      mcpServerConfigWriteParams({
+        name: "docs",
+        transport: "http",
+        url: "https://mcp.example.test",
+        startupTimeoutSec: 15,
+        defaultToolsApprovalMode: "prompt",
+        envHttpHeaders: { Authorization: "MCP_AUTH_HEADER" },
+      }),
+    );
+    validates("ConfigValueWriteParams", mcpServerConfigRemoveParams("docs"));
   });
   it("accepte le démarrage et l’annulation du login ChatGPT", () => {
     validates("LoginAccountParams", chatgptLoginParams());
     validates("CancelLoginAccountParams", cancelLoginParams("login-1"));
   });
-  it("accepte app/list", () =>
-    validates("AppsListParams", appsListParams("thr_1")));
+  it("accepte l’inventaire et l’activation globale des Apps", () => {
+    validates("AppsListParams", appsListParams("thr_1"));
+    validates("AppsInstalledParams", appsInstalledParams("thr_1"));
+    validates("AppsReadParams", appsReadParams(["github"]));
+    validates(
+      "ConfigValueWriteParams",
+      appEnabledConfigWriteParams("google.drive", false),
+    );
+    validates("ConfigBatchWriteParams", appsConfigBatchWriteParams({
+      appId: "github",
+      enabled: true,
+      approvalsReviewer: null,
+      destructiveEnabled: false,
+      openWorldEnabled: true,
+      defaultToolsApprovalMode: "prompt",
+      defaultToolsEnabled: true,
+      tools: { search: { enabled: true, approvalMode: "auto" } },
+    }));
+  });
   it("accepte la consommation d’un ticket de reset", () =>
     validates(
       "ConsumeAccountRateLimitResetCreditParams",
@@ -527,6 +562,13 @@ describe("contrat Codex installé", () => {
       "ListMcpServerStatusParams",
       mcpServerStatusListParams("thr_1", "cursor-1"),
     );
+    validates("McpServerStatusUpdatedNotification", {
+      threadId: "thr_1",
+      name: "github",
+      status: "failed",
+      error: "token expired",
+      failureReason: "reauthenticationRequired",
+    });
   });
   it("accepte la détection, l’import et l’historique d’agents externes", () => {
     validates(

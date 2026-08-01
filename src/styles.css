@@ -1736,7 +1736,10 @@ footer {
 }
 .overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: var(--interface-viewport-width, 100vw);
+  height: var(--interface-viewport-height, 100vh);
   background: #0009;
   display: grid;
   place-items: center;
@@ -1800,7 +1803,7 @@ footer {
   gap: 8px;
   margin-top: 20px;
 }
-.modal-actions button {
+.modal-actions button:not(.round-icon-button) {
   padding: 8px 14px;
   border: 1px solid #41413d;
   border-radius: 7px;
@@ -1835,12 +1838,14 @@ footer {
   grid-column: 1 / -1;
 }
 .modal-actions .danger {
-  border-color: #723d38;
-  background: #a84f46;
-  color: #fff;
+  border-color: #62413c;
+  background: #382825;
+  color: #dc9489;
 }
 .modal-actions .danger:hover:not(:disabled) {
-  background: #b95b51;
+  border-color: #86534b;
+  background: #4b2f2b;
+  color: #f0aaa0;
 }
 .user-input-modal {
   width: min(520px, calc(100vw - 40px));
@@ -1915,8 +1920,6 @@ footer {
 .user-input-submit {
   width: 100%;
   margin-top: 18px;
-  padding: 9px;
-  border-radius: 7px;
 }
 .user-input-submit:disabled {
   cursor: not-allowed;

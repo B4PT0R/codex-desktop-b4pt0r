@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  appEnabledConfigWriteParams,
+  appsConfigBatchWriteParams,
+  appsInstalledParams,
+  appsListParams,
+  appsReadParams,
   automationThreadResumeParams,
   automationThreadSecurityRestoreParams,
   automationThreadStartParams,
@@ -10,6 +15,8 @@ import {
   fuzzyFileSearchSessionStopParams,
   fuzzyFileSearchSessionUpdateParams,
   mcpServerOauthLoginParams,
+  mcpServerConfigWriteParams,
+  mcpServerConfigRemoveParams,
   hooksListParams,
   quotasFromRateLimits,
   consumeRateLimitResetCreditParams,
@@ -49,6 +56,100 @@ import {
   scheduledTaskPrompt,
 } from "../../src/lib/protocol";
 describe("constructeurs JSON-RPC", () => {
+  it("construit la lecture et l'écriture atomique de la configuration Apps", () => {
+    expect(appsInstalledParams("thread-1", true)).toEqual({ threadId: "thread-1", forceRefresh: true });
+    expect(appsListParams("thread-1", true, "next-page")).toEqual({ cursor: "next-page", limit: 200, threadId: "thread-1", forceRefetch: true });
+    expect(appsReadParams(["github"])).toEqual({ appIds: ["github"], includeTools: true });
+    expect(appsConfigBatchWriteParams({
+      appId: 'drive.team"one',
+      enabled: true,
+      approvalsReviewer: "user",
+      destructiveEnabled: false,
+      openWorldEnabled: true,
+      defaultToolsApprovalMode: "prompt",
+      defaultToolsEnabled: true,
+      tools: { 'search"repos': { enabled: false, approvalMode: "approve" } },
+    })).toEqual({
+      edits: [
+        { keyPath: 'apps."drive.team\\"one".enabled', value: true, mergeStrategy: "replace" },
+        { keyPath: 'apps."drive.team\\"one".approvals_reviewer', value: "user", mergeStrategy: "replace" },
+        { keyPath: 'apps."drive.team\\"one".destructive_enabled', value: false, mergeStrategy: "replace" },
+        { keyPath: 'apps."drive.team\\"one".open_world_enabled', value: true, mergeStrategy: "replace" },
+        { keyPath: 'apps."drive.team\\"one".default_tools_approval_mode', value: "prompt", mergeStrategy: "replace" },
+        { keyPath: 'apps."drive.team\\"one".default_tools_enabled', value: true, mergeStrategy: "replace" },
+        { keyPath: 'apps."drive.team\\"one".tools."search\\"repos".enabled', value: false, mergeStrategy: "replace" },
+        { keyPath: 'apps."drive.team\\"one".tools."search\\"repos".approval_mode', value: "approve", mergeStrategy: "replace" },
+      ],
+      filePath: null,
+      expectedVersion: null,
+      reloadUserConfig: true,
+    });
+  });
+  it("échappe l’identifiant d’une App dans sa clé de configuration", () => {
+    expect(appEnabledConfigWriteParams('drive.team"one\\two', false)).toEqual({
+      keyPath: 'apps."drive.team\\"one\\\\two".enabled',
+      value: false,
+      mergeStrategy: "upsert",
+    });
+  });
+  it("construit les configurations MCP usuelles sans options expertes", () => {
+    expect(mcpServerConfigWriteParams({
+      name: "docs-local",
+      transport: "stdio",
+      command: "npx",
+      args: ["-y", "@acme/docs"],
+      cwd: "/project",
+      env: { DOCS_TOKEN: "value" },
+    })).toEqual({
+      keyPath: 'mcp_servers."docs-local"',
+      value: {
+        command: "npx",
+        args: ["-y", "@acme/docs"],
+        cwd: "/project",
+        env: { DOCS_TOKEN: "value" },
+      },
+      mergeStrategy: "upsert",
+    });
+    expect(mcpServerConfigWriteParams({
+      name: "remote",
+      transport: "http",
+      url: "https://mcp.example.test",
+      bearerTokenEnvVar: "MCP_TOKEN",
+    }).value).toEqual({
+      url: "https://mcp.example.test",
+      bearer_token_env_var: "MCP_TOKEN",
+    });
+  });
+  it("traduit les réglages MCP avancés vers les noms natifs de config.toml", () => {
+    expect(mcpServerConfigWriteParams({
+      name: "remote",
+      transport: "http",
+      url: "https://mcp.example.test",
+      startupTimeoutSec: 15,
+      toolTimeoutSec: 90,
+      defaultToolsApprovalMode: "writes",
+      enabledTools: ["search", "read"],
+      disabledTools: ["delete"],
+      httpHeaders: { "X-Client": "desktop" },
+      envHttpHeaders: { Authorization: "MCP_AUTH_HEADER" },
+    }).value).toEqual({
+      url: "https://mcp.example.test",
+      startup_timeout_sec: 15,
+      tool_timeout_sec: 90,
+      default_tools_approval_mode: "writes",
+      enabled_tools: ["search", "read"],
+      disabled_tools: ["delete"],
+      http_headers: { "X-Client": "desktop" },
+      env_http_headers: { Authorization: "MCP_AUTH_HEADER" },
+    });
+  });
+  it("supprime une table MCP avec la sémantique null documentée", () => {
+    expect(mcpServerConfigRemoveParams('docs"local')).toEqual({
+      keyPath: 'mcp_servers."docs\\"local"',
+      value: null,
+      mergeStrategy: "replace",
+    });
+  });
   it("lit les métadonnées d'un thread sans charger ni modifier son état", () => {
     expect(threadReadParams("thread-1")).toEqual({
       threadId: "thread-1",

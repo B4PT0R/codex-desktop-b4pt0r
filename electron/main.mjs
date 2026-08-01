@@ -54,6 +54,7 @@ import {
   setLaunchAtLogin,
 } from "./autostart.mjs";
 import { bundledSkillsRoot } from "./bundled-skills.mjs";
+import { createSkillScaffold } from "./skill-scaffold.mjs";
 import { AutomationScheduler } from "./automation-scheduler.mjs";
 import { OperationQueue } from "./operation-queue.mjs";
 import {
@@ -122,6 +123,10 @@ function registerIpc() {
       packaged: app.isPackaged,
       resourcesPath: process.resourcesPath,
     });
+  });
+  ipcMain.handle("desktop:create_skill_scaffold", (event, args) => {
+    trusted(event);
+    return createSkillScaffold(app.getPath("home"), args);
   });
   ipcMain.handle("desktop:read_desktop_settings", (event) => {
     trusted(event);

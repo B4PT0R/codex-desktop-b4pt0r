@@ -2,7 +2,7 @@ import { Trash2 } from "lucide-react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { SchedulerDeleteConfirmation } from "../lib/useSchedulerTools";
 import { useDialogFocus } from "../lib/useDialogFocus";
-import { RoundIcon } from "./RoundIcon";
+import { RoundIcon, RoundIconButton } from "./RoundIcon";
 
 export function SchedulerToolConfirmationDialog({
   confirmation,
@@ -52,22 +52,23 @@ export function SchedulerToolConfirmationDialog({
           </p>
         </div>
         <div className="modal-actions">
-          <button
+          <RoundIconButton
             data-dialog-initial-focus
             disabled={submitting}
+            label={t("common.cancel")}
             onClick={onCancel}
-          >
-            {t("common.cancel")}
-          </button>
-          <button
+            variant="secondary"
+          />
+          <RoundIconButton
             className="danger"
             disabled={submitting}
-            onClick={onConfirm}
-          >
-            {submitting
+            icon={Trash2}
+            label={submitting
               ? t("schedulerTool.delete.deleting")
               : t("schedulerTool.delete.confirm")}
-          </button>
+            onClick={onConfirm}
+            variant="secondary"
+          />
         </div>
       </div>
     </div>

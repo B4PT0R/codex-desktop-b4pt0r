@@ -10,10 +10,12 @@ import {
   Mic,
   Palette,
   Plug,
+  Puzzle,
   RadioTower,
   Search,
   Settings,
   ShieldCheck,
+  Sparkles,
   UserRound,
   Webhook,
 } from "lucide-react";
@@ -21,6 +23,7 @@ import { useState, type ComponentType } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import {
   filteredSettingsSections,
+  type SettingsSectionGroupId,
   type SettingsSectionId,
 } from "../lib/settingsSections";
 import { RoundIconButton } from "./RoundIcon";
@@ -35,7 +38,9 @@ const icons: Record<SettingsSectionId, ComponentType> = {
   appearance: Palette,
   voice: Mic,
   account: UserRound,
-  plugins: Boxes,
+  apps: Boxes,
+  skills: Sparkles,
+  plugins: Puzzle,
   mcp: Plug,
   permissions: ShieldCheck,
   config: FileCog,
@@ -55,6 +60,12 @@ export function SettingsNavigation({
   const { t } = useI18n();
   const [query, setQuery] = useState("");
   const sections = filteredSettingsSections(query, t);
+  const groups: Array<{ id: SettingsSectionGroupId; label: string }> = [
+    { id: "application", label: t("settings.group.application") },
+    { id: "agents", label: t("settings.group.agents") },
+    { id: "extensions", label: t("settings.group.extensions") },
+    { id: "advanced", label: t("settings.group.advanced") },
+  ];
 
   return (
     <aside
@@ -77,23 +88,25 @@ export function SettingsNavigation({
         />
       </label>
       <nav>
-        {sections.map((item) => (
-          <RoundIconButton
-            key={item.id}
-            aria-current={activeSection === item.id ? "page" : undefined}
-            gap="large"
-            icon={icons[item.id]}
-            label={
-              <>
-                <span>{item.label}</span>
-                {!item.available && <small>{t("settings.planned")}</small>}
-              </>
-            }
-            onClick={() => onSelectSection(item.id)}
-            size="large"
-            variant="tertiary"
-          />
-        ))}
+        {groups.map((group) => {
+          const items = sections.filter((item) => item.group === group.id);
+          if (items.length === 0) return null;
+          return <section className="settings-navigation-group" key={group.id} aria-labelledby={`settings-group-${group.id}`}>
+            <h2 id={`settings-group-${group.id}`}>{group.label}</h2>
+            {items.map((item) => (
+              <RoundIconButton
+                key={item.id}
+                aria-current={activeSection === item.id ? "page" : undefined}
+                gap="large"
+                icon={icons[item.id]}
+                label={<><span>{item.label}</span>{!item.available && <small>{t("settings.planned")}</small>}</>}
+                onClick={() => onSelectSection(item.id)}
+                size="medium"
+                variant="tertiary"
+              />
+            ))}
+          </section>;
+        })}
         {sections.length === 0 && <p>{t("settings.noResults")}</p>}
       </nav>
     </aside>

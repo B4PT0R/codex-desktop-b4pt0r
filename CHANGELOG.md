@@ -3,6 +3,40 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.4.0] - 2026-08-01
+
+### Added
+
+- Settings now provides guided management for MCP servers, including essential
+  and advanced creation, authentication state, refresh/reload controls and safe
+  removal when the App Server permits it.
+- Apps gain global defaults, per-App configuration and a searchable discovery
+  catalog with category and alphabetical navigation, progressive tool details
+  and hosted connector setup.
+- Skills gain guided creation and enablement controls, while Plugins have a
+  dedicated inventory that reflects the bundles exposed by Codex.
+- Settings navigation is grouped into Application, Agents & Capabilities,
+  Extensions and Advanced sections for faster orientation.
+
+### Changed
+
+- Settings pages now share reusable headers, control bars, alerts, notes,
+  subheaders, joined card stacks, icon cards and icon buttons, with consistent
+  light-theme contrast, spacing and responsive behavior.
+- App discovery follows `app/list` pagination to cursor exhaustion within
+  defensive safety bounds, and uses dense two-line cards suitable for large
+  catalogs.
+- Voice, Memory, General, Agent, Permissions, Remote Control, Scheduler and
+  Advanced Configuration adopt the same card hierarchy and action styling.
+
+### Fixed
+
+- Settings modals remain within the effective interface viewport at narrow
+  widths and non-default interface scales.
+- Light-theme cards, warnings, selectors, section titles and dividers no longer
+  inherit harsh dark borders, misleading disabled-like contrast or oversized
+  shadows.
+
 ## [0.3.17] - 2026-07-31
 
 ### Added

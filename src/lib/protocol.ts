@@ -114,11 +114,91 @@ export function automationThreadSecurityRestoreParams(
   return { threadId, permissions: permission, approvalPolicy };
 }
 
-export function configReadParams(cwd?: string) {
-  return { cwd: cwd ?? null, includeLayers: false };
+export function configReadParams(cwd?: string, includeLayers = false) {
+  return { cwd: cwd ?? null, includeLayers };
 }
 export function configValueWriteParams(keyPath: string, value: unknown) {
   return { keyPath, value, mergeStrategy: "upsert" as const };
+}
+
+type McpServerAdvancedDraft = {
+  startupTimeoutSec?: number;
+  toolTimeoutSec?: number;
+  defaultToolsApprovalMode?: "auto" | "prompt" | "writes" | "approve";
+  enabledTools?: string[];
+  disabledTools?: string[];
+};
+
+export type McpServerDraft = McpServerAdvancedDraft & (
+  {
+      name: string;
+      transport: "stdio";
+      command: string;
+      args: string[];
+      cwd?: string;
+      env?: Record<string, string>;
+      envVars?: string[];
+    }
+  | {
+      name: string;
+      transport: "http";
+      url: string;
+      bearerTokenEnvVar?: string;
+      httpHeaders?: Record<string, string>;
+      envHttpHeaders?: Record<string, string>;
+    }
+);
+
+export function mcpServerConfigWriteParams(draft: McpServerDraft) {
+  const escapedName = draft.name.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+  const shared = {
+    ...(draft.startupTimeoutSec !== undefined
+      ? { startup_timeout_sec: draft.startupTimeoutSec }
+      : {}),
+    ...(draft.toolTimeoutSec !== undefined
+      ? { tool_timeout_sec: draft.toolTimeoutSec }
+      : {}),
+    ...(draft.defaultToolsApprovalMode
+      ? { default_tools_approval_mode: draft.defaultToolsApprovalMode }
+      : {}),
+    ...(draft.enabledTools?.length ? { enabled_tools: draft.enabledTools } : {}),
+    ...(draft.disabledTools?.length ? { disabled_tools: draft.disabledTools } : {}),
+  };
+  return configValueWriteParams(
+    `mcp_servers."${escapedName}"`,
+    draft.transport === "stdio"
+      ? {
+          command: draft.command,
+          ...(draft.args.length > 0 ? { args: draft.args } : {}),
+          ...(draft.cwd ? { cwd: draft.cwd } : {}),
+          ...(draft.env && Object.keys(draft.env).length > 0
+            ? { env: draft.env }
+            : {}),
+          ...(draft.envVars?.length ? { env_vars: draft.envVars } : {}),
+          ...shared,
+        }
+      : {
+          url: draft.url,
+          ...(draft.bearerTokenEnvVar
+            ? { bearer_token_env_var: draft.bearerTokenEnvVar }
+            : {}),
+          ...(draft.httpHeaders && Object.keys(draft.httpHeaders).length > 0
+            ? { http_headers: draft.httpHeaders }
+            : {}),
+          ...(draft.envHttpHeaders && Object.keys(draft.envHttpHeaders).length > 0
+            ? { env_http_headers: draft.envHttpHeaders }
+            : {}),
+          ...shared,
+        },
+  );
+}
+export function mcpServerConfigRemoveParams(name: string) {
+  const escapedName = name.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+  return {
+    keyPath: `mcp_servers."${escapedName}"`,
+    value: null,
+    mergeStrategy: "replace" as const,
+  };
 }
 export function remoteControlEnableParams() {
   return {};
@@ -444,13 +524,77 @@ export function creditsNudgeParams(creditType: "credits" | "usage_limit") {
 export function collaborationModeListParams() {
   return {};
 }
-export function appsListParams(threadId?: string, forceRefetch = false) {
+export function appsListParams(threadId?: string, forceRefetch = false, cursor?: string) {
   return {
-    cursor: null,
-    limit: 50,
+    cursor: cursor ?? null,
+    limit: 200,
     threadId: threadId ?? null,
     forceRefetch,
   };
+}
+
+export function appsInstalledParams(threadId?: string, forceRefresh = false) {
+  return { threadId: threadId ?? null, forceRefresh };
+}
+
+export function appsReadParams(appIds: string[], includeTools = true) {
+  return { appIds, includeTools };
+}
+
+export function appEnabledConfigWriteParams(appId: string, enabled: boolean) {
+  const escapedAppId = appId.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+  return configValueWriteParams(`apps."${escapedAppId}".enabled`, enabled);
+}
+
+export type AppConfigurationDraft = {
+  appId?: string;
+  enabled: boolean;
+  approvalsReviewer: ApprovalsReviewer | null;
+  destructiveEnabled: boolean | null;
+  openWorldEnabled: boolean | null;
+  defaultToolsApprovalMode: "auto" | "prompt" | "writes" | "approve" | null;
+  defaultToolsEnabled?: boolean | null;
+  tools?: Record<string, {
+    enabled: boolean | null;
+    approvalMode: "auto" | "prompt" | "writes" | "approve" | null;
+  }>;
+};
+
+export function appsConfigBatchWriteParams(draft: AppConfigurationDraft) {
+  const prefix = draft.appId
+    ? `apps.${quotedConfigKey(draft.appId)}`
+    : "apps._default";
+  const edits = [
+    configEdit(`${prefix}.enabled`, draft.enabled),
+    configEdit(`${prefix}.approvals_reviewer`, draft.approvalsReviewer),
+    configEdit(`${prefix}.destructive_enabled`, draft.destructiveEnabled),
+    configEdit(`${prefix}.open_world_enabled`, draft.openWorldEnabled),
+    configEdit(`${prefix}.default_tools_approval_mode`, draft.defaultToolsApprovalMode),
+    ...(draft.appId
+      ? [configEdit(`${prefix}.default_tools_enabled`, draft.defaultToolsEnabled ?? null)]
+      : []),
+    ...Object.entries(draft.tools ?? {}).flatMap(([toolName, tool]) => {
+      const toolPrefix = `${prefix}.tools.${quotedConfigKey(toolName)}`;
+      return [
+        configEdit(`${toolPrefix}.enabled`, tool.enabled),
+        configEdit(`${toolPrefix}.approval_mode`, tool.approvalMode),
+      ];
+    }),
+  ];
+  return {
+    edits,
+    filePath: null,
+    expectedVersion: null,
+    reloadUserConfig: true,
+  };
+}
+
+function quotedConfigKey(value: string) {
+  return `"${value.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
+}
+
+function configEdit(keyPath: string, value: unknown) {
+  return { keyPath, value, mergeStrategy: "replace" as const };
 }
 
 export function externalAgentDetectParams(

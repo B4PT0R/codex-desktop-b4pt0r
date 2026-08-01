@@ -170,17 +170,8 @@
   white-space: nowrap;
 }
 
-.mcp-elicitation-url button {
-  display: inline-flex;
+.mcp-elicitation-url .round-icon-button {
   width: fit-content;
-  align-items: center;
-  gap: 6px;
-  color: #b8b8b3;
-  font-size: 11px;
-}
-
-.mcp-elicitation-url button svg {
-  width: 14px;
 }
 
 .mcp-elicitation-url > div {

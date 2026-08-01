@@ -1,4 +1,6 @@
 import { useI18n } from "../i18n/I18nProvider";
+import { SettingsPageHeader } from "./SettingsPageHeader";
+import { IconSubheader } from "./IconSubheader";
 import {
   useAppearance,
   type FontSizePreference,
@@ -6,6 +8,7 @@ import {
 } from "../lib/AppearanceProvider";
 import type { ReasoningSummaryMode } from "../lib/protocol";
 import type { CodexGlobalSettingsController } from "../lib/useCodexGlobalSettings";
+import { Alert } from "./Alert";
 import {
   MAX_VISIBLE_ACTIONS,
   MIN_VISIBLE_ACTIONS,
@@ -34,13 +37,11 @@ export function AppearanceSettings({
 
   return (
     <section className="settings-page">
-      <header>
-        <p>{t("settings.appearance.description")}</p>
-      </header>
-      <div className="settings-subsection-heading">
-        <strong>{t("settings.appearance.interface.title")}</strong>
-        <small>{t("settings.appearance.interface.description")}</small>
-      </div>
+      <SettingsPageHeader description={t("settings.appearance.description")} />
+      <IconSubheader
+        title={t("settings.appearance.interface.title")}
+        subtitle={t("settings.appearance.interface.description")}
+      />
       <div className="settings-card settings-fields">
         <label>
           <span className="settings-field-description">
@@ -79,10 +80,10 @@ export function AppearanceSettings({
           </select>
         </label>
       </div>
-      <div className="settings-subsection-heading">
-        <strong>{t("settings.appearance.conversation.title")}</strong>
-        <small>{t("settings.appearance.conversation.description")}</small>
-      </div>
+      <IconSubheader
+        title={t("settings.appearance.conversation.title")}
+        subtitle={t("settings.appearance.conversation.description")}
+      />
       <div className="settings-card settings-fields">
         <label>
           <span className="settings-field-description">
@@ -136,14 +137,14 @@ export function AppearanceSettings({
         </label>
       </div>
       {appearance.persistenceError && (
-        <p className="settings-inline-error" role="alert">
+        <Alert tone="error">
           {t("settings.persistence.error")} {appearance.persistenceError}
-        </p>
+        </Alert>
       )}
       {presentation.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("settings.appearance.visibleActions.error")} {presentation.error}
-        </div>
+        </Alert>
       )}
     </section>
   );

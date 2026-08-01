@@ -2,7 +2,7 @@ import { ShieldCheck } from "lucide-react";
 import type { Approval } from "../types";
 import { useDialogFocus } from "../lib/useDialogFocus";
 import { useI18n } from "../i18n/I18nProvider";
-import { RoundIcon } from "./RoundIcon";
+import { RoundIcon, RoundIconButton } from "./RoundIcon";
 
 type ApprovalDecision = "accept" | "session" | "decline";
 
@@ -37,17 +37,11 @@ export function ApprovalDialog({ approval, onDecide }: ApprovalDialogProps) {
         <p>{approval.description}</p>
         {approval.command && <code>{approval.command}</code>}
         <div className="modal-actions">
-          <button data-dialog-initial-focus onClick={() => onDecide("decline")}>
-            {t("approval.decline")}
-          </button>
+          <RoundIconButton data-dialog-initial-focus label={t("approval.decline")} onClick={() => onDecide("decline")} variant="secondary" />
           {approval.allowSession && (
-            <button onClick={() => onDecide("session")}>
-              {t("approval.session")}
-            </button>
+            <RoundIconButton label={t("approval.session")} onClick={() => onDecide("session")} variant="secondary" />
           )}
-          <button className="primary" onClick={() => onDecide("accept")}>
-            {t("approval.once")}
-          </button>
+          <RoundIconButton label={t("approval.once")} onClick={() => onDecide("accept")} variant="primary" />
         </div>
       </div>
     </div>

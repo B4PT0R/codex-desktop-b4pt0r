@@ -2,6 +2,10 @@ import { ExternalLink, LogIn, LogOut, X } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { AccountController } from "../lib/useAccount";
+import { IconCard } from "./IconCard";
+import { CardStack } from "./CardStack";
+import { RoundIconButton } from "./RoundIcon";
+import { Alert } from "./Alert";
 
 export function AccountAuthActions({
   controller,
@@ -17,10 +21,11 @@ export function AccountAuthActions({
     (account?.type === "amazonBedrock" && account.usesCodexManagedCredentials);
 
   return (
-    <section className="settings-card account-auth-actions">
-      <div>
-        <strong>{t("account.auth.title")}</strong>
-        <small>
+    <CardStack className="account-auth-actions">
+      <IconCard
+        title={t("account.auth.title")}
+        subtitle={
+          <>
           {controller.authPending
             ? controller.authOpenMode === "system"
               ? t("account.auth.pendingSystem")
@@ -28,62 +33,58 @@ export function AccountAuthActions({
             : account
               ? t("account.auth.connected")
               : t("account.auth.disconnected")}
-        </small>
-        {controller.authError && (
-          <p className="account-auth-error" role="alert">
-            {controller.authError}
-          </p>
-        )}
-      </div>
-      {controller.authPending ? (
-        <div className="account-auth-buttons">
-          <button onClick={() => void controller.reopenLogin()}>
-            <ExternalLink /> {t("account.auth.reopen")}
-          </button>
-          <button onClick={() => void controller.cancelLogin()}>
-            <X /> {t("common.cancel")}
-          </button>
-        </div>
-      ) : !account ? (
-        <button
-          disabled={controller.startingLogin}
-          onClick={() => void controller.startLogin()}
-        >
-          <LogIn />
-          {controller.startingLogin
-            ? t("account.auth.opening")
-            : t("account.auth.login")}
-        </button>
-      ) : confirmingLogout ? (
-        <div
-          className="account-logout-confirm"
-          role="group"
-          aria-label={t("common.confirm")}
-        >
-          <span>{t("account.auth.logoutQuestion")}</span>
-          <button onClick={() => setConfirmingLogout(false)}>
-            {t("common.cancel")}
-          </button>
-          <button
-            className="danger"
-            disabled={controller.loggingOut}
-            onClick={() => {
-              setConfirmingLogout(false);
-              void controller.logout();
-            }}
+          </>
+        }
+        trailing={controller.authPending ? (
+          <div className="account-auth-buttons">
+            <RoundIconButton icon={ExternalLink} label={t("account.auth.reopen")} onClick={() => void controller.reopenLogin()} size="medium" variant="secondary" />
+            <RoundIconButton icon={X} label={t("common.cancel")} onClick={() => void controller.cancelLogin()} size="medium" variant="secondary" />
+          </div>
+        ) : !account ? (
+          <RoundIconButton
+            disabled={controller.startingLogin}
+            icon={LogIn}
+            label={controller.startingLogin
+              ? t("account.auth.opening")
+              : t("account.auth.login")}
+            onClick={() => void controller.startLogin()}
+            size="medium"
+            variant="secondary"
+          />
+        ) : confirmingLogout ? (
+          <div
+            className="account-logout-confirm"
+            role="group"
+            aria-label={t("common.confirm")}
           >
-            {t("account.auth.logoutConfirm")}
-          </button>
-        </div>
-      ) : canLogout ? (
-        <button onClick={() => setConfirmingLogout(true)}>
-          <LogOut /> {t("account.auth.logout")}
-        </button>
-      ) : (
-        <small className="account-auth-external">
-          {t("account.auth.external")}
-        </small>
-      )}
-    </section>
+            <span>{t("account.auth.logoutQuestion")}</span>
+            <RoundIconButton label={t("common.cancel")} onClick={() => setConfirmingLogout(false)} size="medium" variant="secondary" />
+            <RoundIconButton
+              className="danger"
+              disabled={controller.loggingOut}
+              label={t("account.auth.logoutConfirm")}
+              onClick={() => {
+                setConfirmingLogout(false);
+                void controller.logout();
+              }}
+              size="medium"
+              variant="secondary"
+            />
+          </div>
+        ) : canLogout ? (
+          <RoundIconButton icon={LogOut} label={t("account.auth.logout")} onClick={() => setConfirmingLogout(true)} size="medium" variant="secondary" />
+        ) : (
+          <small className="account-auth-external">
+            {t("account.auth.external")}
+          </small>
+        )}
+      >
+        {controller.authError && (
+          <Alert tone="error">
+            {controller.authError}
+          </Alert>
+        )}
+      </IconCard>
+    </CardStack>
   );
 }

@@ -1,6 +1,7 @@
 import { RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
+import { SettingsPageHeader } from "./SettingsPageHeader";
 import type {
   FileOpener,
   WebSearchMode,
@@ -13,6 +14,12 @@ import type { DefaultThreadSettingsController } from "../lib/useDefaultThreadSet
 import { DefaultThreadSettingsField } from "./DefaultThreadSettingsField";
 import type { AppUpdateController } from "../lib/useAppUpdate";
 import { AppUpdateSettings } from "./AppUpdateSettings";
+import { CardStack } from "./CardStack";
+import { IconCard } from "./IconCard";
+import { RoundIconButton } from "./RoundIcon";
+import { IconSubheader } from "./IconSubheader";
+import { Note } from "./Note";
+import { Alert } from "./Alert";
 
 export type AppServerRestartController = {
   available: boolean;
@@ -50,16 +57,17 @@ export function GeneralSettings({
   const launchAtLogin = useLaunchAtLogin();
   return (
     <section className="settings-page">
-      <header>
-        <p>{t("settings.general.description")}</p>
-      </header>
-      <div className="settings-card settings-fields">
-        <label>
-          <span className="settings-field-description">
-            <strong>{t("settings.language.title")}</strong>
-            <small>{t("settings.language.detail")}</small>
-          </span>
-          <select
+      <SettingsPageHeader description={t("settings.general.description")} />
+      <IconSubheader
+        title={t("settings.general.applicationTitle")}
+        subtitle={t("settings.general.applicationDetail")}
+      />
+      <CardStack className="settings-fields">
+        <IconCard
+          as="label"
+          title={t("settings.language.title")}
+          subtitle={t("settings.language.detail")}
+          trailing={<select
             value={locale}
             aria-label={t("settings.language.title")}
             onChange={(event) =>
@@ -68,14 +76,13 @@ export function GeneralSettings({
           >
             <option value="fr">{t("settings.language.french")}</option>
             <option value="en">{t("settings.language.english")}</option>
-          </select>
-        </label>
-        <label>
-          <span className="settings-field-description">
-            <strong>{t("settings.fileOpener.title")}</strong>
-            <small>{t("settings.fileOpener.detail")}</small>
-          </span>
-          <select
+          </select>}
+        />
+        <IconCard
+          as="label"
+          title={t("settings.fileOpener.title")}
+          subtitle={t("settings.fileOpener.detail")}
+          trailing={<select
             aria-label={t("settings.fileOpener.title")}
             disabled={globalSettings.loading}
             value={globalSettings.fileOpener}
@@ -90,15 +97,14 @@ export function GeneralSettings({
                 {t(`settings.fileOpener.${opener}`)}
               </option>
             ))}
-          </select>
-        </label>
+          </select>}
+        />
         <DefaultThreadSettingsField controller={defaultThread} />
-        <label>
-          <span className="settings-field-description">
-            <strong>{t("settings.startup.title")}</strong>
-            <small>{t("settings.startup.detail")}</small>
-          </span>
-          <span className="startup-toggle">
+        <IconCard
+          as="label"
+          title={t("settings.startup.title")}
+          subtitle={t("settings.startup.detail")}
+          trailing={<span className="startup-toggle">
             <input
               type="checkbox"
               checked={launchAtLogin.enabled}
@@ -115,55 +121,56 @@ export function GeneralSettings({
                     : "settings.startup.disabled",
                 )
               : t("settings.startup.nativeOnly")}
-          </span>
-        </label>
-        <div className="settings-browser-row">
-          <span className="settings-field-description">
-            <strong>{t("settings.appServerRestart.title")}</strong>
-            <small>{t("settings.appServerRestart.detail")}</small>
-          </span>
-          <div className="settings-browser-status">
-            <button
-              className="app-server-restart-button secondary-button"
+          </span>}
+        />
+        <IconCard
+          title={t("settings.appServerRestart.title")}
+          subtitle={t("settings.appServerRestart.detail")}
+          trailing={<div className="settings-browser-status">
+            <RoundIconButton
               disabled={
                 !appServerRestart.available || appServerRestart.restarting
               }
-              onClick={() => void appServerRestart.restart()}
-            >
-              <RefreshCw
-                className={appServerRestart.restarting ? "spin" : ""}
-              />
-              {t(
+              icon={RefreshCw}
+              iconClassName={appServerRestart.restarting ? "spin" : ""}
+              label={t(
                 appServerRestart.restarting
                   ? "settings.appServerRestart.running"
                   : "settings.appServerRestart.action",
               )}
-            </button>
-          </div>
-        </div>
-      </div>
+              onClick={() => void appServerRestart.restart()}
+              size="medium"
+              variant="tertiary"
+            />
+          </div>}
+        />
+      </CardStack>
+      <IconSubheader
+        title={t("settings.general.maintenanceTitle")}
+        subtitle={t("settings.general.maintenanceDetail")}
+      />
       <AppUpdateSettings controller={appUpdate} />
       {persistenceError && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("settings.persistence.error")} {persistenceError}
-        </div>
+        </Alert>
       )}
       {defaultThread.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("settings.defaultThread.error", {
             detail: defaultThread.error,
           })}
-        </div>
+        </Alert>
       )}
       {appServerRestart.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("settings.appServerRestart.error")} {appServerRestart.error}
-        </div>
+        </Alert>
       )}
       {launchAtLogin.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("settings.startup.error")} {launchAtLogin.error}
-        </div>
+        </Alert>
       )}
     </section>
   );
@@ -182,9 +189,7 @@ export function BrowserSettings({
 
   return (
     <section className="settings-page">
-      <header>
-        <p>{t("settings.browser.description")}</p>
-      </header>
+      <SettingsPageHeader description={t("settings.browser.description")} />
       <div className="settings-card settings-fields">
         <label>
           <span className="settings-field-description">
@@ -267,48 +272,45 @@ export function BrowserSettings({
                     .filter(Boolean)
                     .join(" · ")}
                 </small>
-                <button
-                  className="secondary-button"
+                <RoundIconButton
                   disabled={chromium.loading}
+                  icon={RefreshCw}
+                  label={t("settings.chromium.repair")}
                   onClick={() => void chromium.install(integrations.reloadMcp)}
-                >
-                  {t("settings.chromium.repair")}
-                </button>
+                  variant="secondary"
+                />
               </>
             ) : chromium.status?.enabled && chromium.status.available ? (
               <>
                 <strong>{t("settings.chromium.needsRepair")}</strong>
-                <button
-                  className="secondary-button"
+                <RoundIconButton
                   disabled={chromium.loading}
+                  icon={RefreshCw}
+                  label={t("settings.chromium.repair")}
                   onClick={() => void chromium.install(integrations.reloadMcp)}
-                >
-                  {t("settings.chromium.repair")}
-                </button>
+                  variant="secondary"
+                />
               </>
             ) : chromium.status?.installing ? (
-              <button onClick={() => void chromium.cancelInstall()}>
-                {t("settings.chromium.cancel")}
-              </button>
+              <RoundIconButton label={t("settings.chromium.cancel")} onClick={() => void chromium.cancelInstall()} variant="secondary" />
             ) : confirmInstall ? (
               <div className="settings-browser-confirm" role="group">
                 <small>{t("settings.chromium.confirm")}</small>
                 <span>
-                  <button
-                    className="secondary-button"
+                  <RoundIconButton
+                    label={t("common.cancel")}
                     onClick={() => setConfirmInstall(false)}
-                  >
-                    {t("common.cancel")}
-                  </button>
-                  <button
+                    variant="secondary"
+                  />
+                  <RoundIconButton
                     disabled={!chromium.status?.installSupported}
+                    label={t("common.confirm")}
                     onClick={() => {
                       setConfirmInstall(false);
                       void chromium.install(integrations.reloadMcp);
                     }}
-                  >
-                    {t("common.confirm")}
-                  </button>
+                    variant="primary"
+                  />
                 </span>
               </div>
             ) : (
@@ -321,31 +323,28 @@ export function BrowserSettings({
           </div>
         </div>
       </div>
-      <div className="settings-card">
-        <div className="settings-explanation">
-          <span>
-            <strong>{t("settings.browser.routingTitle")}</strong>
-            <small>{t("settings.browser.routingDetail")}</small>
-          </span>
-        </div>
-      </div>
+      <Note
+        title={t("settings.browser.routingTitle")}
+      >
+        {t("settings.browser.routingDetail")}
+      </Note>
       {chromium.native &&
         !chromium.loading &&
         !chromium.status?.available &&
         !chromium.status?.installSupported && (
-          <div className="inventory-message" role="status">
+          <Alert>
             {t("settings.chromium.unsupported")}
-          </div>
+          </Alert>
         )}
       {chromium.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("settings.chromium.error")} {chromium.error}
-        </div>
+        </Alert>
       )}
       {globalSettings.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("webSearch.error")} {globalSettings.error}
-        </div>
+        </Alert>
       )}
     </section>
   );

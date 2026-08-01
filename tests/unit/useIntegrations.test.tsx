@@ -6,6 +6,7 @@ const requestMock = vi.hoisted(() => vi.fn());
 const subscribeMock = vi.hoisted(() => vi.fn());
 const openChromiumMock = vi.hoisted(() => vi.fn());
 const openUrlMock = vi.hoisted(() => vi.fn());
+const invokeMock = vi.hoisted(() => vi.fn());
 vi.mock("../../src/lib/codex", () => ({
   isDesktopApp: () => true,
   request: requestMock,
@@ -14,7 +15,7 @@ vi.mock("../../src/lib/codex", () => ({
 vi.mock("../../src/lib/useChromium", () => ({
   openInChromium: openChromiumMock,
 }));
-vi.mock("../../src/lib/nativeBridge", () => ({ openUrl: openUrlMock }));
+vi.mock("../../src/lib/nativeBridge", () => ({ invoke: invokeMock, openUrl: openUrlMock }));
 
 import { useIntegrations } from "../../src/lib/useIntegrations";
 
@@ -32,9 +33,85 @@ beforeEach(() => {
   subscribeMock.mockReturnValue(vi.fn());
   openChromiumMock.mockReset().mockResolvedValue(undefined);
   openUrlMock.mockReset().mockResolvedValue(undefined);
+  invokeMock.mockReset().mockResolvedValue(undefined);
 });
 
 describe("inventaire des intégrations", () => {
+  it("crée un skill borné puis recharge l’inventaire App Server", async () => {
+    requestMock.mockResolvedValue({ data: [{ cwd: "/project", skills: [], errors: [] }] });
+    const { result } = renderHook(() => useIntegrations({ cwd: "/project", enabled: false }));
+    let created = false;
+    await act(async () => {
+      created = await result.current.createSkill({
+        name: "review-changes",
+        description: "Relire les changements.",
+        instructions: "# Workflow\n\nInspecter le diff.",
+        scope: "repo",
+      });
+    });
+    expect(created).toBe(true);
+    expect(invokeMock).toHaveBeenCalledWith("create_skill_scaffold", {
+      name: "review-changes",
+      description: "Relire les changements.",
+      instructions: "# Workflow\n\nInspecter le diff.",
+      scope: "repo",
+      workspace: "/project",
+    });
+    expect(requestMock).toHaveBeenCalledWith("skills/list", { cwds: ["/project"], forceReload: true });
+  });
+
+  it("écrit puis recharge un nouveau serveur MCP", async () => {
+    requestMock
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({ data: [], nextCursor: null })
+      .mockResolvedValueOnce({ layers: [] });
+    const { result } = renderHook(() =>
+      useIntegrations({ cwd: "/project", enabled: false }),
+    );
+    let added = false;
+    await act(async () => {
+      added = await result.current.addMcpServer({
+        name: "docs",
+        transport: "http",
+        url: "https://mcp.example.test",
+      });
+    });
+    expect(added).toBe(true);
+    expect(requestMock).toHaveBeenNthCalledWith(1, "config/value/write", {
+      keyPath: 'mcp_servers."docs"',
+      value: { url: "https://mcp.example.test" },
+      mergeStrategy: "upsert",
+    });
+    expect(requestMock).toHaveBeenNthCalledWith(2, "config/mcpServer/reload");
+    expect(requestMock).toHaveBeenNthCalledWith(3, "mcpServerStatus/list", {
+      cursor: null,
+      detail: "toolsAndAuthOnly",
+      limit: 100,
+      threadId: null,
+    });
+  });
+  it("supprime puis recharge un serveur MCP de la configuration utilisateur", async () => {
+    requestMock
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({ data: [], nextCursor: null })
+      .mockResolvedValueOnce({ layers: [] });
+    const { result } = renderHook(() =>
+      useIntegrations({ cwd: "/project", enabled: false }),
+    );
+    let removed = false;
+    await act(async () => {
+      removed = await result.current.removeMcpServer("docs");
+    });
+    expect(removed).toBe(true);
+    expect(requestMock).toHaveBeenNthCalledWith(1, "config/value/write", {
+      keyPath: 'mcp_servers."docs"',
+      value: null,
+      mergeStrategy: "replace",
+    });
+    expect(requestMock).toHaveBeenNthCalledWith(2, "config/mcpServer/reload");
+  });
   it("charge et normalise les hooks sans charger les autres intégrations", async () => {
     requestMock.mockResolvedValue({
       data: [
@@ -102,6 +179,22 @@ describe("inventaire des intégrations", () => {
             ],
           });
         }
+        if (method === "config/read") {
+          return Promise.resolve({
+            layers: [
+              {
+                name: { type: "user", file: "/home/alice/.codex/config.toml", profile: null },
+                config: { mcp_servers: { first: {}, second: {} } },
+                version: "1",
+              },
+              {
+                name: { type: "system", file: "/etc/codex/config.toml" },
+                config: { mcp_servers: { builtin: {} } },
+                version: "1",
+              },
+            ],
+          });
+        }
         return Promise.resolve({
           data: [{ name: params?.cursor ? "second" : "first", tools: {} }],
           nextCursor: params?.cursor ? null : "page-2",
@@ -118,6 +211,7 @@ describe("inventaire des intégrations", () => {
     expect(result.current.mcpServers.data.map((server) => server.name)).toEqual(
       ["first", "second"],
     );
+    expect(result.current.removableMcpServers).toEqual(["first", "second"]);
     expect(requestMock).toHaveBeenCalledWith("skills/list", {
       cwds: ["/project"],
       forceReload: true,
@@ -180,6 +274,55 @@ describe("inventaire des intégrations", () => {
         requestMock.mock.calls.filter(([method]) => method === "skills/list"),
       ).toHaveLength(initialSkillCalls + 1),
     );
+  });
+
+  it("conserve seulement l’état de démarrage MCP du thread courant", async () => {
+    requestMock.mockImplementation((method: string) =>
+      Promise.resolve(
+        method === "skills/list"
+          ? { data: [] }
+          : { data: [], nextCursor: null },
+      ),
+    );
+    const { result, rerender } = renderHook(
+      ({ threadId }) =>
+        useIntegrations({ cwd: "/project", enabled: true, threadId }),
+      { initialProps: { threadId: "thread-1" as string | undefined } },
+    );
+    await waitFor(() => expect(subscribeMock).toHaveBeenCalledOnce());
+    const handler = subscribeMock.mock.calls[0][0];
+
+    act(() => {
+      handler({
+        method: "mcpServer/startupStatus/updated",
+        params: {
+          threadId: "another-thread",
+          name: "ignored",
+          status: "failed",
+          error: "wrong thread",
+        },
+      });
+      handler({
+        method: "mcpServer/startupStatus/updated",
+        params: {
+          threadId: "thread-1",
+          name: "github",
+          status: "failed",
+          error: "token expired",
+          failureReason: "reauthenticationRequired",
+        },
+      });
+    });
+    expect(result.current.mcpStartup).toEqual({
+      github: {
+        status: "failed",
+        error: "token expired",
+        failureReason: "reauthenticationRequired",
+      },
+    });
+
+    rerender({ threadId: "thread-2" });
+    await waitFor(() => expect(result.current.mcpStartup).toEqual({}));
   });
 
   it("recharge explicitement la configuration MCP avant l’inventaire", async () => {

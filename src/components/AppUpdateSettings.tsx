@@ -1,6 +1,10 @@
 import { Check, Download, RefreshCw } from "lucide-react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { AppUpdateController } from "../lib/useAppUpdate";
+import { CardStack } from "./CardStack";
+import { IconCard } from "./IconCard";
+import { RoundIconButton } from "./RoundIcon";
+import { Alert } from "./Alert";
 
 export function AppUpdateSettings({
   controller,
@@ -14,98 +18,94 @@ export function AppUpdateSettings({
 
   return (
     <>
-      <div className="settings-card settings-fields app-update-card">
-        <div className="settings-browser-row">
-          <span className="settings-field-description">
-            <strong>{t("settings.updates.client")}</strong>
-            <small>{t("settings.updates.clientDetail")}</small>
-          </span>
-          <code className="app-version-value">
+      <CardStack className="settings-fields app-update-card">
+        <IconCard
+          title={t("settings.updates.client")}
+          subtitle={t("settings.updates.clientDetail")}
+          trailing={<code className="app-version-value">
             {controller.versions
               ? `v${controller.versions.clientVersion}`
               : t("settings.updates.loading")}
-          </code>
-        </div>
-        <div className="settings-browser-row">
-          <span className="settings-field-description">
-            <strong>{t("settings.updates.codex")}</strong>
-            <small>{t("settings.updates.codexDetail")}</small>
-          </span>
-          <code className="app-version-value">
+          </code>}
+        />
+        <IconCard
+          title={t("settings.updates.codex")}
+          subtitle={t("settings.updates.codexDetail")}
+          trailing={<code className="app-version-value">
             {controller.versions?.codexVersion ??
               (controller.loadingVersions
                 ? t("settings.updates.loading")
                 : t("settings.updates.unavailable"))}
-          </code>
-        </div>
-        <div className="settings-browser-row app-update-action-row">
-          <span className="settings-field-description">
-            <strong>{t("settings.updates.title")}</strong>
-            <small>{updateMessage(controller, t)}</small>
-          </span>
-          <div className="settings-browser-status">
+          </code>}
+        />
+        <IconCard
+          className="app-update-action-row"
+          title={t("settings.updates.title")}
+          subtitle={updateMessage(controller, t)}
+          trailing={<div className="settings-browser-status">
             {controller.updateInstalled ? (
-              <button
-                className="app-server-restart-button secondary-button"
+              <RoundIconButton
                 disabled
-              >
-                <Check />
-                {t("settings.updates.installed")}
-              </button>
+                icon={Check}
+                label={t("settings.updates.installed")}
+                size="medium"
+                variant="tertiary"
+              />
             ) : canInstall ? (
-              <button
-                className="app-server-restart-button secondary-button"
+              <RoundIconButton
                 disabled={controller.installing}
-                onClick={() => void controller.install()}
-              >
-                <Download />
-                {t(
+                icon={Download}
+                label={t(
                   controller.installing
                     ? "settings.updates.installing"
                     : "settings.updates.install",
                 )}
-              </button>
+                onClick={() => void controller.install()}
+                size="medium"
+                variant="tertiary"
+              />
             ) : (
-              <button
-                className="app-server-restart-button secondary-button"
+              <RoundIconButton
                 disabled={
                   !controller.native ||
                   controller.checking ||
                   controller.loadingVersions
                 }
-                onClick={() => void controller.check()}
-              >
-                <RefreshCw className={controller.checking ? "spin" : ""} />
-                {t(
+                icon={RefreshCw}
+                iconClassName={controller.checking ? "spin" : ""}
+                label={t(
                   controller.checking
                     ? "settings.updates.checking"
                     : "settings.updates.check",
                 )}
-              </button>
+                onClick={() => void controller.check()}
+                size="medium"
+                variant="tertiary"
+              />
             )}
-          </div>
-        </div>
-      </div>
+          </div>}
+        />
+      </CardStack>
       {controller.updateInstalled && (
-        <div
-          className="inventory-message neutral app-update-restart-message"
-          role="status"
+        <Alert
+          className="app-update-restart-message"
+          tone="neutral"
           aria-live="polite"
         >
           <Check />
           {t("settings.updates.restartRequired")}
-        </div>
+        </Alert>
       )}
       {controller.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("settings.updates.error")} {controller.error}
-        </div>
+        </Alert>
       )}
       {controller.versions?.codexError && (
-        <div className="inventory-message warning">
+        <Alert>
           {t("settings.updates.codexError")}{" "}
           {controller.versions.codexError}
-        </div>
+        </Alert>
       )}
     </>
   );

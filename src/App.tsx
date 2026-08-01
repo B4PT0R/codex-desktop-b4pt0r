@@ -19,6 +19,7 @@ import {
   type AppServerMessage,
 } from "./lib/codex";
 import type {
+  AppInfo,
   ThreadListResponse,
   ThreadStartResponse,
 } from "./lib/appServerTypes";
@@ -33,6 +34,7 @@ import {
 import type { AgentActivity } from "./lib/activity";
 import {
   demoTelemetry,
+  demoApps,
   demoQuotas,
   demoResetCredits,
   demoSkills,
@@ -47,7 +49,10 @@ import { useThreadHistory } from "./lib/useThreadHistory";
 import { useDemoPlayback } from "./lib/useDemoPlayback";
 import { useInteractiveRequests } from "./lib/useInteractiveRequests";
 import { useThreadActions } from "./lib/useThreadActions";
-import { useIntegrations } from "./lib/useIntegrations";
+import {
+  useIntegrations,
+  type IntegrationsController,
+} from "./lib/useIntegrations";
 import { useCapabilityCatalog } from "./lib/useCapabilityCatalog";
 import { useAccount } from "./lib/useAccount";
 import { useAppUpdate } from "./lib/useAppUpdate";
@@ -247,7 +252,7 @@ export default function App() {
   }, []);
   const integrations = useIntegrations({
     cwd,
-    enabled: settings === "plugins" || settings === "mcp",
+    enabled: settings === "skills" || settings === "mcp",
     hooksEnabled: settings === "hooks",
     threadId,
   });
@@ -385,7 +390,7 @@ export default function App() {
   const threadSearch = useThreadSearch(connection.connected);
   const rateLimits = useRateLimits(connection.connected);
   const apps = useApps({
-    enabled: appsEnabled || settings === "plugins",
+    enabled: appsEnabled || settings === "apps",
     threadId,
   });
   useEffect(() => setWorkPanel(undefined), [threadId]);
@@ -943,18 +948,110 @@ export default function App() {
     return threadHistory.resume(threadId);
   }
   const currentThread = threads.find((thread) => thread.id === threadId);
+  const displayedApps = isDemoPreview()
+    ? {
+        ...apps,
+        apps: demoApps.filter((app) => app.isEnabled),
+        catalogApps: demoApps,
+        configurableApps: demoApps.filter((app) => app.isAccessible),
+        error: undefined,
+        installedApps: {
+          github: { id: "github", runtimeName: "GitHub", enabled: true, callable: true },
+          google_drive: { id: "google_drive", runtimeName: "Google Drive", enabled: false, callable: false },
+        },
+        loading: false,
+        savingConfigurations: [],
+        updatingApps: [],
+        readConfiguration: async (app?: AppInfo) => ({
+          ...(app ? { app } : {}),
+          config: app ? {
+            enabled: app.isEnabled,
+            approvals_reviewer: null,
+            destructive_enabled: null,
+            open_world_enabled: null,
+            default_tools_approval_mode: null,
+            default_tools_enabled: null,
+            tools: {},
+          } : {
+            enabled: true,
+            approvals_reviewer: null,
+            destructive_enabled: true,
+            open_world_enabled: true,
+            default_tools_approval_mode: null,
+          },
+          defaults: {
+            enabled: true,
+            approvals_reviewer: null,
+            destructive_enabled: true,
+            open_world_enabled: true,
+            default_tools_approval_mode: null,
+          },
+          tools: app?.id === "github" ? [
+            { name: "search", title: "Search repositories", description: "Search repositories, issues, and pull requests.", isEnabled: true, disabledReason: null, isReadOnly: true },
+            { name: "create_issue", title: "Create issue", description: "Create a new issue in a repository.", isEnabled: true, disabledReason: null, isReadOnly: false },
+          ] : [
+            { name: "search_files", title: "Search files", description: "Find files in connected drives.", isEnabled: true, disabledReason: null, isReadOnly: true },
+          ],
+        }),
+        saveConfiguration: async () => true,
+        openInstall: async () => true,
+        setEnabled: async () => undefined,
+      }
+    : apps;
+  const displayedIntegrations: IntegrationsController = isDemoPreview()
+    ? {
+        ...integrations,
+        mcpServers: {
+          data: [
+            {
+              name: "github",
+              serverInfo: {
+                name: "github",
+                title: "GitHub",
+                version: "1.4.0",
+                description: null,
+              },
+              tools: { search: {}, read: {} },
+              resources: [],
+              resourceTemplates: [],
+              authStatus: "oAuth",
+            },
+            {
+              name: "project_docs",
+              serverInfo: null,
+              tools: {},
+              resources: [],
+              resourceTemplates: [],
+              authStatus: "notLoggedIn",
+            },
+          ],
+          loading: false,
+        },
+        mcpStartup: {
+          github: { status: "ready" },
+          project_docs: {
+            status: "failed",
+            error: "Authentication must be renewed before this server can start.",
+            failureReason: "reauthenticationRequired",
+          },
+        },
+        removableMcpServers: ["github", "project_docs"],
+        removingMcpServers: [],
+        removeMcpServer: async () => true,
+      }
+    : integrations;
   if (settings) {
     return (
       <SettingsLoader
         account={account}
         appUpdate={appUpdate}
-        apps={apps}
+        apps={displayedApps}
         automations={automations}
         capabilities={capabilities}
         configRequirements={configRequirements}
         defaultThread={defaultThread}
         externalAgentImport={externalAgentImport}
-        integrations={integrations}
+        integrations={displayedIntegrations}
         models={models}
         rateLimits={rateLimits}
         realtime={realtime}
@@ -1107,7 +1204,7 @@ export default function App() {
           }
         />
         <ChatFooter
-          apps={apps}
+          apps={displayedApps}
           skills={isDemoPreview() ? demoSkills : integrations.skills.data}
           skillsError={isDemoPreview() ? undefined : integrations.skills.error}
           skillsLoading={isDemoPreview() ? false : integrations.skills.loading}

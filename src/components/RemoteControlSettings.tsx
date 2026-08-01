@@ -2,14 +2,20 @@ import {
   Link2,
   RadioTower,
   RefreshCw,
-  ShieldCheck,
   Smartphone,
   Unplug,
 } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
+import { SettingsPageHeader } from "./SettingsPageHeader";
+import { IconCard } from "./IconCard";
+import { CardStack } from "./CardStack";
+import { RoundIconButton } from "./RoundIcon";
+import { IconSubheader } from "./IconSubheader";
+import { Note } from "./Note";
 import type { RemoteControlClient } from "../lib/appServerTypes";
 import type { RemoteControlController } from "../lib/useRemoteControl";
+import { Alert } from "./Alert";
 
 export function RemoteControlSettings({
   controller,
@@ -25,89 +31,89 @@ export function RemoteControlSettings({
 
   return (
     <section className="settings-page remote-control-settings">
-      <header>
-        <p>{t("settings.remoteControl.description")}</p>
-        <span className="planned-badge">
-          {t("settings.remoteControl.experimental")}
-        </span>
-      </header>
-      <div className="settings-explanation">
-        <ShieldCheck />
-        <span>
-          <strong>{t("settings.remoteControl.securityTitle")}</strong>
-          <small>{t("settings.remoteControl.securityDetail")}</small>
-        </span>
-      </div>
+      <SettingsPageHeader
+        badge={t("settings.remoteControl.experimental")}
+        badgeTone="experimental"
+        description={t("settings.remoteControl.description")}
+      />
+      <Note
+        title={t("settings.remoteControl.securityTitle")}
+      >
+        {t("settings.remoteControl.securityDetail")}
+      </Note>
       {!controller.available && (
-        <div className="inventory-message warning" role="status">
+        <Alert>
           <strong>{t("settings.remoteControl.desktopOnlyTitle")}</strong>
           <small>{t("settings.remoteControl.desktopOnlyDetail")}</small>
-        </div>
+        </Alert>
       )}
       {!controller.allowed && (
-        <div className="inventory-message warning" role="status">
+        <Alert>
           <strong>{t("settings.remoteControl.managedTitle")}</strong>
           <small>{t("settings.remoteControl.managedDetail")}</small>
-        </div>
+        </Alert>
       )}
-      <div className="settings-card remote-control-status-card">
-        <span className={`remote-control-status-icon ${status}`}>
-          <RadioTower />
-        </span>
-        <span>
-          <strong>
-            {controller.status?.serverName ||
-              t("settings.remoteControl.thisDevice")}
-          </strong>
-          <small>{t(`settings.remoteControl.status.${status}`)}</small>
-        </span>
-        <span className={`remote-control-status-badge ${status}`}>
-          {t(`settings.remoteControl.status.${status}`)}
-        </span>
-        <input
-          aria-label={t("settings.remoteControl.enabled")}
-          checked={enabled}
-          disabled={
-            busy ||
-            !controller.available ||
-            (!controller.allowed && !enabled)
+      <CardStack>
+        <IconCard
+          className={`remote-control-local ${status}`}
+          icon={<RadioTower />}
+          subtitle={t(`settings.remoteControl.status.${status}`)}
+          title={
+            controller.status?.serverName ||
+            t("settings.remoteControl.thisDevice")
           }
-          type="checkbox"
-          onChange={(event) =>
-            void (event.target.checked
-              ? controller.enable()
-              : controller.disable())
-          }
+          trailing={<>
+            <span className={`remote-control-status-badge ${status}`}>
+              {t(`settings.remoteControl.status.${status}`)}
+            </span>
+            <input
+              aria-label={t("settings.remoteControl.enabled")}
+              checked={enabled}
+              disabled={
+                busy ||
+                !controller.available ||
+                (!controller.allowed && !enabled)
+              }
+              type="checkbox"
+              onChange={(event) =>
+                void (event.target.checked
+                  ? controller.enable()
+                  : controller.disable())
+              }
+            />
+          </>}
         />
-      </div>
+      </CardStack>
       {status === "errored" && (
-        <button
-          className="secondary-button remote-control-refresh"
+        <RoundIconButton
+          className="remote-control-refresh"
           disabled={controller.loading}
+          icon={RefreshCw}
+          label={t("settings.remoteControl.retry")}
           onClick={() => void controller.refresh()}
-        >
-          <RefreshCw />
-          {t("settings.remoteControl.retry")}
-        </button>
+          variant="secondary"
+        />
       )}
       {status === "connected" && controller.status?.environmentId && (
         <>
           <section className="remote-control-section">
             <header>
-              <span>
-                <h2>{t("settings.remoteControl.pairingTitle")}</h2>
-                <p>{t("settings.remoteControl.pairingDetail")}</p>
-              </span>
+              <IconSubheader
+                className="remote-control-section-subheader"
+                icon={<Link2 />}
+                title={t("settings.remoteControl.pairingTitle")}
+                subtitle={t("settings.remoteControl.pairingDetail")}
+              />
               {!controller.pairing && (
-                <button
+                <RoundIconButton
                   disabled={controller.pairingLoading}
-                  onClick={() => void controller.startPairing()}
-                >
-                  <Link2 />
-                  {controller.pairingLoading
+                  icon={Link2}
+                  label={controller.pairingLoading
                     ? t("settings.remoteControl.pairingStarting")
                     : t("settings.remoteControl.pairingAction")}
-                </button>
+                  onClick={() => void controller.startPairing()}
+                  variant="secondary"
+                />
               )}
             </header>
             {controller.pairing && (
@@ -128,27 +134,28 @@ export function RemoteControlSettings({
               </div>
             )}
             {controller.pairingClaimed && (
-              <div className="inventory-message success" role="status">
+              <Alert tone="success">
                 {t("settings.remoteControl.pairingClaimed")}
-              </div>
+              </Alert>
             )}
           </section>
           <section className="remote-control-section">
             <header>
-              <span>
-                <h2>{t("settings.remoteControl.devicesTitle")}</h2>
-                <p>{t("settings.remoteControl.devicesDetail")}</p>
-              </span>
-              <button
-                className="secondary-button"
+              <IconSubheader
+                className="remote-control-section-subheader"
+                icon={<Smartphone />}
+                title={t("settings.remoteControl.devicesTitle")}
+                subtitle={t("settings.remoteControl.devicesDetail")}
+              />
+              <RoundIconButton
                 disabled={controller.clientsLoading}
+                icon={RefreshCw}
+                label={t("settings.remoteControl.refresh")}
                 onClick={() => void controller.refresh()}
-              >
-                <RefreshCw />
-                {t("settings.remoteControl.refresh")}
-              </button>
+                variant="secondary"
+              />
             </header>
-            <div className="settings-card remote-control-devices">
+            <CardStack className="remote-control-devices">
               {controller.clientsLoading && controller.clients.length === 0 ? (
                 <div className="remote-control-loading" role="status">
                   <span className="settings-loader-spinner" />
@@ -185,24 +192,24 @@ export function RemoteControlSettings({
                   />
                 ))
               )}
-            </div>
+            </CardStack>
             {controller.nextCursor && (
-              <button
-                className="secondary-button remote-control-load-more"
+              <RoundIconButton
+                className="remote-control-load-more"
                 disabled={controller.clientsLoading}
+                label={t("settings.remoteControl.loadMore")}
                 onClick={() => void controller.loadMoreClients()}
-              >
-                {t("settings.remoteControl.loadMore")}
-              </button>
+                variant="secondary"
+              />
             )}
           </section>
         </>
       )}
       {controller.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           <strong>{t("settings.remoteControl.error")}</strong>
           <small>{controller.error}</small>
-        </div>
+        </Alert>
       )}
     </section>
   );
@@ -233,51 +240,48 @@ function RemoteControlDevice({
     .filter(Boolean)
     .join(" · ");
   return (
-    <div className="remote-control-device">
-      <Smartphone />
-      <span>
-        <strong>
-          {client.displayName ||
-            client.deviceType ||
-            t("settings.remoteControl.unknownDevice")}
-        </strong>
-        {detail && <small>{detail}</small>}
-        {client.lastSeenAt != null && (
-          <small>
-            {t("settings.remoteControl.lastSeen", {
-              time: formatTimestamp(client.lastSeenAt),
-            })}
-          </small>
-        )}
-      </span>
-      {confirming ? (
+    <IconCard
+      className="remote-control-device"
+      icon={<Smartphone />}
+      title={client.displayName ||
+        client.deviceType ||
+        t("settings.remoteControl.unknownDevice")}
+      subtitle={detail || undefined}
+      trailing={confirming ? (
         <span className="remote-control-revoke-confirm">
           <small>{t("settings.remoteControl.revokeConfirm")}</small>
-          <button onClick={onCancel}>{t("common.cancel")}</button>
-          <button
+          <RoundIconButton label={t("common.cancel")} onClick={onCancel} variant="secondary" />
+          <RoundIconButton
             className="danger"
             disabled={revoking}
+            label={t("settings.remoteControl.revoke")}
             onClick={() => void onRevoke()}
-          >
-            {t("settings.remoteControl.revoke")}
-          </button>
+            variant="secondary"
+          />
         </span>
       ) : (
-        <button
-          className="secondary-button"
+        <RoundIconButton
           aria-label={t("settings.remoteControl.revokeNamed", {
             name:
               client.displayName ??
               client.deviceType ??
               t("settings.remoteControl.unknownDevice"),
           })}
+          icon={Unplug}
+          label={t("settings.remoteControl.revoke")}
           onClick={() => void onRevoke()}
-        >
-          <Unplug />
-          {t("settings.remoteControl.revoke")}
-        </button>
+          variant="secondary"
+        />
       )}
-    </div>
+    >
+      {client.lastSeenAt != null && (
+        <small>
+          {t("settings.remoteControl.lastSeen", {
+            time: formatTimestamp(client.lastSeenAt),
+          })}
+        </small>
+      )}
+    </IconCard>
   );
 }
 

@@ -161,6 +161,62 @@ App Server : `turn/diff/updated`, `item/fileChange/*`, `command/exec/*`,
 
 ### 6. Centre de réglages
 
+Toutes les pages du centre utilisent `SettingsPageHeader` pour leur description
+et leur badge de portée ou d’expérimentation. Les contrôles opérationnels
+d’inventaire restent hors du header : `SettingsControlsBar` les attache au bloc
+qu’ils pilotent, avec titre ou statut à gauche et actions rapides à droite.
+`SettingsPageHeader` neutralise les styles du header de conversation et possède
+seul l’espacement, le reflow et la palette clair/sombre de cette zone. Il possède un séparateur discret et un
+espacement vertical symétrique, indépendants du header de conversation.
+`SettingsPageHeaderBadge` réutilise le même
+cartouche dans les sous-sections globales ; une page ne recrée pas localement ces
+classes.
+
+`IconSubheader` introduit les groupes de contrôles avec une icône facultative,
+un titre et un sous-titre facultatif, sans contour ni séparateur. L’icône reste
+centrée sur toute la colonne typographique ; les pages ne reconstruisent pas ce
+motif avec des blocs `settings-explanation` ou des titres locaux.
+
+`Note` porte les explications éditoriales qui ne structurent pas un groupe de
+contrôles. Son traitement de citation Markdown — barre verticale, fond discret,
+titre facultatif — reste distinct des subheaders, cartes et alertes sémantiques.
+Les recommandations de portée, comme le rappel que les règles durables vivent
+dans `AGENTS.md`, appartiennent à cette catégorie.
+
+`Alert` porte tous les états opérationnels de Settings. Il centralise les tons
+warning, error, neutral et success ainsi que leurs rôles accessibles ; les pages
+fournissent le contenu sans reconstruire le markup ou les palettes par thème.
+
+Les lignes de contenu structurées utilisent `IconCard` : icône gauche
+optionnelle, titre, sous-titre optionnel, détails secondaires et slot de widgets
+à droite. Apps, Skills, MCP, Hooks, tâches planifiées, compte, crédits de reset,
+Remote Control, appareils associés, documents de configuration, catalogue de
+plugins, migrations externes et états planifiés partagent ainsi la même grille,
+les mêmes séparateurs et la même palette ; leurs styles spécifiques ne portent
+que les widgets métier. Une carte dont le contenu ouvre un dialogue transmet
+ses attributs accessibles au bouton interne sans rendre le slot de contrôles
+imbriqué.
+La variante `density="compact"` conserve cette hiérarchie pour les inventaires
+volumineux sans imposer la hauteur des cartes de réglages ordinaires ; le
+catalogue d’Apps l’utilise pour rendre plusieurs entrées parcourables par écran.
+
+`CardStack` joint ces lignes en un groupe unique et possède seul le contour, le
+fond, les coins, l’ombre et les séparateurs externes. Son slot `controlBar`
+accueille facultativement `SettingsControlsBar`. Les groupes General, Agent,
+Subagents, Permissions, les inventaires et le flux d’import externe utilisent
+la même composition ; une page ne juxtapose pas manuellement des cartes pour
+simuler une liste.
+Un subheader parent suffit pour une série homogène de documents éditables ;
+chaque carte ne répète pas localement titre de section, description et badge de
+portée. Réciproquement, un subheader qui paraphrase seulement le header de page
+est omis.
+
+Les feuilles Settings ne conservent pas les anciennes implémentations après
+migration vers ces primitives. Les sélecteurs partagés définissent géométrie,
+palette et responsive ; les classes de feature restantes ne décrivent que les
+widgets ou états métier. Un audit de CSS mort doit vérifier séparément les
+classes littérales et les variantes construites dynamiquement avant suppression.
+
 L’app officielle utilise une vue dédiée qui remplace temporairement l’espace de
 travail, avec « Retour à l’app », recherche, groupes de navigation et contenu
 scrollable. Cette structure est retenue à la place d’une grande modale.
@@ -170,28 +226,41 @@ configurent exclusivement des préférences persistantes globales. Le modèle,
 l’effort et le mode Plan du thread restent dans le popover Modèle ; permissions
 et approbations partagent le popover Security sous le composer.
 
-Le centre utilise une navigation interne durable :
+Le centre utilise quatre rubriques stables :
 
-1. **Général** — langue, démarrage, ouverture des fichiers et cycle App Server ;
-2. **Web** — recherche web globale, Chromium Playwright partagé, activation, état et réparation ;
-3. **Chat** — résumés et futures préférences globales qui contrôlent le niveau de détail visible ;
-4. **Agent** — modèle, effort, tier de service, personnalité et sous-agents globaux ;
-5. **Permissions** — profils, approbations, relecteur et exigences administrées ;
-6. **Configuration** — champs TOML globaux guidés, éditeur brut et instructions personnelles ;
-7. **Intégrations** — MCP, apps/connecteurs, plugins, skills et hooks ;
-8. **Tâches planifiées** — réveils locaux, cible de conversation, pause et exécution immédiate ;
-9. **Compte et utilisation** — connexion, quotas, consommation et messages ;
-10. **Avancé** — fonctions expérimentales, import d’autres agents, contrôle distant,
-    diagnostics et feedback.
+1. **Application** — Général, Compte et utilisation, Apparence et affichage,
+   Contrôle à distance ;
+2. **Agents & Capabilities** — Agents, Permissions, Web, Voix, Mémoire,
+   Planificateur ;
+3. **Extensions** — Skills, Apps, Serveurs MCP, Plugins et Hooks ;
+4. **Advanced** — Configuration et import depuis un autre agent.
+
+Les titres de rubrique sont des
+régions sémantiques et disparaissent lorsqu’une recherche ne conserve aucun de
+leurs éléments. Hooks reste classé avec les extensions ; la liste utilise le
+gabarit compact commun et défile indépendamment aux faibles hauteurs.
 
 État actuel : les inventaires stables `skills/list`, `mcpServerStatus/list` et
-`hooks/list` sont branchés, ainsi que l’activation des skills et la connexion OAuth
-MCP complète. Les hooks effectifs du projet restent volontairement en lecture seule :
+`hooks/list` sont branchés, ainsi que l’activation des skills, la connexion OAuth
+MCP complète et les états de démarrage MCP du thread courant. Ces derniers restent
+transitoires, sont attribués par `threadId` puis purgés au changement de thread ;
+ils ne sont jamais présentés comme une santé globale persistante. Les hooks effectifs
+du projet restent volontairement en lecture seule :
 leur origine, confiance et commande sont consultables, sans simuler une API de mutation.
-Les apps accessibles et activées de
-`app/list` apparaissent dans les réglages et peuvent être ajoutées au compositeur
-comme mentions structurées `app://`; le catalogue complet n'est pas chargé dans
-la navigation quotidienne. Les skills actives peuvent être jointes depuis le
+Skills et Plugins sont deux sections Settings de premier niveau : un Plugin est
+un bundle susceptible d'agréger Apps, Skills et intégrations MCP, et non un
+sous-type de Skill. Chaque page débute directement avec sa pile de contenu,
+sans sous-titre répétant son nom. La création
+d’un skill passe par une modale progressive puis un IPC Electron spécialisé qui
+ne peut créer qu’un nouveau `SKILL.md` sous la racine personnelle ou celle du
+workspace courant. L’inventaire est ensuite relu avec `skills/list(forceReload)` ;
+le client ne maintient aucun catalogue parallèle et n’expose pas d’écriture de
+fichier arbitraire.
+Les apps accessibles de `app/list` apparaissent dans les réglages avec leur
+activation globale effective, écrite par le contrôle borné
+`apps."<id>".enabled`. Seules les apps accessibles et activées sont proposées
+au compositeur comme mentions structurées `app://`; le catalogue complet n'est
+pas chargé dans la navigation quotidienne. Les skills actives peuvent être jointes depuis le
 menu d’ajout : le compositeur envoie alors l’item App Server structuré
 `{ type: "skill", name, path }` et le message utilisateur affiche un indicateur
 discret, restauré depuis le même item lors du replay. Une invocation implicite
@@ -199,9 +268,56 @@ reste volontairement sans indicateur, App Server ne publiant aucun événement
 stable qui permettrait de l’attribuer avec certitude. Le catalogue et l’installation de
 plugins restent isolés tant que la documentation officielle les interdit aux
 clients de production.
+L’ajout d’un serveur MCP part de la barre de contrôle de son inventaire et ouvre
+une modale à deux onglets. **Essentiel** garde les champs propres au transport
+immédiatement visibles ; **Avancé** regroupe les délais, filtres d’outils,
+approbation par défaut et options d’environnement ou d’en-têtes les plus utiles.
+La modale traduit ces valeurs directement vers les clés App Server documentées,
+sans modèle de configuration client parallèle. Les champs très minoritaires
+restent accessibles dans l’éditeur `config.toml`.
+Les états de démarrage et d’authentification restent des métadonnées textuelles
+sur la ligne de sous-titre, après outils et version ; seules les actions occupent
+la colonne droite. La suppression exige une confirmation et n’est proposée que
+si `config/read` attribue la table MCP à la couche utilisateur de base modifiable.
+Un serveur intégré, administré, système ou fourni uniquement par un profil ne
+reçoit jamais cette action.
 Les surfaces propres à un plugin ne deviennent pas des catégories globales :
 Git et la gestion de workspaces restent exposés par les workflows ou plugins
 qui les possèdent, pas par une section native vide du centre de réglages.
+
+La finition ergonomique des intégrations suit les contrats App Server, dans cet
+ordre :
+
+1. **Apps globales** — inventaire accessible, état callable, activation
+   effective et invocation structurée ; aucun état optimiste ne remplace les
+   vues App Server. La carte garde l'activation rapide et ouvre une modale de
+   réglages progressive : politique essentielle d'abord, overrides par outil
+   ensuite. Les valeurs par défaut globales forment une section directe sous
+   l'inventaire, introduite par `IconSubheader` puis composée avec le même
+   `CardStack` / `IconCard` que les autres réglages. Elles sont enregistrées
+   automatiquement et ne surchargent donc pas la barre d'actions des connecteurs.
+   Les écritures apparentées sont regroupées par `config/batchWrite` puis
+   relues ; l'édition experte de TOML reste le recours pour les rares champs
+   volontairement non exposés. L'inventaire opérationnel reste distinct d'une
+   modale de découverte recherchable : celle-ci présente les Apps accessibles
+   et disponibles, parcourt `app/list` jusqu'à épuisement du curseur, puis les
+   organise par catégories App Server et groupes alphabétiques. Une barre dense
+   réunit recherche et déroulants de catégorie et d'initiale ; disponibilité,
+   catégorie et initiale se composent sans dupliquer le catalogue.
+   La fiche dévoile ses outils à la demande, puis remet la connexion au
+   `installUrl` HTTP(S) fourni par Codex. Comme App Server
+   n'expose pas `app/install`, le client ne simule pas cette mutation et propose
+   une relecture explicite au retour du parcours hébergé.
+2. **MCP global** — fournir des contrôles bornés pour les champs de configuration officiellement
+   documentés ; les tables MCP arbitraires restent dans l’éditeur TOML.
+3. **Contexte du thread** — comparer l’état global à l’état effectif évalué avec
+   `threadId`, en utilisant notamment `app/installed` lorsqu’il apporte un état
+   callable fiable. Aucun override local n’est proposé tant qu’App Server
+   n’expose pas de mutation persistante correspondante.
+4. **Plugins** — catalogue, détail, installation, authentification et
+   désinstallation forment un seul cycle produit. Cette surface reste absente
+   des clients de production tant que la documentation App Server la marque en
+   développement.
 
 Les profils nommés de `permissionProfile/list`, les presets de
 `collaborationMode/list`, l’identité `account/read` et l’activité
@@ -281,7 +397,10 @@ Les icônes circulaires statiques et interactives utilisent la primitive commune
 `tertiary` définissent le niveau d’accent, de fond et de bordure ; les features
 ne surchargent que les couleurs sémantiques. Les tailles `small`, `medium` et
 `large` ainsi que le label texte optionnel appartiennent aussi à la primitive ;
-les composants ne recréent pas leur propre géométrie d’icône.
+les composants ne recréent pas leur propre géométrie d’icône. Les actions
+compactes des cartes Settings, barres de contrôle et pieds de modale utilisent
+également `RoundIconButton`; les boutons HTML ordinaires sont réservés aux
+surfaces interactives complètes, comme une carte de choix.
 
 La connexion ChatGPT gérée par Codex ouvre le navigateur système, conserve le
 `loginId` pour permettre réouverture et annulation, et attend la notification de

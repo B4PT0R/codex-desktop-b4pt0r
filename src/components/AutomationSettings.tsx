@@ -15,7 +15,15 @@ import {
   type AutomationsController,
 } from "../lib/automations";
 import { AutomationEditor } from "./AutomationEditor";
+import { IconCard } from "./IconCard";
+import { CardStack } from "./CardStack";
 import { RoundIconButton } from "./RoundIcon";
+import { SettingsPageHeader } from "./SettingsPageHeader";
+import { Alert } from "./Alert";
+import {
+  SettingsControlsBar,
+  SettingsControlsBarButton,
+} from "./SettingsControlsBar";
 
 export function AutomationSettings({
   controller,
@@ -31,19 +39,11 @@ export function AutomationSettings({
   const [confirmingDelete, setConfirmingDelete] = useState<string>();
   return (
     <section className="settings-page automations-settings">
-      <header>
-        <p>{t("automations.description")}</p>
-        <RoundIconButton
-          icon={Plus}
-          label={t("automations.create")}
-          onClick={() => setEditing("new")}
-          variant="secondary"
-        />
-      </header>
+      <SettingsPageHeader description={t("automations.description")} />
       {controller.error && (
-        <p className="inventory-message error" role="alert">
+        <Alert tone="error">
           {controller.error}
-        </p>
+        </Alert>
       )}
       {editing && (
         <AutomationEditor
@@ -57,7 +57,25 @@ export function AutomationSettings({
           }}
         />
       )}
-      <div className="settings-card automation-list">
+      <CardStack
+        className="automation-list"
+        controlBar={<SettingsControlsBar
+          actions={
+          <SettingsControlsBarButton
+            icon={Plus}
+            onClick={() => setEditing("new")}
+          >
+            {t("automations.create")}
+          </SettingsControlsBarButton>
+          }
+          status={t(
+            controller.automations.length === 1
+              ? "automations.countOne"
+              : "automations.countMany",
+            { count: controller.automations.length },
+          )}
+        />}
+      >
         {controller.loading && controller.automations.length === 0 ? (
           <p className="inventory-empty">{t("automations.loading")}</p>
         ) : controller.automations.length === 0 ? (
@@ -89,7 +107,7 @@ export function AutomationSettings({
             />
           ))
         )}
-      </div>
+      </CardStack>
     </section>
   );
 }
@@ -127,8 +145,11 @@ function AutomationRow({
       ? t("automations.completed")
       : t("automations.paused");
   return (
-    <article className="automation-row">
-      <span className={`automation-state ${automation.lastStatus ?? "idle"}`}>
+    <IconCard
+      as="article"
+      className="automation-row"
+      contentDisabled={automation.lastStatus === "running"}
+      icon={<span className={`automation-state ${automation.lastStatus ?? "idle"}`}>
         {automation.lastStatus === "running" ? (
           <span className="settings-loader-spinner" />
         ) : automation.lastStatus === "succeeded" ? (
@@ -138,14 +159,11 @@ function AutomationRow({
         ) : (
           <Pause />
         )}
-      </span>
-      <button
-        className="automation-main"
-        disabled={automation.lastStatus === "running"}
-        onClick={onEdit}
-      >
-        <strong>{automation.name}</strong>
-        <small>
+      </span>}
+      onContentClick={onEdit}
+      title={automation.name}
+      subtitle={
+        <>
           {scheduleLabel(automation, locale, t)}
           <span aria-hidden="true"> · </span>
           {targetLabel(automation, t)}
@@ -155,19 +173,9 @@ function AutomationRow({
               {t("automations.unattendedShort")}
             </>
           )}
-        </small>
-        <small>{t("automations.next", { date: nextRun })}</small>
-        {automation.lastError && (
-          <em>
-            {automation.lastError === "automation-interrupted"
-              ? t("automations.interrupted")
-              : automation.lastError === DEFAULT_THREAD_UNAVAILABLE_ERROR
-                ? t("automations.defaultThreadUnavailable")
-              : automation.lastError}
-          </em>
-        )}
-      </button>
-      <div className="automation-actions">
+        </>
+      }
+      trailing={<div className="automation-actions">
         {confirmingDelete ? (
           <div className="automation-delete-confirm" role="group">
             <span>{t("automations.confirmDelete")}</span>
@@ -216,8 +224,19 @@ function AutomationRow({
             />
           </>
         )}
-      </div>
-    </article>
+      </div>}
+    >
+        <small>{t("automations.next", { date: nextRun })}</small>
+        {automation.lastError && (
+          <em>
+            {automation.lastError === "automation-interrupted"
+              ? t("automations.interrupted")
+              : automation.lastError === DEFAULT_THREAD_UNAVAILABLE_ERROR
+                ? t("automations.defaultThreadUnavailable")
+              : automation.lastError}
+          </em>
+        )}
+    </IconCard>
   );
 }
 

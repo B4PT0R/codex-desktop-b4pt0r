@@ -15,6 +15,11 @@ import type {
   ExternalAgentMigrationSource,
 } from "../lib/appServerTypes";
 import { RoundIconButton } from "./RoundIcon";
+import { CardStack } from "./CardStack";
+import { IconCard } from "./IconCard";
+import { SettingsControlsBar } from "./SettingsControlsBar";
+import { SettingsPageHeader } from "./SettingsPageHeader";
+import { Alert } from "./Alert";
 import {
   externalAgentDetailNames,
   externalAgentItemKey,
@@ -51,66 +56,104 @@ export function ExternalAgentImportSettings({
   }, [controller.items]);
 
   return (
-    <section className="external-import-settings" aria-labelledby="external-import-title">
-      <header className="external-import-heading">
-        <span>
-          <h2 id="external-import-title">{t("externalImport.title")}</h2>
-          <p>{t("externalImport.description")}</p>
-        </span>
-        <span className="external-import-detection">
-          <label>
-            <span>{t("externalImport.source")}</span>
-            <select
+    <section className="settings-page external-agent-import-page">
+      <SettingsPageHeader description={t("externalImport.description")} />
+      <CardStack className="settings-fields external-agent-import-discovery">
+        <IconCard
+          as="label"
+          title={t("externalImport.source")}
+          trailing={<select
               value={source}
               disabled={controller.detecting || controller.importing}
               onChange={(event) =>
                 setSource(event.target.value as ExternalAgentMigrationSource)
               }
-            >
+          >
               <option value="claude-code">
                 {t("externalImport.source.claude")}
               </option>
               <option value="cursor">{t("externalImport.source.cursor")}</option>
-            </select>
-          </label>
-          <button
-            className="secondary-button"
+          </select>}
+        />
+        <IconCard
+          title={t("externalImport.detect")}
+          subtitle={t("externalImport.description")}
+          trailing={<RoundIconButton
             disabled={controller.detecting || controller.importing}
-            onClick={() => void controller.detect(source)}
-          >
-            {controller.detecting ? (
-              <RefreshCw className="spinning" />
-            ) : (
-              <Search />
-            )}
-            {t(
+            icon={controller.detecting ? RefreshCw : Search}
+            iconClassName={controller.detecting ? "spinning" : undefined}
+            label={t(
               controller.detecting
                 ? "externalImport.detecting"
                 : "externalImport.detect",
             )}
-          </button>
-        </span>
-      </header>
+            onClick={() => void controller.detect(source)}
+            variant="secondary"
+          />}
+        />
+      </CardStack>
 
       {controller.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("externalImport.error", { detail: controller.error })}
-        </div>
+        </Alert>
       )}
 
       {!controller.detecting && controller.items.length === 0 && (
-        <div className="external-import-empty">
-          <Download />
-          <span>
-            <strong>{t("externalImport.emptyTitle")}</strong>
-            <small>{t("externalImport.emptyDetail")}</small>
-          </span>
-        </div>
+        <CardStack>
+          <IconCard
+            icon={<Download />}
+            title={t("externalImport.emptyTitle")}
+            subtitle={t("externalImport.emptyDetail")}
+          />
+        </CardStack>
       )}
 
       {keyedItems.length > 0 && (
         <>
-          <div className="external-import-list">
+          <CardStack
+            className="external-agent-import-list"
+            controlBar={<SettingsControlsBar
+              label={confirming
+                ? t("externalImport.confirmTitle")
+                : t("externalImport.selected", {
+                    count: selectedItems.length,
+                  })}
+              actions={!confirming ? (
+                <RoundIconButton
+                  disabled={selectedItems.length === 0 || controller.importing}
+                  icon={Download}
+                  label={t("externalImport.prepare")}
+                  onClick={() => setConfirming(true)}
+                  variant="secondary"
+                />
+              ) : (
+                <span className="external-agent-import-confirm" role="group">
+                  <RoundIconButton
+                    disabled={controller.importing}
+                    label={t("externalImport.cancel")}
+                    onClick={() => setConfirming(false)}
+                    variant="secondary"
+                  />
+                  <RoundIconButton
+                    disabled={controller.importing}
+                    icon={Download}
+                    label={t("externalImport.confirm")}
+                    onClick={() => {
+                      setConfirming(false);
+                      void controller.importItems(selectedItems);
+                    }}
+                    variant="primary"
+                  />
+                </span>
+              )}
+              status={confirming
+                ? t("externalImport.confirmDetail", {
+                    count: selectedItems.length,
+                  })
+                : undefined}
+            />}
+          >
             {keyedItems.map(({ item, key }) => (
               <MigrationItem
                 key={key}
@@ -128,90 +171,38 @@ export function ExternalAgentImportSettings({
                 }}
               />
             ))}
-          </div>
-          <div className="external-import-actions">
-            <small>
-              {t("externalImport.selected", {
-                count: selectedItems.length,
-              })}
-            </small>
-            {!confirming ? (
-              <RoundIconButton
-                disabled={selectedItems.length === 0 || controller.importing}
-                icon={Download}
-                label={t("externalImport.prepare")}
-                onClick={() => setConfirming(true)}
-                variant="secondary"
-              />
-            ) : (
-              <div className="external-import-confirm" role="group">
-                <span>
-                  <strong>{t("externalImport.confirmTitle")}</strong>
-                  <small>
-                    {t("externalImport.confirmDetail", {
-                      count: selectedItems.length,
-                    })}
-                  </small>
-                </span>
-                <button
-                  className="secondary-button"
-                  disabled={controller.importing}
-                  onClick={() => setConfirming(false)}
-                >
-                  {t("externalImport.cancel")}
-                </button>
-                <button
-                  disabled={controller.importing}
-                  onClick={() => {
-                    setConfirming(false);
-                    void controller.importItems(selectedItems);
-                  }}
-                >
-                  <Download />
-                  {t("externalImport.confirm")}
-                </button>
-              </div>
-            )}
-          </div>
+          </CardStack>
         </>
       )}
 
       {(controller.importing || controller.completed) && (
-        <div
-          className={`external-import-result${controller.completed ? " complete" : ""}`}
-          role={controller.importing ? "status" : undefined}
-          aria-live="polite"
-        >
-          {controller.importing ? (
-            <RefreshCw className="spinning" />
-          ) : totals.failures > 0 ? (
-            <AlertTriangle />
-          ) : (
-            <CheckCircle2 />
-          )}
-          <span>
-            <strong>
-              {t(
+        <CardStack className={controller.completed ? "external-agent-import-result-complete" : ""}>
+          <IconCard
+            className="external-agent-import-result"
+            icon={controller.importing ? (
+              <RefreshCw className="spinning" />
+            ) : totals.failures > 0 ? (
+              <AlertTriangle />
+            ) : (
+              <CheckCircle2 />
+            )}
+            title={t(
                 controller.importing
                   ? "externalImport.importing"
                   : "externalImport.completed",
               )}
-            </strong>
-            <small>
-              {t("externalImport.resultSummary", {
+            subtitle={t("externalImport.resultSummary", {
                 successes: totals.successes,
                 failures: totals.failures,
               })}
-            </small>
-          </span>
-          {controller.completed && (
-            <button
-              className="secondary-button"
+            trailing={controller.completed ? (
+            <RoundIconButton
+              label={t("externalImport.dismiss")}
               onClick={controller.clearResult}
-            >
-              {t("externalImport.dismiss")}
-            </button>
-          )}
+              variant="secondary"
+            />
+            ) : undefined}
+          >
           {controller.results.flatMap((result) =>
             result.failures.map((failure, index) => (
               <p role="alert" key={`${result.itemType}-${index}`}>
@@ -220,16 +211,15 @@ export function ExternalAgentImportSettings({
               </p>
             )),
           )}
-        </div>
+          </IconCard>
+        </CardStack>
       )}
 
-      <section className="external-import-history" aria-labelledby="external-import-history">
-        <header>
-          <span>
-            <History />
-            <h3 id="external-import-history">{t("externalImport.history")}</h3>
-          </span>
-          <RoundIconButton
+      <CardStack
+        className="external-agent-import-history"
+        controlBar={<SettingsControlsBar
+          label={t("externalImport.history")}
+          actions={<RoundIconButton
             className="icon-button"
             aria-label={t("externalImport.refreshHistory")}
             disabled={controller.historyLoading}
@@ -237,38 +227,33 @@ export function ExternalAgentImportSettings({
             iconClassName={controller.historyLoading ? "spinning" : ""}
             onClick={() => void controller.refreshHistory()}
             variant="tertiary"
-          />
-        </header>
+          />}
+        />}
+      >
         {controller.histories.length === 0 ? (
-          <small>{t("externalImport.noHistory")}</small>
+          <IconCard
+            icon={<History />}
+            title={t("externalImport.noHistory")}
+          />
         ) : (
-          <ul>
+          <>
             {controller.histories.slice(0, 10).map((history) => (
-              <li key={history.importId}>
-                <span>
-                  <strong>
-                    {new Intl.DateTimeFormat(locale, {
+              <IconCard
+                icon={history.failures.length > 0 ? <AlertTriangle /> : <CheckCircle2 />}
+                key={history.importId}
+                title={new Intl.DateTimeFormat(locale, {
                       dateStyle: "medium",
                       timeStyle: "short",
                     }).format(new Date(history.completedAtMs))}
-                  </strong>
-                  <small>
-                    {t("externalImport.resultSummary", {
+                subtitle={t("externalImport.resultSummary", {
                       successes: history.successes.length,
                       failures: history.failures.length,
                     })}
-                  </small>
-                </span>
-                {history.failures.length > 0 ? (
-                  <AlertTriangle />
-                ) : (
-                  <CheckCircle2 />
-                )}
-              </li>
+              />
             ))}
-          </ul>
+          </>
         )}
-      </section>
+      </CardStack>
     </section>
   );
 }
@@ -287,24 +272,26 @@ function MigrationItem({
   const { t } = useI18n();
   const details = externalAgentDetailNames(item.details);
   return (
-    <label className="external-import-item">
-      <input
+    <IconCard
+      as="label"
+      className="external-agent-import-item"
+      icon={<Download />}
+      title={itemTypeLabel(item.itemType, t)}
+      subtitle={item.description}
+      trailing={<input
         type="checkbox"
         checked={checked}
         disabled={disabled}
         onChange={(event) => onChange(event.target.checked)}
-      />
-      <span>
-        <strong>{itemTypeLabel(item.itemType, t)}</strong>
-        <small>{item.description}</small>
-        <em>
-          {item.cwd
-            ? t("externalImport.workspaceScope", { cwd: item.cwd })
-            : t("externalImport.homeScope")}
-        </em>
-        {details.length > 0 && <code>{details.join(" · ")}</code>}
-      </span>
-    </label>
+      />}
+    >
+      <em>
+        {item.cwd
+          ? t("externalImport.workspaceScope", { cwd: item.cwd })
+          : t("externalImport.homeScope")}
+      </em>
+      {details.length > 0 && <code>{details.join(" · ")}</code>}
+    </IconCard>
   );
 }
 

@@ -32,7 +32,12 @@ import {
   type AppServerRestartController,
 } from "./GeneralSettingsSections";
 import { HooksSettings } from "./HooksSettings";
-import { McpSettings, SkillsSettings } from "./IntegrationSettings";
+import {
+  AppsSettings,
+  McpSettings,
+  PluginsSettings,
+  SkillsSettings,
+} from "./IntegrationSettings";
 import { MemorySettings } from "./MemorySettings";
 import { RemoteControlSettings } from "./RemoteControlSettings";
 import { SettingsNavigation } from "./SettingsNavigation";
@@ -69,8 +74,12 @@ export type SettingsViewProps = {
 export function SettingsView(props: SettingsViewProps) {
   const { t } = useI18n();
   const heading = useRef<HTMLHeadingElement>(null);
+  const content = useRef<HTMLElement>(null);
 
-  useEffect(() => heading.current?.focus(), [props.section]);
+  useEffect(() => {
+    if (content.current) content.current.scrollTop = 0;
+    heading.current?.focus({ preventScroll: true });
+  }, [props.section]);
   useEffect(() => {
     const close = (event: KeyboardEvent) => {
       if (event.key === "Escape") props.onClose();
@@ -86,7 +95,7 @@ export function SettingsView(props: SettingsViewProps) {
         onClose={props.onClose}
         onSelectSection={props.onSelectSection}
       />
-      <main className="settings-content">
+      <main ref={content} className="settings-content">
         <h1 ref={heading} tabIndex={-1}>
           {settingsSectionLabel(props.section, t)}
         </h1>
@@ -152,10 +161,12 @@ function SettingsSection(props: SettingsViewProps) {
       );
     case "config":
       return <CodexConfigSettings globalSettings={props.webSearch} />;
+    case "apps":
+      return <AppsSettings apps={props.apps} />;
+    case "skills":
+      return <SkillsSettings integrations={props.integrations} />;
     case "plugins":
-      return (
-        <SkillsSettings apps={props.apps} integrations={props.integrations} />
-      );
+      return <PluginsSettings />;
     case "mcp":
       return <McpSettings integrations={props.integrations} />;
     case "hooks":

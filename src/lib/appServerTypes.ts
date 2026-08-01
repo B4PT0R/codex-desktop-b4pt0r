@@ -26,7 +26,30 @@ export type ConfigReadResponse = {
     model_reasoning_effort?: string | null;
     approval_policy?: string | null;
     developer_instructions?: string | null;
+    apps?: AppsConfiguration | null;
   };
+};
+
+export type AppToolApprovalMode = "auto" | "prompt" | "writes" | "approve";
+
+export type AppToolConfiguration = {
+  enabled?: boolean | null;
+  approval_mode?: AppToolApprovalMode | null;
+};
+
+export type AppConfiguration = {
+  enabled: boolean;
+  approvals_reviewer?: "user" | "auto_review" | null;
+  destructive_enabled?: boolean | null;
+  open_world_enabled?: boolean | null;
+  default_tools_approval_mode?: AppToolApprovalMode | null;
+  default_tools_enabled?: boolean | null;
+  tools?: Record<string, AppToolConfiguration> | null;
+};
+
+export type AppsConfiguration = {
+  _default?: Omit<AppConfiguration, "default_tools_enabled" | "tools"> | null;
+  [appId: string]: AppConfiguration | null | undefined;
 };
 
 export type RateLimitWindow = {
@@ -249,6 +272,18 @@ export type McpServerStatus = {
   authStatus: McpAuthStatus;
 };
 
+export type McpServerStartupState =
+  | "starting"
+  | "ready"
+  | "failed"
+  | "cancelled";
+
+export type McpServerStartupStatus = {
+  status: McpServerStartupState;
+  error?: string;
+  failureReason?: "reauthenticationRequired";
+};
+
 export type ListMcpServerStatusResponse = {
   data: McpServerStatus[];
   nextCursor: string | null;
@@ -346,6 +381,21 @@ export type AppInfo = {
   id: string;
   name: string;
   description: string | null;
+  logoUrl: string | null;
+  logoUrlDark: string | null;
+  distributionChannel: string | null;
+  branding: {
+    category: string | null;
+    developer: string | null;
+    website: string | null;
+    isDiscoverableApp: boolean;
+  } | null;
+  appMetadata: {
+    categories: string[] | null;
+    seoDescription: string | null;
+    developer: string | null;
+    version: string | null;
+  } | null;
   installUrl: string | null;
   isAccessible: boolean;
   isEnabled: boolean;
@@ -355,6 +405,41 @@ export type AppInfo = {
 export type AppsListResponse = {
   data: AppInfo[];
   nextCursor: string | null;
+};
+
+export type InstalledApp = {
+  id: string;
+  runtimeName: string | null;
+  enabled: boolean;
+  callable: boolean;
+};
+
+export type AppsInstalledResponse = { apps: InstalledApp[] };
+
+export type AppToolSummary = {
+  name: string;
+  title: string | null;
+  description: string;
+  isEnabled: boolean;
+  disabledReason: string | null;
+  isReadOnly: boolean;
+};
+
+export type ConnectorMetadata = {
+  id: string;
+  name: string;
+  description: string | null;
+  iconUrl: string | null;
+  iconUrlDark: string | null;
+  distributionChannel: string | null;
+  installUrl: string | null;
+  pluginDisplayNames: string[];
+  toolSummaries: AppToolSummary[] | null;
+};
+
+export type AppsReadResponse = {
+  apps: ConnectorMetadata[];
+  missingAppIds: string[];
 };
 
 export type ThreadGoalStatus =

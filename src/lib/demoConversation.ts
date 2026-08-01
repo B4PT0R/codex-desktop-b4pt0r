@@ -1,4 +1,5 @@
 import type {
+  AppInfo,
   AppServerSkill,
   RateLimitResetCreditsSummary,
 } from "./appServerTypes";
@@ -417,6 +418,37 @@ export const demoSkills: AppServerSkill[] = [
     path: "/preview/skills/skill-creator/SKILL.md",
     scope: "system",
     enabled: true,
+  },
+];
+
+export const demoApps: AppInfo[] = [
+  {
+    id: "github",
+    name: "GitHub",
+    description: "Search repositories, issues, and pull requests.",
+    logoUrl: null,
+    logoUrlDark: null,
+    distributionChannel: "hosted",
+    branding: { category: "Developer tools", developer: "GitHub", website: "https://github.com", isDiscoverableApp: true },
+    appMetadata: { categories: ["Developer tools"], seoDescription: null, developer: "GitHub", version: "1.0" },
+    installUrl: "https://chatgpt.com/apps/github",
+    isAccessible: true,
+    isEnabled: true,
+    pluginDisplayNames: ["GitHub"],
+  },
+  {
+    id: "google_drive",
+    name: "Google Drive",
+    description: "Find and read documents from connected drives.",
+    logoUrl: null,
+    logoUrlDark: null,
+    distributionChannel: "hosted",
+    branding: { category: "Productivity", developer: "Google", website: "https://drive.google.com", isDiscoverableApp: true },
+    appMetadata: { categories: ["Productivity"], seoDescription: null, developer: "Google", version: "1.0" },
+    installUrl: "https://chatgpt.com/apps/google-drive",
+    isAccessible: false,
+    isEnabled: false,
+    pluginDisplayNames: ["Google Drive"],
   },
 ];
 

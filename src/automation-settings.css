@@ -1,29 +1,10 @@
-.automations-settings > header {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-}
-
-.automations-settings > header p {
-  max-width: 620px;
-}
-
 .automation-list {
   overflow: hidden;
   padding: 0;
 }
 
 .automation-row {
-  align-items: center;
-  display: grid;
-  gap: 10px;
-  grid-template-columns: 30px minmax(0, 1fr) auto;
-  min-height: 58px;
   padding: 8px 10px;
-}
-
-.automation-row + .automation-row {
-  border-top: 1px solid #33332f;
 }
 
 .automation-state {
@@ -50,50 +31,6 @@
 
 .automation-state.failed {
   color: #e68a86;
-}
-
-.automation-main {
-  align-items: flex-start;
-  background: transparent;
-  border: 0;
-  color: inherit;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  padding: 3px 0;
-  text-align: left;
-}
-
-.automation-main:hover,
-.automation-main:focus-visible {
-  background: transparent;
-  color: inherit;
-}
-
-.automation-main strong,
-.automation-main small,
-.automation-main em {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.automation-main strong {
-  font-size: 12px;
-  line-height: 17px;
-}
-
-.automation-main small {
-  color: #858580;
-  font-size: 10px;
-  line-height: 14px;
-}
-
-.automation-main em {
-  color: #e68a86;
-  font-size: 10px;
-  font-style: normal;
 }
 
 .automation-actions {
@@ -269,12 +206,6 @@
 :root[data-theme="light"] .automation-editor footer {
   background: #fafaf7;
   border-top-color: #e2e2dc;
-}
-
-:root[data-theme="light"] .automation-main:hover,
-:root[data-theme="light"] .automation-main:focus-visible {
-  background: transparent;
-  color: var(--reader-ink);
 }
 
 :root[data-theme="light"] .automation-delete-confirm .danger {

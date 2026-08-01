@@ -6,6 +6,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "../../src/lib/nativeBridge";
@@ -21,8 +22,14 @@ vi.mock("../../src/lib/nativeBridge", () => ({
 }));
 
 const integrations = {
+  addMcpServer: vi.fn(),
+  addingMcpServer: false,
+  removeMcpServer: vi.fn(),
+  removingMcpServers: [],
+  removableMcpServers: [],
   hooks: { data: [], loading: false, warnings: [] },
   mcpServers: { data: [], loading: false },
+  mcpStartup: {},
   skills: { data: [], loading: false },
   refreshMcp: vi.fn(),
   reloadMcp: vi.fn(),
@@ -763,11 +770,11 @@ describe("centre de réglages", () => {
       screen.queryByRole("button", { name: /Git et espaces de travail/ }),
     ).toBeNull();
     expect(
-      screen.getByRole("button", { name: "Configuration avancée" }),
+      screen.getByRole("button", { name: "Configuration" }),
     ).toBeVisible();
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Importer depuis d’autres agents",
+        name: "Importer depuis un autre agent",
       }),
     );
     expect(props.onSelectSection).toHaveBeenCalledWith("advanced");
@@ -784,16 +791,11 @@ describe("centre de réglages", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Importer depuis d’autres agents",
+        name: "Importer depuis un autre agent",
         level: 1,
       }),
     ).toBeVisible();
-    expect(
-      screen.getByRole("heading", {
-        name: "Importer depuis un autre agent",
-        level: 2,
-      }),
-    ).toBeVisible();
+    expect(within(screen.getByRole("main")).getAllByText("Importer depuis un autre agent")).toHaveLength(1);
     expect(screen.queryByText("Fonctions expérimentales")).toBeNull();
     expect(screen.queryByText("Diagnostics et feedback")).toBeNull();
   });
@@ -814,6 +816,8 @@ describe("centre de réglages", () => {
     );
     expect(screen.getByRole("button", { name: /Serveurs MCP/ })).toBeVisible();
     expect(screen.queryByRole("button", { name: /Apparence/ })).toBeNull();
+    expect(screen.getByRole("heading", { name: "Extensions", level: 2 })).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Application", level: 2 })).toBeNull();
   });
 
   it("ordonne les catégories selon leur fréquence de consultation", () => {
@@ -825,20 +829,22 @@ describe("centre de réglages", () => {
 
     expect(labels).toEqual([
       "Général",
-      "Agent",
+      "Compte et utilisation",
+      "Apparence et affichage",
+      "Contrôle à distance",
+      "Agents",
       "Permissions",
       "Web",
       "Voix",
-      "Apparence et affichage",
-      "Tâches planifiées",
       "Mémoire",
-      "Plugins et apps",
+      "Planificateur",
+      "Skills",
+      "Apps",
       "Serveurs MCP",
-      "Contrôle à distance",
-      "Compte et utilisation",
+      "Plugins",
       "Hooks",
-      "Configuration avancée",
-      "Importer depuis d’autres agents",
+      "Configuration",
+      "Importer depuis un autre agent",
     ]);
   });
 

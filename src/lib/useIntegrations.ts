@@ -5,6 +5,7 @@ import type {
   HooksListResponse,
   ListMcpServerStatusResponse,
   McpServerStatus,
+  McpServerStartupStatus,
   SkillsListResponse,
 } from "./appServerTypes";
 import { isDesktopApp, request, subscribeAppServerMessages } from "./codex";
@@ -14,10 +15,22 @@ import {
   skillsConfigWriteParams,
   skillsListParams,
   hooksListParams,
+  mcpServerConfigWriteParams,
+  mcpServerConfigRemoveParams,
+  configReadParams,
+  type McpServerDraft,
 } from "./protocol";
 import { useI18n } from "../i18n/I18nProvider";
 import type { Translate } from "../i18n/translate";
 import { openExternalTarget, safeExternalHttpUrl } from "./externalTarget";
+import { invoke } from "./nativeBridge";
+
+export type SkillDraft = {
+  name: string;
+  description: string;
+  instructions: string;
+  scope: "user" | "repo";
+};
 
 export type IntegrationInventory<T> = {
   data: T[];
@@ -28,6 +41,7 @@ export type IntegrationInventory<T> = {
 export type IntegrationsController = {
   hooks: IntegrationInventory<AppServerHook> & { warnings: string[] };
   mcpServers: IntegrationInventory<McpServerStatus>;
+  mcpStartup: Record<string, McpServerStartupStatus>;
   skills: IntegrationInventory<AppServerSkill>;
   refreshMcp: () => Promise<void>;
   reloadMcp: () => Promise<void>;
@@ -37,8 +51,15 @@ export type IntegrationsController = {
   authenticateMcp: (server: McpServerStatus) => Promise<void>;
   authenticatingMcp: string[];
   mcpAuthNotice?: string;
+  addMcpServer: (draft: McpServerDraft) => Promise<boolean>;
+  addingMcpServer: boolean;
+  removeMcpServer: (name: string) => Promise<boolean>;
+  removingMcpServers: string[];
+  removableMcpServers: string[];
   setSkillEnabled: (skill: AppServerSkill, enabled: boolean) => Promise<void>;
   updatingSkills: string[];
+  createSkill: (draft: SkillDraft) => Promise<boolean>;
+  creatingSkill: boolean;
 };
 
 type UseIntegrationsOptions = {
@@ -59,6 +80,8 @@ export function useIntegrations({
     data: [],
     loading: false,
   });
+  const [removingMcpServers, setRemovingMcpServers] = useState<string[]>([]);
+  const [removableMcpServers, setRemovableMcpServers] = useState<string[]>([]);
   const [hooks, setHooks] = useState<
     IntegrationInventory<AppServerHook> & { warnings: string[] }
   >({ data: [], loading: false, warnings: [] });
@@ -66,9 +89,14 @@ export function useIntegrations({
     IntegrationInventory<McpServerStatus>
   >({ data: [], loading: false });
   const [updatingSkills, setUpdatingSkills] = useState<string[]>([]);
+  const [creatingSkill, setCreatingSkill] = useState(false);
   const [authenticatingMcp, setAuthenticatingMcp] = useState<string[]>([]);
   const [mcpAuthNotice, setMcpAuthNotice] = useState<string>();
   const [reloadingMcp, setReloadingMcp] = useState(false);
+  const [addingMcpServer, setAddingMcpServer] = useState(false);
+  const [mcpStartup, setMcpStartup] = useState<
+    Record<string, McpServerStartupStatus>
+  >({});
   const skillsGeneration = useRef(0);
   const hooksGeneration = useRef(0);
   const mcpGeneration = useRef(0);
@@ -167,7 +195,11 @@ export function useIntegrations({
         cursor = response.nextCursor ?? undefined;
         if (!cursor) break;
       }
+      const removable = await request("config/read", configReadParams(undefined, true))
+        .then(removableMcpServerNames)
+        .catch(() => []);
       if (generation === mcpGeneration.current) {
+        setRemovableMcpServers(removable);
         setMcpServers({
           data,
           error: cursor ? t("integrations.mcp.limit") : undefined,
@@ -189,6 +221,7 @@ export function useIntegrations({
     if (reloadingMcp) return;
     setReloadingMcp(true);
     setMcpAuthNotice(undefined);
+    setMcpStartup({});
     setMcpServers((state) => ({ ...state, error: undefined }));
     try {
       await request("config/mcpServer/reload");
@@ -205,6 +238,48 @@ export function useIntegrations({
       setReloadingMcp(false);
     }
   }, [refreshMcp, reloadingMcp, t]);
+
+  const addMcpServer = useCallback(async (draft: McpServerDraft) => {
+    if (addingMcpServer) return false;
+    setAddingMcpServer(true);
+    setMcpServers((state) => ({ ...state, error: undefined }));
+    try {
+      await request("config/value/write", mcpServerConfigWriteParams(draft));
+      await request("config/mcpServer/reload");
+      await refreshMcp();
+      setMcpAuthNotice(t("integrations.mcp.added", { name: draft.name }));
+      return true;
+    } catch (error) {
+      setMcpServers((state) => ({
+        ...state,
+        error: t("integrations.mcp.addError", { detail: errorMessage(error) }),
+      }));
+      return false;
+    } finally {
+      setAddingMcpServer(false);
+    }
+  }, [addingMcpServer, refreshMcp, t]);
+
+  const removeMcpServer = useCallback(async (name: string) => {
+    if (removingMcpServers.includes(name)) return false;
+    setRemovingMcpServers((names) => [...names, name]);
+    setMcpServers((state) => ({ ...state, error: undefined }));
+    try {
+      await request("config/value/write", mcpServerConfigRemoveParams(name));
+      await request("config/mcpServer/reload");
+      await refreshMcp();
+      setMcpAuthNotice(t("integrations.mcp.removed", { name }));
+      return true;
+    } catch (error) {
+      setMcpServers((state) => ({
+        ...state,
+        error: t("integrations.mcp.removeError", { detail: errorMessage(error) }),
+      }));
+      return false;
+    } finally {
+      setRemovingMcpServers((names) => names.filter((candidate) => candidate !== name));
+    }
+  }, [refreshMcp, removingMcpServers, t]);
 
   const setSkillEnabled = useCallback(
     async (skill: AppServerSkill, nextEnabled: boolean) => {
@@ -233,6 +308,22 @@ export function useIntegrations({
     },
     [],
   );
+
+  const createSkill = useCallback(async (draft: SkillDraft) => {
+    if (creatingSkill || !isDesktopApp()) return false;
+    setCreatingSkill(true);
+    setSkills((state) => ({ ...state, error: undefined }));
+    try {
+      await invoke("create_skill_scaffold", { ...draft, workspace: cwd });
+      await refreshSkills();
+      return true;
+    } catch (error) {
+      setSkills((state) => ({ ...state, error: errorMessage(error) }));
+      return false;
+    } finally {
+      setCreatingSkill(false);
+    }
+  }, [creatingSkill, cwd, refreshSkills]);
 
   const authenticateMcp = useCallback(
     async (server: McpServerStatus) => {
@@ -280,11 +371,22 @@ export function useIntegrations({
   }, [hooksEnabled, refreshHooks]);
 
   useEffect(() => {
-    if (!enabled || !isDesktopApp()) return;
+    setMcpStartup({});
+  }, [threadId]);
+
+  useEffect(() => {
+    if (!isDesktopApp()) return;
     return subscribeAppServerMessages((message) => {
-      if (message.method === "skills/changed") void refreshSkills();
-      if (message.method === "mcpServer/startupStatus/updated")
-        void refreshMcp();
+      if (message.method === "skills/changed" && enabled) void refreshSkills();
+      if (message.method === "mcpServer/startupStatus/updated") {
+        const update = normalizeMcpStartupUpdate(message.params, threadId);
+        if (update) {
+          setMcpStartup((statuses) => ({
+            ...statuses,
+            [update.name]: update.status,
+          }));
+        }
+      }
       if (message.method === "mcpServer/oauthLogin/completed") {
         const params = recordValue(message.params);
         const name = typeof params?.name === "string" ? params.name : undefined;
@@ -310,15 +412,23 @@ export function useIntegrations({
         }
       }
     });
-  }, [enabled, refreshMcp, refreshSkills, t]);
+  }, [enabled, refreshMcp, refreshSkills, t, threadId]);
 
   return {
+    addMcpServer,
+    addingMcpServer,
+    createSkill,
+    creatingSkill,
     authenticateMcp,
     authenticatingMcp,
     hooks,
     mcpAuthNotice,
     mcpServers,
+    mcpStartup,
     refreshMcp,
+    removeMcpServer,
+    removingMcpServers,
+    removableMcpServers,
     reloadMcp,
     reloadingMcp,
     refreshHooks,
@@ -327,6 +437,19 @@ export function useIntegrations({
     skills,
     updatingSkills,
   };
+}
+
+function removableMcpServerNames(response: unknown) {
+  const root = recordValue(response);
+  if (!Array.isArray(root?.layers)) return [];
+  const userLayer = root.layers.find((candidate) => {
+    const layer = recordValue(candidate);
+    const source = recordValue(layer?.name);
+    return source?.type === "user" && (source.profile === null || source.profile === undefined);
+  });
+  const config = recordValue(recordValue(userLayer)?.config);
+  const servers = recordValue(config?.mcp_servers);
+  return servers ? Object.keys(servers) : [];
 }
 
 function normalizeHooks(value: unknown): AppServerHook[] {
@@ -363,6 +486,37 @@ function normalizeHooks(value: unknown): AppServerHook[] {
           ? hook.statusMessage.slice(0, 2_000)
           : null,
     }));
+}
+
+function normalizeMcpStartupUpdate(
+  value: unknown,
+  currentThreadId: string | undefined,
+): { name: string; status: McpServerStartupStatus } | undefined {
+  const update = recordValue(value);
+  if (
+    !currentThreadId ||
+    update?.threadId !== currentThreadId ||
+    typeof update.name !== "string" ||
+    !["starting", "ready", "failed", "cancelled"].includes(
+      String(update.status),
+    )
+  ) {
+    return undefined;
+  }
+  const error =
+    typeof update.error === "string" ? update.error.slice(0, 2_000) : undefined;
+  const failureReason =
+    update.failureReason === "reauthenticationRequired"
+      ? update.failureReason
+      : undefined;
+  return {
+    name: update.name.slice(0, 512),
+    status: {
+      status: update.status as McpServerStartupStatus["status"],
+      ...(error ? { error } : {}),
+      ...(failureReason ? { failureReason } : {}),
+    },
+  };
 }
 
 function hookErrors(

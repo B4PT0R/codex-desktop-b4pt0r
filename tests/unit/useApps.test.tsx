@@ -19,30 +19,96 @@ beforeEach(() => {
 });
 
 describe("apps connectées", () => {
-  it("ne conserve que les apps accessibles et activées", async () => {
-    requestMock.mockResolvedValue({
-      data: [
-        app("github", true, true),
-        app("inactive", true, false),
-        app("private", false, true),
-      ],
-      nextCursor: null,
+  it("parcourt tout le catalogue au-delà des quatre premières pages", async () => {
+    requestMock.mockImplementation((method: string, params: { cursor?: string | null }) => {
+      if (method === "app/installed") return Promise.resolve({ apps: [] });
+      const page = params.cursor ? Number(params.cursor) : 0;
+      return Promise.resolve({
+        data: [app(`app-${page}`, page === 0, true)],
+        nextCursor: page < 5 ? String(page + 1) : null,
+      });
     });
+    const { result } = renderHook(() => useApps({ enabled: true }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.catalogApps.map(({ id }) => id)).toEqual([
+      "app-0", "app-1", "app-2", "app-3", "app-4", "app-5",
+    ]);
+    expect(requestMock).toHaveBeenCalledWith("app/list", expect.objectContaining({ cursor: "5", forceRefetch: false, limit: 200 }));
+  });
+
+  it("sépare les Apps configurables de celles proposées au compositeur", async () => {
+    requestMock.mockImplementation((method: string) => Promise.resolve(
+      method === "app/installed"
+        ? { apps: [{ id: "github", runtimeName: "GitHub", enabled: true, callable: true }] }
+        : { data: [app("github", true, true), app("inactive", true, false), app("private", false, true)], nextCursor: null },
+    ));
     const { result } = renderHook(() =>
       useApps({ enabled: true, threadId: "thr" }),
     );
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.apps.map(({ id }) => id)).toEqual(["github"]);
+    expect(result.current.configurableApps.map(({ id }) => id)).toEqual([
+      "github",
+      "inactive",
+    ]);
     expect(requestMock).toHaveBeenCalledWith("app/list", {
       cursor: null,
-      limit: 50,
+      limit: 200,
       threadId: "thr",
-      forceRefetch: false,
+      forceRefetch: true,
     });
+    expect(result.current.installedApps.github.callable).toBe(true);
+  });
+
+  it("écrit l’activation globale puis relit l’état effectif", async () => {
+    let appEnabled = true;
+    requestMock.mockImplementation((method: string) => {
+      if (method === "app/installed") return Promise.resolve({ apps: [] });
+      if (method === "config/value/write") {
+        appEnabled = false;
+        return Promise.resolve({});
+      }
+      return Promise.resolve({ data: [app("google.drive", true, appEnabled)], nextCursor: null });
+    });
+    const { result } = renderHook(() => useApps({ enabled: true }));
+    await waitFor(() => expect(result.current.apps).toHaveLength(1));
+
+    await act(async () => {
+      await result.current.setEnabled(result.current.apps[0], false);
+    });
+
+    expect(requestMock).toHaveBeenCalledWith("config/value/write", {
+      keyPath: 'apps."google.drive".enabled',
+      value: false,
+      mergeStrategy: "upsert",
+    });
+    expect(result.current.apps).toEqual([]);
+    expect(result.current.configurableApps[0].isEnabled).toBe(false);
+    expect(result.current.updatingApps).toEqual([]);
+  });
+
+  it("conserve l’état App Server et expose une erreur d’écriture", async () => {
+    requestMock.mockImplementation((method: string) => {
+      if (method === "app/installed") return Promise.resolve({ apps: [] });
+      if (method === "config/value/write") return Promise.reject(new Error("Configuration administrée"));
+      return Promise.resolve({ data: [app("github", true, true)], nextCursor: null });
+    });
+    const { result } = renderHook(() => useApps({ enabled: true }));
+    await waitFor(() => expect(result.current.apps).toHaveLength(1));
+
+    await act(async () => {
+      await result.current.setEnabled(result.current.apps[0], false);
+    });
+
+    expect(result.current.apps[0].isEnabled).toBe(true);
+    expect(result.current.error).toBe("Configuration administrée");
+    expect(result.current.updatingApps).toEqual([]);
   });
 
   it("normalise les mises à jour et ignore les entrées malformées", async () => {
-    requestMock.mockResolvedValue({ data: [], nextCursor: null });
+    requestMock.mockImplementation((method: string) => Promise.resolve(
+      method === "app/installed" ? { apps: [] } : { data: [], nextCursor: null },
+    ));
     const { result } = renderHook(() => useApps({ enabled: true }));
     await waitFor(() => expect(subscribeMock).toHaveBeenCalledOnce());
     act(() =>
@@ -50,28 +116,55 @@ describe("apps connectées", () => {
         method: "app/list/updated",
         params: {
           data: [
-            {
-              id: "docs",
-              name: "Documents",
+            ...Array.from({ length: 150 }, (_, index) => ({
+              id: `docs-${index}`,
+              name: `Documents ${index}`,
               isAccessible: true,
               isEnabled: true,
-            },
+            })),
             { id: 42 },
           ],
         },
       }),
     );
-    expect(result.current.apps).toEqual([
-      {
-        id: "docs",
-        name: "Documents",
-        description: null,
-        installUrl: null,
-        isAccessible: true,
-        isEnabled: true,
-        pluginDisplayNames: [],
-      },
-    ]);
+    expect(result.current.catalogApps).toHaveLength(150);
+    expect(result.current.catalogApps[149].id).toBe("docs-149");
+  });
+
+  it("lit la politique et les outils puis enregistre une configuration atomique", async () => {
+    requestMock.mockImplementation((method: string) => {
+      if (method === "app/installed") return Promise.resolve({ apps: [] });
+      if (method === "app/list") return Promise.resolve({ data: [app("github", true, true)], nextCursor: null });
+      if (method === "config/read") return Promise.resolve({ config: { apps: { _default: { enabled: true, destructive_enabled: false, open_world_enabled: true }, github: { enabled: true, default_tools_enabled: false, tools: { search: { enabled: true } } } } } });
+      if (method === "app/read") return Promise.resolve({ apps: [{ id: "github", name: "GitHub", description: null, toolSummaries: [{ name: "search", title: "Search", description: "Search repos", isEnabled: true, disabledReason: null, isReadOnly: true }] }], missingAppIds: [] });
+      return Promise.resolve({});
+    });
+    const { result } = renderHook(() => useApps({ enabled: true }));
+    await waitFor(() => expect(result.current.configurableApps).toHaveLength(1));
+    let editor = null;
+    await act(async () => {
+      editor = await result.current.readConfiguration(result.current.configurableApps[0]);
+    });
+    expect(editor).toMatchObject({ config: { default_tools_enabled: false }, tools: [{ name: "search" }] });
+    await act(async () => {
+      await result.current.saveConfiguration({
+        appId: "github",
+        enabled: true,
+        approvalsReviewer: null,
+        destructiveEnabled: false,
+        openWorldEnabled: true,
+        defaultToolsApprovalMode: "prompt",
+        defaultToolsEnabled: false,
+        tools: { search: { enabled: true, approvalMode: "auto" } },
+      });
+    });
+    expect(requestMock).toHaveBeenCalledWith("config/batchWrite", expect.objectContaining({
+      reloadUserConfig: true,
+      edits: expect.arrayContaining([
+        { keyPath: 'apps."github".default_tools_enabled', value: false, mergeStrategy: "replace" },
+        { keyPath: 'apps."github".tools."search".approval_mode', value: "auto", mergeStrategy: "replace" },
+      ]),
+    }));
   });
 });
 

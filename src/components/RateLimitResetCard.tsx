@@ -2,6 +2,10 @@ import { RotateCcw, TicketCheck } from "lucide-react";
 import { useState } from "react";
 import type { RateLimitsController } from "../lib/useRateLimits";
 import { useI18n } from "../i18n/I18nProvider";
+import { IconCard } from "./IconCard";
+import { CardStack } from "./CardStack";
+import { RoundIconButton } from "./RoundIcon";
+import { Alert } from "./Alert";
 
 export function RateLimitResetCard({
   controller,
@@ -16,11 +20,12 @@ export function RateLimitResetCard({
   const credit = summary.credits?.find((item) => item.status === "available");
 
   return (
-    <section className="settings-card reset-credit-card">
-      <TicketCheck />
-      <div>
-        <strong>{t("reset.title")}</strong>
-        <small>
+    <CardStack className="reset-credit-card">
+      <IconCard
+        icon={<TicketCheck />}
+        title={t("reset.title")}
+        subtitle={
+          <>
           {available > 0
             ? t(
                 available === 1 ? "reset.availableOne" : "reset.availableMany",
@@ -29,7 +34,40 @@ export function RateLimitResetCard({
                 },
               )
             : t("reset.none")}
-        </small>
+          </>
+        }
+        trailing={confirming ? (
+          <div
+            className="reset-credit-confirm"
+            role="group"
+            aria-label={t("reset.confirmationLabel")}
+          >
+            <span>{t("reset.question")}</span>
+            <RoundIconButton label={t("common.cancel")} onClick={() => setConfirming(false)} size="medium" variant="secondary" />
+            <RoundIconButton
+              disabled={controller.consuming}
+              icon={RotateCcw}
+              label={controller.consuming ? t("reset.running") : t("common.confirm")}
+              onClick={() => {
+                setConfirming(false);
+                void controller.consumeReset(credit?.id);
+              }}
+              size="medium"
+              variant="primary"
+            />
+          </div>
+        ) : (
+          <RoundIconButton
+            disabled={available < 1 || controller.consuming}
+            icon={RotateCcw}
+            iconClassName={controller.consuming ? "spin" : undefined}
+            label={controller.consuming ? t("reset.running") : t("reset.action")}
+            onClick={() => setConfirming(true)}
+            size="medium"
+            variant="secondary"
+          />
+        )}
+      >
         {credit?.expiresAt && (
           <small>
             {t("reset.expires", {
@@ -43,42 +81,12 @@ export function RateLimitResetCard({
           </p>
         )}
         {controller.error && (
-          <p className="reset-credit-error" role="alert">
+          <Alert tone="error">
             {controller.error}
-          </p>
+          </Alert>
         )}
-      </div>
-      {confirming ? (
-        <div
-          className="reset-credit-confirm"
-          role="group"
-          aria-label={t("reset.confirmationLabel")}
-        >
-          <span>{t("reset.question")}</span>
-          <button onClick={() => setConfirming(false)}>
-            {t("common.cancel")}
-          </button>
-          <button
-            className="primary"
-            disabled={controller.consuming}
-            onClick={() => {
-              setConfirming(false);
-              void controller.consumeReset(credit?.id);
-            }}
-          >
-            {controller.consuming ? t("reset.running") : t("common.confirm")}
-          </button>
-        </div>
-      ) : (
-        <button
-          disabled={available < 1 || controller.consuming}
-          onClick={() => setConfirming(true)}
-        >
-          <RotateCcw className={controller.consuming ? "spin" : undefined} />
-          {controller.consuming ? t("reset.running") : t("reset.action")}
-        </button>
-      )}
-    </section>
+      </IconCard>
+    </CardStack>
   );
 }
 

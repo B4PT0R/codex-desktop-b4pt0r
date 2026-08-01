@@ -2,7 +2,7 @@ import { openUrl } from "../lib/nativeBridge";
 import { ExternalLink, ListChecks } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useI18n } from "../i18n/I18nProvider";
-import { RoundIcon } from "./RoundIcon";
+import { RoundIcon, RoundIconButton } from "./RoundIcon";
 import {
   mcpElicitationResponse,
   type McpElicitationField,
@@ -120,16 +120,12 @@ export function McpElicitationDialog({
         {request.mode === "url" && request.url && (
           <div className="mcp-elicitation-url">
             <code>{request.url}</code>
-            <button type="button" onClick={() => void openTarget()}>
-              <ExternalLink /> {t("mcpElicitation.openChromium")}
-            </button>
+            <RoundIconButton icon={ExternalLink} label={t("mcpElicitation.openChromium")} onClick={() => void openTarget()} variant="secondary" />
             {openError && (
               <div role="alert">
                 <span>{t("mcpElicitation.openError")}</span>
                 <small>{openError}</small>
-                <button type="button" onClick={() => void openTarget(true)}>
-                  {t("mcpElicitation.openSystem")}
-                </button>
+                <RoundIconButton label={t("mcpElicitation.openSystem")} onClick={() => void openTarget(true)} variant="secondary" />
               </div>
             )}
           </div>
@@ -142,45 +138,45 @@ export function McpElicitationDialog({
         )}
 
         <div className="modal-actions mcp-elicitation-actions">
-          <button
-            type="button"
+          <RoundIconButton
             disabled={submitting}
+            label={t("common.cancel")}
             onClick={() => onSubmit(mcpElicitationResponse("cancel"))}
-          >
-            {t("common.cancel")}
-          </button>
-          <button
-            type="button"
+            variant="secondary"
+          />
+          <RoundIconButton
             disabled={submitting}
+            label={t("mcpElicitation.decline")}
             onClick={() => onSubmit(mcpElicitationResponse("decline"))}
-          >
-            {t("mcpElicitation.decline")}
-          </button>
+            variant="secondary"
+          />
           {approvalOnly &&
             request.persistModes.map((mode) => (
-              <button
-                type="button"
+              <RoundIconButton
                 disabled={submitting}
                 key={mode}
+                label={mode === "session"
+                  ? t("mcpElicitation.allowSession")
+                  : t("mcpElicitation.allowAlways")}
                 onClick={() =>
                   onSubmit(mcpElicitationResponse("accept", {}, mode))
                 }
-              >
-                {mode === "session"
-                  ? t("mcpElicitation.allowSession")
-                  : t("mcpElicitation.allowAlways")}
-              </button>
+                variant="secondary"
+              />
             ))}
           {request.mode !== "unsupported" && (
-            <button className="primary" disabled={submitting} type="submit">
-              {submitting
+            <RoundIconButton
+              disabled={submitting}
+              label={submitting
                 ? t("mcpElicitation.sending")
                 : approvalOnly
                   ? t("mcpElicitation.allowOnce")
                   : request.mode === "url"
                     ? t("mcpElicitation.done")
                     : t("mcpElicitation.submit")}
-            </button>
+              type="submit"
+              variant="primary"
+            />
           )}
         </div>
       </form>

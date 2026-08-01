@@ -5,8 +5,15 @@ import { RateLimitResetCard } from "./RateLimitResetCard";
 import { WorkspaceMessages } from "./WorkspaceMessages";
 import { AccountAuthActions } from "./AccountAuthActions";
 import { useI18n } from "../i18n/I18nProvider";
-import { RoundIconButton } from "./RoundIcon";
+import { SettingsPageHeader } from "./SettingsPageHeader";
+import {
+  SettingsControlsBar,
+  SettingsControlsBarButton,
+} from "./SettingsControlsBar";
 import type { MessageKey } from "../i18n/locales/fr";
+import { IconCard } from "./IconCard";
+import { CardStack } from "./CardStack";
+import { Alert } from "./Alert";
 
 export function AccountSettings({
   controller,
@@ -26,40 +33,43 @@ export function AccountSettings({
   );
   return (
     <section className="settings-page account-page">
-      <header>
-        <p>{t("account.description")}</p>
-        <RoundIconButton
-          className="settings-refresh"
-          disabled={controller.loading || rateLimits.loading}
-          icon={RefreshCw}
-          iconClassName={
-            controller.loading || rateLimits.loading ? "spin" : undefined
-          }
-          label={t("account.refresh")}
-          onClick={() =>
-            void Promise.all([controller.refresh(), rateLimits.refresh()])
-          }
-          variant="tertiary"
-        />
-      </header>
+      <SettingsPageHeader description={t("account.description")} />
       {controller.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {controller.error}
-        </div>
+        </Alert>
       )}
       {rateLimits.error && !rateLimits.resetCredits && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("account.rateLimitsError")} {rateLimits.error}
-        </div>
+        </Alert>
       )}
-      <div className="settings-card account-identity">
-        <UserRound />
-        <span>
-          <strong>{identity.title}</strong>
-          <small>{identity.detail}</small>
-        </span>
-        <em>{identity.plan}</em>
-      </div>
+      <CardStack
+        controlBar={<SettingsControlsBar
+          actions={
+          <SettingsControlsBarButton
+            disabled={controller.loading || rateLimits.loading}
+            icon={RefreshCw}
+            iconClassName={
+              controller.loading || rateLimits.loading ? "spin" : undefined
+            }
+            onClick={() =>
+              void Promise.all([controller.refresh(), rateLimits.refresh()])
+            }
+          >
+            {t("account.refresh")}
+          </SettingsControlsBarButton>
+          }
+          label={t("account.data")}
+        />}
+      >
+          <IconCard
+            icon={<UserRound />}
+            subtitle={identity.detail}
+            title={identity.title}
+            trailing={<em className="account-plan-badge">{identity.plan}</em>}
+          />
+      </CardStack>
       <AccountAuthActions controller={controller} />
       <RateLimitResetCard controller={rateLimits} />
       <WorkspaceMessages

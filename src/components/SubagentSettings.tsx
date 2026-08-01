@@ -2,6 +2,9 @@ import { useI18n } from "../i18n/I18nProvider";
 import { reasoningEffortLabel } from "../lib/reasoningEffort";
 import type { CodexGlobalSettingsController } from "../lib/useCodexGlobalSettings";
 import type { Model } from "../types";
+import { CardStack } from "./CardStack";
+import { IconCard } from "./IconCard";
+import { IconSubheader } from "./IconSubheader";
 
 const reasoningEfforts = [
   "minimal",
@@ -31,17 +34,16 @@ export function SubagentSettings({
 
   return (
     <>
-      <div className="settings-subsection-heading">
-        <strong>{t("settings.agent.subagents.title")}</strong>
-        <small>{t("settings.agent.subagents.detail")}</small>
-      </div>
-      <div className="settings-card settings-fields">
-        <label>
-          <span className="settings-field-description">
-            <strong>{t("settings.agent.subagents.enabled")}</strong>
-            <small>{t("settings.agent.subagents.enabledDetail")}</small>
-          </span>
-          <span className="startup-toggle">
+      <IconSubheader
+        title={t("settings.agent.subagents.title")}
+        subtitle={t("settings.agent.subagents.detail")}
+      />
+      <CardStack className="settings-fields">
+        <IconCard
+          as="label"
+          title={t("settings.agent.subagents.enabled")}
+          subtitle={t("settings.agent.subagents.enabledDetail")}
+          trailing={<span className="startup-toggle">
             <input
               aria-label={t("settings.agent.subagents.enabled")}
               checked={config.agentsEnabled}
@@ -57,14 +59,13 @@ export function SubagentSettings({
             {config.agentsEnabled
               ? t("settings.agent.subagents.active")
               : t("settings.agent.subagents.inactive")}
-          </span>
-        </label>
-        <label>
-          <span className="settings-field-description">
-            <strong>{t("settings.agent.subagents.model")}</strong>
-            <small>{t("settings.agent.subagents.modelDetail")}</small>
-          </span>
-          <select
+          </span>}
+        />
+        <IconCard
+          as="label"
+          title={t("settings.agent.subagents.model")}
+          subtitle={t("settings.agent.subagents.modelDetail")}
+          trailing={<select
             aria-label={t("settings.agent.subagents.model")}
             disabled={disabled}
             value={config.subagentModel ?? ""}
@@ -87,14 +88,13 @@ export function SubagentSettings({
                 {model.label}
               </option>
             ))}
-          </select>
-        </label>
-        <label>
-          <span className="settings-field-description">
-            <strong>{t("settings.agent.subagents.effort")}</strong>
-            <small>{t("settings.agent.subagents.effortDetail")}</small>
-          </span>
-          <select
+          </select>}
+        />
+        <IconCard
+          as="label"
+          title={t("settings.agent.subagents.effort")}
+          subtitle={t("settings.agent.subagents.effortDetail")}
+          trailing={<select
             aria-label={t("settings.agent.subagents.effort")}
             disabled={disabled}
             value={config.subagentReasoningEffort ?? ""}
@@ -120,14 +120,13 @@ export function SubagentSettings({
                 {reasoningEffortLabel(effort, t)}
               </option>
             ))}
-          </select>
-        </label>
-        <label>
-          <span className="settings-field-description">
-            <strong>{t("settings.agent.subagents.concurrency")}</strong>
-            <small>{t("settings.agent.subagents.concurrencyDetail")}</small>
-          </span>
-          <select
+          </select>}
+        />
+        <IconCard
+          as="label"
+          title={t("settings.agent.subagents.concurrency")}
+          subtitle={t("settings.agent.subagents.concurrencyDetail")}
+          trailing={<select
             aria-label={t("settings.agent.subagents.concurrency")}
             disabled={disabled}
             value={config.subagentMaxConcurrentThreads ?? ""}
@@ -144,14 +143,13 @@ export function SubagentSettings({
                 {value}
               </option>
             ))}
-          </select>
-        </label>
-        <label>
-          <span className="settings-field-description">
-            <strong>{t("settings.agent.subagents.interrupt")}</strong>
-            <small>{t("settings.agent.subagents.interruptDetail")}</small>
-          </span>
-          <span className="startup-toggle">
+          </select>}
+        />
+        <IconCard
+          as="label"
+          title={t("settings.agent.subagents.interrupt")}
+          subtitle={t("settings.agent.subagents.interruptDetail")}
+          trailing={<span className="startup-toggle">
             <input
               aria-label={t("settings.agent.subagents.interrupt")}
               checked={config.subagentInterruptMessage}
@@ -167,9 +165,9 @@ export function SubagentSettings({
             {config.subagentInterruptMessage
               ? t("settings.agent.subagents.recorded")
               : t("settings.agent.subagents.silent")}
-          </span>
-        </label>
-      </div>
+          </span>}
+        />
+      </CardStack>
     </>
   );
 }

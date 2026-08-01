@@ -14,6 +14,7 @@ describe("réglages vocaux", () => {
   it("présente v3, les voix disponibles et persiste le choix demandé", () => {
     localStorage.setItem("codex-desktop.locale", "fr");
     const setVoice = vi.fn();
+    const refresh = vi.fn();
     render(
       <I18nProvider>
         <VoiceSettings
@@ -22,7 +23,7 @@ describe("réglages vocaux", () => {
             voices: ["juniper", "maple"],
             loading: false,
             saving: false,
-            refresh: vi.fn(),
+            refresh,
             setVoice,
           }}
         />
@@ -33,6 +34,12 @@ describe("réglages vocaux", () => {
       target: { value: "maple" },
     });
     expect(setVoice).toHaveBeenCalledWith("maple");
+    const refreshButton = screen.getByRole("button", {
+      name: "Actualiser les voix",
+    });
+    expect(refreshButton.closest(".voice-settings-card")).not.toBeNull();
+    fireEvent.click(refreshButton);
+    expect(refresh).toHaveBeenCalledOnce();
   });
 
   it("rend l’échec d’inventaire visible sans masquer le catalogue intégré", () => {

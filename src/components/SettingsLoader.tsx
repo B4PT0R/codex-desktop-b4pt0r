@@ -47,9 +47,7 @@ export function SettingsLoader(props: SettingsViewProps) {
           <strong>{t("settings.loadError")}</strong>
           <small>{error}</small>
           <span>
-            <button className="secondary-button" onClick={props.onClose}>
-              {t("settings.back")}
-            </button>
+            <RoundIconButton label={t("settings.back")} onClick={props.onClose} variant="secondary" />
             <RoundIconButton
               icon={RotateCcw}
               label={t("settings.retry")}
