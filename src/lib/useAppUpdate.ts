@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke, isDesktopApp } from "./nativeBridge";
 
 export type AppVersions = {
@@ -36,6 +36,7 @@ export function useAppUpdate(enabled: boolean): AppUpdateController {
   const [installing, setInstalling] = useState(false);
   const [updateInstalled, setUpdateInstalled] = useState(false);
   const [error, setError] = useState<string>();
+  const operationRef = useRef<"check" | "install" | null>(null);
 
   useEffect(() => {
     if (!enabled) return;
@@ -61,7 +62,8 @@ export function useAppUpdate(enabled: boolean): AppUpdateController {
   }, [enabled, native]);
 
   const check = useCallback(async () => {
-    if (!native || checking || installing) return false;
+    if (!native || operationRef.current) return false;
+    operationRef.current = "check";
     setChecking(true);
     setUpdateInstalled(false);
     setStatus(undefined);
@@ -74,19 +76,21 @@ export function useAppUpdate(enabled: boolean): AppUpdateController {
       setError(errorMessage(cause));
       return false;
     } finally {
+      operationRef.current = null;
       setChecking(false);
     }
-  }, [checking, installing, native]);
+  }, [native]);
 
   const install = useCallback(async () => {
     if (
       !native ||
-      installing ||
+      operationRef.current ||
       !status?.updateAvailable ||
       !status.assetAvailable
     ) {
       return false;
     }
+    operationRef.current = "install";
     setInstalling(true);
     setError(undefined);
     try {
@@ -97,9 +101,10 @@ export function useAppUpdate(enabled: boolean): AppUpdateController {
       setError(errorMessage(cause));
       return false;
     } finally {
+      operationRef.current = null;
       setInstalling(false);
     }
-  }, [installing, native, status]);
+  }, [native, status]);
 
   return {
     check,

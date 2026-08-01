@@ -13,6 +13,14 @@ vi.mock("../../src/lib/nativeBridge", () => ({
 
 import { useAppUpdate } from "../../src/lib/useAppUpdate";
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((next) => {
+    resolve = next;
+  });
+  return { promise, resolve };
+}
+
 beforeEach(() => {
   bridge.invoke.mockReset();
   bridge.native = true;
@@ -85,5 +93,75 @@ describe("mise à jour de l’application", () => {
       expect(await result.current.check()).toBe(false);
     });
     expect(bridge.invoke).not.toHaveBeenCalled();
+  });
+
+  it("sérialise les contrôles déclenchés dans le même rendu", async () => {
+    const pending = deferred<{
+      assetAvailable: boolean;
+      currentVersion: string;
+      latestVersion: string;
+      updateAvailable: boolean;
+    }>();
+    bridge.invoke.mockImplementation((command) => {
+      if (command === "read_app_versions") {
+        return Promise.resolve({ clientVersion: "0.3.12" });
+      }
+      if (command === "check_for_updates") return pending.promise;
+      throw new Error(`Unexpected command: ${command}`);
+    });
+    const { result } = renderHook(() => useAppUpdate(true));
+    await waitFor(() => expect(result.current.versions).toBeDefined());
+
+    let first!: Promise<boolean>;
+    await act(async () => {
+      first = result.current.check();
+      expect(await result.current.check()).toBe(false);
+    });
+    expect(bridge.invoke).toHaveBeenCalledTimes(2);
+
+    pending.resolve({
+      assetAvailable: true,
+      currentVersion: "0.3.12",
+      latestVersion: "0.3.13",
+      updateAvailable: true,
+    });
+    await act(async () => expect(await first).toBe(true));
+  });
+
+  it("ne relance pas un contrôle pendant une installation", async () => {
+    const pendingInstall = deferred<{ installed: boolean }>();
+    bridge.invoke.mockImplementation((command) => {
+      if (command === "read_app_versions") {
+        return Promise.resolve({ clientVersion: "0.3.12" });
+      }
+      if (command === "check_for_updates") {
+        return Promise.resolve({
+          assetAvailable: true,
+          currentVersion: "0.3.12",
+          latestVersion: "0.3.13",
+          updateAvailable: true,
+        });
+      }
+      if (command === "install_update") return pendingInstall.promise;
+      throw new Error(`Unexpected command: ${command}`);
+    });
+    const { result } = renderHook(() => useAppUpdate(true));
+    await waitFor(() => expect(result.current.versions).toBeDefined());
+    await act(async () => expect(await result.current.check()).toBe(true));
+
+    let installation!: Promise<boolean>;
+    await act(async () => {
+      installation = result.current.install();
+      expect(await result.current.check()).toBe(false);
+      expect(await result.current.install()).toBe(false);
+    });
+    expect(
+      bridge.invoke.mock.calls.filter(([command]) =>
+        ["check_for_updates", "install_update"].includes(command),
+      ),
+    ).toHaveLength(2);
+
+    pendingInstall.resolve({ installed: true });
+    await act(async () => expect(await installation).toBe(true));
   });
 });
