@@ -3,6 +3,19 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.4.1] - 2026-08-01
+
+### Fixed
+
+- Asynchronous Settings controllers now reject stale responses and serialize
+  conflicting mutations across Apps, MCP integrations, Remote Control, updates,
+  shared Chromium, account login, agent import, configuration editors, Memory,
+  Voice, capability catalogs, default-thread metadata and Scheduled Tasks.
+- Fast duplicate actions can no longer issue concurrent destructive resets,
+  repeated document saves or overlapping lifecycle operations.
+- Late inventory and preference reads can no longer restore deleted tasks,
+  obsolete workspaces, superseded capabilities or older user choices.
+
 ## [0.4.0] - 2026-08-01
 
 ### Added

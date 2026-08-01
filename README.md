@@ -104,7 +104,7 @@ Download the current `.deb` from
 then run:
 
 ```bash
-sudo apt install ./codex-desktop-linux_0.4.0_amd64.deb
+sudo apt install ./codex-desktop-linux_0.4.1_amd64.deb
 ```
 
 Launch **Codex Desktop** from the application menu or run:
@@ -126,7 +126,7 @@ Install the locked dependencies and build the Debian package:
 ```bash
 npm ci
 npm run electron:deb
-sudo apt install ./dist/codex-desktop-linux_0.4.0_amd64.deb
+sudo apt install ./dist/codex-desktop-linux_0.4.1_amd64.deb
 ```
 
 Run the complete desktop environment during development with:

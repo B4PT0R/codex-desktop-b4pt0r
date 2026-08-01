@@ -9,7 +9,7 @@ belongs in `CHANGELOG.md` and Git.
 ## Baseline
 
 Codex Desktop Linux is a functional independent Electron client for the
-official `codex app-server`. The current public release is v0.4.0.
+official `codex app-server`. The current public release is v0.4.1.
 
 The daily workflow covers conversation replay and concurrent activity,
 streaming Markdown/LaTeX, reasoning, plans, tools, approvals, diffs, files,
@@ -21,12 +21,11 @@ Compatibility is currently verified against installed `codex-cli 0.145.0`.
 
 ## Latest release
 
-Release v0.4.0 completes the first ergonomic Extensions surface: guided MCP
-server management, Apps defaults/configuration/discovery, Skills creation and a
-dedicated Plugin inventory. Settings now uses a shared component hierarchy and
-grouped navigation across all pages, with consistent responsive behavior and
-light-theme styling. App discovery consumes the authoritative paginated App
-Server catalog and remains dense enough for hundreds of entries.
+Release v0.4.1 is a stabilization release for the v0.4.0 surface. Async
+controllers across Settings now serialize conflicting mutations and invalidate
+stale reads, preventing late responses from restoring obsolete state in Apps,
+integrations, account, browser, configuration, Voice, Memory, capabilities,
+thread metadata and Scheduled Tasks.
 
 ## Durable constraints
 
@@ -402,7 +401,7 @@ and Git/worktree management without a stable App Server product contract.
 - Installed App Server contract: 51 tests, passing against
   `codex-cli 0.145.0` (722 tests across 127 files including contract).
 - Electron/Node: 117 tests, passing.
-- Production Vite build: passing; main JS 660.27 kB, 189.51 kB gzip.
+- Production Vite build: passing; main JS 660.27 kB, 189.50 kB gzip.
 - Production dependency audit: zero vulnerabilities.
 - `git diff --check`: passing.
 - Settings primitive visual pass: Agent, Advanced Configuration, Plugin
