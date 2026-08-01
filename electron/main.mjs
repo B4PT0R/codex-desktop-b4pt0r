@@ -65,6 +65,7 @@ import {
 } from "./tray-menu.mjs";
 import {
   AppUpdateManager,
+  detectLinuxPackageFormat,
 } from "./app-update.mjs";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -475,6 +476,7 @@ else {
       architecture: process.arch,
       clientVersion: app.getVersion(),
       fetchImpl: net.fetch,
+      packageFormat: detectLinuxPackageFormat(),
       tempRoot: app.getPath("temp"),
     });
     automationScheduler.start();

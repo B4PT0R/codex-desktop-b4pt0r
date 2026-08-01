@@ -1,4 +1,4 @@
-import { Check, Download, RefreshCw } from "lucide-react";
+import { Check, Download, ExternalLink, RefreshCw } from "lucide-react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { AppUpdateController } from "../lib/useAppUpdate";
 import { CardStack } from "./CardStack";
@@ -14,7 +14,11 @@ export function AppUpdateSettings({
   const { t } = useI18n();
   const status = controller.status;
   const canInstall =
-    status?.updateAvailable === true && status.assetAvailable;
+    status?.updateAvailable === true &&
+    status.assetAvailable &&
+    status.installMode === "automatic";
+  const canOpenRelease =
+    status?.updateAvailable === true && status.installMode === "manual";
 
   return (
     <>
@@ -61,6 +65,14 @@ export function AppUpdateSettings({
                     : "settings.updates.install",
                 )}
                 onClick={() => void controller.install()}
+                size="medium"
+                variant="tertiary"
+              />
+            ) : canOpenRelease ? (
+              <RoundIconButton
+                icon={ExternalLink}
+                label={t("settings.updates.openRelease")}
+                onClick={() => void controller.openRelease()}
                 size="medium"
                 variant="tertiary"
               />
@@ -122,6 +134,11 @@ function updateMessage(
   if (!controller.status.updateAvailable) {
     return t("settings.updates.current", {
       version: controller.status.currentVersion,
+    });
+  }
+  if (controller.status.installMode === "manual") {
+    return t("settings.updates.manual", {
+      version: controller.status.latestVersion,
     });
   }
   if (!controller.status.assetAvailable) {

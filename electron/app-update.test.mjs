@@ -8,6 +8,7 @@ import {
   AppUpdateManager,
   checkLatestRelease,
   compareVersions,
+  detectLinuxPackageFormat,
   downloadReleaseAsset,
   installDebianPackage,
   publicUpdateStatus,
@@ -21,21 +22,23 @@ const packageDigest = createHash("sha256")
   .digest("hex");
 
 function release(version = "0.4.0") {
-  const name = `codex-desktop-linux_${version}_amd64.deb`;
+  const names = [
+    `codex-desktop-linux_${version}_amd64.deb`,
+    `codex-desktop-linux_${version}_x86_64.rpm`,
+    `codex-desktop-linux_${version}_x86_64.AppImage`,
+  ];
   return {
     tag_name: `v${version}`,
     html_url:
       `https://github.com/B4PT0R/codex-desktop-b4pt0r/releases/tag/v${version}`,
-    assets: [
-      {
+    assets: names.map((name) => ({
         name,
         state: "uploaded",
         size: packageBytes.length,
         digest: `sha256:${packageDigest}`,
         browser_download_url:
           `https://github.com/B4PT0R/codex-desktop-b4pt0r/releases/download/v${version}/${name}`,
-      },
-    ],
+      })),
   };
 }
 
@@ -71,9 +74,71 @@ test("selects only the matching Debian asset and exposes no download URL", () =>
   assert.deepEqual(publicUpdateStatus(candidate), {
     assetAvailable: true,
     currentVersion: "0.3.12",
+    installMode: "automatic",
     latestVersion: "0.4.0",
+    packageFormat: "deb",
+    releaseUrl:
+      "https://github.com/B4PT0R/codex-desktop-b4pt0r/releases/tag/v0.4.0",
     updateAvailable: true,
   });
+});
+
+test("selects RPM and AppImage assets without authorizing automatic install", () => {
+  const rpm = releaseCandidate(release(), "0.3.12", "x64", "rpm");
+  const appImage = releaseCandidate(
+    release(),
+    "0.3.12",
+    "x64",
+    "appimage",
+  );
+
+  assert.equal(rpm.asset.name, "codex-desktop-linux_0.4.0_x86_64.rpm");
+  assert.equal(rpm.installMode, "manual");
+  assert.equal(
+    appImage.asset.name,
+    "codex-desktop-linux_0.4.0_x86_64.AppImage",
+  );
+  assert.equal(appImage.installMode, "manual");
+});
+
+test("detects AppImage before the distribution package family", () => {
+  assert.equal(
+    detectLinuxPackageFormat({
+      env: { APPIMAGE: "/home/alice/Codex.AppImage" },
+      platform: "linux",
+      readFile: () => 'ID="ubuntu"\n',
+    }),
+    "appimage",
+  );
+  assert.equal(
+    detectLinuxPackageFormat({
+      env: {},
+      platform: "linux",
+      readFile: () => 'ID=fedora\nID_LIKE="rhel"\n',
+    }),
+    "rpm",
+  );
+  assert.equal(
+    detectLinuxPackageFormat({
+      env: {},
+      platform: "linux",
+      readFile: () => "ID=arch\n",
+    }),
+    "unknown",
+  );
+});
+
+test("keeps unknown distributions on the manual release path", () => {
+  const candidate = releaseCandidate(
+    release(),
+    "0.3.12",
+    "x64",
+    "unknown",
+  );
+
+  assert.equal(candidate.asset, undefined);
+  assert.equal(candidate.installMode, "manual");
+  assert.equal(publicUpdateStatus(candidate).releaseUrl, candidate.releaseUrl);
 });
 
 test("does not expose an installable asset when the client is current", () => {
@@ -177,6 +242,24 @@ test("requires a fresh checked candidate and explicit install confirmation", asy
     version: "0.4.0",
   });
   await assert.rejects(manager.install(true), /Check for an available update/);
+});
+
+test("never sends RPM or AppImage assets to the Debian installer", async () => {
+  const installed = [];
+  const manager = new AppUpdateManager({
+    architecture: "x64",
+    clientVersion: "0.3.12",
+    fetchImpl: async () => new Response(JSON.stringify(release())),
+    installPackage: async (...args) => installed.push(args),
+    packageFormat: "rpm",
+    tempRoot: os.tmpdir(),
+  });
+
+  const status = await manager.check();
+  assert.equal(status.assetAvailable, true);
+  assert.equal(status.installMode, "manual");
+  await assert.rejects(manager.install(true), /requires a manual update/);
+  assert.deepEqual(installed, []);
 });
 
 test("installs a matching Debian package as an explicit apt upgrade", async () => {

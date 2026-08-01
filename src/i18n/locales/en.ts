@@ -952,7 +952,7 @@ export const en: Record<MessageKey, string> = {
   "settings.startup.error": "Unable to change automatic startup:",
   "settings.updates.title": "Updates",
   "settings.updates.detail":
-    "Check the latest stable GitHub release and install its verified Debian package.",
+    "Check the latest stable GitHub release and use its verified package for this installation.",
   "settings.updates.client": "Codex Desktop",
   "settings.updates.clientDetail": "Independent Linux client version",
   "settings.updates.codex": "Codex",
@@ -966,9 +966,12 @@ export const en: Record<MessageKey, string> = {
   "settings.updates.checkingDetail": "Contacting GitHub Releases…",
   "settings.updates.current": "Version {version} is up to date.",
   "settings.updates.available": "Version {version} is available.",
+  "settings.updates.manual":
+    "Version {version} is available for manual installation.",
   "settings.updates.assetUnavailable":
     "Version {version} is available, but no package matches this architecture.",
   "settings.updates.install": "Update",
+  "settings.updates.openRelease": "Open release",
   "settings.updates.installing": "Installing…",
   "settings.updates.installComplete":
     "The verified update was installed successfully.",

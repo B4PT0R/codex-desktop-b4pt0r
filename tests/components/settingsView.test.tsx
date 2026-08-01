@@ -87,6 +87,7 @@ const appUpdate = {
   status: undefined,
   check: vi.fn().mockResolvedValue(true),
   install: vi.fn().mockResolvedValue(true),
+  openRelease: vi.fn().mockResolvedValue(true),
 };
 const apps = {
   apps: [],
@@ -309,7 +310,11 @@ describe("centre de réglages", () => {
         status: {
           assetAvailable: true,
           currentVersion: "0.3.12",
+          installMode: "automatic",
           latestVersion: "0.3.13",
+          packageFormat: "deb",
+          releaseUrl:
+            "https://github.com/B4PT0R/codex-desktop-b4pt0r/releases/tag/v0.3.13",
           updateAvailable: true,
         },
       },
@@ -501,7 +506,11 @@ describe("centre de réglages", () => {
         status: {
           assetAvailable: true,
           currentVersion: "0.3.12",
+          installMode: "automatic",
           latestVersion: "0.3.13",
+          packageFormat: "deb",
+          releaseUrl:
+            "https://github.com/B4PT0R/codex-desktop-b4pt0r/releases/tag/v0.3.13",
           updateAvailable: true,
         },
       },
@@ -512,6 +521,34 @@ describe("centre de réglages", () => {
       screen.getByRole("button", { name: "Mettre à jour" }),
     );
     expect(install).toHaveBeenCalledOnce();
+  });
+
+  it("ouvre la release au lieu d’installer un paquet RPM automatiquement", () => {
+    const openRelease = vi.fn().mockResolvedValue(true);
+    renderSettings({
+      appUpdate: {
+        ...appUpdate,
+        openRelease,
+        status: {
+          assetAvailable: true,
+          currentVersion: "0.3.12",
+          installMode: "manual",
+          latestVersion: "0.3.13",
+          packageFormat: "rpm",
+          releaseUrl:
+            "https://github.com/B4PT0R/codex-desktop-b4pt0r/releases/tag/v0.3.13",
+          updateAvailable: true,
+        },
+      },
+    });
+
+    expect(
+      screen.getByText(
+        "La version 0.3.13 est disponible pour une installation manuelle.",
+      ),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Ouvrir la release" }));
+    expect(openRelease).toHaveBeenCalledOnce();
   });
 
   it("modifie le mode global de recherche web depuis Web", () => {

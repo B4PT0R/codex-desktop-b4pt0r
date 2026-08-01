@@ -973,7 +973,7 @@ export const fr = {
   "settings.startup.error": "Impossible de modifier le démarrage automatique :",
   "settings.updates.title": "Mises à jour",
   "settings.updates.detail":
-    "Vérifie la dernière release GitHub stable et installe son paquet Debian validé.",
+    "Vérifie la dernière release GitHub stable et utilise le paquet validé pour cette installation.",
   "settings.updates.client": "Codex Desktop",
   "settings.updates.clientDetail": "Version du client Linux indépendant",
   "settings.updates.codex": "Codex",
@@ -987,9 +987,12 @@ export const fr = {
   "settings.updates.checkingDetail": "Consultation des releases GitHub…",
   "settings.updates.current": "La version {version} est à jour.",
   "settings.updates.available": "La version {version} est disponible.",
+  "settings.updates.manual":
+    "La version {version} est disponible pour une installation manuelle.",
   "settings.updates.assetUnavailable":
     "La version {version} est disponible, mais aucun paquet ne correspond à cette architecture.",
   "settings.updates.install": "Mettre à jour",
+  "settings.updates.openRelease": "Ouvrir la release",
   "settings.updates.installing": "Installation…",
   "settings.updates.installComplete":
     "La mise à jour vérifiée a bien été installée.",

@@ -5,10 +5,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const bridge = vi.hoisted(() => ({
   invoke: vi.fn(),
   native: true,
+  openUrl: vi.fn(),
 }));
 vi.mock("../../src/lib/nativeBridge", () => ({
   invoke: bridge.invoke,
   isDesktopApp: () => bridge.native,
+  openUrl: bridge.openUrl,
 }));
 
 import { useAppUpdate } from "../../src/lib/useAppUpdate";
@@ -24,6 +26,7 @@ function deferred<T>() {
 beforeEach(() => {
   bridge.invoke.mockReset();
   bridge.native = true;
+  bridge.openUrl.mockReset().mockResolvedValue(undefined);
 });
 
 describe("mise à jour de l’application", () => {
@@ -58,7 +61,11 @@ describe("mise à jour de l’application", () => {
         return {
           assetAvailable: true,
           currentVersion: "0.3.12",
+          installMode: "automatic",
           latestVersion: "0.3.13",
+          packageFormat: "deb",
+          releaseUrl:
+            "https://github.com/B4PT0R/codex-desktop-b4pt0r/releases/tag/v0.3.13",
           updateAvailable: true,
         };
       }
@@ -95,11 +102,50 @@ describe("mise à jour de l’application", () => {
     expect(bridge.invoke).not.toHaveBeenCalled();
   });
 
+  it("ouvre la release validée pour une mise à jour manuelle", async () => {
+    bridge.invoke.mockImplementation(async (command) => {
+      if (command === "read_app_versions") {
+        return { clientVersion: "0.3.12" };
+      }
+      if (command === "check_for_updates") {
+        return {
+          assetAvailable: true,
+          currentVersion: "0.3.12",
+          installMode: "manual",
+          latestVersion: "0.3.13",
+          packageFormat: "rpm",
+          releaseUrl:
+            "https://github.com/B4PT0R/codex-desktop-b4pt0r/releases/tag/v0.3.13",
+          updateAvailable: true,
+        };
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    });
+    const { result } = renderHook(() => useAppUpdate(true));
+    await waitFor(() => expect(result.current.versions).toBeDefined());
+    await act(async () => expect(await result.current.check()).toBe(true));
+
+    await act(async () => {
+      expect(await result.current.install()).toBe(false);
+      expect(await result.current.openRelease()).toBe(true);
+    });
+    expect(bridge.openUrl).toHaveBeenCalledWith(
+      "https://github.com/B4PT0R/codex-desktop-b4pt0r/releases/tag/v0.3.13",
+    );
+    expect(bridge.invoke).not.toHaveBeenCalledWith(
+      "install_update",
+      expect.anything(),
+    );
+  });
+
   it("sérialise les contrôles déclenchés dans le même rendu", async () => {
     const pending = deferred<{
       assetAvailable: boolean;
       currentVersion: string;
+      installMode: "automatic";
       latestVersion: string;
+      packageFormat: "deb";
+      releaseUrl: string;
       updateAvailable: boolean;
     }>();
     bridge.invoke.mockImplementation((command) => {
@@ -122,7 +168,11 @@ describe("mise à jour de l’application", () => {
     pending.resolve({
       assetAvailable: true,
       currentVersion: "0.3.12",
+      installMode: "automatic",
       latestVersion: "0.3.13",
+      packageFormat: "deb",
+      releaseUrl:
+        "https://github.com/B4PT0R/codex-desktop-b4pt0r/releases/tag/v0.3.13",
       updateAvailable: true,
     });
     await act(async () => expect(await first).toBe(true));
@@ -138,7 +188,11 @@ describe("mise à jour de l’application", () => {
         return Promise.resolve({
           assetAvailable: true,
           currentVersion: "0.3.12",
+          installMode: "automatic",
           latestVersion: "0.3.13",
+          packageFormat: "deb",
+          releaseUrl:
+            "https://github.com/B4PT0R/codex-desktop-b4pt0r/releases/tag/v0.3.13",
           updateAvailable: true,
         });
       }

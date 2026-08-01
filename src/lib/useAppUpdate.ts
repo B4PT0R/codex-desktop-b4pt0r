@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { invoke, isDesktopApp } from "./nativeBridge";
+import { invoke, isDesktopApp, openUrl } from "./nativeBridge";
 
 export type AppVersions = {
   clientVersion: string;
@@ -10,7 +10,10 @@ export type AppVersions = {
 export type UpdateStatus = {
   assetAvailable: boolean;
   currentVersion: string;
+  installMode: "automatic" | "manual" | "unavailable";
   latestVersion: string;
+  packageFormat: "appimage" | "deb" | "rpm" | "unknown";
+  releaseUrl: string;
   updateAvailable: boolean;
 };
 
@@ -25,6 +28,7 @@ export type AppUpdateController = {
   status?: UpdateStatus;
   check: () => Promise<boolean>;
   install: () => Promise<boolean>;
+  openRelease: () => Promise<boolean>;
 };
 
 export function useAppUpdate(enabled: boolean): AppUpdateController {
@@ -86,7 +90,8 @@ export function useAppUpdate(enabled: boolean): AppUpdateController {
       !native ||
       operationRef.current ||
       !status?.updateAvailable ||
-      !status.assetAvailable
+      !status.assetAvailable ||
+      status.installMode !== "automatic"
     ) {
       return false;
     }
@@ -106,6 +111,17 @@ export function useAppUpdate(enabled: boolean): AppUpdateController {
     }
   }, [native, status]);
 
+  const openRelease = useCallback(async () => {
+    if (!native || !status?.updateAvailable || !status.releaseUrl) return false;
+    try {
+      await openUrl(status.releaseUrl);
+      return true;
+    } catch (cause) {
+      setError(errorMessage(cause));
+      return false;
+    }
+  }, [native, status]);
+
   return {
     check,
     checking,
@@ -115,6 +131,7 @@ export function useAppUpdate(enabled: boolean): AppUpdateController {
     installing,
     loadingVersions,
     native,
+    openRelease,
     status,
     versions,
   };

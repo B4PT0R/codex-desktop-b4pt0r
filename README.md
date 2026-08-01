@@ -141,9 +141,9 @@ npm run electron:linux
 RPM packaging requires `rpmbuild` (`rpm` on Ubuntu/Debian) on the build host.
 The AppImage build needs no additional distribution packaging tool.
 
-The in-app updater remains Debian-only for now. RPM and AppImage artifacts are
-build-validation targets, not supported release installs, until runtime format
-detection can keep their upgrade paths explicitly manual and safe.
+The updater detects Debian, RPM and AppImage installations and selects only the
+matching release asset. Debian retains its verified Polkit/APT installation;
+RPM and AppImage updates open the validated release for manual installation.
 
 Run the complete desktop environment during development with:
 

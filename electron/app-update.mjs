@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
-import { createWriteStream } from "node:fs";
+import { createWriteStream, readFileSync } from "node:fs";
 import { mkdtemp, rename, rm } from "node:fs/promises";
 import path from "node:path";
 import { Readable, Transform } from "node:stream";
@@ -22,6 +22,7 @@ export class AppUpdateManager {
   #fetch;
   #installing = false;
   #installPackage;
+  #packageFormat;
   #tempRoot;
 
   constructor({
@@ -29,12 +30,14 @@ export class AppUpdateManager {
     clientVersion,
     fetchImpl,
     installPackage = installDebianPackage,
+    packageFormat = detectLinuxPackageFormat(),
     tempRoot,
   }) {
     this.#architecture = architecture;
     this.#clientVersion = clientVersion;
     this.#fetch = fetchImpl;
     this.#installPackage = installPackage;
+    this.#packageFormat = packageFormat;
     this.#tempRoot = tempRoot;
   }
 
@@ -48,6 +51,7 @@ export class AppUpdateManager {
       architecture: this.#architecture,
       currentVersion: this.#clientVersion,
       fetchImpl: this.#fetch,
+      packageFormat: this.#packageFormat,
     });
     if (candidate.updateAvailable && candidate.asset) {
       this.#candidate = candidate;
@@ -61,6 +65,9 @@ export class AppUpdateManager {
     }
     if (!this.#candidate?.asset) {
       throw new Error("Check for an available update before installing");
+    }
+    if (this.#candidate.installMode !== "automatic") {
+      throw new Error("This package format requires a manual update");
     }
     if (this.#installing) {
       throw new Error("An update download is already in progress");
@@ -168,6 +175,7 @@ export async function checkLatestRelease({
   architecture = process.arch,
   currentVersion,
   fetchImpl = globalThis.fetch,
+  packageFormat = detectLinuxPackageFormat(),
 }) {
   const response = await fetchImpl(RELEASE_API, {
     headers: {
@@ -184,26 +192,44 @@ export async function checkLatestRelease({
     await response.json(),
     normalizeVersion(currentVersion),
     architecture,
+    packageFormat,
   );
 }
 
-export function releaseCandidate(input, currentVersion, architecture) {
+export function releaseCandidate(
+  input,
+  currentVersion,
+  architecture,
+  packageFormat = "deb",
+) {
   const release = objectValue(input);
   const latestVersion = normalizeVersion(release.tag_name);
   const releaseUrl = validatedReleaseUrl(release.html_url, latestVersion);
   const updateAvailable =
     compareVersions(latestVersion, currentVersion) > 0;
-  const expectedName =
-    `codex-desktop-linux_${latestVersion}_${debianArchitecture(architecture)}.deb`;
-  const asset = Array.isArray(release.assets)
-    ? release.assets
-        .map(objectValue)
-        .find((candidate) => candidate.name === expectedName)
+  const expectedName = releaseAssetName(
+    latestVersion,
+    architecture,
+    packageFormat,
+  );
+  const asset = expectedName
+    ? Array.isArray(release.assets)
+      ? release.assets
+          .map(objectValue)
+          .find((candidate) => candidate.name === expectedName)
+      : undefined
     : undefined;
 
   return {
     currentVersion,
     latestVersion,
+    installMode:
+      updateAvailable && asset
+        ? packageFormat === "deb" ? "automatic" : "manual"
+        : updateAvailable && packageFormat === "unknown"
+          ? "manual"
+          : "unavailable",
+    packageFormat,
     releaseUrl,
     updateAvailable,
     asset:
@@ -217,7 +243,10 @@ export function publicUpdateStatus(candidate) {
   return {
     assetAvailable: Boolean(candidate.asset),
     currentVersion: candidate.currentVersion,
+    installMode: candidate.installMode,
     latestVersion: candidate.latestVersion,
+    packageFormat: candidate.packageFormat,
+    releaseUrl: candidate.releaseUrl,
     updateAvailable: candidate.updateAvailable,
   };
 }
@@ -317,12 +346,12 @@ function validatedAsset(asset, expectedName, version) {
     size <= 0 ||
     size > MAX_PACKAGE_BYTES
   ) {
-    throw new Error("GitHub release contains an invalid Debian asset");
+    throw new Error("GitHub release contains an invalid Linux asset");
   }
   const digest = typeof asset.digest === "string" ? asset.digest : "";
   const digestMatch = /^sha256:([a-f0-9]{64})$/i.exec(digest);
   if (!digestMatch) {
-    throw new Error("GitHub release Debian asset has no SHA-256 digest");
+    throw new Error("GitHub release Linux asset has no SHA-256 digest");
   }
   const url = new URL(String(asset.browser_download_url ?? ""));
   const expectedPrefix =
@@ -333,7 +362,7 @@ function validatedAsset(asset, expectedName, version) {
     !url.pathname.startsWith(expectedPrefix) ||
     path.posix.basename(url.pathname) !== expectedName
   ) {
-    throw new Error("GitHub release contains an invalid Debian asset URL");
+    throw new Error("GitHub release contains an invalid Linux asset URL");
   }
   return {
     name: expectedName,
@@ -359,6 +388,55 @@ function debianArchitecture(architecture) {
   if (architecture === "x64") return "amd64";
   if (architecture === "arm64") return "arm64";
   throw new Error(`Unsupported update architecture: ${architecture}`);
+}
+
+function portableArchitecture(architecture) {
+  if (architecture === "x64") return "x86_64";
+  if (architecture === "arm64") return "arm64";
+  throw new Error(`Unsupported update architecture: ${architecture}`);
+}
+
+function rpmArchitecture(architecture) {
+  if (architecture === "x64") return "x86_64";
+  if (architecture === "arm64") return "aarch64";
+  throw new Error(`Unsupported update architecture: ${architecture}`);
+}
+
+function releaseAssetName(version, architecture, packageFormat) {
+  if (packageFormat === "deb") {
+    return `codex-desktop-linux_${version}_${debianArchitecture(architecture)}.deb`;
+  }
+  if (packageFormat === "rpm") {
+    return `codex-desktop-linux_${version}_${rpmArchitecture(architecture)}.rpm`;
+  }
+  if (packageFormat === "appimage") {
+    return `codex-desktop-linux_${version}_${portableArchitecture(architecture)}.AppImage`;
+  }
+  return undefined;
+}
+
+export function detectLinuxPackageFormat({
+  env = process.env,
+  platform = process.platform,
+  readFile = readFileSync,
+} = {}) {
+  if (platform !== "linux") return "unknown";
+  if (typeof env.APPIMAGE === "string" && env.APPIMAGE.trim()) {
+    return "appimage";
+  }
+  try {
+    const release = String(readFile("/etc/os-release", "utf8"));
+    const family = release
+      .split(/\r?\n/)
+      .filter((line) => /^(ID|ID_LIKE)=/.test(line))
+      .join(" ")
+      .toLowerCase();
+    if (/\b(debian|ubuntu)\b/.test(family)) return "deb";
+    if (/\b(fedora|rhel|centos|suse|opensuse)\b/.test(family)) return "rpm";
+  } catch {
+    // Unknown distributions remain on the non-installing release path.
+  }
+  return "unknown";
 }
 
 function normalizeVersion(value) {
