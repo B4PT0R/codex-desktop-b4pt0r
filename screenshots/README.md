@@ -17,6 +17,14 @@ every visual iteration. Historical captures remain available through Git.
   showing search, connection state and progressive access to connector details.
 - `settings-memory-light-1164x860.png` — light-theme Settings baseline showing
   shared icon subheaders, joined option cards and the local-memory reset action.
+- `settings-navigation-light-1164x860.png` — light-theme Settings navigation
+  grouped into Application, Agents & Capabilities, Extensions and Advanced.
+- `settings-skills-light-1164x860.png` — light-theme Skills & Plugins baseline
+  showing the dedicated Skills page and its inventory actions.
+- `settings-plugins-light-1164x860.png` — light-theme dedicated Plugins page
+  showing the separate bundle-level surface.
+- `settings-skills-create-light-1164x860.png` — light-theme guided skill
+  creation modal at its essential-information step.
 
 These images are generated from the deterministic local preview:
 

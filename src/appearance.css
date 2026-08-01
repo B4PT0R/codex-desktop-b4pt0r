@@ -55,6 +55,7 @@
 :root[data-theme="light"] .search,
 :root[data-theme="light"] .sidebar-bottom button,
 :root[data-theme="light"] .settings-navigation nav button,
+:root[data-theme="light"] .settings-navigation-group h2,
 :root[data-theme="light"] .settings-back,
 :root[data-theme="light"] .settings-page-header-description,
 :root[data-theme="light"] .settings-field-description small,
@@ -952,6 +953,15 @@
 
 :root[data-theme="light"] .settings-dialog-tabs button.active::after {
   background: #555550;
+}
+
+:root[data-theme="light"] .skill-path-preview {
+  color: #6f6f69;
+  background: #f0f0ec;
+}
+
+:root[data-theme="light"] .skill-path-preview code {
+  color: #454540;
 }
 
 :root[data-theme="light"] .settings-form-dialog-body small.field-error {

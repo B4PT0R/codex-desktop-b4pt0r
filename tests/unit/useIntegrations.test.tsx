@@ -6,6 +6,7 @@ const requestMock = vi.hoisted(() => vi.fn());
 const subscribeMock = vi.hoisted(() => vi.fn());
 const openChromiumMock = vi.hoisted(() => vi.fn());
 const openUrlMock = vi.hoisted(() => vi.fn());
+const invokeMock = vi.hoisted(() => vi.fn());
 vi.mock("../../src/lib/codex", () => ({
   isDesktopApp: () => true,
   request: requestMock,
@@ -14,7 +15,7 @@ vi.mock("../../src/lib/codex", () => ({
 vi.mock("../../src/lib/useChromium", () => ({
   openInChromium: openChromiumMock,
 }));
-vi.mock("../../src/lib/nativeBridge", () => ({ openUrl: openUrlMock }));
+vi.mock("../../src/lib/nativeBridge", () => ({ invoke: invokeMock, openUrl: openUrlMock }));
 
 import { useIntegrations } from "../../src/lib/useIntegrations";
 
@@ -32,9 +33,33 @@ beforeEach(() => {
   subscribeMock.mockReturnValue(vi.fn());
   openChromiumMock.mockReset().mockResolvedValue(undefined);
   openUrlMock.mockReset().mockResolvedValue(undefined);
+  invokeMock.mockReset().mockResolvedValue(undefined);
 });
 
 describe("inventaire des intégrations", () => {
+  it("crée un skill borné puis recharge l’inventaire App Server", async () => {
+    requestMock.mockResolvedValue({ data: [{ cwd: "/project", skills: [], errors: [] }] });
+    const { result } = renderHook(() => useIntegrations({ cwd: "/project", enabled: false }));
+    let created = false;
+    await act(async () => {
+      created = await result.current.createSkill({
+        name: "review-changes",
+        description: "Relire les changements.",
+        instructions: "# Workflow\n\nInspecter le diff.",
+        scope: "repo",
+      });
+    });
+    expect(created).toBe(true);
+    expect(invokeMock).toHaveBeenCalledWith("create_skill_scaffold", {
+      name: "review-changes",
+      description: "Relire les changements.",
+      instructions: "# Workflow\n\nInspecter le diff.",
+      scope: "repo",
+      workspace: "/project",
+    });
+    expect(requestMock).toHaveBeenCalledWith("skills/list", { cwds: ["/project"], forceReload: true });
+  });
+
   it("écrit puis recharge un nouveau serveur MCP", async () => {
     requestMock
       .mockResolvedValueOnce({})

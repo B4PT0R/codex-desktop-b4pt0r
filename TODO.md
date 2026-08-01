@@ -190,6 +190,29 @@ authoritative `app/list` / `app/installed` state. Pagination is bounded to four
 pages / 200 entries. The inventory, catalog, detail and 840px layouts were
 reviewed in the live light-theme preview; both curated Apps captures are current.
 
+Completed Skills creation lot: retain App Server `skills/list` and
+`skills/config/write` as the discovery and activation authority, while adding a
+strictly bounded Electron scaffold operation for new personal or workspace
+skills. Settings will progressively collect the required name, trigger
+description and Markdown instructions, create only a new
+`<root>/<slug>/SKILL.md`, then force-refresh the authoritative inventory. The
+flow must reject traversal, duplicates, symlinked targets and oversized content;
+arbitrary file writing and optional resource editing remain outside this lot.
+Skills and Plugins now have separate top-level Settings sections because a
+Plugin is a bundle that may aggregate Apps, Skills and MCP integrations rather
+than a subtype of Skill. Their redundant same-name subheaders were removed now
+that each domain has its own page; content begins directly with its `CardStack`.
+Navigation presents Apps, Skills and MCP first, then Plugins as their aggregate.
+Settings navigation is grouped into Application, Agents & Capabilities,
+Extensions and Advanced. Group headings are semantic and search-aware; compact
+medium navigation rows keep the complete hierarchy visible at 1164x860 while
+the navigation pane scrolls independently at the 840x620 reference viewport.
+Hooks remains under Extensions so the existing feature stays discoverable.
+The guided Essential / Instructions
+modal normalizes names, explains trigger descriptions and supports personal or
+workspace scope. Its native boundary rejects invalid names, duplicates,
+symlinked roots/targets and oversized content before force-refreshing App Server.
+
 Current MCP addition lot: Settings opens an Add server modal from the inventory
 controls bar. It exposes the useful App Server configuration surface in
 progressive Essential / Advanced tabs: transport connection first, then common
@@ -289,16 +312,10 @@ light-theme cards plus the narrow confirmation dialog were visually reviewed.
 
 ## Next bounded work
 
-1. Complete ergonomic integration support without inventing client-owned
-   capability state:
-   - finish the current App global-activation lot and visually validate its
-     enabled, disabled, loading and failure states;
-   - enrich MCP with App Server startup state and bounded documented
-     configuration controls;
-   - add an effective thread integration view only where `threadId`-scoped
-     reads expose authoritative state;
-   - keep Plugin list/install/uninstall out of production while App Server
-     documents those methods as under development.
+1. Complete ergonomic Plugin support without inventing client-owned capability
+   state. Re-audit the installed marketplace/plugin methods before enabling the
+   current planned surface; keep list/install/uninstall out of production until
+   the App Server contract is declared client-ready.
 2. Exercise long-idle and suspend/resume recovery in packaged Electron with a
    scheduled task, approval gating, hidden-window delivery and Realtime active.
 3. Add a concise public App Server compatibility guide and `SECURITY.md`.
@@ -317,11 +334,11 @@ and Git/worktree management without a stable App Server product contract.
 - Settings primitive migration: 44 focused component tests across five files,
   passing; production build and full regression suite are listed below when
   rerun for the completed lot.
-- Deterministic frontend/unit suite: 637 tests across 125 files, passing.
+- Deterministic frontend/unit suite: 640 tests across 125 files, passing.
 - Installed App Server contract: 51 tests, passing against
   `codex-cli 0.145.0` (660 tests across 122 files including contract).
-- Electron/Node: 114 tests, passing.
-- Production Vite build: passing; main JS 653.07 kB, 187.58 kB gzip.
+- Electron/Node: 117 tests, passing.
+- Production Vite build: passing; main JS 657.27 kB, 188.75 kB gzip.
 - Production dependency audit: zero vulnerabilities.
 - `git diff --check`: passing.
 - Settings primitive visual pass: Agent, Advanced Configuration, Plugin
@@ -341,6 +358,15 @@ and Git/worktree management without a stable App Server product contract.
   confirmation dialog were reviewed in light theme. The shared modal danger
   action now uses a quiet tinted treatment with explicit hover/focus emphasis
   instead of a heavy low-contrast red fill.
+- Shared-browser Skills and Plugins preview: dedicated pages without redundant
+  subheaders, navigation ordered Apps → Skills → MCP Servers → Plugins, and the
+  guided Essential / Instructions modal pass in light theme at 1164x860 and
+  840x620 with no clipped controls or console error. Curated inventory,
+  creation and Plugin captures are current.
+- Shared-browser grouped Settings navigation: all four semantic groups and
+  destinations fit at 1164x860 with compact shared buttons; the 840x620 layout
+  scrolls the sidebar independently without clipping the page or controls.
+  Search removes empty group headings and the console remains error-free.
 - Debian package: built successfully as `codex-desktop-linux 0.3.17` (amd64),
   SHA-256
   `0a50e029f683e66e7d8191e9a5f376efb3bad12b756a28dd80540f4d59ead681`;

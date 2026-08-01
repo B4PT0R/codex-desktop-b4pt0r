@@ -252,7 +252,7 @@ export default function App() {
   }, []);
   const integrations = useIntegrations({
     cwd,
-    enabled: settings === "plugins" || settings === "mcp",
+    enabled: settings === "skills" || settings === "mcp",
     hooksEnabled: settings === "hooks",
     threadId,
   });

@@ -219,21 +219,19 @@ configurent exclusivement des préférences persistantes globales. Le modèle,
 l’effort et le mode Plan du thread restent dans le popover Modèle ; permissions
 et approbations partagent le popover Security sous le composer.
 
-Le centre utilise une navigation interne durable :
+Le centre utilise quatre rubriques stables :
 
-1. **Général** — langue, démarrage, ouverture des fichiers et cycle App Server ;
-2. **Web** — recherche web globale, Chromium Playwright partagé, activation, état et réparation ;
-3. **Chat** — résumés et futures préférences globales qui contrôlent le niveau de détail visible ;
-4. **Agent** — modèle, effort, tier de service, personnalité et sous-agents globaux ;
-5. **Permissions** — profils, approbations, relecteur et exigences administrées ;
-6. **Configuration** — champs TOML globaux guidés, éditeur brut et instructions personnelles ;
-7. **Apps** — connecteurs et services de données accessibles à Codex ;
-8. **Skills et plugins** — capacités, procédures et bundles installés ;
-9. **Serveurs MCP** — infrastructure d’outils, état et authentification ;
-10. **Tâches planifiées** — réveils locaux, cible de conversation, pause et exécution immédiate ;
-11. **Compte et utilisation** — connexion, quotas, consommation et messages ;
-12. **Avancé** — fonctions expérimentales, import d’autres agents, contrôle distant,
-    diagnostics et feedback.
+1. **Application** — Général, Compte et utilisation, Apparence et affichage,
+   Contrôle à distance ;
+2. **Agents & Capabilities** — Agents, Permissions, Web, Voix, Mémoire,
+   Planificateur ;
+3. **Extensions** — Skills, Apps, Serveurs MCP, Plugins et Hooks ;
+4. **Advanced** — Configuration et import depuis un autre agent.
+
+Les titres de rubrique sont des
+régions sémantiques et disparaissent lorsqu’une recherche ne conserve aucun de
+leurs éléments. Hooks reste classé avec les extensions ; la liste utilise le
+gabarit compact commun et défile indépendamment aux faibles hauteurs.
 
 État actuel : les inventaires stables `skills/list`, `mcpServerStatus/list` et
 `hooks/list` sont branchés, ainsi que l’activation des skills, la connexion OAuth
@@ -242,6 +240,15 @@ transitoires, sont attribués par `threadId` puis purgés au changement de threa
 ils ne sont jamais présentés comme une santé globale persistante. Les hooks effectifs
 du projet restent volontairement en lecture seule :
 leur origine, confiance et commande sont consultables, sans simuler une API de mutation.
+Skills et Plugins sont deux sections Settings de premier niveau : un Plugin est
+un bundle susceptible d'agréger Apps, Skills et intégrations MCP, et non un
+sous-type de Skill. Chaque page débute directement avec sa pile de contenu,
+sans sous-titre répétant son nom. La création
+d’un skill passe par une modale progressive puis un IPC Electron spécialisé qui
+ne peut créer qu’un nouveau `SKILL.md` sous la racine personnelle ou celle du
+workspace courant. L’inventaire est ensuite relu avec `skills/list(forceReload)` ;
+le client ne maintient aucun catalogue parallèle et n’expose pas d’écriture de
+fichier arbitraire.
 Les apps accessibles de `app/list` apparaissent dans les réglages avec leur
 activation globale effective, écrite par le contrôle borné
 `apps."<id>".enabled`. Seules les apps accessibles et activées sont proposées

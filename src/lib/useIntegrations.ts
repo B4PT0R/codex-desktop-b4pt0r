@@ -23,6 +23,14 @@ import {
 import { useI18n } from "../i18n/I18nProvider";
 import type { Translate } from "../i18n/translate";
 import { openExternalTarget, safeExternalHttpUrl } from "./externalTarget";
+import { invoke } from "./nativeBridge";
+
+export type SkillDraft = {
+  name: string;
+  description: string;
+  instructions: string;
+  scope: "user" | "repo";
+};
 
 export type IntegrationInventory<T> = {
   data: T[];
@@ -50,6 +58,8 @@ export type IntegrationsController = {
   removableMcpServers: string[];
   setSkillEnabled: (skill: AppServerSkill, enabled: boolean) => Promise<void>;
   updatingSkills: string[];
+  createSkill: (draft: SkillDraft) => Promise<boolean>;
+  creatingSkill: boolean;
 };
 
 type UseIntegrationsOptions = {
@@ -79,6 +89,7 @@ export function useIntegrations({
     IntegrationInventory<McpServerStatus>
   >({ data: [], loading: false });
   const [updatingSkills, setUpdatingSkills] = useState<string[]>([]);
+  const [creatingSkill, setCreatingSkill] = useState(false);
   const [authenticatingMcp, setAuthenticatingMcp] = useState<string[]>([]);
   const [mcpAuthNotice, setMcpAuthNotice] = useState<string>();
   const [reloadingMcp, setReloadingMcp] = useState(false);
@@ -298,6 +309,22 @@ export function useIntegrations({
     [],
   );
 
+  const createSkill = useCallback(async (draft: SkillDraft) => {
+    if (creatingSkill || !isDesktopApp()) return false;
+    setCreatingSkill(true);
+    setSkills((state) => ({ ...state, error: undefined }));
+    try {
+      await invoke("create_skill_scaffold", { ...draft, workspace: cwd });
+      await refreshSkills();
+      return true;
+    } catch (error) {
+      setSkills((state) => ({ ...state, error: errorMessage(error) }));
+      return false;
+    } finally {
+      setCreatingSkill(false);
+    }
+  }, [creatingSkill, cwd, refreshSkills]);
+
   const authenticateMcp = useCallback(
     async (server: McpServerStatus) => {
       if (mcpAuthInFlight.current.has(server.name)) return;
@@ -390,6 +417,8 @@ export function useIntegrations({
   return {
     addMcpServer,
     addingMcpServer,
+    createSkill,
+    creatingSkill,
     authenticateMcp,
     authenticatingMcp,
     hooks,

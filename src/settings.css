@@ -116,6 +116,26 @@
   padding-right: 2px;
 }
 
+.settings-navigation-group {
+  display: grid;
+  gap: 1px;
+}
+
+.settings-navigation-group + .settings-navigation-group {
+  margin-top: 13px;
+}
+
+.settings-navigation-group h2 {
+  margin: 0;
+  padding: 4px 9px 5px;
+  color: #777772;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.055em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
 .settings-navigation nav button {
   display: flex;
   align-items: center;
@@ -1102,6 +1122,41 @@
   color: #d0d0cc;
   background: #292927;
   font: inherit;
+}
+
+.skill-create-dialog {
+  width: min(540px, calc(100vw - 32px));
+}
+
+.skill-create-dialog .settings-form-dialog-body textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.skill-create-dialog .settings-form-dialog-body .skill-instructions-editor {
+  min-height: 210px;
+  font-family: var(--font-mono);
+  line-height: 1.5;
+}
+
+.skill-path-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: #92928d;
+  background: #2c2c29;
+  font-size: 10px;
+}
+
+.skill-path-preview code {
+  overflow: hidden;
+  color: #c5c5c0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .settings-form-dialog-body textarea {

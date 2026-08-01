@@ -5,11 +5,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   AppsSettings,
   McpSettings,
+  PluginsSettings,
   SkillsSettings,
 } from "../../src/components/IntegrationSettings";
 import type { IntegrationsController } from "../../src/lib/useIntegrations";
 import type { AppsController } from "../../src/lib/useApps";
 import { I18nProvider } from "../../src/i18n/I18nProvider";
+import { SkillCreateDialog } from "../../src/components/SkillCreateDialog";
 
 afterEach(() => {
   cleanup();
@@ -22,6 +24,8 @@ function controller(
   return {
     addMcpServer: vi.fn(),
     addingMcpServer: false,
+    createSkill: vi.fn(),
+    creatingSkill: false,
     removeMcpServer: vi.fn(),
     removingMcpServers: [],
     removableMcpServers: [],
@@ -83,9 +87,29 @@ describe("réglages des intégrations", () => {
       integrations.skills.data[0],
       false,
     );
-    expect(
-      screen.getByText(/API officielle est encore réservée/),
-    ).toBeVisible();
+    expect(screen.queryByText(/API officielle est encore réservée/)).not.toBeInTheDocument();
+  });
+
+  it("présente les plugins dans une section autonome", () => {
+    render(<PluginsSettings />);
+    expect(screen.getByText(/Apps, des Skills et des intégrations MCP/)).toBeVisible();
+    expect(screen.getByText(/API officielle est encore réservée/)).toBeVisible();
+  });
+
+  it("assiste la création progressive d’un skill", async () => {
+    const createSkill = vi.fn().mockResolvedValue(true);
+    render(<SkillCreateDialog creating={false} onCancel={vi.fn()} onCreate={createSkill} />);
+    fireEvent.change(screen.getByPlaceholderText("relire-changements"), { target: { value: "Review Changes" } });
+    fireEvent.change(screen.getByPlaceholderText(/Relire un lot de changements/), { target: { value: "Relire les changements quand on demande une revue." } });
+    fireEvent.click(screen.getByRole("tab", { name: "Instructions" }));
+    fireEvent.change(screen.getByRole("textbox", { name: /Instructions du workflow/ }), { target: { value: "# Workflow\n\nInspecter le diff." } });
+    fireEvent.click(screen.getByRole("button", { name: "Créer un skill" }));
+    await waitFor(() => expect(createSkill).toHaveBeenCalledWith({
+      name: "review-changes",
+      description: "Relire les changements quand on demande une revue.",
+      instructions: "# Workflow\n\nInspecter le diff.",
+      scope: "user",
+    }));
   });
 
   it("présente les Apps accessibles et permet de les désactiver globalement", () => {

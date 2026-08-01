@@ -26,6 +26,7 @@ import { AppConfigurationDialog, AppConfigurationLoadingDialog } from "./AppConf
 import { AppCatalogDialog } from "./AppCatalogDialog";
 import { AppDefaultsSettings } from "./AppDefaultsSettings";
 import { IconSubheader } from "./IconSubheader";
+import { SkillCreateDialog } from "./SkillCreateDialog";
 import {
   SettingsControlsBar,
   SettingsControlsBarButton,
@@ -128,6 +129,7 @@ export function SkillsSettings({
 }) {
   const { t } = useI18n();
   const { skills } = integrations;
+  const [creating, setCreating] = useState(false);
   return (
     <section className="settings-page integrations-page">
       <SettingsPageHeader description={t("integrations.skills.description")} />
@@ -136,10 +138,10 @@ export function SkillsSettings({
         className="integration-list"
         controlBar={<SettingsControlsBar
           actions={
-          <InventoryRefresh
+          <><SettingsControlsBarButton icon={Plus} onClick={() => setCreating(true)}>{t("integrations.skills.createAction")}</SettingsControlsBarButton><InventoryRefresh
             loading={skills.loading}
             onRefresh={integrations.refreshSkills}
-          />
+          /></>
           }
           label={t("integrations.skills.title")}
           status={inventoryCount(skills.data.length, t)}
@@ -180,16 +182,24 @@ export function SkillsSettings({
           ))
         )}
       </CardStack>
-      <CardStack className="planned-settings integration-planned">
-        <IconCard
-          icon={<Puzzle />}
-          subtitle={t("integrations.plugins.detail")}
-          title={t("integrations.plugins.title")}
-          trailing={<em>{t("integrations.planned")}</em>}
-        />
-      </CardStack>
+      {creating && <SkillCreateDialog creating={integrations.creatingSkill} onCancel={() => setCreating(false)} onCreate={integrations.createSkill} />}
     </section>
   );
+}
+
+export function PluginsSettings() {
+  const { t } = useI18n();
+  return <section className="settings-page integrations-page">
+    <SettingsPageHeader description={t("integrations.plugins.description")} />
+    <CardStack className="planned-settings integration-planned">
+      <IconCard
+        icon={<Puzzle />}
+        subtitle={t("integrations.plugins.detail")}
+        title={t("integrations.plugins.title")}
+        trailing={<em>{t("integrations.planned")}</em>}
+      />
+    </CardStack>
+  </section>;
 }
 
 export function McpSettings({

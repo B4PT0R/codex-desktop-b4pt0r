@@ -35,6 +35,7 @@ import { HooksSettings } from "./HooksSettings";
 import {
   AppsSettings,
   McpSettings,
+  PluginsSettings,
   SkillsSettings,
 } from "./IntegrationSettings";
 import { MemorySettings } from "./MemorySettings";
@@ -162,8 +163,10 @@ function SettingsSection(props: SettingsViewProps) {
       return <CodexConfigSettings globalSettings={props.webSearch} />;
     case "apps":
       return <AppsSettings apps={props.apps} />;
-    case "plugins":
+    case "skills":
       return <SkillsSettings integrations={props.integrations} />;
+    case "plugins":
+      return <PluginsSettings />;
     case "mcp":
       return <McpSettings integrations={props.integrations} />;
     case "hooks":
