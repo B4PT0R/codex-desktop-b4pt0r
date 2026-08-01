@@ -266,6 +266,19 @@
   background: #e9e9e4;
 }
 
+:root[data-theme="light"] .modal-actions .danger {
+  border-color: #dec2bc;
+  color: #a65347;
+  background: #f7eeeb;
+}
+
+:root[data-theme="light"] .modal-actions .danger:hover:not(:disabled),
+:root[data-theme="light"] .modal-actions .danger:focus-visible:not(:disabled) {
+  border-color: #c98275;
+  color: #8f4036;
+  background: #efddd8;
+}
+
 :root[data-theme="light"] .composer-actions button:hover,
 :root[data-theme="light"] .composer-actions button.active {
   color: var(--reader-ink);
@@ -863,28 +876,41 @@
   color: #6d6d68;
 }
 
-:root[data-theme="light"] .auth-status,
-:root[data-theme="light"] .mcp-startup-status {
-  border-color: #d5d5cf;
-  color: #6d6d68;
-}
-
-:root[data-theme="light"] .auth-status.notLoggedIn,
-:root[data-theme="light"] .mcp-startup-status.failed {
-  color: #865b41;
-}
-
-:root[data-theme="light"] .mcp-startup-status.ready {
-  color: #58765d;
-}
-
-:root[data-theme="light"] .mcp-startup-status.starting {
-  color: #887342;
-}
-
 :root[data-theme="light"] .mcp-startup-error {
   color: #865b41;
   background: #f3f3ef;
+}
+
+:root[data-theme="light"] .mcp-add-dialog-body label {
+  color: #555550;
+}
+
+:root[data-theme="light"] .mcp-add-dialog-body input,
+:root[data-theme="light"] .mcp-add-dialog-body select,
+:root[data-theme="light"] .mcp-add-dialog-body textarea {
+  border-color: #d5d5cf;
+  color: #33332e;
+  background: #f7f7f4;
+}
+
+:root[data-theme="light"] .mcp-add-tabs {
+  border-color: #d5d5cf;
+}
+
+:root[data-theme="light"] .mcp-add-tabs button {
+  color: #696963;
+}
+
+:root[data-theme="light"] .mcp-add-tabs button.active {
+  color: #33332e;
+}
+
+:root[data-theme="light"] .mcp-add-tabs button.active::after {
+  background: #555550;
+}
+
+:root[data-theme="light"] .mcp-add-dialog-body small.field-error {
+  color: #a45543;
 }
 
 :root[data-theme="light"] .config-editor-dialog > header strong {

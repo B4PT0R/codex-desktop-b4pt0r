@@ -168,6 +168,28 @@ domain widgets.
 Completed current bounded lots: global App activation and thread-scoped MCP
 startup visibility.
 
+Current MCP addition lot: Settings opens an Add server modal from the inventory
+controls bar. It exposes the useful App Server configuration surface in
+progressive Essential / Advanced tabs: transport connection first, then common
+timeouts, tool filters, default approval and transport-specific environment or
+header controls. Rare environment routing, custom OAuth and per-tool policy
+remain in `config.toml`. Submission is a direct targeted
+`config/value/write` at `mcp_servers."<name>"`, followed by MCP reload and an
+authoritative inventory refresh. Duplicate visible names and malformed URLs,
+environment variables, key/value lines and timeouts are rejected before write.
+The final tabbed stdio and HTTP variants were reviewed in light theme at
+1164x860 and the advanced local form at 840x620; its body scrolls independently
+while actions remain visible.
+MCP inventory cards no longer repeat the server key as a permanent monospace
+third line; they stay at title/subtitle density unless a useful startup error
+needs its own detail row.
+Tool count, optional version, startup and authentication states now share that
+single subtitle line. The trailing column contains only Sign in and conditional
+Remove actions. Remove is exposed only for names found in App Server's writable
+base user config layer, is explicitly confirmed, writes `null` with replace
+semantics, reloads MCP and refreshes authoritative inventory. Wide and 840x620
+light-theme cards plus the narrow confirmation dialog were visually reviewed.
+
 - Audited installed `codex-cli 0.145.0` schemas and official source conventions.
 - Confirmed `app/list.isEnabled` plus targeted
   `config/value/write` at `apps."<id>".enabled` as the supported global flow.
@@ -273,11 +295,11 @@ and Git/worktree management without a stable App Server product contract.
 - Settings primitive migration: 44 focused component tests across five files,
   passing; production build and full regression suite are listed below when
   rerun for the completed lot.
-- Deterministic frontend/unit suite: 623 tests across 125 files, passing.
+- Deterministic frontend/unit suite: 631 tests across 125 files, passing.
 - Installed App Server contract: 51 tests, passing against
   `codex-cli 0.145.0` (660 tests across 122 files including contract).
 - Electron/Node: 114 tests, passing.
-- Production Vite build: passing; main JS 627.61 kB, 181.00 kB gzip.
+- Production Vite build: passing; main JS 639.81 kB, 184.23 kB gzip.
 - Production dependency audit: zero vulnerabilities.
 - `git diff --check`: passing.
 - Settings primitive visual pass: Agent, Advanced Configuration, Plugin
@@ -286,6 +308,13 @@ and Git/worktree management without a stable App Server product contract.
   recaptured after removing its bespoke dark icon tile.
 - Shared-browser Apps settings preview: passing at 1164x860 and 840x620 with no
   overflow or console error; stable enabled and disabled states are represented.
+- Shared-browser MCP addition preview: essential and advanced stdio/HTTP states
+  reviewed in light theme at 1164x860; the advanced form also passes at 840x620
+  with an independently scrolling body, persistent actions and aligned icon/title.
+- MCP inventory metadata/removal preview: wide and 840x620 layouts plus the
+  confirmation dialog were reviewed in light theme. The shared modal danger
+  action now uses a quiet tinted treatment with explicit hover/focus emphasis
+  instead of a heavy low-contrast red fill.
 - Debian package: built successfully as `codex-desktop-linux 0.3.17` (amd64),
   SHA-256
   `0a50e029f683e66e7d8191e9a5f376efb3bad12b756a28dd80540f4d59ead681`;

@@ -254,6 +254,19 @@ reste volontairement sans indicateur, App Server ne publiant aucun événement
 stable qui permettrait de l’attribuer avec certitude. Le catalogue et l’installation de
 plugins restent isolés tant que la documentation officielle les interdit aux
 clients de production.
+L’ajout d’un serveur MCP part de la barre de contrôle de son inventaire et ouvre
+une modale à deux onglets. **Essentiel** garde les champs propres au transport
+immédiatement visibles ; **Avancé** regroupe les délais, filtres d’outils,
+approbation par défaut et options d’environnement ou d’en-têtes les plus utiles.
+La modale traduit ces valeurs directement vers les clés App Server documentées,
+sans modèle de configuration client parallèle. Les champs très minoritaires
+restent accessibles dans l’éditeur `config.toml`.
+Les états de démarrage et d’authentification restent des métadonnées textuelles
+sur la ligne de sous-titre, après outils et version ; seules les actions occupent
+la colonne droite. La suppression exige une confirmation et n’est proposée que
+si `config/read` attribue la table MCP à la couche utilisateur de base modifiable.
+Un serveur intégré, administré, système ou fourni uniquement par un profil ne
+reçoit jamais cette action.
 Les surfaces propres à un plugin ne deviennent pas des catégories globales :
 Git et la gestion de workspaces restent exposés par les workflows ou plugins
 qui les possèdent, pas par une section native vide du centre de réglages.

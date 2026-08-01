@@ -114,11 +114,91 @@ export function automationThreadSecurityRestoreParams(
   return { threadId, permissions: permission, approvalPolicy };
 }
 
-export function configReadParams(cwd?: string) {
-  return { cwd: cwd ?? null, includeLayers: false };
+export function configReadParams(cwd?: string, includeLayers = false) {
+  return { cwd: cwd ?? null, includeLayers };
 }
 export function configValueWriteParams(keyPath: string, value: unknown) {
   return { keyPath, value, mergeStrategy: "upsert" as const };
+}
+
+type McpServerAdvancedDraft = {
+  startupTimeoutSec?: number;
+  toolTimeoutSec?: number;
+  defaultToolsApprovalMode?: "auto" | "prompt" | "writes" | "approve";
+  enabledTools?: string[];
+  disabledTools?: string[];
+};
+
+export type McpServerDraft = McpServerAdvancedDraft & (
+  {
+      name: string;
+      transport: "stdio";
+      command: string;
+      args: string[];
+      cwd?: string;
+      env?: Record<string, string>;
+      envVars?: string[];
+    }
+  | {
+      name: string;
+      transport: "http";
+      url: string;
+      bearerTokenEnvVar?: string;
+      httpHeaders?: Record<string, string>;
+      envHttpHeaders?: Record<string, string>;
+    }
+);
+
+export function mcpServerConfigWriteParams(draft: McpServerDraft) {
+  const escapedName = draft.name.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+  const shared = {
+    ...(draft.startupTimeoutSec !== undefined
+      ? { startup_timeout_sec: draft.startupTimeoutSec }
+      : {}),
+    ...(draft.toolTimeoutSec !== undefined
+      ? { tool_timeout_sec: draft.toolTimeoutSec }
+      : {}),
+    ...(draft.defaultToolsApprovalMode
+      ? { default_tools_approval_mode: draft.defaultToolsApprovalMode }
+      : {}),
+    ...(draft.enabledTools?.length ? { enabled_tools: draft.enabledTools } : {}),
+    ...(draft.disabledTools?.length ? { disabled_tools: draft.disabledTools } : {}),
+  };
+  return configValueWriteParams(
+    `mcp_servers."${escapedName}"`,
+    draft.transport === "stdio"
+      ? {
+          command: draft.command,
+          ...(draft.args.length > 0 ? { args: draft.args } : {}),
+          ...(draft.cwd ? { cwd: draft.cwd } : {}),
+          ...(draft.env && Object.keys(draft.env).length > 0
+            ? { env: draft.env }
+            : {}),
+          ...(draft.envVars?.length ? { env_vars: draft.envVars } : {}),
+          ...shared,
+        }
+      : {
+          url: draft.url,
+          ...(draft.bearerTokenEnvVar
+            ? { bearer_token_env_var: draft.bearerTokenEnvVar }
+            : {}),
+          ...(draft.httpHeaders && Object.keys(draft.httpHeaders).length > 0
+            ? { http_headers: draft.httpHeaders }
+            : {}),
+          ...(draft.envHttpHeaders && Object.keys(draft.envHttpHeaders).length > 0
+            ? { env_http_headers: draft.envHttpHeaders }
+            : {}),
+          ...shared,
+        },
+  );
+}
+export function mcpServerConfigRemoveParams(name: string) {
+  const escapedName = name.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+  return {
+    keyPath: `mcp_servers."${escapedName}"`,
+    value: null,
+    mergeStrategy: "replace" as const,
+  };
 }
 export function remoteControlEnableParams() {
   return {};

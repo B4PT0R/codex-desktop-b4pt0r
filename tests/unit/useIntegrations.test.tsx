@@ -35,6 +35,58 @@ beforeEach(() => {
 });
 
 describe("inventaire des intégrations", () => {
+  it("écrit puis recharge un nouveau serveur MCP", async () => {
+    requestMock
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({ data: [], nextCursor: null })
+      .mockResolvedValueOnce({ layers: [] });
+    const { result } = renderHook(() =>
+      useIntegrations({ cwd: "/project", enabled: false }),
+    );
+    let added = false;
+    await act(async () => {
+      added = await result.current.addMcpServer({
+        name: "docs",
+        transport: "http",
+        url: "https://mcp.example.test",
+      });
+    });
+    expect(added).toBe(true);
+    expect(requestMock).toHaveBeenNthCalledWith(1, "config/value/write", {
+      keyPath: 'mcp_servers."docs"',
+      value: { url: "https://mcp.example.test" },
+      mergeStrategy: "upsert",
+    });
+    expect(requestMock).toHaveBeenNthCalledWith(2, "config/mcpServer/reload");
+    expect(requestMock).toHaveBeenNthCalledWith(3, "mcpServerStatus/list", {
+      cursor: null,
+      detail: "toolsAndAuthOnly",
+      limit: 100,
+      threadId: null,
+    });
+  });
+  it("supprime puis recharge un serveur MCP de la configuration utilisateur", async () => {
+    requestMock
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({ data: [], nextCursor: null })
+      .mockResolvedValueOnce({ layers: [] });
+    const { result } = renderHook(() =>
+      useIntegrations({ cwd: "/project", enabled: false }),
+    );
+    let removed = false;
+    await act(async () => {
+      removed = await result.current.removeMcpServer("docs");
+    });
+    expect(removed).toBe(true);
+    expect(requestMock).toHaveBeenNthCalledWith(1, "config/value/write", {
+      keyPath: 'mcp_servers."docs"',
+      value: null,
+      mergeStrategy: "replace",
+    });
+    expect(requestMock).toHaveBeenNthCalledWith(2, "config/mcpServer/reload");
+  });
   it("charge et normalise les hooks sans charger les autres intégrations", async () => {
     requestMock.mockResolvedValue({
       data: [
@@ -102,6 +154,22 @@ describe("inventaire des intégrations", () => {
             ],
           });
         }
+        if (method === "config/read") {
+          return Promise.resolve({
+            layers: [
+              {
+                name: { type: "user", file: "/home/alice/.codex/config.toml", profile: null },
+                config: { mcp_servers: { first: {}, second: {} } },
+                version: "1",
+              },
+              {
+                name: { type: "system", file: "/etc/codex/config.toml" },
+                config: { mcp_servers: { builtin: {} } },
+                version: "1",
+              },
+            ],
+          });
+        }
         return Promise.resolve({
           data: [{ name: params?.cursor ? "second" : "first", tools: {} }],
           nextCursor: params?.cursor ? null : "page-2",
@@ -118,6 +186,7 @@ describe("inventaire des intégrations", () => {
     expect(result.current.mcpServers.data.map((server) => server.name)).toEqual(
       ["first", "second"],
     );
+    expect(result.current.removableMcpServers).toEqual(["first", "second"]);
     expect(requestMock).toHaveBeenCalledWith("skills/list", {
       cwds: ["/project"],
       forceReload: true,

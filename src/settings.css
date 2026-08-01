@@ -266,7 +266,9 @@
 
 .settings-controls-bar-summary {
   display: flex;
+  flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
   align-items: baseline;
   gap: 8px;
 }
@@ -281,9 +283,11 @@
 }
 
 .settings-controls-bar-summary span {
+  overflow: hidden;
   color: #777772;
   font-size: 10px;
   white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .settings-controls-bar-actions {
@@ -890,32 +894,6 @@
   accent-color: #d7d7d1;
 }
 
-.auth-status,
-.mcp-startup-status {
-  padding: 4px 7px;
-  border: 1px solid #3b3b37;
-  border-radius: 999px;
-  color: #92928d;
-  font-size: 9px;
-  white-space: nowrap;
-}
-
-.auth-status.notLoggedIn {
-  border-color: #41413d;
-  color: #c89b7a;
-}
-.mcp-startup-status.ready {
-  border-color: #3b3b37;
-  color: #87a985;
-}
-.mcp-startup-status.failed {
-  border-color: #41413d;
-  color: #c89b7a;
-}
-.mcp-startup-status.starting {
-  border-color: #41413d;
-  color: #c0ae7d;
-}
 .mcp-startup-error {
   display: flex;
   align-items: flex-start;
@@ -937,17 +915,149 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
-.mcp-server-badges {
+.mcp-server-actions {
   display: flex;
-  max-width: 190px;
   flex: 0 0 auto;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 4px;
+  gap: 6px;
 }
-.mcp-server-badges .round-icon-button:disabled {
+.mcp-server-actions .round-icon-button:disabled {
   cursor: default;
   opacity: 0.55;
+}
+
+.mcp-add-dialog {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: min(620px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: hidden;
+}
+
+.mcp-add-dialog-body {
+  display: grid;
+  min-height: 0;
+  padding-right: 4px;
+  overflow: auto;
+  gap: 12px;
+}
+
+.mcp-add-dialog-heading {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 18px;
+}
+
+.mcp-add-dialog-heading h2 {
+  margin: 0;
+}
+
+.mcp-add-dialog > .modal-actions {
+  flex: 0 0 auto;
+}
+
+.mcp-add-dialog-body > p {
+  margin: 0 0 2px;
+}
+
+.mcp-add-tabs {
+  display: flex;
+  gap: 22px;
+  border-bottom: 1px solid #454541;
+}
+
+.mcp-add-tabs button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 2px 10px;
+  border: 0;
+  color: #92928d;
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mcp-add-tabs button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.mcp-add-tabs button::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: transparent;
+  content: "";
+}
+
+.mcp-add-tabs button.active {
+  color: #e3e3df;
+}
+
+.mcp-add-tabs button.active::after {
+  background: #a8a8a2;
+}
+
+.mcp-add-fields {
+  display: grid;
+  gap: 12px;
+}
+
+.mcp-add-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.mcp-add-dialog-body label {
+  display: grid;
+  gap: 5px;
+  color: #a8a8a3;
+  font-size: 10px;
+}
+
+.mcp-add-dialog-body input,
+.mcp-add-dialog-body select,
+.mcp-add-dialog-body textarea {
+  width: 100%;
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 1px solid #454541;
+  border-radius: 8px;
+  color: #d0d0cc;
+  background: #292927;
+  font: inherit;
+}
+
+.mcp-add-dialog-body textarea {
+  min-height: 66px;
+  resize: vertical;
+}
+
+.mcp-add-dialog-body small {
+  color: #858580;
+  line-height: 1.4;
+}
+
+.mcp-add-dialog-body small.field-error {
+  color: #c98272;
+}
+
+@media (max-width: 700px) {
+  .mcp-add-field-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .inventory-message.neutral {
   border-color: #39453b;

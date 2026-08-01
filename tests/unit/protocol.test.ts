@@ -11,6 +11,8 @@ import {
   fuzzyFileSearchSessionStopParams,
   fuzzyFileSearchSessionUpdateParams,
   mcpServerOauthLoginParams,
+  mcpServerConfigWriteParams,
+  mcpServerConfigRemoveParams,
   hooksListParams,
   quotasFromRateLimits,
   consumeRateLimitResetCreditParams,
@@ -55,6 +57,64 @@ describe("constructeurs JSON-RPC", () => {
       keyPath: 'apps."drive.team\\"one\\\\two".enabled',
       value: false,
       mergeStrategy: "upsert",
+    });
+  });
+  it("construit les configurations MCP usuelles sans options expertes", () => {
+    expect(mcpServerConfigWriteParams({
+      name: "docs-local",
+      transport: "stdio",
+      command: "npx",
+      args: ["-y", "@acme/docs"],
+      cwd: "/project",
+      env: { DOCS_TOKEN: "value" },
+    })).toEqual({
+      keyPath: 'mcp_servers."docs-local"',
+      value: {
+        command: "npx",
+        args: ["-y", "@acme/docs"],
+        cwd: "/project",
+        env: { DOCS_TOKEN: "value" },
+      },
+      mergeStrategy: "upsert",
+    });
+    expect(mcpServerConfigWriteParams({
+      name: "remote",
+      transport: "http",
+      url: "https://mcp.example.test",
+      bearerTokenEnvVar: "MCP_TOKEN",
+    }).value).toEqual({
+      url: "https://mcp.example.test",
+      bearer_token_env_var: "MCP_TOKEN",
+    });
+  });
+  it("traduit les réglages MCP avancés vers les noms natifs de config.toml", () => {
+    expect(mcpServerConfigWriteParams({
+      name: "remote",
+      transport: "http",
+      url: "https://mcp.example.test",
+      startupTimeoutSec: 15,
+      toolTimeoutSec: 90,
+      defaultToolsApprovalMode: "writes",
+      enabledTools: ["search", "read"],
+      disabledTools: ["delete"],
+      httpHeaders: { "X-Client": "desktop" },
+      envHttpHeaders: { Authorization: "MCP_AUTH_HEADER" },
+    }).value).toEqual({
+      url: "https://mcp.example.test",
+      startup_timeout_sec: 15,
+      tool_timeout_sec: 90,
+      default_tools_approval_mode: "writes",
+      enabled_tools: ["search", "read"],
+      disabled_tools: ["delete"],
+      http_headers: { "X-Client": "desktop" },
+      env_http_headers: { Authorization: "MCP_AUTH_HEADER" },
+    });
+  });
+  it("supprime une table MCP avec la sémantique null documentée", () => {
+    expect(mcpServerConfigRemoveParams('docs"local')).toEqual({
+      keyPath: 'mcp_servers."docs\\"local"',
+      value: null,
+      mergeStrategy: "replace",
     });
   });
   it("lit les métadonnées d'un thread sans charger ni modifier son état", () => {

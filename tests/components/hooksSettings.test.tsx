@@ -30,6 +30,11 @@ describe("réglages des hooks", () => {
 
 function controller(): IntegrationsController {
   return {
+    addMcpServer: vi.fn(),
+    addingMcpServer: false,
+    removeMcpServer: vi.fn(),
+    removingMcpServers: [],
+    removableMcpServers: [],
     authenticateMcp: vi.fn(),
     authenticatingMcp: [],
     hooks: {

@@ -2,10 +2,12 @@ import {
   AlertCircle,
   CheckCircle2,
   LogIn,
+  Plus,
   Puzzle,
   RefreshCw,
   Server,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import type { McpAuthStatus } from "../lib/appServerTypes";
 import type { IntegrationsController } from "../lib/useIntegrations";
@@ -16,6 +18,9 @@ import { CardStack } from "./CardStack";
 import { IconCard } from "./IconCard";
 import { RoundIconButton } from "./RoundIcon";
 import { SettingsPageHeader } from "./SettingsPageHeader";
+import { McpServerAddDialog } from "./McpServerAddDialog";
+import { McpServerRemoveDialog } from "./McpServerRemoveDialog";
+import { useState } from "react";
 import {
   SettingsControlsBar,
   SettingsControlsBarButton,
@@ -153,6 +158,8 @@ export function McpSettings({
 }) {
   const { t } = useI18n();
   const { mcpServers } = integrations;
+  const [adding, setAdding] = useState(false);
+  const [removingName, setRemovingName] = useState<string>();
   return (
     <section className="settings-page integrations-page">
       <SettingsPageHeader description={t("integrations.mcp.description")} />
@@ -167,6 +174,9 @@ export function McpSettings({
         controlBar={<SettingsControlsBar
           actions={
           <>
+          <SettingsControlsBarButton icon={Plus} onClick={() => setAdding(true)}>
+            {t("integrations.mcp.addAction")}
+          </SettingsControlsBarButton>
           <SettingsControlsBarButton
             disabled={mcpServers.loading}
             icon={RefreshCw}
@@ -198,6 +208,7 @@ export function McpSettings({
             const signInRequired =
               server.authStatus === "notLoggedIn" ||
               startup?.failureReason === "reauthenticationRequired";
+            const removable = integrations.removableMcpServers.includes(server.name);
             return (
             <IconCard
               className="mcp-server-row"
@@ -216,18 +227,12 @@ export function McpSettings({
                         version: server.serverInfo.version,
                       })}`
                     : ""}
+                  {startup ? ` · ${startupLabel(startup.status, t)}` : ""}
+                  {` · ${authLabel(server.authStatus, t)}`}
                 </>
               }
               title={server.serverInfo?.title ?? server.name}
-              trailing={<div className="mcp-server-badges">
-                {startup && (
-                  <span className={`mcp-startup-status ${startup.status}`}>
-                    {startupLabel(startup.status, t)}
-                  </span>
-                )}
-                <span className={`auth-status ${server.authStatus}`}>
-                  {authLabel(server.authStatus, t)}
-                </span>
+              trailing={(signInRequired || removable) ? <div className="mcp-server-actions">
                 {signInRequired && (
                   <RoundIconButton
                     disabled={integrations.authenticatingMcp.includes(
@@ -242,7 +247,17 @@ export function McpSettings({
                     variant="secondary"
                   />
                 )}
-              </div>}
+                {removable && (
+                  <RoundIconButton
+                    disabled={integrations.removingMcpServers.includes(server.name)}
+                    icon={Trash2}
+                    label={t("integrations.mcp.remove")}
+                    onClick={() => setRemovingName(server.name)}
+                    size="medium"
+                    variant="secondary"
+                  />
+                )}
+              </div> : undefined}
             >
                 {startup?.status === "failed" && startup.error && (
                   <small className="mcp-startup-error" role="alert">
@@ -250,12 +265,28 @@ export function McpSettings({
                     <span>{startup.error}</span>
                   </small>
                 )}
-                <code>{server.name}</code>
             </IconCard>
             );
           })
         )}
       </CardStack>
+      {adding && (
+        <McpServerAddDialog
+          adding={integrations.addingMcpServer}
+          existingNames={mcpServers.data.map((server) => server.name)}
+          onAdd={integrations.addMcpServer}
+          onCancel={() => setAdding(false)}
+        />
+      )}
+      {removingName && (
+        <McpServerRemoveDialog
+          name={removingName}
+          removing={integrations.removingMcpServers.includes(removingName)}
+          onCancel={() => setRemovingName(undefined)}
+          onConfirm={() => void integrations.removeMcpServer(removingName)
+            .then((removed) => removed && setRemovingName(undefined))}
+        />
+      )}
     </section>
   );
 }

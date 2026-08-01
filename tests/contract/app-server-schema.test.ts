@@ -35,6 +35,8 @@ import {
   realtimeThreadForkParams,
   mcpServerStatusListParams,
   mcpServerOauthLoginParams,
+  mcpServerConfigWriteParams,
+  mcpServerConfigRemoveParams,
   hooksListParams,
   permissionProfileListParams,
   skillsConfigWriteParams,
@@ -226,6 +228,18 @@ describe("contrat Codex installé", () => {
       "properties.requirements",
     );
     expect(schema("McpServerRefreshResponse")).toBeDefined();
+    validates(
+      "ConfigValueWriteParams",
+      mcpServerConfigWriteParams({
+        name: "docs",
+        transport: "http",
+        url: "https://mcp.example.test",
+        startupTimeoutSec: 15,
+        defaultToolsApprovalMode: "prompt",
+        envHttpHeaders: { Authorization: "MCP_AUTH_HEADER" },
+      }),
+    );
+    validates("ConfigValueWriteParams", mcpServerConfigRemoveParams("docs"));
   });
   it("accepte le démarrage et l’annulation du login ChatGPT", () => {
     validates("LoginAccountParams", chatgptLoginParams());

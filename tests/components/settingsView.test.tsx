@@ -21,6 +21,11 @@ vi.mock("../../src/lib/nativeBridge", () => ({
 }));
 
 const integrations = {
+  addMcpServer: vi.fn(),
+  addingMcpServer: false,
+  removeMcpServer: vi.fn(),
+  removingMcpServers: [],
+  removableMcpServers: [],
   hooks: { data: [], loading: false, warnings: [] },
   mcpServers: { data: [], loading: false },
   mcpStartup: {},

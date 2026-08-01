@@ -995,6 +995,9 @@ export default function App() {
             failureReason: "reauthenticationRequired",
           },
         },
+        removableMcpServers: ["github", "project_docs"],
+        removingMcpServers: [],
+        removeMcpServer: async () => true,
       }
     : integrations;
   if (settings) {

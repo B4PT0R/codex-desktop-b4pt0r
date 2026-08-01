@@ -15,6 +15,10 @@ import {
   skillsConfigWriteParams,
   skillsListParams,
   hooksListParams,
+  mcpServerConfigWriteParams,
+  mcpServerConfigRemoveParams,
+  configReadParams,
+  type McpServerDraft,
 } from "./protocol";
 import { useI18n } from "../i18n/I18nProvider";
 import type { Translate } from "../i18n/translate";
@@ -39,6 +43,11 @@ export type IntegrationsController = {
   authenticateMcp: (server: McpServerStatus) => Promise<void>;
   authenticatingMcp: string[];
   mcpAuthNotice?: string;
+  addMcpServer: (draft: McpServerDraft) => Promise<boolean>;
+  addingMcpServer: boolean;
+  removeMcpServer: (name: string) => Promise<boolean>;
+  removingMcpServers: string[];
+  removableMcpServers: string[];
   setSkillEnabled: (skill: AppServerSkill, enabled: boolean) => Promise<void>;
   updatingSkills: string[];
 };
@@ -61,6 +70,8 @@ export function useIntegrations({
     data: [],
     loading: false,
   });
+  const [removingMcpServers, setRemovingMcpServers] = useState<string[]>([]);
+  const [removableMcpServers, setRemovableMcpServers] = useState<string[]>([]);
   const [hooks, setHooks] = useState<
     IntegrationInventory<AppServerHook> & { warnings: string[] }
   >({ data: [], loading: false, warnings: [] });
@@ -71,6 +82,7 @@ export function useIntegrations({
   const [authenticatingMcp, setAuthenticatingMcp] = useState<string[]>([]);
   const [mcpAuthNotice, setMcpAuthNotice] = useState<string>();
   const [reloadingMcp, setReloadingMcp] = useState(false);
+  const [addingMcpServer, setAddingMcpServer] = useState(false);
   const [mcpStartup, setMcpStartup] = useState<
     Record<string, McpServerStartupStatus>
   >({});
@@ -172,7 +184,11 @@ export function useIntegrations({
         cursor = response.nextCursor ?? undefined;
         if (!cursor) break;
       }
+      const removable = await request("config/read", configReadParams(undefined, true))
+        .then(removableMcpServerNames)
+        .catch(() => []);
       if (generation === mcpGeneration.current) {
+        setRemovableMcpServers(removable);
         setMcpServers({
           data,
           error: cursor ? t("integrations.mcp.limit") : undefined,
@@ -211,6 +227,48 @@ export function useIntegrations({
       setReloadingMcp(false);
     }
   }, [refreshMcp, reloadingMcp, t]);
+
+  const addMcpServer = useCallback(async (draft: McpServerDraft) => {
+    if (addingMcpServer) return false;
+    setAddingMcpServer(true);
+    setMcpServers((state) => ({ ...state, error: undefined }));
+    try {
+      await request("config/value/write", mcpServerConfigWriteParams(draft));
+      await request("config/mcpServer/reload");
+      await refreshMcp();
+      setMcpAuthNotice(t("integrations.mcp.added", { name: draft.name }));
+      return true;
+    } catch (error) {
+      setMcpServers((state) => ({
+        ...state,
+        error: t("integrations.mcp.addError", { detail: errorMessage(error) }),
+      }));
+      return false;
+    } finally {
+      setAddingMcpServer(false);
+    }
+  }, [addingMcpServer, refreshMcp, t]);
+
+  const removeMcpServer = useCallback(async (name: string) => {
+    if (removingMcpServers.includes(name)) return false;
+    setRemovingMcpServers((names) => [...names, name]);
+    setMcpServers((state) => ({ ...state, error: undefined }));
+    try {
+      await request("config/value/write", mcpServerConfigRemoveParams(name));
+      await request("config/mcpServer/reload");
+      await refreshMcp();
+      setMcpAuthNotice(t("integrations.mcp.removed", { name }));
+      return true;
+    } catch (error) {
+      setMcpServers((state) => ({
+        ...state,
+        error: t("integrations.mcp.removeError", { detail: errorMessage(error) }),
+      }));
+      return false;
+    } finally {
+      setRemovingMcpServers((names) => names.filter((candidate) => candidate !== name));
+    }
+  }, [refreshMcp, removingMcpServers, t]);
 
   const setSkillEnabled = useCallback(
     async (skill: AppServerSkill, nextEnabled: boolean) => {
@@ -330,6 +388,8 @@ export function useIntegrations({
   }, [enabled, refreshMcp, refreshSkills, t, threadId]);
 
   return {
+    addMcpServer,
+    addingMcpServer,
     authenticateMcp,
     authenticatingMcp,
     hooks,
@@ -337,6 +397,9 @@ export function useIntegrations({
     mcpServers,
     mcpStartup,
     refreshMcp,
+    removeMcpServer,
+    removingMcpServers,
+    removableMcpServers,
     reloadMcp,
     reloadingMcp,
     refreshHooks,
@@ -345,6 +408,19 @@ export function useIntegrations({
     skills,
     updatingSkills,
   };
+}
+
+function removableMcpServerNames(response: unknown) {
+  const root = recordValue(response);
+  if (!Array.isArray(root?.layers)) return [];
+  const userLayer = root.layers.find((candidate) => {
+    const layer = recordValue(candidate);
+    const source = recordValue(layer?.name);
+    return source?.type === "user" && (source.profile === null || source.profile === undefined);
+  });
+  const config = recordValue(recordValue(userLayer)?.config);
+  const servers = recordValue(config?.mcp_servers);
+  return servers ? Object.keys(servers) : [];
 }
 
 function normalizeHooks(value: unknown): AppServerHook[] {
