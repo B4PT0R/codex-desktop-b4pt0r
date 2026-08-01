@@ -105,6 +105,32 @@ describe("apps connectées", () => {
     expect(result.current.updatingApps).toEqual([]);
   });
 
+  it("n’envoie pas deux activations simultanées pour la même App", async () => {
+    const write = deferred<void>();
+    requestMock.mockImplementation((method: string) => {
+      if (method === "app/installed") return Promise.resolve({ apps: [] });
+      if (method === "config/value/write") return write.promise;
+      return Promise.resolve({ data: [app("github", true, true)], nextCursor: null });
+    });
+    const { result } = renderHook(() => useApps({ enabled: true }));
+    await waitFor(() => expect(result.current.apps).toHaveLength(1));
+
+    let first: Promise<void>;
+    let duplicate: Promise<void>;
+    act(() => {
+      first = result.current.setEnabled(result.current.apps[0], false);
+      duplicate = result.current.setEnabled(result.current.apps[0], false);
+    });
+
+    expect(
+      requestMock.mock.calls.filter(([method]) => method === "config/value/write"),
+    ).toHaveLength(1);
+    await expect(duplicate!).resolves.toBeUndefined();
+    write.resolve();
+    await act(async () => first!);
+    expect(result.current.updatingApps).toEqual([]);
+  });
+
   it("normalise les mises à jour et ignore les entrées malformées", async () => {
     requestMock.mockImplementation((method: string) => Promise.resolve(
       method === "app/installed" ? { apps: [] } : { data: [], nextCursor: null },
@@ -166,6 +192,40 @@ describe("apps connectées", () => {
       ]),
     }));
   });
+
+  it("n’envoie pas deux sauvegardes simultanées pour la même configuration", async () => {
+    const write = deferred<void>();
+    requestMock.mockImplementation((method: string) => {
+      if (method === "app/installed") return Promise.resolve({ apps: [] });
+      if (method === "app/list") return Promise.resolve({ data: [], nextCursor: null });
+      if (method === "config/batchWrite") return write.promise;
+      return Promise.resolve({});
+    });
+    const { result } = renderHook(() => useApps({ enabled: true }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    const draft = {
+      enabled: true,
+      approvalsReviewer: null,
+      destructiveEnabled: true,
+      openWorldEnabled: true,
+      defaultToolsApprovalMode: null,
+    };
+
+    let first: Promise<boolean>;
+    let duplicate: Promise<boolean>;
+    act(() => {
+      first = result.current.saveConfiguration(draft);
+      duplicate = result.current.saveConfiguration(draft);
+    });
+
+    expect(
+      requestMock.mock.calls.filter(([method]) => method === "config/batchWrite"),
+    ).toHaveLength(1);
+    await expect(duplicate!).resolves.toBe(false);
+    write.resolve();
+    await act(async () => first!);
+    expect(result.current.savingConfigurations).toEqual([]);
+  });
 });
 
 function app(id: string, isAccessible: boolean, isEnabled: boolean) {
@@ -178,4 +238,12 @@ function app(id: string, isAccessible: boolean, isEnabled: boolean) {
     isEnabled,
     pluginDisplayNames: [],
   };
+}
+
+function deferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  const promise = new Promise<T>((promiseResolve) => {
+    resolve = promiseResolve;
+  });
+  return { promise, resolve };
 }

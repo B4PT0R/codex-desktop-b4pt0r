@@ -64,6 +64,8 @@ export function useApps({
   const [updatingApps, setUpdatingApps] = useState<string[]>([]);
   const [savingConfigurations, setSavingConfigurations] = useState<string[]>([]);
   const generation = useRef(0);
+  const updatingAppIds = useRef(new Set<string>());
+  const savingConfigurationKeys = useRef(new Set<string>());
 
   const refresh = useCallback(async () => {
     const current = ++generation.current;
@@ -112,7 +114,10 @@ export function useApps({
         setError(t("apps.nativeOnly"));
         return;
       }
-      setUpdatingApps((ids) => [...new Set([...ids, app.id])]);
+      // React state drives presentation; this synchronous set owns the request.
+      if (updatingAppIds.current.has(app.id)) return;
+      updatingAppIds.current.add(app.id);
+      setUpdatingApps((ids) => [...ids, app.id]);
       setError(undefined);
       try {
         await request(
@@ -123,6 +128,7 @@ export function useApps({
       } catch (cause) {
         setError(errorMessage(cause));
       } finally {
+        updatingAppIds.current.delete(app.id);
         setUpdatingApps((ids) => ids.filter((id) => id !== app.id));
       }
     },
@@ -159,7 +165,8 @@ export function useApps({
 
   const saveConfiguration = useCallback(async (draft: AppConfigurationDraft) => {
     const key = draft.appId ?? "_default";
-    if (savingConfigurations.includes(key)) return false;
+    if (savingConfigurationKeys.current.has(key)) return false;
+    savingConfigurationKeys.current.add(key);
     setSavingConfigurations((ids) => [...ids, key]);
     setError(undefined);
     try {
@@ -170,9 +177,10 @@ export function useApps({
       setError(errorMessage(cause));
       return false;
     } finally {
+      savingConfigurationKeys.current.delete(key);
       setSavingConfigurations((ids) => ids.filter((id) => id !== key));
     }
-  }, [refresh, savingConfigurations]);
+  }, [refresh]);
 
   const openInstall = useCallback(async (app: AppInfo) => {
     const target = safeExternalHttpUrl(app.installUrl);

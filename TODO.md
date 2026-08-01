@@ -46,8 +46,8 @@ Server catalog and remains dense enough for hundreds of entries.
 
 ## Active objective
 
-Validate v0.4.0 in packaged Electron and continue capability-driven per-thread
-extension controls while keeping App Server as the sole authority.
+Keep the v0.4.0 functional surface frozen while running bounded stabilization,
+failure-path, simplification and maintainability passes across existing sectors.
 
 Visual-work invariant: every frontend style or layout change starts with a real
 before screenshot and ends with a comparable after screenshot at the same
@@ -191,6 +191,10 @@ icons, descriptions and trailing actions while avoiding full Settings-card
 height across inventories that may contain hundreds of Apps. Light-theme
 `CardStack` shadows now remain at contact depth so compact stacks do not leave
 grey halos around their lower corners.
+Apps mutations now use synchronous per-App/per-configuration ownership sets
+rather than React presentation state as an implicit lock. Same-tick duplicate
+activation or autosave requests are ignored deterministically while distinct
+Apps and configurations may still update concurrently.
 
 Completed Skills creation lot: retain App Server `skills/list` and
 `skills/config/write` as the discovery and activation authority, while adding a
@@ -314,18 +318,14 @@ light-theme cards plus the narrow confirmation dialog were visually reviewed.
 
 ## Next bounded work
 
-1. Complete ergonomic Plugin support without inventing client-owned capability
-   state. Re-audit the installed marketplace/plugin methods before enabling the
-   current planned surface; keep list/install/uninstall out of production until
-   the App Server contract is declared client-ready.
-2. Exercise long-idle and suspend/resume recovery in packaged Electron with a
+1. Exercise long-idle and suspend/resume recovery in packaged Electron with a
    scheduled task, approval gating, hidden-window delivery and Realtime active.
-3. Add a concise public App Server compatibility guide and `SECURITY.md`.
-4. Add user-controlled diagnostic export with redaction and preview.
-5. Define and test a documented package-update rollback strategy.
-6. Revisit `App.tsx`, `useDemoPlayback.ts` and `electron/chromium.mjs` only when
-   the next feature supplies a concrete ownership seam; line count alone does
-   not justify another extraction.
+2. Audit another existing asynchronous controller for duplicate submissions,
+   stale responses and incomplete recovery without extending its UI surface.
+3. Review large owners only where a concrete cohesive extraction removes
+   mixed responsibilities; line count alone does not justify a module split.
+4. Tighten outcome-oriented tests whose current assertions allow concurrency,
+   cancellation or cleanup regressions to pass unnoticed.
 
 Defer generic RPC/filesystem consoles, unstable marketplace production support
 and Git/worktree management without a stable App Server product contract.
@@ -336,11 +336,12 @@ and Git/worktree management without a stable App Server product contract.
 - Settings primitive migration: 44 focused component tests across five files,
   passing; production build and full regression suite are listed below when
   rerun for the completed lot.
-- Deterministic frontend/unit suite: 640 tests across 125 files, passing.
+- Deterministic frontend/unit suite: 645 tests across 126 files, passing;
+  `useApps` includes two same-tick duplicate-mutation regressions.
 - Installed App Server contract: 51 tests, passing against
-  `codex-cli 0.145.0` (660 tests across 122 files including contract).
+  `codex-cli 0.145.0` (696 tests across 127 files including contract).
 - Electron/Node: 117 tests, passing.
-- Production Vite build: passing; main JS 657.27 kB, 188.75 kB gzip.
+- Production Vite build: passing; main JS 658.25 kB, 188.96 kB gzip.
 - Production dependency audit: zero vulnerabilities.
 - `git diff --check`: passing.
 - Settings primitive visual pass: Agent, Advanced Configuration, Plugin
