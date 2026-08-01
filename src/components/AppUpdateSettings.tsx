@@ -4,6 +4,7 @@ import type { AppUpdateController } from "../lib/useAppUpdate";
 import { CardStack } from "./CardStack";
 import { IconCard } from "./IconCard";
 import { RoundIconButton } from "./RoundIcon";
+import { Alert } from "./Alert";
 
 export function AppUpdateSettings({
   controller,
@@ -86,25 +87,25 @@ export function AppUpdateSettings({
         />
       </CardStack>
       {controller.updateInstalled && (
-        <div
-          className="inventory-message neutral app-update-restart-message"
-          role="status"
+        <Alert
+          className="app-update-restart-message"
+          tone="neutral"
           aria-live="polite"
         >
           <Check />
           {t("settings.updates.restartRequired")}
-        </div>
+        </Alert>
       )}
       {controller.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("settings.updates.error")} {controller.error}
-        </div>
+        </Alert>
       )}
       {controller.versions?.codexError && (
-        <div className="inventory-message warning">
+        <Alert>
           {t("settings.updates.codexError")}{" "}
           {controller.versions.codexError}
-        </div>
+        </Alert>
       )}
     </>
   );

@@ -8,6 +8,7 @@ import {
 } from "../lib/AppearanceProvider";
 import type { ReasoningSummaryMode } from "../lib/protocol";
 import type { CodexGlobalSettingsController } from "../lib/useCodexGlobalSettings";
+import { Alert } from "./Alert";
 import {
   MAX_VISIBLE_ACTIONS,
   MIN_VISIBLE_ACTIONS,
@@ -136,14 +137,14 @@ export function AppearanceSettings({
         </label>
       </div>
       {appearance.persistenceError && (
-        <p className="settings-inline-error" role="alert">
+        <Alert tone="error">
           {t("settings.persistence.error")} {appearance.persistenceError}
-        </p>
+        </Alert>
       )}
       {presentation.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("settings.appearance.visibleActions.error")} {presentation.error}
-        </div>
+        </Alert>
       )}
     </section>
   );

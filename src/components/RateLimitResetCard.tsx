@@ -5,6 +5,7 @@ import { useI18n } from "../i18n/I18nProvider";
 import { IconCard } from "./IconCard";
 import { CardStack } from "./CardStack";
 import { RoundIconButton } from "./RoundIcon";
+import { Alert } from "./Alert";
 
 export function RateLimitResetCard({
   controller,
@@ -80,9 +81,9 @@ export function RateLimitResetCard({
           </p>
         )}
         {controller.error && (
-          <p className="reset-credit-error" role="alert">
+          <Alert tone="error">
             {controller.error}
-          </p>
+          </Alert>
         )}
       </IconCard>
     </CardStack>

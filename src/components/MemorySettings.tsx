@@ -7,6 +7,7 @@ import { RoundIconButton } from "./RoundIcon";
 import { IconSubheader } from "./IconSubheader";
 import { SettingsPageHeader } from "./SettingsPageHeader";
 import { Note } from "./Note";
+import { Alert } from "./Alert";
 import type { MemorySettingsController } from "../lib/useMemorySettings";
 
 export function MemorySettings({
@@ -135,9 +136,9 @@ export function MemorySettings({
         />
       </CardStack>
       {controller.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("settings.memory.error")} {controller.error}
-        </div>
+        </Alert>
       )}
     </section>
   );

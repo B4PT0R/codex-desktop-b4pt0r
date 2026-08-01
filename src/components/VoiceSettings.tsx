@@ -6,6 +6,7 @@ import { SettingsPageHeader } from "./SettingsPageHeader";
 import { CardStack } from "./CardStack";
 import { IconCard } from "./IconCard";
 import { RoundIconButton } from "./RoundIcon";
+import { Alert } from "./Alert";
 
 export function VoiceSettings({
   controller,
@@ -69,14 +70,14 @@ export function VoiceSettings({
         />
       </CardStack>
       {controller.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {controller.error}
-        </div>
+        </Alert>
       )}
       {controller.persistenceError && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("settings.persistence.error")} {controller.persistenceError}
-        </div>
+        </Alert>
       )}
     </section>
   );

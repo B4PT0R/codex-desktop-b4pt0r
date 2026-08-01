@@ -10,6 +10,7 @@ import { useDialogFocus } from "../lib/useDialogFocus";
 import { RoundIconButton } from "./RoundIcon";
 import { CardStack } from "./CardStack";
 import { IconCard } from "./IconCard";
+import { Alert } from "./Alert";
 
 type ConfigDocumentEditorProps = {
   description: string;
@@ -171,15 +172,15 @@ export function ConfigDocumentEditor({
             </div>
             {notice}
             {error && (
-              <div className="inventory-message error" role="alert">
+              <Alert tone="error">
                 <strong>{errorTitle}</strong>
                 <small>{error}</small>
-              </div>
+              </Alert>
             )}
             {saved && (
-              <div className="inventory-message success" role="status">
+              <Alert tone="success">
                 {savedMessage}
-              </div>
+              </Alert>
             )}
             <p className="config-restart-note">{restartNote}</p>
             <footer>

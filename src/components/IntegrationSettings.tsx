@@ -31,6 +31,7 @@ import {
   SettingsControlsBar,
   SettingsControlsBarButton,
 } from "./SettingsControlsBar";
+import { Alert } from "./Alert";
 
 export function AppsSettings({ apps }: { apps: AppsController }) {
   const { t } = useI18n();
@@ -216,9 +217,9 @@ export function McpSettings({
       <SettingsPageHeader description={t("integrations.mcp.description")} />
       {mcpServers.error && <InventoryError message={mcpServers.error} />}
       {integrations.mcpAuthNotice && (
-        <div className="inventory-message neutral" role="status">
+        <Alert tone="neutral">
           <CheckCircle2 /> {integrations.mcpAuthNotice}
-        </div>
+        </Alert>
       )}
       <CardStack
         className="integration-list mcp-server-list"
@@ -370,9 +371,9 @@ function inventoryCount(count: number, t: Translate) {
 
 function InventoryError({ message }: { message: string }) {
   return (
-    <div className="inventory-message error" role="alert">
+    <Alert tone="error">
       <AlertCircle /> {message}
-    </div>
+    </Alert>
   );
 }
 

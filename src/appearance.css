@@ -861,13 +861,16 @@
   background: #292925 !important;
 }
 
-:root[data-theme="light"] .inventory-message.neutral {
+:root[data-theme="light"] .settings-alert.neutral,
+:root[data-theme="light"] .settings-alert.success {
   border-color: #c9d5ca;
   color: #526a56;
   background: #edf3ed;
 }
 
-:root[data-theme="light"] .inventory-message.warning {
+:root[data-theme="light"] .settings-alert,
+:root[data-theme="light"] .settings-alert.warning,
+:root[data-theme="light"] .settings-alert.error {
   border-color: #decbbd;
   color: #865b41;
   background: #f7eee8;

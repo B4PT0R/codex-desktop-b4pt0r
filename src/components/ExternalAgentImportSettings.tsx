@@ -19,6 +19,7 @@ import { CardStack } from "./CardStack";
 import { IconCard } from "./IconCard";
 import { SettingsControlsBar } from "./SettingsControlsBar";
 import { SettingsPageHeader } from "./SettingsPageHeader";
+import { Alert } from "./Alert";
 import {
   externalAgentDetailNames,
   externalAgentItemKey,
@@ -93,9 +94,9 @@ export function ExternalAgentImportSettings({
       </CardStack>
 
       {controller.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("externalImport.error", { detail: controller.error })}
-        </div>
+        </Alert>
       )}
 
       {!controller.detecting && controller.items.length === 0 && (

@@ -10,6 +10,7 @@ import type { AppServerHook } from "../lib/appServerTypes";
 import type { IntegrationsController } from "../lib/useIntegrations";
 import { IconCard } from "./IconCard";
 import { CardStack } from "./CardStack";
+import { Alert } from "./Alert";
 
 export function HooksSettings({
   integrations,
@@ -24,19 +25,19 @@ export function HooksSettings({
     <section className="settings-page integrations-page hooks-page">
       <SettingsPageHeader description={t("settings.hooks.description")} />
       {hooks.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {hooks.error}
-        </div>
+        </Alert>
       )}
       {managedOnly && (
-        <div className="inventory-message neutral" role="status">
+        <Alert tone="neutral">
           {t("settings.requirements.hooks")}
-        </div>
+        </Alert>
       )}
       {hooks.warnings.map((warning, index) => (
-        <div className="inventory-message warning" key={index} role="status">
+        <Alert key={index}>
           <AlertTriangle /> {warning}
-        </div>
+        </Alert>
       ))}
       <CardStack
         className="hook-list"

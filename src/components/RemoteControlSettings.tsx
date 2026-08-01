@@ -15,6 +15,7 @@ import { IconSubheader } from "./IconSubheader";
 import { Note } from "./Note";
 import type { RemoteControlClient } from "../lib/appServerTypes";
 import type { RemoteControlController } from "../lib/useRemoteControl";
+import { Alert } from "./Alert";
 
 export function RemoteControlSettings({
   controller,
@@ -41,16 +42,16 @@ export function RemoteControlSettings({
         {t("settings.remoteControl.securityDetail")}
       </Note>
       {!controller.available && (
-        <div className="inventory-message warning" role="status">
+        <Alert>
           <strong>{t("settings.remoteControl.desktopOnlyTitle")}</strong>
           <small>{t("settings.remoteControl.desktopOnlyDetail")}</small>
-        </div>
+        </Alert>
       )}
       {!controller.allowed && (
-        <div className="inventory-message warning" role="status">
+        <Alert>
           <strong>{t("settings.remoteControl.managedTitle")}</strong>
           <small>{t("settings.remoteControl.managedDetail")}</small>
-        </div>
+        </Alert>
       )}
       <CardStack>
         <IconCard
@@ -133,9 +134,9 @@ export function RemoteControlSettings({
               </div>
             )}
             {controller.pairingClaimed && (
-              <div className="inventory-message success" role="status">
+              <Alert tone="success">
                 {t("settings.remoteControl.pairingClaimed")}
-              </div>
+              </Alert>
             )}
           </section>
           <section className="remote-control-section">
@@ -205,10 +206,10 @@ export function RemoteControlSettings({
         </>
       )}
       {controller.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           <strong>{t("settings.remoteControl.error")}</strong>
           <small>{controller.error}</small>
-        </div>
+        </Alert>
       )}
     </section>
   );

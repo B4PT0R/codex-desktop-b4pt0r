@@ -1,20 +1,21 @@
 import { useI18n } from "../i18n/I18nProvider";
 import { useGlobalAgents } from "../lib/useGlobalAgents";
 import { ConfigDocumentEditor } from "./ConfigDocumentEditor";
+import { Alert } from "./Alert";
 
 export function GlobalAgentsSettings() {
   const { t } = useI18n();
   const agents = useGlobalAgents();
 
   const overrideNotice = agents.document?.overrideActive ? (
-    <div className="inventory-message warning" role="status">
+    <Alert>
       <strong>{t("settings.globalAgents.overrideTitle")}</strong>
       <small>
         {t("settings.globalAgents.overrideDetail", {
           path: agents.document.overrideFilePath,
         })}
       </small>
-    </div>
+    </Alert>
   ) : undefined;
 
   return (

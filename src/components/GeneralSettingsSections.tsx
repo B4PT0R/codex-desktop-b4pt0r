@@ -19,6 +19,7 @@ import { IconCard } from "./IconCard";
 import { RoundIconButton } from "./RoundIcon";
 import { IconSubheader } from "./IconSubheader";
 import { Note } from "./Note";
+import { Alert } from "./Alert";
 
 export type AppServerRestartController = {
   available: boolean;
@@ -150,26 +151,26 @@ export function GeneralSettings({
       />
       <AppUpdateSettings controller={appUpdate} />
       {persistenceError && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("settings.persistence.error")} {persistenceError}
-        </div>
+        </Alert>
       )}
       {defaultThread.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("settings.defaultThread.error", {
             detail: defaultThread.error,
           })}
-        </div>
+        </Alert>
       )}
       {appServerRestart.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("settings.appServerRestart.error")} {appServerRestart.error}
-        </div>
+        </Alert>
       )}
       {launchAtLogin.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("settings.startup.error")} {launchAtLogin.error}
-        </div>
+        </Alert>
       )}
     </section>
   );
@@ -331,19 +332,19 @@ export function BrowserSettings({
         !chromium.loading &&
         !chromium.status?.available &&
         !chromium.status?.installSupported && (
-          <div className="inventory-message" role="status">
+          <Alert>
             {t("settings.chromium.unsupported")}
-          </div>
+          </Alert>
         )}
       {chromium.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("settings.chromium.error")} {chromium.error}
-        </div>
+        </Alert>
       )}
       {globalSettings.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("webSearch.error")} {globalSettings.error}
-        </div>
+        </Alert>
       )}
     </section>
   );

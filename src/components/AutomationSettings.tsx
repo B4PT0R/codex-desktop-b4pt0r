@@ -19,6 +19,7 @@ import { IconCard } from "./IconCard";
 import { CardStack } from "./CardStack";
 import { RoundIconButton } from "./RoundIcon";
 import { SettingsPageHeader } from "./SettingsPageHeader";
+import { Alert } from "./Alert";
 import {
   SettingsControlsBar,
   SettingsControlsBarButton,
@@ -40,9 +41,9 @@ export function AutomationSettings({
     <section className="settings-page automations-settings">
       <SettingsPageHeader description={t("automations.description")} />
       {controller.error && (
-        <p className="inventory-message error" role="alert">
+        <Alert tone="error">
           {controller.error}
-        </p>
+        </Alert>
       )}
       {editing && (
         <AutomationEditor

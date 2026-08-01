@@ -10,6 +10,7 @@ import type {
 import { ConfigDocumentEditor } from "./ConfigDocumentEditor";
 import { DeveloperInstructionsSettings } from "./DeveloperInstructionsSettings";
 import { RoundIconButton } from "./RoundIcon";
+import { Alert } from "./Alert";
 
 const compactLimits = [32_000, 64_000, 128_000];
 const toolOutputLimits = [4_000, 8_000, 12_000, 24_000];
@@ -197,9 +198,9 @@ export function CodexConfigSettings({
         </div>
 
         {globalSettings.error && (
-          <div className="inventory-message error" role="alert">
+          <Alert tone="error">
             {t("settings.config.guided.error")} {globalSettings.error}
-          </div>
+          </Alert>
         )}
       </section>
 

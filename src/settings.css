@@ -150,16 +150,18 @@
 
 .settings-navigation nav .round-icon-button.round-icon-button-labeled {
   width: 100%;
-  padding: 7px 9px;
+  min-height: 34px;
+  padding: 9px;
   border-radius: 6px;
+  font-size: 13px;
 }
 
 .settings-navigation
   nav
   .round-icon-button.round-icon-button-labeled
   .round-icon-button-glyph {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
   margin-left: 0;
 }
 
@@ -669,11 +671,7 @@
 
 .memory-threshold select {
   width: 72px;
-  min-height: 34px;
-  border: 1px solid #d6d5cf;
-  border-radius: 9px;
-  background: transparent;
-  padding: 6px 8px;
+  min-width: 72px;
   text-align: right;
 }
 
@@ -885,12 +883,12 @@
   align-content: start;
 }
 
-.inventory-message svg,
+.settings-alert svg,
 .inventory-empty svg {
   width: 14px;
 }
 
-.inventory-message {
+.settings-alert {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1419,12 +1417,13 @@
     max-width: 60%;
   }
 }
-.inventory-message.neutral {
+.settings-alert.neutral,
+.settings-alert.success {
   border-color: #39453b;
   color: #9fb3a2;
   background: #1d241e;
 }
-.inventory-message.warning {
+.settings-alert.warning {
   border-color: #554439;
   color: #c89b7a;
   background: #29211c;
@@ -1560,12 +1559,6 @@
   background: #31201d;
 }
 
-.account-auth-error {
-  margin: 4px 0 0;
-  color: #c98c80;
-  font-size: 10px;
-}
-
 .account-auth-external {
   padding: 5px 0;
   white-space: nowrap;
@@ -1602,15 +1595,10 @@
   font-size: 10px;
 }
 
-.reset-credit-result,
-.reset-credit-error {
+.reset-credit-result {
   margin: 5px 0 0;
   color: #8eaa87;
   font-size: 10px;
-}
-
-.reset-credit-error {
-  color: #c98c80;
 }
 
 .workspace-messages {

@@ -13,6 +13,7 @@ import {
 import type { MessageKey } from "../i18n/locales/fr";
 import { IconCard } from "./IconCard";
 import { CardStack } from "./CardStack";
+import { Alert } from "./Alert";
 
 export function AccountSettings({
   controller,
@@ -34,14 +35,14 @@ export function AccountSettings({
     <section className="settings-page account-page">
       <SettingsPageHeader description={t("account.description")} />
       {controller.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {controller.error}
-        </div>
+        </Alert>
       )}
       {rateLimits.error && !rateLimits.resetCredits && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("account.rateLimitsError")} {rateLimits.error}
-        </div>
+        </Alert>
       )}
       <CardStack
         controlBar={<SettingsControlsBar

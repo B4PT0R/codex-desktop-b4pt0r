@@ -119,6 +119,13 @@ obsolete pre-`IconCard` capability-row CSS has been removed.
 Memory's toggle and quota rows now use `CardStack` and `IconCard`; their trailing
 widgets share one vertical axis and uniform 65px rows at the narrow reference
 viewport instead of varying with wrapped legacy flex content.
+The quota threshold selector uses the same shared Settings select treatment as
+the other card controls; only its intentionally compact width remains local.
+Settings operational notices now use one `Alert` component across Account,
+Agent/Permissions, Apps, Skills, MCP, Voice, Memory, Scheduler, Hooks, Remote
+Control, Configuration and Import. Preview limitations and other alerts share
+Remote Control's restrained light-theme treatment instead of retaining the
+legacy dark red inventory banner.
 The Clear local memory action is also composed from the same primitives, including
 its inline confirmation state; the bespoke reset-card border and layout are gone.
 General, Updates and Memory card actions share the `RoundIconButton` primitive
@@ -204,9 +211,9 @@ than a subtype of Skill. Their redundant same-name subheaders were removed now
 that each domain has its own page; content begins directly with its `CardStack`.
 Navigation presents Apps, Skills and MCP first, then Plugins as their aggregate.
 Settings navigation is grouped into Application, Agents & Capabilities,
-Extensions and Advanced. Group headings are semantic and search-aware; compact
-medium navigation rows keep the complete hierarchy visible at 1164x860 while
-the navigation pane scrolls independently at the 840x620 reference viewport.
+Extensions and Advanced. Group headings are semantic and search-aware; medium
+navigation rows prioritize legibility and vertical rhythm, with the navigation
+pane scrolling independently whenever the complete hierarchy exceeds its height.
 Hooks remains under Extensions so the existing feature stays discoverable.
 The guided Essential / Instructions
 modal normalizes names, explains trigger descriptions and supports personal or

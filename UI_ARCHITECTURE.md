@@ -183,6 +183,10 @@ titre facultatif — reste distinct des subheaders, cartes et alertes sémantiqu
 Les recommandations de portée, comme le rappel que les règles durables vivent
 dans `AGENTS.md`, appartiennent à cette catégorie.
 
+`Alert` porte tous les états opérationnels de Settings. Il centralise les tons
+warning, error, neutral et success ainsi que leurs rôles accessibles ; les pages
+fournissent le contenu sans reconstruire le markup ou les palettes par thème.
+
 Les lignes de contenu structurées utilisent `IconCard` : icône gauche
 optionnelle, titre, sous-titre optionnel, détails secondaires et slot de widgets
 à droite. Apps, Skills, MCP, Hooks, tâches planifiées, compte, crédits de reset,

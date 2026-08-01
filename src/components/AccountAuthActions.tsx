@@ -5,6 +5,7 @@ import type { AccountController } from "../lib/useAccount";
 import { IconCard } from "./IconCard";
 import { CardStack } from "./CardStack";
 import { RoundIconButton } from "./RoundIcon";
+import { Alert } from "./Alert";
 
 export function AccountAuthActions({
   controller,
@@ -79,9 +80,9 @@ export function AccountAuthActions({
         )}
       >
         {controller.authError && (
-          <p className="account-auth-error" role="alert">
+          <Alert tone="error">
             {controller.authError}
-          </p>
+          </Alert>
         )}
       </IconCard>
     </CardStack>

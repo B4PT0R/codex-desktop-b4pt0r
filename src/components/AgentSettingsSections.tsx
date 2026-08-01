@@ -14,6 +14,7 @@ import type { CodexGlobalSettingsController } from "../lib/useCodexGlobalSetting
 import type { ConfigRequirements } from "../lib/useConfigRequirements";
 import type { Model } from "../types";
 import { GlobalAgentsSettings } from "./GlobalAgentsSettings";
+import { Alert } from "./Alert";
 import {
   normalizePermission,
   permissionDetail,
@@ -150,9 +151,9 @@ export function AgentSettings({
       <SubagentSettings globalSettings={globalSettings} models={models} />
       <GlobalAgentsSettings />
       {globalSettings.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {globalSettings.error}
-        </div>
+        </Alert>
       )}
     </section>
   );
@@ -187,12 +188,12 @@ export function PermissionSettings({
         description={t("settings.permissions.description")}
       />
       {capabilities.permissionProfiles.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("settings.permissions.catalogUnavailable")}
-        </div>
+        </Alert>
       )}
       {configRequirements?.managed && (
-        <div className="inventory-message neutral" role="status">
+        <Alert tone="neutral">
           {t("settings.requirements.permissions")}
           {configRequirements.defaultPermission
             ? ` ${t("settings.requirements.default", {
@@ -202,12 +203,12 @@ export function PermissionSettings({
                 ),
               })}`
             : ""}
-        </div>
+        </Alert>
       )}
       {configRequirements?.error && (
-        <div className="inventory-message error" role="alert">
+        <Alert tone="error">
           {t("settings.requirements.error")}
-        </div>
+        </Alert>
       )}
       <IconSubheader
         title={t("settings.permissions.profile")}
