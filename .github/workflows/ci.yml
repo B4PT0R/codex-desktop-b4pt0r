@@ -37,5 +37,28 @@ jobs:
       - name: Audit production dependencies
         run: npm audit --omit=dev
 
+  package-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Install RPM build tools
+        run: sudo apt-get update && sudo apt-get install --yes rpm
+      - name: Build Linux packages
+        run: npm run electron:linux
+      - name: Inspect package metadata
+        run: |
+          dpkg-deb --field dist/codex-desktop-linux_*_amd64.deb Package Version Architecture
+          rpm --query --package --info dist/codex-desktop-linux_*_x86_64.rpm
+          test -s dist/codex-desktop-linux_*_x86_64.AppImage
+
 # `npm run test:contract` intentionally remains a local compatibility check:
 # it generates schemas from the contributor's exact installed Codex binary.

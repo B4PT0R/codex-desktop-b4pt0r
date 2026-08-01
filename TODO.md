@@ -48,6 +48,12 @@ thread metadata and Scheduled Tasks.
 Keep the v0.4.0 functional surface frozen while running bounded stabilization,
 failure-path, simplification and maintainability passes across existing sectors.
 
+Multi-distribution packaging is the active portability objective. The manifest
+now owns Debian, RPM and AppImage targets with explicit RPM runtime dependencies;
+CI builds and inspects all three formats, installing `rpmbuild` explicitly;
+the in-app installer remains intentionally Debian-only until package-format
+detection and equally strict RPM/AppImage validation are implemented.
+
 Visual-work invariant: every frontend style or layout change starts with a real
 before screenshot and ends with a comparable after screenshot at the same
 viewport/theme/state. Accessibility snapshots do not replace this pair. Functional
@@ -365,23 +371,26 @@ reads and clears their loading state.
   `turn/start`; App Server 0.145 exposes no conditional start-if-idle request.
 - Quitting interrupts scheduled work; closing the window preserves the hidden
   renderer and App Server.
-- Linux/Ubuntu is the only regularly packaged environment. The `.deb` still
-  needs a clean second-machine or VM lifecycle pass.
+- Debian, RPM and AppImage artifacts build on Ubuntu CI, but runtime validation
+  still needs clean Debian/Fedora GNOME and KDE/Wayland VM lifecycle passes.
 - The lazy Markdown/KaTeX chunk remains large, but is isolated and not a release
   blocker.
 
 ## Next bounded work
 
-1. Exercise long-idle and suspend/resume recovery in packaged Electron with a
+1. Detect Debian, RPM and AppImage runtime installation formats, then select
+   matching release assets while keeping unsupported automatic installation in
+   an explicit manual-update state.
+2. Exercise long-idle and suspend/resume recovery in packaged Electron with a
    scheduled task, approval gating, hidden-window delivery and Realtime active.
-2. Audit another asynchronous controller outside Apps, integrations, Account,
+3. Audit another asynchronous controller outside Apps, integrations, Account,
    capability catalogs, default-thread metadata, file-backed configuration
    editors, external-agent import, Memory, Remote Control, Voice settings,
    Scheduled Tasks, application updates and shared Chromium for stale
    responses, incomplete cancellation and recovery gaps.
-3. Review large owners only where a concrete cohesive extraction removes
+4. Review large owners only where a concrete cohesive extraction removes
    mixed responsibilities; line count alone does not justify a module split.
-4. Tighten outcome-oriented tests whose current assertions allow concurrency,
+5. Tighten outcome-oriented tests whose current assertions allow concurrency,
    cancellation or cleanup regressions to pass unnoticed.
 
 Defer generic RPC/filesystem consoles, unstable marketplace production support
@@ -400,8 +409,11 @@ and Git/worktree management without a stable App Server product contract.
   Chromium include focused concurrency, recovery and stale-response regressions.
 - Installed App Server contract: 51 tests, passing against
   `codex-cli 0.145.0` (722 tests across 127 files including contract).
-- Electron/Node: 117 tests, passing.
+- Electron/Node: 118 tests, passing.
 - Production Vite build: passing; main JS 660.27 kB, 189.50 kB gzip.
+- Linux packaging: Debian (`amd64`), RPM (`x86_64`) and AppImage (`x86_64`)
+  build in one pass; package metadata and embedded desktop/Skill resources were
+  inspected locally. RPM builds require the `rpmbuild` executable.
 - Production dependency audit: zero vulnerabilities.
 - `git diff --check`: passing.
 - Settings primitive visual pass: Agent, Advanced Configuration, Plugin

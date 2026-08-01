@@ -22,6 +22,9 @@
     "electron:probe": "electron electron-spike/main.mjs",
     "electron:pack": "npm run build && electron-builder --dir",
     "electron:deb": "npm run build && electron-builder --linux deb",
+    "electron:rpm": "npm run build && electron-builder --linux rpm",
+    "electron:appimage": "npm run build && electron-builder --linux AppImage",
+    "electron:linux": "npm run build && electron-builder --linux deb rpm AppImage",
     "check": "tsc --noEmit",
     "test": "vitest run --exclude 'tests/contract/**'",
     "test:watch": "vitest --exclude 'tests/contract/**'",
@@ -56,7 +59,9 @@
     "linux": {
       "syncDesktopName": true,
       "target": [
-        "deb"
+        "deb",
+        "rpm",
+        "AppImage"
       ],
       "category": "Development",
       "icon": "electron/assets/icon.png",
@@ -71,6 +76,18 @@
         "libxtst6",
         "pkexec",
         "xdg-utils"
+      ]
+    },
+    "rpm": {
+      "depends": [
+        "gtk3",
+        "libnotify",
+        "nss",
+        "libXScrnSaver",
+        "libXtst",
+        "xdg-utils",
+        "at-spi2-core",
+        "util-linux"
       ]
     }
   },

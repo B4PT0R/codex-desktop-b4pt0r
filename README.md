@@ -129,6 +129,22 @@ npm run electron:deb
 sudo apt install ./dist/codex-desktop-linux_0.4.1_amd64.deb
 ```
 
+The packaging manifest also supports native RPM and portable AppImage builds:
+
+```bash
+npm run electron:rpm
+npm run electron:appimage
+# Build all three Linux artifacts in one pass:
+npm run electron:linux
+```
+
+RPM packaging requires `rpmbuild` (`rpm` on Ubuntu/Debian) on the build host.
+The AppImage build needs no additional distribution packaging tool.
+
+The in-app updater remains Debian-only for now. RPM and AppImage artifacts are
+build-validation targets, not supported release installs, until runtime format
+detection can keep their upgrade paths explicitly manual and safe.
+
 Run the complete desktop environment during development with:
 
 ```bash

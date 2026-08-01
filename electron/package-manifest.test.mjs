@@ -23,6 +23,24 @@ test("ships the renderer and native runtime without native test sources", async 
   ]);
 });
 
+test("builds native packages and a portable image for Linux", () => {
+  assert.deepEqual(manifest.build.linux.target, ["deb", "rpm", "AppImage"]);
+  assert.equal(
+    manifest.scripts["electron:linux"],
+    "npm run build && electron-builder --linux deb rpm AppImage",
+  );
+  assert.deepEqual(manifest.build.rpm.depends, [
+    "gtk3",
+    "libnotify",
+    "nss",
+    "libXScrnSaver",
+    "libXtst",
+    "xdg-utils",
+    "at-spi2-core",
+    "util-linux",
+  ]);
+});
+
 test("ships host skills outside the ASAR at the path used in production", async () => {
   assert.deepEqual(manifest.build.extraResources, [
     {
