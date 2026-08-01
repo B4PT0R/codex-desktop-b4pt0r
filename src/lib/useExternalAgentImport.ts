@@ -54,6 +54,7 @@ export function useExternalAgentImport({
   const activeImportId = useRef<string | undefined>(undefined);
   const importInFlight = useRef(false);
   const detectionGeneration = useRef(0);
+  const detectionCwd = useRef(cwd);
   const historyGeneration = useRef(0);
   const queuedNotifications = useRef(
     new Map<
@@ -105,6 +106,7 @@ export function useExternalAgentImport({
       return;
     }
     setDetecting(true);
+    setItems([]);
     setError(undefined);
     setCompleted(false);
     setResults([]);
@@ -113,15 +115,25 @@ export function useExternalAgentImport({
         "externalAgentConfig/detect",
         externalAgentDetectParams(cwd, source),
       );
-      if (generation === detectionGeneration.current) {
+      if (
+        generation === detectionGeneration.current &&
+        cwd === detectionCwd.current
+      ) {
         detectedSource.current = source;
         setItems(normalizeExternalAgentItems(response.items));
       }
     } catch (cause) {
-      if (generation === detectionGeneration.current)
+      if (
+        generation === detectionGeneration.current &&
+        cwd === detectionCwd.current
+      )
         setError(errorMessage(cause));
     } finally {
-      if (generation === detectionGeneration.current) setDetecting(false);
+      if (
+        generation === detectionGeneration.current &&
+        cwd === detectionCwd.current
+      )
+        setDetecting(false);
     }
   }, [cwd, t]);
 
@@ -176,6 +188,13 @@ export function useExternalAgentImport({
   useEffect(() => {
     if (enabled) void refreshHistory();
   }, [enabled, refreshHistory]);
+
+  useEffect(() => {
+    detectionCwd.current = cwd;
+    detectionGeneration.current += 1;
+    setDetecting(false);
+    setItems([]);
+  }, [cwd]);
 
   useEffect(() => {
     if ((!enabled && !importing) || !isDesktopApp()) return;

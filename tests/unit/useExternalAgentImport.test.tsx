@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ExternalAgentMigrationItem } from "../../src/lib/appServerTypes";
 
 const requestMock = vi.hoisted(() => vi.fn());
 const subscribeMock = vi.hoisted(() => vi.fn());
@@ -11,6 +12,14 @@ vi.mock("../../src/lib/codex", () => ({
 }));
 
 import { useExternalAgentImport } from "../../src/lib/useExternalAgentImport";
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((next) => {
+    resolve = next;
+  });
+  return { promise, resolve };
+}
 
 beforeEach(() => {
   requestMock.mockReset();
@@ -117,5 +126,45 @@ describe("contrôleur d’import d’agents", () => {
         ),
       ).toHaveLength(1),
     );
+  });
+
+  it("retire l’inventaire précédent avant une nouvelle détection", async () => {
+    requestMock
+      .mockResolvedValueOnce({
+        items: [{ itemType: "CONFIG", description: "Ancienne config" }],
+      })
+      .mockRejectedValueOnce(new Error("detection failed"));
+    const { result } = renderHook(() =>
+      useExternalAgentImport({ cwd: "/project", enabled: false }),
+    );
+    await act(() => result.current.detect("claude-code"));
+    expect(result.current.items).toHaveLength(1);
+
+    await act(() => result.current.detect("cursor"));
+
+    expect(result.current.items).toEqual([]);
+    expect(result.current.error).toBe("detection failed");
+  });
+
+  it("ignore une détection terminée pour l’ancien workspace", async () => {
+    const pending = deferred<{ items: ExternalAgentMigrationItem[] }>();
+    requestMock.mockReturnValueOnce(pending.promise);
+    const { result, rerender } = renderHook(
+      ({ cwd }) => useExternalAgentImport({ cwd, enabled: false }),
+      { initialProps: { cwd: "/old-project" } },
+    );
+    let detection!: Promise<void>;
+    act(() => {
+      detection = result.current.detect("claude-code");
+    });
+
+    rerender({ cwd: "/new-project" });
+    pending.resolve({
+      items: [{ itemType: "CONFIG", description: "Ancienne config" }],
+    });
+    await act(() => detection);
+
+    expect(result.current.detecting).toBe(false);
+    expect(result.current.items).toEqual([]);
   });
 });
