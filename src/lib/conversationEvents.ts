@@ -207,23 +207,8 @@ function startItem(
   item: AppServerItem | undefined,
   t: Translate,
 ): ChatMessage[] {
-  const scheduledTask = scheduledTaskFromItem(item);
-  if (
-    scheduledTask &&
-    item?.id &&
-    !messages.some((message) => message.id === item.id)
-  ) {
-    return [
-      ...messages,
-      {
-        id: item.id,
-        role: "user",
-        modality: "scheduledTask",
-        title: scheduledTask.name,
-        content: scheduledTask.prompt,
-      },
-    ];
-  }
+  const userMessage = userMessageFromItem(item);
+  if (userMessage) return reconcileUserMessage(messages, userMessage);
   const tool = toolFromItem(item, t);
   const signal = signalFromItem(item, t);
   let next = messages;
@@ -272,19 +257,51 @@ function startItem(
   return signal ? appendSignal(next, signal) : next;
 }
 
-function scheduledTaskFromItem(item: AppServerItem | undefined) {
-  if (item?.type !== "userMessage" || !Array.isArray(item.content)) {
+function userMessageFromItem(
+  item: AppServerItem | undefined,
+): ChatMessage | undefined {
+  if (item?.type !== "userMessage" || !item.id || !Array.isArray(item.content)) {
     return undefined;
   }
-  const text = item.content
-    .flatMap((entry) => {
-      const value = record(entry);
-      return value?.type === "text" && typeof value.text === "string"
-        ? [value.text]
-        : [];
-    })
-    .join("\n");
-  return scheduledTaskFromPrompt(text);
+  const content = item.content.flatMap((entry) => {
+    const value = record(entry);
+    return value?.type === "text" && typeof value.text === "string"
+      ? [value.text]
+      : [];
+  });
+  const attachments = item.content.flatMap((entry) => {
+    const value = record(entry);
+    if (value?.type !== "localImage" || typeof value.path !== "string") return [];
+    return [value.path.split("/").at(-1) ?? value.path];
+  });
+  const skills = item.content.flatMap((entry) => {
+    const value = record(entry);
+    return value?.type === "skill" && typeof value.name === "string"
+      ? [{ name: value.name }]
+      : [];
+  });
+  const text = content.filter(Boolean).join("\n");
+  const scheduledTask = scheduledTaskFromPrompt(text);
+  return {
+    id: item.id,
+    role: "user",
+    content: scheduledTask?.prompt ?? text,
+    ...(scheduledTask
+      ? { modality: "scheduledTask" as const, title: scheduledTask.name }
+      : {}),
+    ...(attachments.length ? { attachments } : {}),
+    ...(skills.length ? { skills } : {}),
+  };
+}
+
+function reconcileUserMessage(
+  messages: ChatMessage[],
+  authoritative: ChatMessage,
+): ChatMessage[] {
+  if (messages.some((message) => message.id === authoritative.id)) {
+    return messages;
+  }
+  return [...messages, authoritative];
 }
 
 function completeItem(
@@ -293,6 +310,8 @@ function completeItem(
   t: Translate,
 ): ChatMessage[] {
   if (!item?.id) return messages;
+  const userMessage = userMessageFromItem(item);
+  if (userMessage) return reconcileUserMessage(messages, userMessage);
   const completedTool = toolFromItem(item, t);
   const index = findLastIndex(messages, (message) =>
     Boolean(

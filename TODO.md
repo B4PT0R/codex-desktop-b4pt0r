@@ -1,6 +1,6 @@
 # Codex Desktop Linux — Handoff
 
-Last updated: 2026-08-01
+Last updated: 2026-08-02
 
 Read `AGENTS.md` before contributing. Durable protocol and interface decisions
 belong in `APP_SERVER_COVERAGE.md` and `UI_ARCHITECTURE.md`; release history
@@ -9,7 +9,7 @@ belongs in `CHANGELOG.md` and Git.
 ## Baseline
 
 Codex Desktop Linux is a functional independent Electron client for the
-official `codex app-server`. The current public release is v0.5.0.
+official `codex app-server`. The current public release is v0.5.1.
 
 The daily workflow covers conversation replay and concurrent activity,
 streaming Markdown/LaTeX, reasoning, plans, tools, approvals, diffs, files,
@@ -21,13 +21,10 @@ Compatibility is currently verified against installed `codex-cli 0.145.0`.
 
 ## Latest release
 
-Release v0.5.0 establishes the multi-distribution baseline: x86-64 DEB, RPM and
-AppImage artifacts, format-aware update selection, automatic verified APT
-upgrades only for Debian-family installations, and explicit manual release
-handoff for RPM, AppImage and unknown families. Clean Debian stable and Fedora
-container checks cover native installation, linked libraries and non-root
-native/AppImage startup; a local Debian pass also confirmed discovery and
-liveness of `codex app-server` 0.145.0.
+Release v0.5.1 fixes live transcript synchronization for Remote Control. App
+Server `userMessage` items are now the single source of truth for local, remote
+and steered prompts, so messages submitted from paired phones appear on the
+desktop without renderer-owned optimistic transcript state.
 
 ## Durable constraints
 

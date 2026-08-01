@@ -10,6 +10,29 @@ const assistantMessage: ChatMessage = {
 };
 
 describe("événements de conversation", () => {
+  it("affiche un message utilisateur reçu d'un client remote", () => {
+    const event = {
+      method: "item/started",
+      params: {
+        item: {
+          id: "remote-user-1",
+          type: "userMessage",
+          content: [{ type: "text", text: "Message depuis le téléphone" }],
+        },
+      },
+    };
+
+    const started = applyConversationEvent([], event);
+    expect(started).toEqual([
+      {
+        id: "remote-user-1",
+        role: "user",
+        content: "Message depuis le téléphone",
+      },
+    ]);
+    expect(applyConversationEvent(started, event)).toBe(started);
+  });
+
   it("matérialise un sous-agent depuis son seul événement d’activité", () => {
     const updated = applyConversationEvent([], {
       method: "item/completed",

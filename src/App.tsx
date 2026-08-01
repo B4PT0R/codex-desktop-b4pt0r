@@ -692,28 +692,6 @@ export default function App() {
       await composerCommands.execute(command);
       return;
     }
-    const attachments = context.flatMap((item) =>
-      item.type === "skill"
-        ? []
-        : [
-            item.type === "mention"
-              ? `@${item.name}`
-              : (item.path.split("/").at(-1) ?? item.path),
-          ],
-    );
-    const skills = context.flatMap((item) =>
-      item.type === "skill" ? [{ name: item.name }] : [],
-    );
-    setMessages((x) => [
-      ...x,
-      {
-        id: crypto.randomUUID(),
-        role: "user",
-        content: text || t("app.attachments"),
-        attachments,
-        skills,
-      },
-    ]);
     if (busy) {
       if (!threadId || !turnId) {
         showError(t("app.steerError"), t("app.noActiveTurn"));

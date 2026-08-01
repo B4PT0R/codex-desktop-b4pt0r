@@ -3,6 +3,15 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.5.1] - 2026-08-02
+
+### Fixed
+
+- User prompts submitted from paired Remote Control devices now appear in the
+  active desktop transcript. App Server user-message notifications are the
+  single authoritative path for local, remote, and steered prompts, preventing
+  the renderer from diverging from the persisted conversation.
+
 ## [0.5.0] - 2026-08-01
 
 ### Added
