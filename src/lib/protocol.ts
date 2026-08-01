@@ -453,6 +453,11 @@ export function appsListParams(threadId?: string, forceRefetch = false) {
   };
 }
 
+export function appEnabledConfigWriteParams(appId: string, enabled: boolean) {
+  const escapedAppId = appId.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+  return configValueWriteParams(`apps."${escapedAppId}".enabled`, enabled);
+}
+
 export function externalAgentDetectParams(
   cwd?: string,
   migrationSource: "claude-code" | "cursor" = "claude-code",

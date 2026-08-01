@@ -1,5 +1,6 @@
 import { useI18n } from "../i18n/I18nProvider";
 import type { DefaultThreadSettingsController } from "../lib/useDefaultThreadSettings";
+import { IconCard } from "./IconCard";
 
 const maxThreadTitleLength = 42;
 const maxWorkspacePathLength = 36;
@@ -17,12 +18,11 @@ export function DefaultThreadSettingsField({
     );
 
   return (
-    <label>
-      <span className="settings-field-description">
-        <strong>{t("settings.defaultThread.title")}</strong>
-        <small>{t("settings.defaultThread.detail")}</small>
-      </span>
-      <select
+    <IconCard
+      as="label"
+      title={t("settings.defaultThread.title")}
+      subtitle={t("settings.defaultThread.detail")}
+      trailing={<select
         className="default-thread-select"
         aria-label={t("settings.defaultThread.title")}
         value={controller.defaultThreadId ?? ""}
@@ -50,8 +50,8 @@ export function DefaultThreadSettingsField({
             </option>
           );
         })}
-      </select>
-    </label>
+      </select>}
+    />
   );
 }
 

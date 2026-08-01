@@ -8,6 +8,11 @@ every visual iteration. Historical captures remain available through Git.
   modalities, compaction, composer controls, context, and quotas.
 - `showcase-dark-1240x820.png` — English dark-theme continuation showing the
   Realtime hierarchy and active Plan immediately above the composer.
+- `settings-mcp-light-1164x860.png` — light-theme Settings baseline showing the
+  shared page header, operational toolbar, MCP server cards, status badges and
+  recoverable authentication failure.
+- `settings-memory-light-1164x860.png` — light-theme Settings baseline showing
+  shared icon subheaders, joined option cards and the local-memory reset action.
 
 Both images are generated from the deterministic local preview:
 

@@ -269,6 +269,8 @@ export const fr = {
   "integrations.apps.loading": "Chargement des apps…",
   "integrations.apps.empty": "Aucune app connectée disponible.",
   "integrations.apps.fallback": "Connecteur utilisable par Codex",
+  "integrations.apps.globalHint":
+    "L’activation s’applique globalement aux futurs tours. L’état effectif reste déterminé par Codex et les politiques administrées.",
   "integrations.available": "Disponible",
   "integrations.skills.title": "Skills du projet",
   "integrations.skills.loading": "Recherche des skills…",
@@ -286,6 +288,10 @@ export const fr = {
   "integrations.mcp.toolOne": "1 outil",
   "integrations.mcp.toolMany": "{count} outils",
   "integrations.mcp.version": "version {version}",
+  "integrations.mcp.startup.starting": "Démarrage…",
+  "integrations.mcp.startup.ready": "Prêt",
+  "integrations.mcp.startup.failed": "Échec au démarrage",
+  "integrations.mcp.startup.cancelled": "Démarrage annulé",
   "integrations.mcp.reloadConfig": "Recharger la configuration",
   "integrations.mcp.reloaded": "Configuration MCP rechargée.",
   "integrations.mcp.reloadError":
@@ -603,7 +609,8 @@ export const fr = {
   "settings.section.appearance": "Apparence et affichage",
   "settings.section.voice": "Voix",
   "settings.section.account": "Compte et utilisation",
-  "settings.section.plugins": "Plugins et apps",
+  "settings.section.apps": "Apps",
+  "settings.section.plugins": "Skills et plugins",
   "settings.section.mcp": "Serveurs MCP",
   "settings.section.permissions": "Permissions",
   "settings.section.config": "Configuration avancée",
@@ -611,9 +618,17 @@ export const fr = {
   "settings.section.advanced": "Importer depuis d’autres agents",
   "settings.general.description":
     "Préférences générales de l’application Linux.",
+  "settings.general.applicationTitle": "Application",
+  "settings.general.applicationDetail":
+    "Langue, ouverture des fichiers, démarrage et cycle de vie d’App Server.",
+  "settings.general.maintenanceTitle": "Versions et mises à jour",
+  "settings.general.maintenanceDetail":
+    "Versions installées et contrôles de mise à jour du client.",
   "automations.description":
     "Exécute une consigne à une date précise ou selon une cadence récurrente. L’application doit rester active dans la zone de notification et la machine éveillée.",
   "automations.create": "Créer une tâche",
+  "automations.countOne": "1 tâche planifiée",
+  "automations.countMany": "{count} tâches planifiées",
   "automations.loading": "Chargement des tâches planifiées…",
   "automations.empty": "Aucune tâche planifiée",
   "automations.error": "Impossible d’exécuter la tâche planifiée",
@@ -1119,7 +1134,7 @@ export const fr = {
   "settings.voice.v3": "Version 3",
   "settings.voice.microphoneOnDemand":
     "Demandé au démarrage d’une conversation vocale",
-  "settings.voice.refresh": "Actualiser les voix disponibles",
+  "settings.voice.refresh": "Actualiser les voix",
   "settings.voice.loading": "Chargement des voix…",
   "settings.voice.inventoryError":
     "Impossible d’actualiser le catalogue vocal : {detail}. Le catalogue v3 intégré reste disponible.",
@@ -1190,6 +1205,7 @@ export const fr = {
   "account.auth.external": "Identifiants gérés hors de Codex",
   "account.description":
     "Identité, abonnement et activité du compte utilisé par App Server.",
+  "account.data": "Données du compte",
   "account.refresh": "Actualiser",
   "account.rateLimitsError": "Impossible de lire les quotas et tickets :",
   "account.identity.loading": "Chargement du compte…",

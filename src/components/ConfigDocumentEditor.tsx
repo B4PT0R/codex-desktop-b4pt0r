@@ -8,6 +8,8 @@ import {
 import { useI18n } from "../i18n/I18nProvider";
 import { useDialogFocus } from "../lib/useDialogFocus";
 import { RoundIconButton } from "./RoundIcon";
+import { CardStack } from "./CardStack";
+import { IconCard } from "./IconCard";
 
 type ConfigDocumentEditorProps = {
   description: string;
@@ -84,31 +86,28 @@ export function ConfigDocumentEditor({
 
   return (
     <section className="config-document-section">
-      <header>
-        <span>
-          <h2>{title}</h2>
-          <p>{description}</p>
-        </span>
-        <span className="scope-badge">{t("settings.config.global")}</span>
-      </header>
-      <button
-        className="settings-card config-document-card"
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        onClick={() => setOpen(true)}
-      >
-        <span className="config-document-icon">
-          <FilePenLine />
-        </span>
-        <span className="config-document-summary">
-          <strong>{fileName}</strong>
-          <small>{filePath}</small>
-        </span>
-        {!native && <em>{t("settings.config.preview")}</em>}
-        <span className="config-document-edit">
-          {t("settings.config.edit")}
-        </span>
-      </button>
+      <CardStack className="config-document-card">
+        <IconCard
+          contentButtonProps={{
+            "aria-label": `${fileName} ${t("settings.config.edit")}`,
+            "aria-expanded": open,
+            "aria-haspopup": "dialog",
+          }}
+          icon={<FilePenLine />}
+          onContentClick={() => setOpen(true)}
+          title={fileName}
+          subtitle={filePath}
+          trailing={<>
+            {!native && <em>{t("settings.config.preview")}</em>}
+            <RoundIconButton
+              icon={FilePenLine}
+              label={t("settings.config.edit")}
+              onClick={() => setOpen(true)}
+              variant="tertiary"
+            />
+          </>}
+        />
+      </CardStack>
       {open && (
         <div
           className="config-editor-backdrop"
@@ -187,19 +186,21 @@ export function ConfigDocumentEditor({
               {confirmingClose ? (
                 <span className="config-editor-discard">
                   <small>{t("settings.config.discardConfirm")}</small>
-                  <button onClick={() => setConfirmingClose(false)}>
-                    {t("common.cancel")}
-                  </button>
-                  <button
+                  <RoundIconButton
+                    label={t("common.cancel")}
+                    onClick={() => setConfirmingClose(false)}
+                    variant="secondary"
+                  />
+                  <RoundIconButton
                     className="danger"
+                    label={t("settings.config.discard")}
                     onClick={() => {
                       setConfirmingClose(false);
                       setOpen(false);
                       void onReload();
                     }}
-                  >
-                    {t("settings.config.discard")}
-                  </button>
+                    variant="secondary"
+                  />
                 </span>
               ) : (
                 <>

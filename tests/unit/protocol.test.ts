@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  appEnabledConfigWriteParams,
   automationThreadResumeParams,
   automationThreadSecurityRestoreParams,
   automationThreadStartParams,
@@ -49,6 +50,13 @@ import {
   scheduledTaskPrompt,
 } from "../../src/lib/protocol";
 describe("constructeurs JSON-RPC", () => {
+  it("échappe l’identifiant d’une App dans sa clé de configuration", () => {
+    expect(appEnabledConfigWriteParams('drive.team"one\\two', false)).toEqual({
+      keyPath: 'apps."drive.team\\"one\\\\two".enabled',
+      value: false,
+      mergeStrategy: "upsert",
+    });
+  });
   it("lit les métadonnées d'un thread sans charger ni modifier son état", () => {
     expect(threadReadParams("thread-1")).toEqual({
       threadId: "thread-1",

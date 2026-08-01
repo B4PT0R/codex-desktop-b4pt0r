@@ -3,6 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  AppsSettings,
   McpSettings,
   SkillsSettings,
 } from "../../src/components/IntegrationSettings";
@@ -23,6 +24,7 @@ function controller(
     authenticatingMcp: [],
     hooks: { data: [], loading: false, warnings: [] },
     mcpServers: { data: [], loading: false },
+    mcpStartup: {},
     skills: { data: [], loading: false },
     refreshMcp: vi.fn(),
     refreshHooks: vi.fn(),
@@ -36,7 +38,15 @@ function controller(
 function appsController(
   overrides: Partial<AppsController> = {},
 ): AppsController {
-  return { apps: [], loading: false, refresh: vi.fn(), ...overrides };
+  return {
+    apps: [],
+    configurableApps: [],
+    loading: false,
+    refresh: vi.fn(),
+    setEnabled: vi.fn(),
+    updatingApps: [],
+    ...overrides,
+  };
 }
 
 describe("réglages des intégrations", () => {
@@ -55,9 +65,7 @@ describe("réglages des intégrations", () => {
         loading: false,
       },
     });
-    render(
-      <SkillsSettings apps={appsController()} integrations={integrations} />,
-    );
+    render(<SkillsSettings integrations={integrations} />);
     expect(screen.getByText("Examiner les changements")).toBeVisible();
     fireEvent.click(screen.getByRole("checkbox"));
     expect(integrations.setSkillEnabled).toHaveBeenCalledWith(
@@ -69,27 +77,25 @@ describe("réglages des intégrations", () => {
     ).toBeVisible();
   });
 
-  it("présente les apps connectées utilisables", () => {
-    render(
-      <SkillsSettings
-        apps={appsController({
-          apps: [
-            {
-              id: "github",
-              name: "GitHub",
-              description: "Rechercher les dépôts et issues",
-              installUrl: null,
-              isAccessible: true,
-              isEnabled: true,
-              pluginDisplayNames: [],
-            },
-          ],
-        })}
-        integrations={controller()}
-      />,
-    );
+  it("présente les Apps accessibles et permet de les désactiver globalement", () => {
+    const github = {
+      id: "github",
+      name: "GitHub",
+      description: "Rechercher les dépôts et issues",
+      installUrl: null,
+      isAccessible: true,
+      isEnabled: true,
+      pluginDisplayNames: [],
+    };
+    const apps = appsController({
+      apps: [github],
+      configurableApps: [github],
+    });
+    render(<AppsSettings apps={apps} />);
     expect(screen.getByText("Rechercher les dépôts et issues")).toBeVisible();
-    expect(screen.getByText("Disponible")).toBeVisible();
+    expect(screen.getByText(/activation s’applique globalement/i)).toBeVisible();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Activé" }));
+    expect(apps.setEnabled).toHaveBeenCalledWith(github, false);
   });
 
   it("résume les outils et l’authentification MCP", () => {
@@ -119,6 +125,38 @@ describe("réglages des intégrations", () => {
     );
     expect(screen.getByText("2 outils · version 1.2.0")).toBeVisible();
     expect(screen.getByText("OAuth connecté")).toBeVisible();
+  });
+
+  it("affiche l’échec de démarrage MCP et propose la réauthentification", () => {
+    const integrations = controller({
+      mcpServers: {
+        data: [
+          {
+            name: "github",
+            serverInfo: null,
+            tools: {},
+            resources: [],
+            resourceTemplates: [],
+            authStatus: "oAuth",
+          },
+        ],
+        loading: false,
+      },
+      mcpStartup: {
+        github: {
+          status: "failed",
+          error: "Le jeton a expiré",
+          failureReason: "reauthenticationRequired",
+        },
+      },
+    });
+    render(<McpSettings integrations={integrations} />);
+    expect(screen.getByText("Échec au démarrage")).toBeVisible();
+    expect(screen.getByRole("alert")).toHaveTextContent("Le jeton a expiré");
+    fireEvent.click(screen.getByRole("button", { name: "Se connecter" }));
+    expect(integrations.authenticateMcp).toHaveBeenCalledWith(
+      integrations.mcpServers.data[0],
+    );
   });
 
   it("rend les erreurs récupérables et l’actualisation disponible", () => {

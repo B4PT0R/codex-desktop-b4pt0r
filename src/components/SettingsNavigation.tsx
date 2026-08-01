@@ -14,6 +14,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  Sparkles,
   UserRound,
   Webhook,
 } from "lucide-react";
@@ -35,7 +36,8 @@ const icons: Record<SettingsSectionId, ComponentType> = {
   appearance: Palette,
   voice: Mic,
   account: UserRound,
-  plugins: Boxes,
+  apps: Boxes,
+  plugins: Sparkles,
   mcp: Plug,
   permissions: ShieldCheck,
   config: FileCog,

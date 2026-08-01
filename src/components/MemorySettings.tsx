@@ -1,6 +1,12 @@
-import { Brain, RotateCcw, ShieldCheck } from "lucide-react";
+import { Brain, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
+import { CardStack } from "./CardStack";
+import { IconCard } from "./IconCard";
+import { RoundIconButton } from "./RoundIcon";
+import { IconSubheader } from "./IconSubheader";
+import { SettingsPageHeader } from "./SettingsPageHeader";
+import { Note } from "./Note";
 import type { MemorySettingsController } from "../lib/useMemorySettings";
 
 export function MemorySettings({
@@ -13,18 +19,17 @@ export function MemorySettings({
   const disabled = controller.loading || controller.saving;
   return (
     <section className="settings-page">
-      <header>
-        <p>{t("settings.memory.description")}</p>
-        <span className="planned-badge">{t("settings.memory.experimental")}</span>
-      </header>
-      <div className="settings-explanation">
-        <Brain />
-        <span>
-          <strong>{t("settings.memory.localTitle")}</strong>
-          <small>{t("settings.memory.localDetail")}</small>
-        </span>
-      </div>
-      <div className="settings-card settings-fields memory-settings-fields">
+      <SettingsPageHeader
+        badge={t("settings.memory.experimental")}
+        badgeTone="experimental"
+        description={t("settings.memory.description")}
+      />
+      <IconSubheader
+        icon={<Brain />}
+        title={t("settings.memory.localTitle")}
+        subtitle={t("settings.memory.localDetail")}
+      />
+      <CardStack className="settings-fields memory-settings-fields">
         <MemoryToggle
           checked={controller.enabled}
           disabled={disabled}
@@ -53,12 +58,11 @@ export function MemorySettings({
           detail={t("settings.memory.externalDetail")}
           onChange={controller.setDisableOnExternalContext}
         />
-        <label>
-          <span className="settings-field-description">
-            <strong>{t("settings.memory.threshold")}</strong>
-            <small>{t("settings.memory.thresholdDetail")}</small>
-          </span>
-          <span className="memory-threshold">
+        <IconCard
+          as="label"
+          title={t("settings.memory.threshold")}
+          subtitle={t("settings.memory.thresholdDetail")}
+          trailing={<span className="memory-threshold">
             <select
               aria-label={t("settings.memory.threshold")}
               disabled={disabled || !controller.enabled}
@@ -86,46 +90,50 @@ export function MemorySettings({
                 ))}
             </select>
             <span>%</span>
-          </span>
-        </label>
-      </div>
-      <div className="settings-explanation memory-privacy-note">
-        <ShieldCheck />
-        <span>
-          <strong>{t("settings.memory.guidanceTitle")}</strong>
-          <small>{t("settings.memory.guidanceDetail")}</small>
-        </span>
-      </div>
-      <div className="memory-reset-row">
-        <span>
-          <strong>{t("settings.memory.reset")}</strong>
-          <small>{t("settings.memory.resetDetail")}</small>
-        </span>
-        {confirmReset ? (
+          </span>}
+        />
+      </CardStack>
+      <Note
+        className="memory-privacy-note"
+        title={t("settings.memory.guidanceTitle")}
+      >
+        {t("settings.memory.guidanceDetail")}
+      </Note>
+      <CardStack className="memory-reset-card">
+        <IconCard
+          title={t("settings.memory.reset")}
+          subtitle={t("settings.memory.resetDetail")}
+          trailing={confirmReset ? (
           <span className="memory-reset-confirm">
-            <button onClick={() => setConfirmReset(false)}>
-              {t("common.cancel")}
-            </button>
-            <button
+            <RoundIconButton
+              label={t("common.cancel")}
+              onClick={() => setConfirmReset(false)}
+              size="medium"
+              variant="secondary"
+            />
+            <RoundIconButton
+              className="danger"
               disabled={controller.resetting}
+              label={t("settings.memory.resetConfirm")}
               onClick={async () => {
                 if (await controller.reset()) setConfirmReset(false);
               }}
-            >
-              {t("settings.memory.resetConfirm")}
-            </button>
+              size="medium"
+              variant="secondary"
+            />
           </span>
         ) : (
-          <button
-            className="secondary-button"
+          <RoundIconButton
             disabled={controller.resetting}
+            icon={RotateCcw}
+            label={t("settings.memory.resetAction")}
             onClick={() => setConfirmReset(true)}
-          >
-            <RotateCcw />
-            {t("settings.memory.resetAction")}
-          </button>
-        )}
-      </div>
+            size="medium"
+            variant="secondary"
+          />
+          )}
+        />
+      </CardStack>
       {controller.error && (
         <div className="inventory-message error" role="alert">
           {t("settings.memory.error")} {controller.error}
@@ -149,18 +157,17 @@ function MemoryToggle({
   title: string;
 }) {
   return (
-    <label>
-      <span className="settings-field-description">
-        <strong>{title}</strong>
-        <small>{detail}</small>
-      </span>
-      <input
+    <IconCard
+      as="label"
+      title={title}
+      subtitle={detail}
+      trailing={<input
         aria-label={title}
         checked={checked}
         disabled={disabled}
         type="checkbox"
         onChange={(event) => void onChange(event.target.checked)}
-      />
-    </label>
+      />}
+    />
   );
 }

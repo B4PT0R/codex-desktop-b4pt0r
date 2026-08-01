@@ -10,6 +10,7 @@ export type SettingsSectionId =
   | "appearance"
   | "voice"
   | "account"
+  | "apps"
   | "plugins"
   | "mcp"
   | "permissions"
@@ -87,9 +88,15 @@ const settingsSectionDefinitions: SettingsSectionDefinition[] = [
     available: true,
   },
   {
+    id: "apps",
+    labelKey: "settings.section.apps",
+    keywords: "apps connectors connecteurs services data données",
+    available: true,
+  },
+  {
     id: "plugins",
     labelKey: "settings.section.plugins",
-    keywords: "connectors connecteurs marketplace skills apps",
+    keywords: "plugins marketplace skills capacités capabilities",
     available: true,
   },
   {

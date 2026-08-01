@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { MessageCircleQuestion } from "lucide-react";
 import { useDialogFocus } from "../lib/useDialogFocus";
 import { useI18n } from "../i18n/I18nProvider";
-import { RoundIcon } from "./RoundIcon";
+import { RoundIcon, RoundIconButton } from "./RoundIcon";
 import {
   freeFormAnswer,
   userInputResponse,
@@ -147,13 +147,14 @@ export function UserInputDialog({
         {request.autoResolutionMs !== undefined && (
           <p className="hint">{t("userInput.autoResolution")}</p>
         )}
-        <button
-          className="primary user-input-submit"
+        <RoundIconButton
+          className="user-input-submit"
           disabled={!complete || submitting}
+          icon={MessageCircleQuestion}
+          label={submitting ? t("userInput.sending") : t("userInput.submit")}
           onClick={submit}
-        >
-          {submitting ? t("userInput.sending") : t("userInput.submit")}
-        </button>
+          variant="primary"
+        />
       </div>
     </div>
   );

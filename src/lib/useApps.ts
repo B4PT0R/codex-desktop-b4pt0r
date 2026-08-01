@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AppInfo, AppsListResponse } from "./appServerTypes";
 import { isDesktopApp, request, subscribeAppServerMessages } from "./codex";
-import { appsListParams } from "./protocol";
+import { appEnabledConfigWriteParams, appsListParams } from "./protocol";
 import { useI18n } from "../i18n/I18nProvider";
 
 export type AppsController = {
   apps: AppInfo[];
+  configurableApps: AppInfo[];
   error?: string;
   loading: boolean;
+  updatingApps: string[];
   refresh: () => Promise<void>;
+  setEnabled: (app: AppInfo, enabled: boolean) => Promise<void>;
 };
 
 export function useApps({
@@ -22,6 +25,7 @@ export function useApps({
   const [apps, setApps] = useState<AppInfo[]>([]);
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
+  const [updatingApps, setUpdatingApps] = useState<string[]>([]);
   const generation = useRef(0);
 
   const refresh = useCallback(async () => {
@@ -38,7 +42,7 @@ export function useApps({
         appsListParams(threadId),
       );
       if (current === generation.current)
-        setApps(selectAccessible(response.data));
+        setApps(response.data.slice(0, 100));
     } catch (cause) {
       if (current === generation.current)
         setError(cause instanceof Error ? cause.message : String(cause));
@@ -56,15 +60,50 @@ export function useApps({
     return subscribeAppServerMessages((message) => {
       if (message.method !== "app/list/updated") return;
       const data = appListFromNotification(message.params);
-      if (data) setApps(selectAccessible(data));
+      if (data) setApps(data.slice(0, 100));
     });
   }, [enabled]);
 
-  return { apps, error, loading, refresh };
+  const setEnabled = useCallback(
+    async (app: AppInfo, appEnabled: boolean) => {
+      if (!isDesktopApp()) {
+        setError(t("apps.nativeOnly"));
+        return;
+      }
+      setUpdatingApps((ids) => [...new Set([...ids, app.id])]);
+      setError(undefined);
+      try {
+        await request(
+          "config/value/write",
+          appEnabledConfigWriteParams(app.id, appEnabled),
+        );
+        await refresh();
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : String(cause));
+      } finally {
+        setUpdatingApps((ids) => ids.filter((id) => id !== app.id));
+      }
+    },
+    [refresh, t],
+  );
+
+  return {
+    apps: selectActive(apps),
+    configurableApps: selectConfigurable(apps),
+    error,
+    loading,
+    updatingApps,
+    refresh,
+    setEnabled,
+  };
 }
 
-function selectAccessible(apps: AppInfo[]) {
+function selectActive(apps: AppInfo[]) {
   return apps.filter((app) => app.isAccessible && app.isEnabled).slice(0, 100);
+}
+
+function selectConfigurable(apps: AppInfo[]) {
+  return apps.filter((app) => app.isAccessible).slice(0, 100);
 }
 
 function appListFromNotification(value: unknown): AppInfo[] | undefined {

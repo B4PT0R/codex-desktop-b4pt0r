@@ -64,6 +64,10 @@ tests actually require.
 
 ## Product principles
 
+- Treat appearance, ergonomics, visual harmony, information hierarchy, spacing,
+  density, and color consistency as first-class product requirements. A frontend
+  change that functions correctly but looks improvised, misplaced, or inconsistent
+  with adjacent surfaces is incomplete.
 - Make common coding tasks obvious and fast. Reveal advanced controls only when
   they are useful.
 - Present Codex activity clearly: user input, model output, reasoning summaries,
@@ -303,6 +307,15 @@ throughout implementation rather than waiting until the end. Cover the relevant
 empty, loading, streaming, success, error, modal, and narrow-window states when
 they are affected. Browser validation complements component and contract tests;
 it does not replace focused packaged-Electron checks for native behavior.
+
+Before changing frontend styling, layout, spacing, density, or visual hierarchy,
+capture the affected rendered state with a real screenshot. After the change,
+capture the same state again at the same viewport, theme, locale, and representative
+data whenever practical, then compare both images before considering the visual
+work complete. Accessibility snapshots and computed-style inspection help explain
+the result but never replace this before/after screenshot pair. Judge the complete
+composition around the change—not only the modified element—so technically valid
+but awkward placement, density, or hierarchy is caught before handoff.
 
 Ergonomic and visual direction remains collaborative. Consult the user at
 regular, meaningful checkpoints and share screenshots or clearly described

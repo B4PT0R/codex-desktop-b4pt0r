@@ -1,4 +1,5 @@
 import type {
+  AppInfo,
   AppServerSkill,
   RateLimitResetCreditsSummary,
 } from "./appServerTypes";
@@ -417,6 +418,27 @@ export const demoSkills: AppServerSkill[] = [
     path: "/preview/skills/skill-creator/SKILL.md",
     scope: "system",
     enabled: true,
+  },
+];
+
+export const demoApps: AppInfo[] = [
+  {
+    id: "github",
+    name: "GitHub",
+    description: "Search repositories, issues, and pull requests.",
+    installUrl: null,
+    isAccessible: true,
+    isEnabled: true,
+    pluginDisplayNames: ["GitHub"],
+  },
+  {
+    id: "google_drive",
+    name: "Google Drive",
+    description: "Find and read documents from connected drives.",
+    installUrl: null,
+    isAccessible: true,
+    isEnabled: false,
+    pluginDisplayNames: ["Google Drive"],
   },
 ];
 

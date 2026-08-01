@@ -21,7 +21,11 @@ import {
   permissionLabel,
 } from "./permissionPresentation";
 import { SettingsChoiceOption } from "./SettingsChoiceOption";
+import { SettingsPageHeader } from "./SettingsPageHeader";
 import { SubagentSettings } from "./SubagentSettings";
+import { CardStack } from "./CardStack";
+import { IconCard } from "./IconCard";
+import { IconSubheader } from "./IconSubheader";
 
 const modelVerbosities: ModelVerbosity[] = ["low", "medium", "high"];
 const planReasoningEfforts: PlanReasoningEffort[] = [
@@ -52,12 +56,16 @@ export function AgentSettings({
     ) ?? planReasoningEfforts.filter((effort) => effort !== "none");
 
   return (
-    <section className="settings-page">
-      <header>
-        <p>{t("settings.agent.description")}</p>
-        <span className="scope-badge">{t("settings.config.global")}</span>
-      </header>
-      <div className="settings-card settings-fields">
+    <section className="settings-page agent-settings-page">
+      <SettingsPageHeader
+        badge={t("settings.config.global")}
+        description={t("settings.agent.description")}
+      />
+      <IconSubheader
+        title={t("settings.agent.globalDefaults")}
+        subtitle={t("settings.agent.globalDefaultsDetail")}
+      />
+      <CardStack className="settings-fields agent-primary-settings">
         <SettingSelect
           label={t("settings.agent.model")}
           value={defaults.model ?? ""}
@@ -134,7 +142,7 @@ export function AgentSettings({
             </option>
           ))}
         </SettingSelect>
-      </div>
+      </CardStack>
       <ServiceTierSettings
         globalSettings={globalSettings}
         models={models}
@@ -174,10 +182,10 @@ export function PermissionSettings({
 
   return (
     <section className="settings-page">
-      <header>
-        <p>{t("settings.permissions.description")}</p>
-        <span className="scope-badge">{t("settings.config.global")}</span>
-      </header>
+      <SettingsPageHeader
+        badge={t("settings.config.global")}
+        description={t("settings.permissions.description")}
+      />
       {capabilities.permissionProfiles.error && (
         <div className="inventory-message error" role="alert">
           {t("settings.permissions.catalogUnavailable")}
@@ -201,11 +209,11 @@ export function PermissionSettings({
           {t("settings.requirements.error")}
         </div>
       )}
-      <div className="settings-subsection-heading">
-        <strong>{t("settings.permissions.profile")}</strong>
-        <small>{t("settings.permissions.profileDetail")}</small>
-      </div>
-      <div
+      <IconSubheader
+        title={t("settings.permissions.profile")}
+        subtitle={t("settings.permissions.profileDetail")}
+      />
+      <CardStack
         aria-label={t("settings.permissions.profile")}
         className="settings-option-list"
         role="listbox"
@@ -251,12 +259,12 @@ export function PermissionSettings({
             />
           );
         })}
-      </div>
-      <div className="settings-subsection-heading">
-        <strong>{t("approvalPolicy.title")}</strong>
-        <small>{t("approvalPolicy.detail")}</small>
-      </div>
-      <div
+      </CardStack>
+      <IconSubheader
+        title={t("approvalPolicy.title")}
+        subtitle={t("approvalPolicy.detail")}
+      />
+      <CardStack
         aria-label={t("approvalPolicy.title")}
         className="settings-option-list"
         role="listbox"
@@ -293,12 +301,12 @@ export function PermissionSettings({
             />
           );
         })}
-      </div>
-      <div className="settings-subsection-heading">
-        <strong>{t("approvalsReviewer.title")}</strong>
-        <small>{t("approvalsReviewer.detail")}</small>
-      </div>
-      <div
+      </CardStack>
+      <IconSubheader
+        title={t("approvalsReviewer.title")}
+        subtitle={t("approvalsReviewer.detail")}
+      />
+      <CardStack
         aria-label={t("approvalsReviewer.title")}
         className="settings-option-list"
         role="listbox"
@@ -340,7 +348,7 @@ export function PermissionSettings({
             />
           );
         })}
-      </div>
+      </CardStack>
     </section>
   );
 }
@@ -370,15 +378,14 @@ function ServiceTierSettings({
 
   return (
     <>
-      <div className="settings-subsection-heading">
-        <strong>{t("settings.agent.serviceTier")}</strong>
-        <small>
-          {t("settings.agent.serviceTierDetail", {
-            model: selectedModel?.label ?? t("settings.agent.model"),
-          })}
-        </small>
-      </div>
-      <div
+      <IconSubheader
+        icon={<Zap />}
+        title={t("settings.agent.serviceTier")}
+        subtitle={t("settings.agent.serviceTierDetail", {
+          model: selectedModel?.label ?? t("settings.agent.model"),
+        })}
+      />
+      <CardStack
         aria-label={t("settings.agent.serviceTier")}
         className="settings-option-list"
         role="listbox"
@@ -421,7 +428,7 @@ function ServiceTierSettings({
             updating={updating === tier.id}
           />
         ))}
-      </div>
+      </CardStack>
     </>
   );
 }
@@ -442,23 +449,18 @@ function SettingSelect({
   children: ReactNode;
 }) {
   return (
-    <label>
-      {detail ? (
-        <span className="settings-field-description">
-          <strong>{label}</strong>
-          <small>{detail}</small>
-        </span>
-      ) : (
-        <span>{label}</span>
-      )}
-      <select
+    <IconCard
+      as="label"
+      title={label}
+      subtitle={detail}
+      trailing={<select
         aria-label={label}
         value={value}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
       >
         {children}
-      </select>
-    </label>
+      </select>}
+    />
   );
 }

@@ -23,6 +23,7 @@ vi.mock("../../src/lib/nativeBridge", () => ({
 const integrations = {
   hooks: { data: [], loading: false, warnings: [] },
   mcpServers: { data: [], loading: false },
+  mcpStartup: {},
   skills: { data: [], loading: false },
   refreshMcp: vi.fn(),
   reloadMcp: vi.fn(),
@@ -788,12 +789,7 @@ describe("centre de réglages", () => {
         level: 1,
       }),
     ).toBeVisible();
-    expect(
-      screen.getByRole("heading", {
-        name: "Importer depuis un autre agent",
-        level: 2,
-      }),
-    ).toBeVisible();
+    expect(screen.queryByText("Importer depuis un autre agent")).toBeNull();
     expect(screen.queryByText("Fonctions expérimentales")).toBeNull();
     expect(screen.queryByText("Diagnostics et feedback")).toBeNull();
   });
@@ -832,7 +828,8 @@ describe("centre de réglages", () => {
       "Apparence et affichage",
       "Tâches planifiées",
       "Mémoire",
-      "Plugins et apps",
+      "Apps",
+      "Skills et plugins",
       "Serveurs MCP",
       "Contrôle à distance",
       "Compte et utilisation",

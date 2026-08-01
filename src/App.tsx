@@ -33,6 +33,7 @@ import {
 import type { AgentActivity } from "./lib/activity";
 import {
   demoTelemetry,
+  demoApps,
   demoQuotas,
   demoResetCredits,
   demoSkills,
@@ -47,7 +48,10 @@ import { useThreadHistory } from "./lib/useThreadHistory";
 import { useDemoPlayback } from "./lib/useDemoPlayback";
 import { useInteractiveRequests } from "./lib/useInteractiveRequests";
 import { useThreadActions } from "./lib/useThreadActions";
-import { useIntegrations } from "./lib/useIntegrations";
+import {
+  useIntegrations,
+  type IntegrationsController,
+} from "./lib/useIntegrations";
 import { useCapabilityCatalog } from "./lib/useCapabilityCatalog";
 import { useAccount } from "./lib/useAccount";
 import { useAppUpdate } from "./lib/useAppUpdate";
@@ -385,7 +389,7 @@ export default function App() {
   const threadSearch = useThreadSearch(connection.connected);
   const rateLimits = useRateLimits(connection.connected);
   const apps = useApps({
-    enabled: appsEnabled || settings === "plugins",
+    enabled: appsEnabled || settings === "apps",
     threadId,
   });
   useEffect(() => setWorkPanel(undefined), [threadId]);
@@ -943,18 +947,68 @@ export default function App() {
     return threadHistory.resume(threadId);
   }
   const currentThread = threads.find((thread) => thread.id === threadId);
+  const displayedApps = isDemoPreview()
+    ? {
+        ...apps,
+        apps: demoApps.filter((app) => app.isEnabled),
+        configurableApps: demoApps,
+        error: undefined,
+        loading: false,
+        updatingApps: [],
+        setEnabled: async () => undefined,
+      }
+    : apps;
+  const displayedIntegrations: IntegrationsController = isDemoPreview()
+    ? {
+        ...integrations,
+        mcpServers: {
+          data: [
+            {
+              name: "github",
+              serverInfo: {
+                name: "github",
+                title: "GitHub",
+                version: "1.4.0",
+                description: null,
+              },
+              tools: { search: {}, read: {} },
+              resources: [],
+              resourceTemplates: [],
+              authStatus: "oAuth",
+            },
+            {
+              name: "project_docs",
+              serverInfo: null,
+              tools: {},
+              resources: [],
+              resourceTemplates: [],
+              authStatus: "notLoggedIn",
+            },
+          ],
+          loading: false,
+        },
+        mcpStartup: {
+          github: { status: "ready" },
+          project_docs: {
+            status: "failed",
+            error: "Authentication must be renewed before this server can start.",
+            failureReason: "reauthenticationRequired",
+          },
+        },
+      }
+    : integrations;
   if (settings) {
     return (
       <SettingsLoader
         account={account}
         appUpdate={appUpdate}
-        apps={apps}
+        apps={displayedApps}
         automations={automations}
         capabilities={capabilities}
         configRequirements={configRequirements}
         defaultThread={defaultThread}
         externalAgentImport={externalAgentImport}
-        integrations={integrations}
+        integrations={displayedIntegrations}
         models={models}
         rateLimits={rateLimits}
         realtime={realtime}
@@ -1107,7 +1161,7 @@ export default function App() {
           }
         />
         <ChatFooter
-          apps={apps}
+          apps={displayedApps}
           skills={isDemoPreview() ? demoSkills : integrations.skills.data}
           skillsError={isDemoPreview() ? undefined : integrations.skills.error}
           skillsLoading={isDemoPreview() ? false : integrations.skills.loading}

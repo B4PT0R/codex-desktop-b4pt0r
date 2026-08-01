@@ -1,6 +1,7 @@
 import { Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
+import { IconSubheader } from "./IconSubheader";
 import { useCodexConfig } from "../lib/useCodexConfig";
 import type {
   CodexGlobalSettingsController,
@@ -37,10 +38,10 @@ export function CodexConfigSettings({
           <p>{t("settings.config.guided.description")}</p>
         </header>
 
-        <div className="settings-subsection-heading">
-          <strong>{t("settings.config.context.title")}</strong>
-          <small>{t("settings.config.context.description")}</small>
-        </div>
+        <IconSubheader
+          title={t("settings.config.context.title")}
+          subtitle={t("settings.config.context.description")}
+        />
         <div className="settings-card settings-fields">
           <GuidedSelect
             label={t("settings.config.compactLimit.title")}
@@ -69,10 +70,10 @@ export function CodexConfigSettings({
           />
         </div>
 
-        <div className="settings-subsection-heading">
-          <strong>{t("settings.config.projectDocs.title")}</strong>
-          <small>{t("settings.config.projectDocs.description")}</small>
-        </div>
+        <IconSubheader
+          title={t("settings.config.projectDocs.title")}
+          subtitle={t("settings.config.projectDocs.description")}
+        />
         <div className="settings-card settings-fields">
           <GuidedSelect
             label={t("settings.config.projectDocLimit.title")}
@@ -121,10 +122,10 @@ export function CodexConfigSettings({
           </form>
         </div>
 
-        <div className="settings-subsection-heading">
-          <strong>{t("settings.config.runtime.title")}</strong>
-          <small>{t("settings.config.runtime.description")}</small>
-        </div>
+        <IconSubheader
+          title={t("settings.config.runtime.title")}
+          subtitle={t("settings.config.runtime.description")}
+        />
         <div className="settings-card settings-fields">
           <label>
             <span className="settings-field-description">
@@ -164,10 +165,10 @@ export function CodexConfigSettings({
           />
         </div>
 
-        <div className="settings-subsection-heading">
-          <strong>{t("settings.config.experimental.title")}</strong>
-          <small>{t("settings.config.experimental.description")}</small>
-        </div>
+        <IconSubheader
+          title={t("settings.config.experimental.title")}
+          subtitle={t("settings.config.experimental.description")}
+        />
         <div className="settings-card settings-fields">
           <label>
             <span className="settings-field-description">
@@ -202,10 +203,11 @@ export function CodexConfigSettings({
         )}
       </section>
 
-      <div className="settings-subsection-heading config-advanced-heading">
-        <strong>{t("settings.config.advanced.title")}</strong>
-        <small>{t("settings.config.advanced.description")}</small>
-      </div>
+      <IconSubheader
+        className="config-advanced-heading"
+        title={t("settings.config.advanced.title")}
+        subtitle={t("settings.config.advanced.description")}
+      />
       <div className="config-document-list">
         <DeveloperInstructionsSettings controller={globalSettings} />
         <ConfigDocumentEditor

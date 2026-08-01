@@ -264,6 +264,8 @@ export const en: Record<MessageKey, string> = {
   "integrations.apps.loading": "Loading apps…",
   "integrations.apps.empty": "No connected app is available.",
   "integrations.apps.fallback": "Connector available to Codex",
+  "integrations.apps.globalHint":
+    "Activation applies globally to future turns. Effective availability remains controlled by Codex and managed policy.",
   "integrations.available": "Available",
   "integrations.skills.title": "Project skills",
   "integrations.skills.loading": "Searching for skills…",
@@ -281,6 +283,10 @@ export const en: Record<MessageKey, string> = {
   "integrations.mcp.toolOne": "1 tool",
   "integrations.mcp.toolMany": "{count} tools",
   "integrations.mcp.version": "version {version}",
+  "integrations.mcp.startup.starting": "Starting…",
+  "integrations.mcp.startup.ready": "Ready",
+  "integrations.mcp.startup.failed": "Startup failed",
+  "integrations.mcp.startup.cancelled": "Startup cancelled",
   "integrations.mcp.reloadConfig": "Reload configuration",
   "integrations.mcp.reloaded": "MCP configuration reloaded.",
   "integrations.mcp.reloadError":
@@ -586,16 +592,25 @@ export const en: Record<MessageKey, string> = {
   "settings.section.appearance": "Appearance & Display",
   "settings.section.voice": "Voice",
   "settings.section.account": "Account & Usage",
-  "settings.section.plugins": "Plugins & Apps",
+  "settings.section.apps": "Apps",
+  "settings.section.plugins": "Skills & Plugins",
   "settings.section.mcp": "MCP Servers",
   "settings.section.permissions": "Permissions",
   "settings.section.config": "Advanced Configuration",
   "settings.section.hooks": "Hooks",
   "settings.section.advanced": "Import from Other Agents",
   "settings.general.description": "General preferences for the Linux app.",
+  "settings.general.applicationTitle": "Application",
+  "settings.general.applicationDetail":
+    "Language, file handling, startup and App Server lifecycle.",
+  "settings.general.maintenanceTitle": "Versions and updates",
+  "settings.general.maintenanceDetail":
+    "Installed versions and client update controls.",
   "automations.description":
     "Run a prompt at a specific date or on a recurring schedule. The app must remain active in the tray and the machine must stay awake.",
   "automations.create": "Create task",
+  "automations.countOne": "1 scheduled task",
+  "automations.countMany": "{count} scheduled tasks",
   "automations.loading": "Loading scheduled tasks…",
   "automations.empty": "No scheduled tasks",
   "automations.error": "Unable to run the scheduled task",
@@ -1087,7 +1102,7 @@ export const en: Record<MessageKey, string> = {
     "Uses Codex Voice behavior over WebRTC, with WebSocket audio fallback.",
   "settings.voice.v3": "Version 3",
   "settings.voice.microphoneOnDemand": "Requested when a voice session starts",
-  "settings.voice.refresh": "Refresh available voices",
+  "settings.voice.refresh": "Refresh voices",
   "settings.voice.loading": "Loading voices…",
   "settings.voice.inventoryError":
     "Unable to refresh the voice catalog: {detail}. The built-in v3 catalog remains available.",
@@ -1155,6 +1170,7 @@ export const en: Record<MessageKey, string> = {
   "account.auth.external": "Credentials managed outside Codex",
   "account.description":
     "Identity, subscription, and App Server account activity.",
+  "account.data": "Account data",
   "account.refresh": "Refresh",
   "account.rateLimitsError": "Unable to read limits and reset credits:",
   "account.identity.loading": "Loading account…",

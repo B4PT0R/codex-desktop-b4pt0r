@@ -56,6 +56,7 @@ function controller(): IntegrationsController {
       warnings: [],
     },
     mcpServers: { data: [], loading: false },
+    mcpStartup: {},
     skills: { data: [], loading: false },
     refreshHooks: vi.fn(),
     refreshMcp: vi.fn(),

@@ -5,6 +5,7 @@ import type {
   HooksListResponse,
   ListMcpServerStatusResponse,
   McpServerStatus,
+  McpServerStartupStatus,
   SkillsListResponse,
 } from "./appServerTypes";
 import { isDesktopApp, request, subscribeAppServerMessages } from "./codex";
@@ -28,6 +29,7 @@ export type IntegrationInventory<T> = {
 export type IntegrationsController = {
   hooks: IntegrationInventory<AppServerHook> & { warnings: string[] };
   mcpServers: IntegrationInventory<McpServerStatus>;
+  mcpStartup: Record<string, McpServerStartupStatus>;
   skills: IntegrationInventory<AppServerSkill>;
   refreshMcp: () => Promise<void>;
   reloadMcp: () => Promise<void>;
@@ -69,6 +71,9 @@ export function useIntegrations({
   const [authenticatingMcp, setAuthenticatingMcp] = useState<string[]>([]);
   const [mcpAuthNotice, setMcpAuthNotice] = useState<string>();
   const [reloadingMcp, setReloadingMcp] = useState(false);
+  const [mcpStartup, setMcpStartup] = useState<
+    Record<string, McpServerStartupStatus>
+  >({});
   const skillsGeneration = useRef(0);
   const hooksGeneration = useRef(0);
   const mcpGeneration = useRef(0);
@@ -189,6 +194,7 @@ export function useIntegrations({
     if (reloadingMcp) return;
     setReloadingMcp(true);
     setMcpAuthNotice(undefined);
+    setMcpStartup({});
     setMcpServers((state) => ({ ...state, error: undefined }));
     try {
       await request("config/mcpServer/reload");
@@ -280,11 +286,22 @@ export function useIntegrations({
   }, [hooksEnabled, refreshHooks]);
 
   useEffect(() => {
-    if (!enabled || !isDesktopApp()) return;
+    setMcpStartup({});
+  }, [threadId]);
+
+  useEffect(() => {
+    if (!isDesktopApp()) return;
     return subscribeAppServerMessages((message) => {
-      if (message.method === "skills/changed") void refreshSkills();
-      if (message.method === "mcpServer/startupStatus/updated")
-        void refreshMcp();
+      if (message.method === "skills/changed" && enabled) void refreshSkills();
+      if (message.method === "mcpServer/startupStatus/updated") {
+        const update = normalizeMcpStartupUpdate(message.params, threadId);
+        if (update) {
+          setMcpStartup((statuses) => ({
+            ...statuses,
+            [update.name]: update.status,
+          }));
+        }
+      }
       if (message.method === "mcpServer/oauthLogin/completed") {
         const params = recordValue(message.params);
         const name = typeof params?.name === "string" ? params.name : undefined;
@@ -310,7 +327,7 @@ export function useIntegrations({
         }
       }
     });
-  }, [enabled, refreshMcp, refreshSkills, t]);
+  }, [enabled, refreshMcp, refreshSkills, t, threadId]);
 
   return {
     authenticateMcp,
@@ -318,6 +335,7 @@ export function useIntegrations({
     hooks,
     mcpAuthNotice,
     mcpServers,
+    mcpStartup,
     refreshMcp,
     reloadMcp,
     reloadingMcp,
@@ -363,6 +381,37 @@ function normalizeHooks(value: unknown): AppServerHook[] {
           ? hook.statusMessage.slice(0, 2_000)
           : null,
     }));
+}
+
+function normalizeMcpStartupUpdate(
+  value: unknown,
+  currentThreadId: string | undefined,
+): { name: string; status: McpServerStartupStatus } | undefined {
+  const update = recordValue(value);
+  if (
+    !currentThreadId ||
+    update?.threadId !== currentThreadId ||
+    typeof update.name !== "string" ||
+    !["starting", "ready", "failed", "cancelled"].includes(
+      String(update.status),
+    )
+  ) {
+    return undefined;
+  }
+  const error =
+    typeof update.error === "string" ? update.error.slice(0, 2_000) : undefined;
+  const failureReason =
+    update.failureReason === "reauthenticationRequired"
+      ? update.failureReason
+      : undefined;
+  return {
+    name: update.name.slice(0, 512),
+    status: {
+      status: update.status as McpServerStartupStatus["status"],
+      ...(error ? { error } : {}),
+      ...(failureReason ? { failureReason } : {}),
+    },
+  };
 }
 
 function hookErrors(

@@ -23,6 +23,8 @@
   align-items: center;
   padding-right: 8px;
   border-radius: 999px;
+  font-size: 11px;
+  line-height: 1;
 }
 
 .round-icon-gap-small {
@@ -112,6 +114,11 @@
 
 .round-icon-button {
   cursor: pointer;
+}
+
+.round-icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .round-icon-button.round-icon-primary:hover,

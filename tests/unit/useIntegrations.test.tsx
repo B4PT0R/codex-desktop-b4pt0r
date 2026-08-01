@@ -182,6 +182,55 @@ describe("inventaire des intégrations", () => {
     );
   });
 
+  it("conserve seulement l’état de démarrage MCP du thread courant", async () => {
+    requestMock.mockImplementation((method: string) =>
+      Promise.resolve(
+        method === "skills/list"
+          ? { data: [] }
+          : { data: [], nextCursor: null },
+      ),
+    );
+    const { result, rerender } = renderHook(
+      ({ threadId }) =>
+        useIntegrations({ cwd: "/project", enabled: true, threadId }),
+      { initialProps: { threadId: "thread-1" as string | undefined } },
+    );
+    await waitFor(() => expect(subscribeMock).toHaveBeenCalledOnce());
+    const handler = subscribeMock.mock.calls[0][0];
+
+    act(() => {
+      handler({
+        method: "mcpServer/startupStatus/updated",
+        params: {
+          threadId: "another-thread",
+          name: "ignored",
+          status: "failed",
+          error: "wrong thread",
+        },
+      });
+      handler({
+        method: "mcpServer/startupStatus/updated",
+        params: {
+          threadId: "thread-1",
+          name: "github",
+          status: "failed",
+          error: "token expired",
+          failureReason: "reauthenticationRequired",
+        },
+      });
+    });
+    expect(result.current.mcpStartup).toEqual({
+      github: {
+        status: "failed",
+        error: "token expired",
+        failureReason: "reauthenticationRequired",
+      },
+    });
+
+    rerender({ threadId: "thread-2" });
+    await waitFor(() => expect(result.current.mcpStartup).toEqual({}));
+  });
+
   it("recharge explicitement la configuration MCP avant l’inventaire", async () => {
     requestMock.mockImplementation((method: string) =>
       Promise.resolve(

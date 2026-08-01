@@ -1,8 +1,15 @@
-import { AlertTriangle, ChevronDown, Webhook } from "lucide-react";
+import { AlertTriangle, ChevronDown, RefreshCw, Webhook } from "lucide-react";
 import { useI18n } from "../i18n/I18nProvider";
+import { SettingsPageHeader } from "./SettingsPageHeader";
+import {
+  SettingsControlsBar,
+  SettingsControlsBarButton,
+} from "./SettingsControlsBar";
 import type { MessageKey } from "../i18n/locales/fr";
 import type { AppServerHook } from "../lib/appServerTypes";
 import type { IntegrationsController } from "../lib/useIntegrations";
+import { IconCard } from "./IconCard";
+import { CardStack } from "./CardStack";
 
 export function HooksSettings({
   integrations,
@@ -15,16 +22,7 @@ export function HooksSettings({
   const { hooks } = integrations;
   return (
     <section className="settings-page integrations-page hooks-page">
-      <header>
-        <p>{t("settings.hooks.description")}</p>
-        <button
-          className="settings-refresh"
-          disabled={hooks.loading}
-          onClick={() => void integrations.refreshHooks()}
-        >
-          {t("integrations.refresh")}
-        </button>
-      </header>
+      <SettingsPageHeader description={t("settings.hooks.description")} />
       {hooks.error && (
         <div className="inventory-message error" role="alert">
           {hooks.error}
@@ -40,7 +38,27 @@ export function HooksSettings({
           <AlertTriangle /> {warning}
         </div>
       ))}
-      <div className="settings-card hook-list">
+      <CardStack
+        className="hook-list"
+        controlBar={<SettingsControlsBar
+          actions={
+          <SettingsControlsBarButton
+            disabled={hooks.loading}
+            icon={RefreshCw}
+            iconClassName={hooks.loading ? "spin" : undefined}
+            onClick={() => void integrations.refreshHooks()}
+          >
+            {t("integrations.refresh")}
+          </SettingsControlsBarButton>
+          }
+          status={t(
+            hooks.data.length === 1
+              ? "integrations.countOne"
+              : "integrations.countMany",
+            { count: hooks.data.length },
+          )}
+        />}
+      >
         {hooks.loading && hooks.data.length === 0 ? (
           <p className="inventory-empty">{t("integrations.hooks.loading")}</p>
         ) : hooks.data.length === 0 ? (
@@ -48,7 +66,7 @@ export function HooksSettings({
         ) : (
           hooks.data.map((hook) => <HookRow hook={hook} key={hook.key} />)
         )}
-      </div>
+      </CardStack>
     </section>
   );
 }
@@ -56,14 +74,26 @@ export function HooksSettings({
 function HookRow({ hook }: { hook: AppServerHook }) {
   const { t } = useI18n();
   return (
-    <div className="hook-row">
-      <Webhook />
-      <div className="hook-copy">
-        <strong>{hook.statusMessage || hook.key}</strong>
-        <small>
+    <IconCard
+      icon={<Webhook />}
+      subtitle={
+        <>
           {t(hookEventKey(hook.eventName))} · {t(handlerKey(hook.handlerType))}
           {hook.matcher ? ` · ${hook.matcher}` : ""}
-        </small>
+        </>
+      }
+      title={hook.statusMessage || hook.key}
+      trailing={<div className="hook-badges">
+        <span className={hook.enabled ? "enabled" : "disabled"}>
+          {t(hook.enabled ? "integrations.enabled" : "integrations.disabled")}
+        </span>
+        <span className={trustClass(hook.trustStatus)}>
+          {t(trustKey(hook.trustStatus))}
+        </span>
+        <small>{t(sourceKey(hook.source))}</small>
+      </div>}
+    >
+      <div className="hook-copy">
         <details>
           <summary>
             {t("integrations.hooks.details")} <ChevronDown />
@@ -72,16 +102,7 @@ function HookRow({ hook }: { hook: AppServerHook }) {
           <code title={hook.sourcePath}>{hook.sourcePath}</code>
         </details>
       </div>
-      <div className="hook-badges">
-        <span className={hook.enabled ? "enabled" : "disabled"}>
-          {t(hook.enabled ? "integrations.enabled" : "integrations.disabled")}
-        </span>
-        <span className={trustClass(hook.trustStatus)}>
-          {t(trustKey(hook.trustStatus))}
-        </span>
-        <small>{t(sourceKey(hook.source))}</small>
-      </div>
-    </div>
+    </IconCard>
   );
 }
 

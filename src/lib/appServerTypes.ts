@@ -249,6 +249,18 @@ export type McpServerStatus = {
   authStatus: McpAuthStatus;
 };
 
+export type McpServerStartupState =
+  | "starting"
+  | "ready"
+  | "failed"
+  | "cancelled";
+
+export type McpServerStartupStatus = {
+  status: McpServerStartupState;
+  error?: string;
+  failureReason?: "reauthenticationRequired";
+};
+
 export type ListMcpServerStatusResponse = {
   data: McpServerStatus[];
   nextCursor: string | null;
