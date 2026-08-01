@@ -27,6 +27,7 @@ if ! command -v "$container_runtime" >/dev/null 2>&1; then
 fi
 
 "$container_runtime" run --rm \
+  --env "CODEX_DESKTOP_SMOKE_RUNTIME=$container_runtime" \
   --volume "$rpm_path:/tmp/codex-desktop.rpm:ro" \
   --volume "$appimage_path:/tmp/codex-desktop.AppImage:ro" \
   docker.io/library/fedora:latest \
@@ -64,9 +65,16 @@ fi
       local log_path=$2
       shift 2
 
+      local smoke_args=(--disable-gpu)
+      # Docker's default seccomp profile blocks Chromium's nested sandbox.
+      # Podman exercises the packaged sandbox normally on the local path.
+      if [[ $CODEX_DESKTOP_SMOKE_RUNTIME == docker ]]; then
+        smoke_args+=(--no-sandbox)
+      fi
+
       set +e
       runuser -u smoke -- env DISPLAY=:99 HOME=/home/smoke \
-        dbus-run-session -- timeout 8s "$@" --disable-gpu \
+        dbus-run-session -- timeout 8s "$@" "${smoke_args[@]}" \
         >"$log_path" 2>&1
       local app_status=$?
       set -e
