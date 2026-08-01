@@ -348,6 +348,11 @@ Default-thread metadata reads are now versioned by connection and selected
 thread. A stale read from an earlier A → B → A selection cycle, or from before
 disconnect, cannot overwrite the newer authoritative catalog entry.
 
+Agent collaboration-mode and permission-profile catalogs now invalidate both
+parallel reads when their Settings surface deactivates or changes context.
+Late results cannot republish stale capabilities, and loading state is cleared
+without discarding the last valid catalog.
+
 ## Known limitations
 
 - Scheduled tasks require the app to remain running in the tray and the machine
@@ -366,9 +371,10 @@ disconnect, cannot overwrite the newer authoritative catalog entry.
 1. Exercise long-idle and suspend/resume recovery in packaged Electron with a
    scheduled task, approval gating, hidden-window delivery and Realtime active.
 2. Audit another asynchronous controller outside Apps, integrations, Account,
-   default-thread metadata, file-backed configuration editors, external-agent
-   import, Memory, Remote Control, Voice settings, application updates and shared
-   Chromium for stale responses, incomplete cancellation and recovery gaps.
+   capability catalogs, default-thread metadata, file-backed configuration
+   editors, external-agent import, Memory, Remote Control, Voice settings,
+   application updates and shared Chromium for stale responses, incomplete
+   cancellation and recovery gaps.
 3. Review large owners only where a concrete cohesive extraction removes
    mixed responsibilities; line count alone does not justify a module split.
 4. Tighten outcome-oriented tests whose current assertions allow concurrency,
@@ -383,15 +389,15 @@ and Git/worktree management without a stable App Server product contract.
 - Settings primitive migration: 44 focused component tests across five files,
   passing; production build and full regression suite are listed below when
   rerun for the completed lot.
-- Deterministic frontend/unit suite: 668 tests across 126 files, passing;
-  Apps, integrations, Account, default-thread metadata, file-backed configuration
-  editors, external-agent import, Memory, Remote Control, Voice settings,
-  application updates and shared Chromium include focused concurrency, recovery
-  and stale-response regressions.
+- Deterministic frontend/unit suite: 669 tests across 126 files, passing;
+  Apps, integrations, Account, capability catalogs, default-thread metadata,
+  file-backed configuration editors, external-agent import, Memory, Remote
+  Control, Voice settings, application updates and shared Chromium include
+  focused concurrency, recovery and stale-response regressions.
 - Installed App Server contract: 51 tests, passing against
-  `codex-cli 0.145.0` (719 tests across 127 files including contract).
+  `codex-cli 0.145.0` (720 tests across 127 files including contract).
 - Electron/Node: 117 tests, passing.
-- Production Vite build: passing; main JS 660.01 kB, 189.40 kB gzip.
+- Production Vite build: passing; main JS 660.11 kB, 189.42 kB gzip.
 - Production dependency audit: zero vulnerabilities.
 - `git diff --check`: passing.
 - Settings primitive visual pass: Agent, Advanced Configuration, Plugin

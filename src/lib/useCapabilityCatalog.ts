@@ -98,7 +98,15 @@ export function useCapabilityCatalog({
   }, [cwd, t]);
 
   useEffect(() => {
-    if (enabled) void refresh();
+    if (enabled) {
+      void refresh();
+      return () => {
+        generation.current += 1;
+      };
+    }
+    generation.current += 1;
+    setCollaborationModes((state) => ({ ...state, loading: false }));
+    setPermissionProfiles((state) => ({ ...state, loading: false }));
   }, [enabled, refresh]);
 
   return { collaborationModes, permissionProfiles, refresh };

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, renderHook, waitFor } from "@testing-library/react";
+import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const requestMock = vi.hoisted(() => vi.fn());
@@ -9,6 +9,14 @@ vi.mock("../../src/lib/codex", () => ({
 }));
 
 import { useCapabilityCatalog } from "../../src/lib/useCapabilityCatalog";
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
 
 beforeEach(() => requestMock.mockReset());
 afterEach(cleanup);
@@ -68,5 +76,54 @@ describe("catalogue de capacités", () => {
       result.current.collaborationModes.data.map((mode) => mode.mode),
     ).toEqual(["default", "plan"]);
     expect(result.current.permissionProfiles.data).toHaveLength(3);
+  });
+
+  it("ignore les catalogues terminés après désactivation", async () => {
+    const modes = deferred<{
+      data: Array<{
+        name: string;
+        mode: "default";
+        model: null;
+        reasoning_effort: null;
+      }>;
+    }>();
+    const profiles = deferred<{
+      data: Array<{ id: string; description: null; allowed: boolean }>;
+      nextCursor: null;
+    }>();
+    requestMock.mockImplementation((method: string) =>
+      method === "collaborationMode/list" ? modes.promise : profiles.promise,
+    );
+    const { result, rerender } = renderHook(
+      ({ enabled }) =>
+        useCapabilityCatalog({ cwd: "/project", enabled }),
+      { initialProps: { enabled: true } },
+    );
+    await waitFor(() =>
+      expect(result.current.collaborationModes.loading).toBe(true),
+    );
+
+    rerender({ enabled: false });
+    modes.resolve({
+      data: [
+        {
+          name: "Stale mode",
+          mode: "default",
+          model: null,
+          reasoning_effort: null,
+        },
+      ],
+    });
+    profiles.resolve({
+      data: [{ id: "stale", description: null, allowed: true }],
+      nextCursor: null,
+    });
+    await act(async () => Promise.all([modes.promise, profiles.promise]));
+
+    expect(result.current.collaborationModes.loading).toBe(false);
+    expect(result.current.collaborationModes.data[0].name).not.toBe(
+      "Stale mode",
+    );
+    expect(result.current.permissionProfiles.data[0].id).not.toBe("stale");
   });
 });
