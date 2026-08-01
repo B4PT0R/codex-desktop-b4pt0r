@@ -53,6 +53,12 @@ export function useAccount(enabled: boolean): AccountController {
   const [authOpenMode, setAuthOpenMode] = useState<ExternalOpenMode>();
   const [loggingOut, setLoggingOut] = useState(false);
   const generation = useRef(0);
+  const loginGeneration = useRef(0);
+  const loginStarting = useRef(false);
+  const pendingLogin = useRef<{
+    authUrl: string;
+    loginId: string;
+  } | null>(null);
 
   const refresh = useCallback(async () => {
     const current = ++generation.current;
@@ -88,10 +94,13 @@ export function useAccount(enabled: boolean): AccountController {
   }, [t]);
 
   const startLogin = useCallback(async () => {
+    if (loginStarting.current) return;
     if (!isDesktopApp()) {
       setAuthError(t("account.login.nativeOnly"));
       return;
     }
+    loginStarting.current = true;
+    const current = ++loginGeneration.current;
     setStartingLogin(true);
     setAuthError(undefined);
     setAuthOpenMode(undefined);
@@ -105,11 +114,18 @@ export function useAccount(enabled: boolean): AccountController {
       }
       const authUrl = safeExternalHttpUrl(response.authUrl);
       if (!authUrl) throw new Error(t("account.login.invalidUrl"));
-      setAuthPending({ authUrl, loginId: response.loginId });
-      setAuthOpenMode(await openExternalTarget(authUrl));
+      if (current !== loginGeneration.current) return;
+      const nextPending = { authUrl, loginId: response.loginId };
+      pendingLogin.current = nextPending;
+      setAuthPending(nextPending);
+      const openMode = await openExternalTarget(authUrl);
+      if (current === loginGeneration.current) setAuthOpenMode(openMode);
     } catch (cause) {
-      setAuthError(cause instanceof Error ? cause.message : String(cause));
+      if (current === loginGeneration.current) {
+        setAuthError(cause instanceof Error ? cause.message : String(cause));
+      }
     } finally {
+      loginStarting.current = false;
       setStartingLogin(false);
     }
   }, [t]);
@@ -117,7 +133,10 @@ export function useAccount(enabled: boolean): AccountController {
   const reopenLogin = useCallback(async () => {
     if (!authPending) return;
     try {
-      setAuthOpenMode(await openExternalTarget(authPending.authUrl));
+      const openMode = await openExternalTarget(authPending.authUrl);
+      if (pendingLogin.current?.loginId === authPending.loginId) {
+        setAuthOpenMode(openMode);
+      }
     } catch (cause) {
       setAuthError(cause instanceof Error ? cause.message : String(cause));
     }
@@ -130,9 +149,13 @@ export function useAccount(enabled: boolean): AccountController {
         "account/login/cancel",
         cancelLoginParams(authPending.loginId),
       );
-      setAuthPending(null);
-      setAuthOpenMode(undefined);
-      setAuthError(undefined);
+      if (pendingLogin.current?.loginId === authPending.loginId) {
+        loginGeneration.current += 1;
+        pendingLogin.current = null;
+        setAuthPending(null);
+        setAuthOpenMode(undefined);
+        setAuthError(undefined);
+      }
     } catch (cause) {
       setAuthError(cause instanceof Error ? cause.message : String(cause));
     }
@@ -162,7 +185,9 @@ export function useAccount(enabled: boolean): AccountController {
       if (message.method === "account/login/completed") {
         const params = record(message.params);
         const loginId = stringValue(params?.loginId);
-        if (loginId && loginId !== authPending?.loginId) return;
+        if (loginId && loginId !== pendingLogin.current?.loginId) return;
+        loginGeneration.current += 1;
+        pendingLogin.current = null;
         setAuthPending(null);
         setAuthOpenMode(undefined);
         if (params?.success === true) {
@@ -173,7 +198,7 @@ export function useAccount(enabled: boolean): AccountController {
         }
       }
     });
-  }, [authPending?.loginId, enabled, refresh, t]);
+  }, [enabled, refresh, t]);
 
   return {
     account,

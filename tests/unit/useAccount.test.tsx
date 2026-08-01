@@ -25,6 +25,14 @@ function EnglishProvider({ children }: { children: ReactNode }) {
   return <I18nProvider>{children}</I18nProvider>;
 }
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((next) => {
+    resolve = next;
+  });
+  return { promise, resolve };
+}
+
 beforeEach(() => {
   requestMock.mockReset();
   subscribeMock.mockReset();
@@ -221,5 +229,63 @@ describe("compte Codex", () => {
     );
 
     expect(result.current.authError).toBe("ChatGPT sign-in failed.");
+  });
+
+  it("ne lance qu’un flux de connexion par interaction", async () => {
+    const pending = deferred<{
+      type: "chatgpt";
+      loginId: string;
+      authUrl: string;
+    }>();
+    requestMock.mockImplementation((method: string) => {
+      if (method === "account/login/start") return pending.promise;
+      throw new Error(`Unexpected request: ${method}`);
+    });
+    const { result } = renderHook(() => useAccount(false));
+
+    let first!: Promise<void>;
+    await act(async () => {
+      first = result.current.startLogin();
+      await result.current.startLogin();
+    });
+    expect(requestMock).toHaveBeenCalledTimes(1);
+
+    pending.resolve({
+      type: "chatgpt",
+      loginId: "login-single",
+      authUrl: "https://chatgpt.com/single",
+    });
+    await act(async () => first);
+    expect(openChromiumMock).toHaveBeenCalledOnce();
+  });
+
+  it("accepte une complétion reçue pendant l’ouverture du navigateur", async () => {
+    requestMock.mockImplementation((method: string) =>
+      Promise.resolve(
+        method === "account/login/start"
+          ? {
+              type: "chatgpt",
+              loginId: "login-immediate",
+              authUrl: "https://chatgpt.com/immediate",
+            }
+          : method === "account/workspaceMessages/read"
+            ? { featureEnabled: false, messages: [] }
+            : { account: null, requiresOpenaiAuth: true },
+      ),
+    );
+    const { result } = renderHook(() => useAccount(true));
+    await waitFor(() => expect(subscribeMock).toHaveBeenCalledOnce());
+    openChromiumMock.mockImplementationOnce(async () => {
+      subscribeMock.mock.calls[0][0]({
+        method: "account/login/completed",
+        params: { loginId: "login-immediate", success: true },
+      });
+    });
+
+    await act(async () => result.current.startLogin());
+
+    expect(result.current.authPending).toBeNull();
+    expect(result.current.authOpenMode).toBeUndefined();
+    expect(result.current.authError).toBeUndefined();
   });
 });
