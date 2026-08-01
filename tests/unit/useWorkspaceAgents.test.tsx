@@ -81,6 +81,44 @@ describe("document AGENTS.md du workspace", () => {
     expect(result.current.draft).toBe("");
     expect(result.current.loading).toBe(false);
   });
+
+  it("sérialise sauvegarde et relecture dans un même rendu", async () => {
+    const pending = deferred<AgentsDocument>();
+    vi.mocked(invoke)
+      .mockResolvedValueOnce({
+        content: "old",
+        exists: true,
+        filePath: "/work/project/AGENTS.md",
+        version: "v1",
+      })
+      .mockReturnValueOnce(pending.promise);
+    const { result } = renderHook(() =>
+      useWorkspaceAgents({
+        enabled: true,
+        nativeApp: true,
+        workspace: "/work/project",
+      }),
+    );
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    act(() => result.current.setDraft("new"));
+
+    let saving!: Promise<void>;
+    await act(async () => {
+      saving = result.current.save();
+      await result.current.save();
+      await result.current.load();
+    });
+    expect(vi.mocked(invoke)).toHaveBeenCalledTimes(2);
+
+    pending.resolve({
+      content: "new",
+      exists: true,
+      filePath: "/work/project/AGENTS.md",
+      version: "v2",
+    });
+    await act(async () => saving);
+    expect(result.current.saved).toBe(true);
+  });
 });
 
 function deferred<T>() {

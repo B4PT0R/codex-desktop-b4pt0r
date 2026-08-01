@@ -24,10 +24,11 @@ export function useWorkspaceAgents({
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const request = useRef(0);
+  const saveInFlight = useRef(false);
   const dirty = Boolean(document && draft !== document.content);
 
   const load = useCallback(async () => {
-    if (!enabled || !workspace) return;
+    if (!enabled || !workspace || saveInFlight.current) return;
     const requestId = ++request.current;
     setLoading(true);
     setSaved(false);
@@ -47,7 +48,8 @@ export function useWorkspaceAgents({
   }, [enabled, nativeApp, workspace]);
 
   const save = useCallback(async () => {
-    if (!document || !dirty || saving) return;
+    if (!document || !dirty || saveInFlight.current) return;
+    saveInFlight.current = true;
     const requestId = ++request.current;
     setSaving(true);
     setSaved(false);
@@ -67,9 +69,10 @@ export function useWorkspaceAgents({
     } catch (cause) {
       if (request.current === requestId) setError(errorMessage(cause));
     } finally {
+      saveInFlight.current = false;
       if (request.current === requestId) setSaving(false);
     }
-  }, [dirty, document, draft, nativeApp, saving, workspace]);
+  }, [dirty, document, draft, nativeApp, workspace]);
 
   useEffect(() => {
     if (enabled) {

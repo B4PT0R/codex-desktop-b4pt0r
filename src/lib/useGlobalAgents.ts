@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke, isDesktopApp } from "./nativeBridge";
 
 export type GlobalAgentsDocument = {
@@ -28,8 +28,10 @@ export function useGlobalAgents() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string>();
+  const saveInFlight = useRef(false);
 
   const load = useCallback(async () => {
+    if (saveInFlight.current) return;
     setLoading(true);
     setError(undefined);
     setSaved(false);
@@ -51,7 +53,10 @@ export function useGlobalAgents() {
   }, [load]);
 
   const save = useCallback(async () => {
-    if (!document || draft === document.content || saving) return;
+    if (!document || draft === document.content || saveInFlight.current) {
+      return;
+    }
+    saveInFlight.current = true;
     setSaving(true);
     setError(undefined);
     setSaved(false);
@@ -73,9 +78,10 @@ export function useGlobalAgents() {
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
+      saveInFlight.current = false;
       setSaving(false);
     }
-  }, [document, draft, native, saving]);
+  }, [document, draft, native]);
 
   return {
     document,
