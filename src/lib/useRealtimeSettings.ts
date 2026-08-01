@@ -36,17 +36,27 @@ export function useRealtimeSettings(
   const [error, setError] = useState<string>();
   const [persistenceError, setPersistenceError] = useState<string>();
   const loadGeneration = useRef(0);
+  const refreshInFlight = useRef(false);
+  const saveInFlight = useRef(false);
+  const voiceVersion = useRef(0);
 
   useEffect(() => {
+    const version = voiceVersion.current;
     let disposed = false;
     void loadDesktopSettings()
       .then((settings) => {
-        if (!disposed && isRealtimeVoice(settings.realtimeVoice)) {
+        if (
+          !disposed &&
+          version === voiceVersion.current &&
+          isRealtimeVoice(settings.realtimeVoice)
+        ) {
           setVoiceState(settings.realtimeVoice);
         }
       })
       .catch((cause) => {
-        if (!disposed) setPersistenceError(errorMessage(cause));
+        if (!disposed && version === voiceVersion.current) {
+          setPersistenceError(errorMessage(cause));
+        }
       });
     return () => {
       disposed = true;
@@ -54,11 +64,14 @@ export function useRealtimeSettings(
   }, []);
 
   const refresh = useCallback(async () => {
+    if (refreshInFlight.current || saveInFlight.current) return;
+    refreshInFlight.current = true;
     const generation = ++loadGeneration.current;
     if (!isDesktopApp()) {
       setVoices(fallbackRealtimeVoices.v1);
       setLoading(false);
       setError(undefined);
+      refreshInFlight.current = false;
       return;
     }
     setLoading(true);
@@ -81,6 +94,7 @@ export function useRealtimeSettings(
         setVoices(fallbackRealtimeVoices.v1);
       }
     } finally {
+      refreshInFlight.current = false;
       if (generation === loadGeneration.current) setLoading(false);
     }
   }, []);
@@ -91,7 +105,15 @@ export function useRealtimeSettings(
 
   const setVoice = useCallback(
     async (nextVoice: RealtimeVoice) => {
-      if (!voices.includes(nextVoice) || saving) return;
+      if (
+        !voices.includes(nextVoice) ||
+        refreshInFlight.current ||
+        saveInFlight.current
+      ) {
+        return;
+      }
+      saveInFlight.current = true;
+      const version = ++voiceVersion.current;
       const previous = voice;
       setVoiceState(nextVoice);
       setSaving(true);
@@ -99,13 +121,16 @@ export function useRealtimeSettings(
       try {
         await updateDesktopSettings({ realtimeVoice: nextVoice });
       } catch (cause) {
-        setVoiceState(previous);
-        setPersistenceError(errorMessage(cause));
+        if (version === voiceVersion.current) {
+          setVoiceState(previous);
+          setPersistenceError(errorMessage(cause));
+        }
       } finally {
+        saveInFlight.current = false;
         setSaving(false);
       }
     },
-    [saving, voice, voices],
+    [voice, voices],
   );
 
   return {

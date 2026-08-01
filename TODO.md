@@ -340,6 +340,10 @@ The destructive local-memory reset now has synchronous ownership independent
 from ordinary Memory configuration writes. Repeated confirmation in one render
 can issue only one `memory/reset` request.
 
+Realtime voice discovery and persistence now have separate synchronous owners.
+A late initial desktop-preference read cannot replace a newer saved choice, and
+catalog refresh cannot interleave with voice persistence in the same render.
+
 ## Known limitations
 
 - Scheduled tasks require the app to remain running in the tray and the machine
@@ -359,8 +363,8 @@ can issue only one `memory/reset` request.
    scheduled task, approval gating, hidden-window delivery and Realtime active.
 2. Audit another asynchronous controller outside Apps, integrations, Account,
    file-backed configuration editors, external-agent import, Memory, Remote
-   Control, application updates and shared Chromium for stale responses,
-   incomplete cancellation and recovery gaps.
+   Control, Voice settings, application updates and shared Chromium for stale
+   responses, incomplete cancellation and recovery gaps.
 3. Review large owners only where a concrete cohesive extraction removes
    mixed responsibilities; line count alone does not justify a module split.
 4. Tighten outcome-oriented tests whose current assertions allow concurrency,
@@ -375,14 +379,15 @@ and Git/worktree management without a stable App Server product contract.
 - Settings primitive migration: 44 focused component tests across five files,
   passing; production build and full regression suite are listed below when
   rerun for the completed lot.
-- Deterministic frontend/unit suite: 665 tests across 126 files, passing;
+- Deterministic frontend/unit suite: 667 tests across 126 files, passing;
   Apps, integrations, Account, file-backed configuration editors,
-  external-agent import, Memory, Remote Control, application updates and shared
-  Chromium include focused concurrency, recovery and stale-response regressions.
+  external-agent import, Memory, Remote Control, Voice settings, application
+  updates and shared Chromium include focused concurrency, recovery and
+  stale-response regressions.
 - Installed App Server contract: 51 tests, passing against
-  `codex-cli 0.145.0` (716 tests across 127 files including contract).
+  `codex-cli 0.145.0` (718 tests across 127 files including contract).
 - Electron/Node: 117 tests, passing.
-- Production Vite build: passing; main JS 659.64 kB, 189.31 kB gzip.
+- Production Vite build: passing; main JS 659.87 kB, 189.35 kB gzip.
 - Production dependency audit: zero vulnerabilities.
 - `git diff --check`: passing.
 - Settings primitive visual pass: Agent, Advanced Configuration, Plugin

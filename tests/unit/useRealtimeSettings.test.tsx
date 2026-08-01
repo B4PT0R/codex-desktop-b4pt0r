@@ -17,6 +17,14 @@ vi.mock("../../src/lib/desktopSettings", () => ({
 import { I18nProvider } from "../../src/i18n/I18nProvider";
 import { useRealtimeSettings } from "../../src/lib/useRealtimeSettings";
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+
 beforeEach(() => {
   requestMock.mockReset();
   loadMock.mockReset().mockResolvedValue({ version: 1, realtimeVoice: "maple" });
@@ -67,4 +75,57 @@ describe("préférences Realtime v3", () => {
     expect(result.current.persistenceError).toBe("write denied");
   });
 
+  it("ne laisse pas le chargement initial remplacer un choix sauvegardé", async () => {
+    const persisted = deferred<{ version: number; realtimeVoice: string }>();
+    loadMock.mockReturnValueOnce(persisted.promise);
+    requestMock.mockResolvedValue({
+      voices: {
+        v1: ["juniper", "maple"],
+        v2: [],
+        defaultV1: "juniper",
+        defaultV2: "marin",
+      },
+    });
+    const { result } = renderHook(() => useRealtimeSettings(true), {
+      wrapper: I18nProvider,
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(() => result.current.setVoice("maple"));
+    persisted.resolve({ version: 1, realtimeVoice: "juniper" });
+    await act(async () => persisted.promise);
+
+    expect(result.current.voice).toBe("maple");
+  });
+
+  it("sérialise les choix de voix dans un même rendu", async () => {
+    const update = deferred<{ version: number; realtimeVoice: string }>();
+    updateMock.mockReturnValueOnce(update.promise);
+    requestMock.mockResolvedValue({
+      voices: {
+        v1: ["juniper", "maple"],
+        v2: [],
+        defaultV1: "juniper",
+        defaultV2: "marin",
+      },
+    });
+    const { result } = renderHook(() => useRealtimeSettings(true), {
+      wrapper: I18nProvider,
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => expect(result.current.voice).toBe("maple"));
+
+    let first!: Promise<void>;
+    await act(async () => {
+      first = result.current.setVoice("juniper");
+      await result.current.setVoice("maple");
+      await result.current.refresh();
+    });
+    expect(updateMock).toHaveBeenCalledTimes(1);
+    expect(requestMock).toHaveBeenCalledTimes(1);
+
+    update.resolve({ version: 1, realtimeVoice: "juniper" });
+    await act(async () => first);
+    expect(result.current.voice).toBe("juniper");
+  });
 });
