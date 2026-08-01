@@ -60,6 +60,33 @@ describe("inventaire des intégrations", () => {
     expect(requestMock).toHaveBeenCalledWith("skills/list", { cwds: ["/project"], forceReload: true });
   });
 
+  it("ignore une seconde création de Skill tant que la première est en cours", async () => {
+    const create = deferred<void>();
+    invokeMock.mockReturnValue(create.promise);
+    requestMock.mockResolvedValue({
+      data: [{ cwd: "/project", skills: [], errors: [] }],
+    });
+    const { result } = renderHook(() =>
+      useIntegrations({ cwd: "/project", enabled: false }),
+    );
+    const draft = {
+      name: "review-changes",
+      description: "Relire les changements.",
+      instructions: "# Workflow\n\nInspecter le diff.",
+      scope: "repo" as const,
+    };
+    let first!: Promise<boolean>;
+    let duplicate!: Promise<boolean>;
+    act(() => {
+      first = result.current.createSkill(draft);
+      duplicate = result.current.createSkill(draft);
+    });
+    expect(invokeMock).toHaveBeenCalledTimes(1);
+    await expect(duplicate).resolves.toBe(false);
+    create.resolve();
+    await act(() => first);
+  });
+
   it("écrit puis recharge un nouveau serveur MCP", async () => {
     requestMock
       .mockResolvedValueOnce({})
@@ -91,6 +118,38 @@ describe("inventaire des intégrations", () => {
       threadId: null,
     });
   });
+
+  it("ignore un second ajout MCP tant que le premier est en cours", async () => {
+    const write = deferred<void>();
+    requestMock.mockImplementation((method: string) => {
+      if (method === "config/value/write") return write.promise;
+      if (method === "mcpServerStatus/list")
+        return Promise.resolve({ data: [], nextCursor: null });
+      if (method === "config/read") return Promise.resolve({ layers: [] });
+      return Promise.resolve({});
+    });
+    const { result } = renderHook(() =>
+      useIntegrations({ cwd: "/project", enabled: false }),
+    );
+    const draft = {
+      name: "docs",
+      transport: "http" as const,
+      url: "https://mcp.example.test",
+    };
+    let first!: Promise<boolean>;
+    let duplicate!: Promise<boolean>;
+    act(() => {
+      first = result.current.addMcpServer(draft);
+      duplicate = result.current.addMcpServer(draft);
+    });
+    expect(
+      requestMock.mock.calls.filter(([method]) => method === "config/value/write"),
+    ).toHaveLength(1);
+    await expect(duplicate).resolves.toBe(false);
+    write.resolve();
+    await act(() => first);
+  });
+
   it("supprime puis recharge un serveur MCP de la configuration utilisateur", async () => {
     requestMock
       .mockResolvedValueOnce({})
@@ -111,6 +170,32 @@ describe("inventaire des intégrations", () => {
       mergeStrategy: "replace",
     });
     expect(requestMock).toHaveBeenNthCalledWith(2, "config/mcpServer/reload");
+  });
+
+  it("ignore une seconde suppression simultanée du même serveur MCP", async () => {
+    const write = deferred<void>();
+    requestMock.mockImplementation((method: string) => {
+      if (method === "config/value/write") return write.promise;
+      if (method === "mcpServerStatus/list")
+        return Promise.resolve({ data: [], nextCursor: null });
+      if (method === "config/read") return Promise.resolve({ layers: [] });
+      return Promise.resolve({});
+    });
+    const { result } = renderHook(() =>
+      useIntegrations({ cwd: "/project", enabled: false }),
+    );
+    let first!: Promise<boolean>;
+    let duplicate!: Promise<boolean>;
+    act(() => {
+      first = result.current.removeMcpServer("docs");
+      duplicate = result.current.removeMcpServer("docs");
+    });
+    expect(
+      requestMock.mock.calls.filter(([method]) => method === "config/value/write"),
+    ).toHaveLength(1);
+    await expect(duplicate).resolves.toBe(false);
+    write.resolve();
+    await act(() => first);
   });
   it("charge et normalise les hooks sans charger les autres intégrations", async () => {
     requestMock.mockResolvedValue({
@@ -254,6 +339,36 @@ describe("inventaire des intégrations", () => {
     expect(result.current.updatingSkills).toEqual([]);
   });
 
+  it("ignore une seconde modification simultanée du même Skill", async () => {
+    const write = deferred<{ effectiveEnabled: boolean }>();
+    requestMock.mockImplementation((method: string) => {
+      if (method === "skills/config/write") return write.promise;
+      return Promise.resolve({ data: [], nextCursor: null });
+    });
+    const { result } = renderHook(() =>
+      useIntegrations({ cwd: "/project", enabled: false }),
+    );
+    const skill = {
+      name: "review",
+      description: "Review",
+      path: "/skills/review/SKILL.md",
+      scope: "user",
+      enabled: true,
+    };
+    let first!: Promise<void>;
+    let duplicate!: Promise<void>;
+    act(() => {
+      first = result.current.setSkillEnabled(skill, false);
+      duplicate = result.current.setSkillEnabled(skill, false);
+    });
+    expect(
+      requestMock.mock.calls.filter(([method]) => method === "skills/config/write"),
+    ).toHaveLength(1);
+    await expect(duplicate).resolves.toBeUndefined();
+    write.resolve({ effectiveEnabled: false });
+    await act(() => first);
+  });
+
   it("réactualise l’inventaire après les notifications App Server", async () => {
     requestMock.mockImplementation((method: string) =>
       Promise.resolve(
@@ -354,6 +469,34 @@ describe("inventaire des intégrations", () => {
     expect(result.current.mcpAuthNotice).toBe(
       "Configuration MCP rechargée.",
     );
+  });
+
+  it("ignore un second reload MCP tant que le premier est en cours", async () => {
+    const reload = deferred<void>();
+    requestMock.mockImplementation((method: string) => {
+      if (method === "config/mcpServer/reload") return reload.promise;
+      if (method === "mcpServerStatus/list")
+        return Promise.resolve({ data: [], nextCursor: null });
+      if (method === "config/read") return Promise.resolve({ layers: [] });
+      return Promise.resolve({ data: [] });
+    });
+    const { result } = renderHook(() =>
+      useIntegrations({ cwd: "/project", enabled: false }),
+    );
+    let first!: Promise<void>;
+    let duplicate!: Promise<void>;
+    act(() => {
+      first = result.current.reloadMcp();
+      duplicate = result.current.reloadMcp();
+    });
+    expect(
+      requestMock.mock.calls.filter(
+        ([method]) => method === "config/mcpServer/reload",
+      ),
+    ).toHaveLength(1);
+    await expect(duplicate).resolves.toBeUndefined();
+    reload.resolve();
+    await act(() => first);
   });
 
   it("ouvre OAuth dans Chromium puis traite la notification de réussite", async () => {

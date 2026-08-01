@@ -240,6 +240,10 @@ Remove actions. Remove is exposed only for names found in App Server's writable
 base user config layer, is explicitly confirmed, writes `null` with replace
 semantics, reloads MCP and refreshes authoritative inventory. Wide and 840x620
 light-theme cards plus the narrow confirmation dialog were visually reviewed.
+MCP configuration mutations now share one synchronous owner across add, remove
+and reload so their write/reload/refresh sequences cannot interleave. Skill
+creation is single-flight, while enablement remains independently serialized per
+Skill path; React state is presentation only, never the concurrency guard.
 
 - Audited installed `codex-cli 0.145.0` schemas and official source conventions.
 - Confirmed `app/list.isEnabled` plus targeted
@@ -320,8 +324,8 @@ light-theme cards plus the narrow confirmation dialog were visually reviewed.
 
 1. Exercise long-idle and suspend/resume recovery in packaged Electron with a
    scheduled task, approval gating, hidden-window delivery and Realtime active.
-2. Audit another existing asynchronous controller for duplicate submissions,
-   stale responses and incomplete recovery without extending its UI surface.
+2. Audit an existing asynchronous controller outside Apps and integrations for
+   stale responses, incomplete cancellation and recovery gaps.
 3. Review large owners only where a concrete cohesive extraction removes
    mixed responsibilities; line count alone does not justify a module split.
 4. Tighten outcome-oriented tests whose current assertions allow concurrency,
@@ -336,12 +340,13 @@ and Git/worktree management without a stable App Server product contract.
 - Settings primitive migration: 44 focused component tests across five files,
   passing; production build and full regression suite are listed below when
   rerun for the completed lot.
-- Deterministic frontend/unit suite: 645 tests across 126 files, passing;
-  `useApps` includes two same-tick duplicate-mutation regressions.
+- Deterministic frontend/unit suite: 650 tests across 126 files, passing;
+  Apps and integration controllers include seven same-tick duplicate-mutation
+  regressions.
 - Installed App Server contract: 51 tests, passing against
-  `codex-cli 0.145.0` (696 tests across 127 files including contract).
+  `codex-cli 0.145.0` (701 tests across 127 files including contract).
 - Electron/Node: 117 tests, passing.
-- Production Vite build: passing; main JS 658.25 kB, 188.96 kB gzip.
+- Production Vite build: passing; main JS 658.53 kB, 189.03 kB gzip.
 - Production dependency audit: zero vulnerabilities.
 - `git diff --check`: passing.
 - Settings primitive visual pass: Agent, Advanced Configuration, Plugin

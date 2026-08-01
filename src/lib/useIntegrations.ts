@@ -100,6 +100,11 @@ export function useIntegrations({
   const skillsGeneration = useRef(0);
   const hooksGeneration = useRef(0);
   const mcpGeneration = useRef(0);
+  // Every MCP mutation owns a write/reload/refresh transaction.
+  const mcpMutationInFlight = useRef(false);
+  // Skill toggles conflict only when they target the same file.
+  const updatingSkillPaths = useRef(new Set<string>());
+  const creatingSkillInFlight = useRef(false);
   const mcpAuthInFlight = useRef(new Set<string>());
 
   const refreshSkills = useCallback(async () => {
@@ -218,7 +223,8 @@ export function useIntegrations({
   }, [t, threadId]);
 
   const reloadMcp = useCallback(async () => {
-    if (reloadingMcp) return;
+    if (mcpMutationInFlight.current) return;
+    mcpMutationInFlight.current = true;
     setReloadingMcp(true);
     setMcpAuthNotice(undefined);
     setMcpStartup({});
@@ -235,12 +241,14 @@ export function useIntegrations({
         }),
       }));
     } finally {
+      mcpMutationInFlight.current = false;
       setReloadingMcp(false);
     }
-  }, [refreshMcp, reloadingMcp, t]);
+  }, [refreshMcp, t]);
 
   const addMcpServer = useCallback(async (draft: McpServerDraft) => {
-    if (addingMcpServer) return false;
+    if (mcpMutationInFlight.current) return false;
+    mcpMutationInFlight.current = true;
     setAddingMcpServer(true);
     setMcpServers((state) => ({ ...state, error: undefined }));
     try {
@@ -256,12 +264,14 @@ export function useIntegrations({
       }));
       return false;
     } finally {
+      mcpMutationInFlight.current = false;
       setAddingMcpServer(false);
     }
-  }, [addingMcpServer, refreshMcp, t]);
+  }, [refreshMcp, t]);
 
   const removeMcpServer = useCallback(async (name: string) => {
-    if (removingMcpServers.includes(name)) return false;
+    if (mcpMutationInFlight.current) return false;
+    mcpMutationInFlight.current = true;
     setRemovingMcpServers((names) => [...names, name]);
     setMcpServers((state) => ({ ...state, error: undefined }));
     try {
@@ -277,12 +287,17 @@ export function useIntegrations({
       }));
       return false;
     } finally {
-      setRemovingMcpServers((names) => names.filter((candidate) => candidate !== name));
+      mcpMutationInFlight.current = false;
+      setRemovingMcpServers((names) =>
+        names.filter((candidate) => candidate !== name),
+      );
     }
-  }, [refreshMcp, removingMcpServers, t]);
+  }, [refreshMcp, t]);
 
   const setSkillEnabled = useCallback(
     async (skill: AppServerSkill, nextEnabled: boolean) => {
+      if (updatingSkillPaths.current.has(skill.path)) return;
+      updatingSkillPaths.current.add(skill.path);
       setUpdatingSkills((paths) => [...paths, skill.path]);
       try {
         const response = await request<{ effectiveEnabled: boolean }>(
@@ -301,6 +316,7 @@ export function useIntegrations({
       } catch (error) {
         setSkills((state) => ({ ...state, error: errorMessage(error) }));
       } finally {
+        updatingSkillPaths.current.delete(skill.path);
         setUpdatingSkills((paths) =>
           paths.filter((path) => path !== skill.path),
         );
@@ -310,7 +326,8 @@ export function useIntegrations({
   );
 
   const createSkill = useCallback(async (draft: SkillDraft) => {
-    if (creatingSkill || !isDesktopApp()) return false;
+    if (creatingSkillInFlight.current || !isDesktopApp()) return false;
+    creatingSkillInFlight.current = true;
     setCreatingSkill(true);
     setSkills((state) => ({ ...state, error: undefined }));
     try {
@@ -321,9 +338,10 @@ export function useIntegrations({
       setSkills((state) => ({ ...state, error: errorMessage(error) }));
       return false;
     } finally {
+      creatingSkillInFlight.current = false;
       setCreatingSkill(false);
     }
-  }, [creatingSkill, cwd, refreshSkills]);
+  }, [cwd, refreshSkills]);
 
   const authenticateMcp = useCallback(
     async (server: McpServerStatus) => {
