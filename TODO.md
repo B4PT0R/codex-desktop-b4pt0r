@@ -331,9 +331,10 @@ Changing workspace invalidates pending detection and clears its inventory;
 retrying detection also removes stale items before a failure can leave them
 selectable for import.
 
-Global and workspace AGENTS.md editors now use synchronous save ownership.
-Repeated keyboard/button saves cannot issue the same optimistic version twice,
-and reload/discard cannot supersede a native write that is still in flight.
+All file-backed configuration editors now use synchronous save ownership:
+global/workspace AGENTS.md and raw config.toml. Repeated keyboard/button saves
+cannot issue the same optimistic version twice, and reload/discard cannot
+supersede a native write that is still in flight.
 
 ## Known limitations
 
@@ -353,9 +354,9 @@ and reload/discard cannot supersede a native write that is still in flight.
 1. Exercise long-idle and suspend/resume recovery in packaged Electron with a
    scheduled task, approval gating, hidden-window delivery and Realtime active.
 2. Audit another asynchronous controller outside Apps, integrations, Account,
-   AGENTS.md editors, external-agent import, Remote Control, application updates
-   and shared Chromium for stale responses, incomplete cancellation and recovery
-   gaps.
+   file-backed configuration editors, external-agent import, Remote Control,
+   application updates and shared Chromium for stale responses, incomplete
+   cancellation and recovery gaps.
 3. Review large owners only where a concrete cohesive extraction removes
    mixed responsibilities; line count alone does not justify a module split.
 4. Tighten outcome-oriented tests whose current assertions allow concurrency,
@@ -370,12 +371,12 @@ and Git/worktree management without a stable App Server product contract.
 - Settings primitive migration: 44 focused component tests across five files,
   passing; production build and full regression suite are listed below when
   rerun for the completed lot.
-- Deterministic frontend/unit suite: 663 tests across 126 files, passing;
-  Apps, integrations, Account, AGENTS.md editors, external-agent import, Remote
-  Control, application updates and shared Chromium include focused concurrency,
-  recovery and stale-response regressions.
+- Deterministic frontend/unit suite: 664 tests across 126 files, passing;
+  Apps, integrations, Account, file-backed configuration editors,
+  external-agent import, Remote Control, application updates and shared Chromium
+  include focused concurrency, recovery and stale-response regressions.
 - Installed App Server contract: 51 tests, passing against
-  `codex-cli 0.145.0` (714 tests across 127 files including contract).
+  `codex-cli 0.145.0` (715 tests across 127 files including contract).
 - Electron/Node: 117 tests, passing.
 - Production Vite build: passing; main JS 659.58 kB, 189.30 kB gzip.
 - Production dependency audit: zero vulnerabilities.

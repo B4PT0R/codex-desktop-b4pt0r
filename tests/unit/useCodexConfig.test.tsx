@@ -53,4 +53,46 @@ describe("éditeur de configuration Codex", () => {
     expect(result.current.error).toContain("Invalid TOML");
     expect(result.current.dirty).toBe(true);
   });
+
+  it("sérialise sauvegarde et relecture dans un même rendu", async () => {
+    const pending = deferred<{
+      content: string;
+      filePath: string;
+      version: string;
+    }>();
+    invokeMock
+      .mockResolvedValueOnce({
+        content: 'model = "old"\n',
+        filePath: "/home/test/.codex/config.toml",
+        version: "v1",
+      })
+      .mockReturnValueOnce(pending.promise);
+    const { result } = renderHook(useCodexConfig);
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    act(() => result.current.setDraft('model = "new"\n'));
+
+    let saving!: Promise<boolean>;
+    await act(async () => {
+      saving = result.current.save();
+      expect(await result.current.save()).toBe(false);
+      await result.current.load();
+    });
+    expect(invokeMock).toHaveBeenCalledTimes(2);
+
+    pending.resolve({
+      content: 'model = "new"\n',
+      filePath: "/home/test/.codex/config.toml",
+      version: "v2",
+    });
+    await act(async () => expect(await saving).toBe(true));
+    expect(result.current.saved).toBe(true);
+  });
 });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
