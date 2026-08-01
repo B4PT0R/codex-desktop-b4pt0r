@@ -31,6 +31,75 @@ vi.mock("../../src/lib/codex", () => ({
 afterEach(() => vi.clearAllMocks());
 
 describe("tâches planifiées", () => {
+  it("conserve le résultat de la lecture la plus récente", async () => {
+    const first = deferred<Array<{ id: string; name: string }>>();
+    const second = deferred<Array<{ id: string; name: string }>>();
+    mocks.invoke
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise);
+    const { result } = renderHook(() =>
+      useAutomations({
+        connected: false,
+        onError: vi.fn(),
+        onThreadCreated: vi.fn(),
+        turnCoordinator: new ThreadTurnCoordinator(),
+      }),
+    );
+
+    let older!: Promise<void>;
+    let newer!: Promise<void>;
+    act(() => {
+      older = result.current.refresh();
+      newer = result.current.refresh();
+    });
+    second.resolve([{ id: "new", name: "Récent" }]);
+    await act(async () => newer);
+    first.resolve([{ id: "old", name: "Ancien" }]);
+    await act(async () => older);
+
+    expect(result.current.automations).toEqual([
+      expect.objectContaining({ id: "new" }),
+    ]);
+    expect(result.current.loading).toBe(false);
+  });
+
+  it("ne ressuscite pas une tâche supprimée par une lecture antérieure", async () => {
+    const automation = {
+      id: "automation-1",
+      name: "Review",
+      prompt: "Inspect",
+      enabled: true,
+      schedule: { type: "interval" as const, intervalMinutes: 60 },
+      target: { type: "newThread" as const },
+    };
+    const stale = deferred<typeof automation[]>();
+    mocks.invoke.mockImplementation((command) => {
+      if (command === "automation_list") return stale.promise;
+      if (command === "automation_delete") return Promise.resolve(true);
+      throw new Error(`Unexpected command: ${command}`);
+    });
+    const { result } = renderHook(() =>
+      useAutomations({
+        connected: false,
+        onError: vi.fn(),
+        onThreadCreated: vi.fn(),
+        turnCoordinator: new ThreadTurnCoordinator(),
+      }),
+    );
+
+    let reading!: Promise<void>;
+    act(() => {
+      reading = result.current.refresh();
+    });
+    await act(async () =>
+      expect(await result.current.deleteAutomation(automation.id)).toBe(true),
+    );
+    stale.resolve([automation]);
+    await act(async () => reading);
+
+    expect(result.current.automations).toEqual([]);
+  });
+
   it("attend l’hydratation des préférences avant d’armer le scheduler", async () => {
     mocks.listen.mockResolvedValue(() => {});
     mocks.invoke.mockResolvedValue([]);

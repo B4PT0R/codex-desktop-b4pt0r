@@ -64,22 +64,26 @@ export function useAutomations({
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
   const runs = useRef(new Map<string, RunState>());
+  const refreshVersion = useRef(0);
   const settingsConfirmation = useRef(new ThreadSettingsConfirmation());
   const callbacks = useRef({ defaultThreadId, onError, onThreadCreated });
   callbacks.current = { defaultThreadId, onError, onThreadCreated };
 
   const refresh = useCallback(async () => {
     if (!isDesktopApp()) return;
+    const version = ++refreshVersion.current;
     setLoading(true);
     setError(undefined);
     try {
-      setAutomations(await invoke<Automation[]>("automation_list"));
+      const next = await invoke<Automation[]>("automation_list");
+      if (version === refreshVersion.current) setAutomations(next);
     } catch (cause) {
+      if (version !== refreshVersion.current) return;
       const message = errorMessage(cause);
       setError(message);
       callbacks.current.onError(cause);
     } finally {
-      setLoading(false);
+      if (version === refreshVersion.current) setLoading(false);
     }
   }, []);
 
@@ -161,6 +165,7 @@ export function useAutomations({
         turnId: response.turn.id,
         restoreSecurity,
       });
+      refreshVersion.current += 1;
       setAutomations((items) =>
         items.map((item) =>
           item.id === run.id
@@ -216,6 +221,8 @@ export function useAutomations({
     })();
     return () => {
       disposed = true;
+      refreshVersion.current += 1;
+      setLoading(false);
       unlisten?.();
     };
   }, [connected, execute, preferencesReady, refresh]);
@@ -239,8 +246,10 @@ export function useAutomations({
   const deleteAutomation = useCallback(async (id: string) => {
     try {
       const removed = await invoke<boolean>("automation_delete", { id });
-      if (removed)
+      if (removed) {
+        refreshVersion.current += 1;
         setAutomations((items) => items.filter((item) => item.id !== id));
+      }
       return removed;
     } catch (cause) {
       setError(errorMessage(cause));
