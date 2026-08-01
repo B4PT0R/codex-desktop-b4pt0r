@@ -71,7 +71,7 @@ fi
       shift 2
 
       local smoke_args=(--disable-gpu)
-      # Docker's default seccomp profile blocks Chromium's nested sandbox.
+      # The Docker default seccomp profile blocks the nested Chromium sandbox.
       # Podman exercises the packaged sandbox normally on the local path.
       if [[ $CODEX_DESKTOP_SMOKE_RUNTIME == docker ]]; then
         smoke_args+=(--no-sandbox)
