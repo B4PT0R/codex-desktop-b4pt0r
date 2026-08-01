@@ -55,4 +55,34 @@ describe("réglages globaux de mémoire", () => {
     });
     expect(requestMock).toHaveBeenLastCalledWith("memory/reset");
   });
+
+  it("refuse deux réinitialisations dans le même rendu", async () => {
+    const pending = deferred<Record<string, never>>();
+    requestMock
+      .mockResolvedValueOnce({ config: {} })
+      .mockReturnValueOnce(pending.promise);
+    const { result } = renderHook(() => useMemorySettings(true));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let first!: Promise<boolean>;
+    await act(async () => {
+      first = result.current.reset();
+      expect(await result.current.reset()).toBe(false);
+    });
+    expect(
+      requestMock.mock.calls.filter(([method]) => method === "memory/reset"),
+    ).toHaveLength(1);
+
+    pending.resolve({});
+    await act(async () => expect(await first).toBe(true));
+    expect(result.current.resetting).toBe(false);
+  });
 });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}

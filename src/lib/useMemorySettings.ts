@@ -35,6 +35,7 @@ export function useMemorySettings(connected: boolean): MemorySettingsController 
   const [resetting, setResetting] = useState(false);
   const [error, setError] = useState<string>();
   const generation = useRef(0);
+  const resetInFlight = useRef(false);
   const writeInFlight = useRef(false);
 
   const refresh = useCallback(async () => {
@@ -134,7 +135,8 @@ export function useMemorySettings(connected: boolean): MemorySettingsController 
         setMinRateLimitRemainingPercentState,
       ),
     reset: async () => {
-      if (resetting || !isDesktopApp()) return false;
+      if (resetInFlight.current || !isDesktopApp()) return false;
+      resetInFlight.current = true;
       setResetting(true);
       setError(undefined);
       try {
@@ -144,6 +146,7 @@ export function useMemorySettings(connected: boolean): MemorySettingsController 
         setError(errorMessage(cause));
         return false;
       } finally {
+        resetInFlight.current = false;
         setResetting(false);
       }
     },
