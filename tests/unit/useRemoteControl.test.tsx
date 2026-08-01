@@ -175,4 +175,92 @@ describe("contrôle à distance", () => {
     expect(result.current.clients).toEqual([]);
     expect(result.current.clientsLoading).toBe(false);
   });
+
+  it("ignore une seconde activation tant que la première est en cours", async () => {
+    const enable = deferred<ReturnType<typeof remoteStatus>>();
+    requestMock.mockImplementation((method) => {
+      if (method === "remoteControl/status/read")
+        return Promise.resolve(remoteStatus("disabled", null));
+      if (method === "remoteControl/enable") return enable.promise;
+      if (method === "remoteControl/client/list")
+        return Promise.resolve({ data: [], nextCursor: null });
+      return Promise.resolve({});
+    });
+    const { result } = renderHook(() => useRemoteControl(true));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    let first!: Promise<boolean>;
+    let duplicate!: Promise<boolean>;
+    act(() => {
+      first = result.current.enable();
+      duplicate = result.current.enable();
+    });
+    expect(
+      requestMock.mock.calls.filter(
+        ([method]) => method === "remoteControl/enable",
+      ),
+    ).toHaveLength(1);
+    await expect(duplicate).resolves.toBe(false);
+    enable.resolve(remoteStatus("connected", "env-1"));
+    await act(() => first);
+  });
+
+  it("préserve une notification de statut plus récente qu’une activation", async () => {
+    const enable = deferred<ReturnType<typeof remoteStatus>>();
+    requestMock.mockImplementation((method) => {
+      if (method === "remoteControl/status/read")
+        return Promise.resolve(remoteStatus("disabled", null));
+      if (method === "remoteControl/enable") return enable.promise;
+      if (method === "remoteControl/client/list")
+        return Promise.resolve({ data: [], nextCursor: null });
+      return Promise.resolve({});
+    });
+    const { result } = renderHook(() => useRemoteControl(true));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    let pending!: Promise<boolean>;
+    act(() => {
+      pending = result.current.enable();
+    });
+    act(() => {
+      subscribeMock.mock.calls[0]?.[0]({
+        method: "remoteControl/status/changed",
+        params: remoteStatus("disabled", null),
+      });
+    });
+    enable.resolve(remoteStatus("connected", "env-1"));
+    await act(() => pending);
+    expect(result.current.status?.status).toBe("disabled");
+    expect(result.current.clients).toEqual([]);
+  });
+
+  it("ignore les notifications de statut lorsque le transport est déconnecté", () => {
+    const { result } = renderHook(() => useRemoteControl(false));
+    act(() => {
+      subscribeMock.mock.calls[0]?.[0]({
+        method: "remoteControl/status/changed",
+        params: remoteStatus("connected", "env-1"),
+      });
+    });
+    expect(result.current.status).toBeUndefined();
+    expect(requestMock).not.toHaveBeenCalled();
+  });
 });
+
+function remoteStatus(
+  status: "disabled" | "connected",
+  environmentId: string | null,
+) {
+  return {
+    status,
+    serverName: "linux-box",
+    installationId: "install-1",
+    environmentId,
+  };
+}
+
+function deferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  const promise = new Promise<T>((promiseResolve) => {
+    resolve = promiseResolve;
+  });
+  return { promise, resolve };
+}

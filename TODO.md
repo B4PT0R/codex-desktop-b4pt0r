@@ -307,6 +307,11 @@ Skill path; React state is presentation only, never the concurrency guard.
   mutations and expose only a small reversible global control if the contract is
   stable; otherwise move directly to effective per-thread Apps visibility.
 
+Remote Control enable/disable is now single-flight and participates in the same
+generation ordering as status reads and pushed status notifications. A newer
+notification invalidates a pending response, and disconnected transports ignore
+late status pushes, preventing stale relay state from being resurrected.
+
 ## Known limitations
 
 - Scheduled tasks require the app to remain running in the tray and the machine
@@ -324,8 +329,8 @@ Skill path; React state is presentation only, never the concurrency guard.
 
 1. Exercise long-idle and suspend/resume recovery in packaged Electron with a
    scheduled task, approval gating, hidden-window delivery and Realtime active.
-2. Audit an existing asynchronous controller outside Apps and integrations for
-   stale responses, incomplete cancellation and recovery gaps.
+2. Audit another asynchronous controller outside Apps, integrations and Remote
+   Control for stale responses, incomplete cancellation and recovery gaps.
 3. Review large owners only where a concrete cohesive extraction removes
    mixed responsibilities; line count alone does not justify a module split.
 4. Tighten outcome-oriented tests whose current assertions allow concurrency,
@@ -340,13 +345,13 @@ and Git/worktree management without a stable App Server product contract.
 - Settings primitive migration: 44 focused component tests across five files,
   passing; production build and full regression suite are listed below when
   rerun for the completed lot.
-- Deterministic frontend/unit suite: 650 tests across 126 files, passing;
-  Apps and integration controllers include seven same-tick duplicate-mutation
-  regressions.
+- Deterministic frontend/unit suite: 653 tests across 126 files, passing;
+  Apps, integrations and Remote Control include focused concurrency and stale
+  response regressions.
 - Installed App Server contract: 51 tests, passing against
-  `codex-cli 0.145.0` (701 tests across 127 files including contract).
+  `codex-cli 0.145.0` (704 tests across 127 files including contract).
 - Electron/Node: 117 tests, passing.
-- Production Vite build: passing; main JS 658.53 kB, 189.03 kB gzip.
+- Production Vite build: passing; main JS 658.66 kB, 189.05 kB gzip.
 - Production dependency audit: zero vulnerabilities.
 - `git diff --check`: passing.
 - Settings primitive visual pass: Agent, Advanced Configuration, Plugin

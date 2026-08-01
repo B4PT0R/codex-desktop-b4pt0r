@@ -63,6 +63,7 @@ export function useRemoteControl(
   const generation = useRef(0);
   const clientsGeneration = useRef(0);
   const pairingPollInFlight = useRef(false);
+  const statusMutationInFlight = useRef(false);
 
   const loadClients = useCallback(
     async (environmentId: string, cursor: string | null = null) => {
@@ -144,9 +145,15 @@ export function useRemoteControl(
   useEffect(
     () =>
       subscribeAppServerMessages((message) => {
-        if (message.method !== "remoteControl/status/changed") return;
+        if (
+          !connected ||
+          message.method !== "remoteControl/status/changed"
+        )
+          return;
         const next = tryNormalizeRemoteControlStatus(message.params);
         if (!next) return;
+        // Push status is newer than any pending read or enable/disable response.
+        generation.current += 1;
         setStatus(next);
         if (next.environmentId) void loadClients(next.environmentId);
         else {
@@ -156,7 +163,7 @@ export function useRemoteControl(
           setNextCursor(null);
         }
       }),
-    [loadClients],
+    [connected, loadClients],
   );
 
   useEffect(() => {
@@ -200,7 +207,15 @@ export function useRemoteControl(
   }, [loadClients, pairing]);
 
   async function setEnabled(enabled: boolean) {
-    if (!available || !connected || (!allowed && enabled)) return false;
+    if (
+      statusMutationInFlight.current ||
+      !available ||
+      !connected ||
+      (!allowed && enabled)
+    )
+      return false;
+    statusMutationInFlight.current = true;
+    const current = ++generation.current;
     const setBusy = enabled ? setEnabling : setDisabling;
     setBusy(true);
     setError(undefined);
@@ -213,6 +228,7 @@ export function useRemoteControl(
             : remoteControlDisableParams(),
         ),
       );
+      if (current !== generation.current) return true;
       setStatus(next);
       if (!enabled) {
         clientsGeneration.current += 1;
@@ -225,9 +241,10 @@ export function useRemoteControl(
       }
       return true;
     } catch (cause) {
-      setError(errorMessage(cause));
+      if (current === generation.current) setError(errorMessage(cause));
       return false;
     } finally {
+      statusMutationInFlight.current = false;
       setBusy(false);
     }
   }
