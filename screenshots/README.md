@@ -11,10 +11,14 @@ every visual iteration. Historical captures remain available through Git.
 - `settings-mcp-light-1164x860.png` — light-theme Settings baseline showing the
   shared page header, operational toolbar, MCP server cards, status badges and
   recoverable authentication failure.
+- `settings-apps-light-1164x860.png` — light-theme Apps baseline showing runtime
+  availability, quick activation, shared defaults and per-connector settings.
+- `settings-apps-catalog-light-1164x860.png` — light-theme Apps discovery modal
+  showing search, connection state and progressive access to connector details.
 - `settings-memory-light-1164x860.png` — light-theme Settings baseline showing
   shared icon subheaders, joined option cards and the local-memory reset action.
 
-Both images are generated from the deterministic local preview:
+These images are generated from the deterministic local preview:
 
 ```text
 http://127.0.0.1:1420/?demo=readme&locale=en

@@ -19,6 +19,7 @@ import {
   type AppServerMessage,
 } from "./lib/codex";
 import type {
+  AppInfo,
   ThreadListResponse,
   ThreadStartResponse,
 } from "./lib/appServerTypes";
@@ -951,10 +952,49 @@ export default function App() {
     ? {
         ...apps,
         apps: demoApps.filter((app) => app.isEnabled),
-        configurableApps: demoApps,
+        catalogApps: demoApps,
+        configurableApps: demoApps.filter((app) => app.isAccessible),
         error: undefined,
+        installedApps: {
+          github: { id: "github", runtimeName: "GitHub", enabled: true, callable: true },
+          google_drive: { id: "google_drive", runtimeName: "Google Drive", enabled: false, callable: false },
+        },
         loading: false,
+        savingConfigurations: [],
         updatingApps: [],
+        readConfiguration: async (app?: AppInfo) => ({
+          ...(app ? { app } : {}),
+          config: app ? {
+            enabled: app.isEnabled,
+            approvals_reviewer: null,
+            destructive_enabled: null,
+            open_world_enabled: null,
+            default_tools_approval_mode: null,
+            default_tools_enabled: null,
+            tools: {},
+          } : {
+            enabled: true,
+            approvals_reviewer: null,
+            destructive_enabled: true,
+            open_world_enabled: true,
+            default_tools_approval_mode: null,
+          },
+          defaults: {
+            enabled: true,
+            approvals_reviewer: null,
+            destructive_enabled: true,
+            open_world_enabled: true,
+            default_tools_approval_mode: null,
+          },
+          tools: app?.id === "github" ? [
+            { name: "search", title: "Search repositories", description: "Search repositories, issues, and pull requests.", isEnabled: true, disabledReason: null, isReadOnly: true },
+            { name: "create_issue", title: "Create issue", description: "Create a new issue in a repository.", isEnabled: true, disabledReason: null, isReadOnly: false },
+          ] : [
+            { name: "search_files", title: "Search files", description: "Find files in connected drives.", isEnabled: true, disabledReason: null, isReadOnly: true },
+          ],
+        }),
+        saveConfiguration: async () => true,
+        openInstall: async () => true,
         setEnabled: async () => undefined,
       }
     : apps;

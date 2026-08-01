@@ -104,7 +104,7 @@ export function McpServerAddDialog({
     <div className="overlay">
       <form
         ref={dialogRef}
-        className="modal mcp-add-dialog"
+        className="modal settings-form-dialog mcp-add-dialog"
         role="dialog"
         aria-modal="true"
         aria-labelledby="mcp-add-title"
@@ -114,13 +114,13 @@ export function McpServerAddDialog({
           void submit();
         }}
       >
-        <div className="mcp-add-dialog-heading">
+        <div className="settings-form-dialog-heading">
           <RoundIcon icon={Server} size="large" variant="primary" />
           <h2 id="mcp-add-title">{t("integrations.mcp.addTitle")}</h2>
         </div>
-        <div className="mcp-add-dialog-body">
+        <div className="settings-form-dialog-body">
           <p>{t("integrations.mcp.addDetail")}</p>
-          <div className="mcp-add-tabs" role="tablist" aria-label={t("integrations.mcp.addLevel")}>
+          <div className="settings-dialog-tabs" role="tablist" aria-label={t("integrations.mcp.addLevel")}>
             {([
               { value: "essential", icon: Zap },
               { value: "advanced", icon: SlidersHorizontal },
@@ -143,7 +143,7 @@ export function McpServerAddDialog({
           </div>
           <div
             aria-labelledby={`mcp-add-tab-${tab}`}
-            className="mcp-add-fields"
+            className="settings-form-fields"
             id={`mcp-add-${tab}`}
             role="tabpanel"
           >
@@ -255,7 +255,7 @@ function AdvancedFields(props: {
   const { t } = useI18n();
   const p = props;
   return <>
-    <div className="mcp-add-field-grid">
+    <div className="settings-form-field-grid">
       <Field error={!p.validTimeouts ? t("integrations.mcp.addTimeoutError") : undefined} label={t("integrations.mcp.addStartupTimeout")}><input disabled={p.adding} inputMode="decimal" value={p.startupTimeout} onChange={(event) => p.setStartupTimeout(event.target.value)} /></Field>
       <Field label={t("integrations.mcp.addToolTimeout")}><input disabled={p.adding} inputMode="decimal" value={p.toolTimeout} onChange={(event) => p.setToolTimeout(event.target.value)} /></Field>
     </div>
@@ -265,13 +265,13 @@ function AdvancedFields(props: {
         {(["auto", "prompt", "writes", "approve"] as const).map((value) => <option key={value} value={value}>{t(`integrations.mcp.addApproval.${value}`)}</option>)}
       </select>
     </Field>
-    <div className="mcp-add-field-grid">
+    <div className="settings-form-field-grid">
       <Field detail={t("integrations.mcp.addToolsDetail")} label={t("integrations.mcp.addEnabledTools")}><textarea disabled={p.adding} value={p.enabledTools} onChange={(event) => p.setEnabledTools(event.target.value)} /></Field>
       <Field detail={t("integrations.mcp.addToolsDetail")} label={t("integrations.mcp.addDisabledTools")}><textarea disabled={p.adding} value={p.disabledTools} onChange={(event) => p.setDisabledTools(event.target.value)} /></Field>
     </div>
     {p.transport === "stdio" ?
       <Field detail={t("integrations.mcp.addEnvVarsDetail")} label={t("integrations.mcp.addEnvVars")}><textarea disabled={p.adding} value={p.envVars} onChange={(event) => p.setEnvVars(event.target.value)} /></Field>
-      : <div className="mcp-add-field-grid">
+      : <div className="settings-form-field-grid">
         <Field detail={t("integrations.mcp.addHeadersDetail")} error={!p.validHeaders ? t("integrations.mcp.addEnvError") : undefined} label={t("integrations.mcp.addHeaders")}><textarea disabled={p.adding} value={p.httpHeaders} onChange={(event) => p.setHttpHeaders(event.target.value)} /></Field>
         <Field detail={t("integrations.mcp.addEnvHeadersDetail")} error={!p.validEnvironmentHeaders ? t("integrations.mcp.addEnvHeaderError") : undefined} label={t("integrations.mcp.addEnvHeaders")}><textarea disabled={p.adding} value={p.envHttpHeaders} onChange={(event) => p.setEnvHttpHeaders(event.target.value)} /></Field>
       </div>}

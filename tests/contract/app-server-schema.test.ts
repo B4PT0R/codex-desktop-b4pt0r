@@ -6,6 +6,8 @@ import Ajv from "ajv";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   appEnabledConfigWriteParams,
+  appsConfigBatchWriteParams,
+  appsInstalledParams,
   automationThreadResumeParams,
   subagentDescendantsListParams,
   threadReadParams,
@@ -15,6 +17,7 @@ import {
   automationTurnStartParams,
   accountReadParams,
   appsListParams,
+  appsReadParams,
   backgroundTerminalsListParams,
   backgroundTerminalTerminateParams,
   collaborationModeListParams,
@@ -247,10 +250,22 @@ describe("contrat Codex installé", () => {
   });
   it("accepte l’inventaire et l’activation globale des Apps", () => {
     validates("AppsListParams", appsListParams("thr_1"));
+    validates("AppsInstalledParams", appsInstalledParams("thr_1"));
+    validates("AppsReadParams", appsReadParams(["github"]));
     validates(
       "ConfigValueWriteParams",
       appEnabledConfigWriteParams("google.drive", false),
     );
+    validates("ConfigBatchWriteParams", appsConfigBatchWriteParams({
+      appId: "github",
+      enabled: true,
+      approvalsReviewer: null,
+      destructiveEnabled: false,
+      openWorldEnabled: true,
+      defaultToolsApprovalMode: "prompt",
+      defaultToolsEnabled: true,
+      tools: { search: { enabled: true, approvalMode: "auto" } },
+    }));
   });
   it("accepte la consommation d’un ticket de reset", () =>
     validates(

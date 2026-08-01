@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   appEnabledConfigWriteParams,
+  appsConfigBatchWriteParams,
+  appsInstalledParams,
+  appsListParams,
+  appsReadParams,
   automationThreadResumeParams,
   automationThreadSecurityRestoreParams,
   automationThreadStartParams,
@@ -52,6 +56,35 @@ import {
   scheduledTaskPrompt,
 } from "../../src/lib/protocol";
 describe("constructeurs JSON-RPC", () => {
+  it("construit la lecture et l'écriture atomique de la configuration Apps", () => {
+    expect(appsInstalledParams("thread-1", true)).toEqual({ threadId: "thread-1", forceRefresh: true });
+    expect(appsListParams("thread-1", true, "next-page")).toEqual({ cursor: "next-page", limit: 50, threadId: "thread-1", forceRefetch: true });
+    expect(appsReadParams(["github"])).toEqual({ appIds: ["github"], includeTools: true });
+    expect(appsConfigBatchWriteParams({
+      appId: 'drive.team"one',
+      enabled: true,
+      approvalsReviewer: "user",
+      destructiveEnabled: false,
+      openWorldEnabled: true,
+      defaultToolsApprovalMode: "prompt",
+      defaultToolsEnabled: true,
+      tools: { 'search"repos': { enabled: false, approvalMode: "approve" } },
+    })).toEqual({
+      edits: [
+        { keyPath: 'apps."drive.team\\"one".enabled', value: true, mergeStrategy: "replace" },
+        { keyPath: 'apps."drive.team\\"one".approvals_reviewer', value: "user", mergeStrategy: "replace" },
+        { keyPath: 'apps."drive.team\\"one".destructive_enabled', value: false, mergeStrategy: "replace" },
+        { keyPath: 'apps."drive.team\\"one".open_world_enabled', value: true, mergeStrategy: "replace" },
+        { keyPath: 'apps."drive.team\\"one".default_tools_approval_mode', value: "prompt", mergeStrategy: "replace" },
+        { keyPath: 'apps."drive.team\\"one".default_tools_enabled', value: true, mergeStrategy: "replace" },
+        { keyPath: 'apps."drive.team\\"one".tools."search\\"repos".enabled', value: false, mergeStrategy: "replace" },
+        { keyPath: 'apps."drive.team\\"one".tools."search\\"repos".approval_mode', value: "approve", mergeStrategy: "replace" },
+      ],
+      filePath: null,
+      expectedVersion: null,
+      reloadUserConfig: true,
+    });
+  });
   it("échappe l’identifiant d’une App dans sa clé de configuration", () => {
     expect(appEnabledConfigWriteParams('drive.team"one\\two', false)).toEqual({
       keyPath: 'apps."drive.team\\"one\\\\two".enabled',

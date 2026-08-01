@@ -524,18 +524,77 @@ export function creditsNudgeParams(creditType: "credits" | "usage_limit") {
 export function collaborationModeListParams() {
   return {};
 }
-export function appsListParams(threadId?: string, forceRefetch = false) {
+export function appsListParams(threadId?: string, forceRefetch = false, cursor?: string) {
   return {
-    cursor: null,
+    cursor: cursor ?? null,
     limit: 50,
     threadId: threadId ?? null,
     forceRefetch,
   };
 }
 
+export function appsInstalledParams(threadId?: string, forceRefresh = false) {
+  return { threadId: threadId ?? null, forceRefresh };
+}
+
+export function appsReadParams(appIds: string[], includeTools = true) {
+  return { appIds, includeTools };
+}
+
 export function appEnabledConfigWriteParams(appId: string, enabled: boolean) {
   const escapedAppId = appId.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
   return configValueWriteParams(`apps."${escapedAppId}".enabled`, enabled);
+}
+
+export type AppConfigurationDraft = {
+  appId?: string;
+  enabled: boolean;
+  approvalsReviewer: ApprovalsReviewer | null;
+  destructiveEnabled: boolean | null;
+  openWorldEnabled: boolean | null;
+  defaultToolsApprovalMode: "auto" | "prompt" | "writes" | "approve" | null;
+  defaultToolsEnabled?: boolean | null;
+  tools?: Record<string, {
+    enabled: boolean | null;
+    approvalMode: "auto" | "prompt" | "writes" | "approve" | null;
+  }>;
+};
+
+export function appsConfigBatchWriteParams(draft: AppConfigurationDraft) {
+  const prefix = draft.appId
+    ? `apps.${quotedConfigKey(draft.appId)}`
+    : "apps._default";
+  const edits = [
+    configEdit(`${prefix}.enabled`, draft.enabled),
+    configEdit(`${prefix}.approvals_reviewer`, draft.approvalsReviewer),
+    configEdit(`${prefix}.destructive_enabled`, draft.destructiveEnabled),
+    configEdit(`${prefix}.open_world_enabled`, draft.openWorldEnabled),
+    configEdit(`${prefix}.default_tools_approval_mode`, draft.defaultToolsApprovalMode),
+    ...(draft.appId
+      ? [configEdit(`${prefix}.default_tools_enabled`, draft.defaultToolsEnabled ?? null)]
+      : []),
+    ...Object.entries(draft.tools ?? {}).flatMap(([toolName, tool]) => {
+      const toolPrefix = `${prefix}.tools.${quotedConfigKey(toolName)}`;
+      return [
+        configEdit(`${toolPrefix}.enabled`, tool.enabled),
+        configEdit(`${toolPrefix}.approval_mode`, tool.approvalMode),
+      ];
+    }),
+  ];
+  return {
+    edits,
+    filePath: null,
+    expectedVersion: null,
+    reloadUserConfig: true,
+  };
+}
+
+function quotedConfigKey(value: string) {
+  return `"${value.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
+}
+
+function configEdit(keyPath: string, value: unknown) {
+  return { keyPath, value, mergeStrategy: "replace" as const };
 }
 
 export function externalAgentDetectParams(

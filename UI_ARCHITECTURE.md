@@ -274,8 +274,22 @@ qui les possèdent, pas par une section native vide du centre de réglages.
 La finition ergonomique des intégrations suit les contrats App Server, dans cet
 ordre :
 
-1. **Apps globales** — inventaire accessible, activation effective et
-   invocation structurée ; aucun état optimiste ne remplace `app/list`.
+1. **Apps globales** — inventaire accessible, état callable, activation
+   effective et invocation structurée ; aucun état optimiste ne remplace les
+   vues App Server. La carte garde l'activation rapide et ouvre une modale de
+   réglages progressive : politique essentielle d'abord, overrides par outil
+   ensuite. Les valeurs par défaut globales forment une section directe sous
+   l'inventaire, introduite par `IconSubheader` puis composée avec le même
+   `CardStack` / `IconCard` que les autres réglages. Elles sont enregistrées
+   automatiquement et ne surchargent donc pas la barre d'actions des connecteurs.
+   Les écritures apparentées sont regroupées par `config/batchWrite` puis
+   relues ; l'édition experte de TOML reste le recours pour les rares champs
+   volontairement non exposés. L'inventaire opérationnel reste distinct d'une
+   modale de découverte recherchable : celle-ci présente les Apps accessibles
+   et disponibles, dévoile leur fiche et leurs outils à la demande, puis remet
+   la connexion au `installUrl` HTTP(S) fourni par Codex. Comme App Server
+   n'expose pas `app/install`, le client ne simule pas cette mutation et propose
+   une relecture explicite au retour du parcours hébergé.
 2. **MCP global** — fournir des contrôles bornés pour les champs de configuration officiellement
    documentés ; les tables MCP arbitraires restent dans l’éditeur TOML.
 3. **Contexte du thread** — comparer l’état global à l’état effectif évalué avec

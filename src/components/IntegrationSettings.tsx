@@ -6,12 +6,13 @@ import {
   Puzzle,
   RefreshCw,
   Server,
+  Settings2,
   Sparkles,
   Trash2,
 } from "lucide-react";
-import type { McpAuthStatus } from "../lib/appServerTypes";
+import type { AppInfo, McpAuthStatus } from "../lib/appServerTypes";
 import type { IntegrationsController } from "../lib/useIntegrations";
-import type { AppsController } from "../lib/useApps";
+import type { AppConfigurationEditorData, AppsController } from "../lib/useApps";
 import { useI18n } from "../i18n/I18nProvider";
 import type { Translate } from "../i18n/translate";
 import { CardStack } from "./CardStack";
@@ -20,7 +21,11 @@ import { RoundIconButton } from "./RoundIcon";
 import { SettingsPageHeader } from "./SettingsPageHeader";
 import { McpServerAddDialog } from "./McpServerAddDialog";
 import { McpServerRemoveDialog } from "./McpServerRemoveDialog";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { AppConfigurationDialog, AppConfigurationLoadingDialog } from "./AppConfigurationDialog";
+import { AppCatalogDialog } from "./AppCatalogDialog";
+import { AppDefaultsSettings } from "./AppDefaultsSettings";
+import { IconSubheader } from "./IconSubheader";
 import {
   SettingsControlsBar,
   SettingsControlsBarButton,
@@ -28,20 +33,45 @@ import {
 
 export function AppsSettings({ apps }: { apps: AppsController }) {
   const { t } = useI18n();
+  const [editing, setEditing] = useState<AppInfo>();
+  const [catalogOpen, setCatalogOpen] = useState(false);
+  const [editorData, setEditorData] = useState<AppConfigurationEditorData>();
+  const editorRequest = useRef(0);
+  const openConfiguration = (target: AppInfo) => {
+    const requestId = ++editorRequest.current;
+    setEditing(target);
+    setEditorData(undefined);
+    void apps.readConfiguration(target).then((data) => {
+      if (requestId !== editorRequest.current) return;
+      if (data) setEditorData(data);
+      else setEditing(undefined);
+    });
+  };
+  const closeConfiguration = () => {
+    editorRequest.current += 1;
+    setEditing(undefined);
+    setEditorData(undefined);
+  };
   return (
     <section className="settings-page integrations-page">
       <SettingsPageHeader description={t("integrations.apps.globalHint")} />
       {apps.error && <InventoryError message={apps.error} />}
-      <CardStack
+      <div className="app-inventory-section">
+        <IconSubheader
+          icon={<Sparkles />}
+          subtitle={t("integrations.apps.inventoryDetail")}
+          title={t("integrations.apps.inventoryTitle")}
+        />
+        <CardStack
         className="integration-list"
         controlBar={<SettingsControlsBar
           actions={
-          <InventoryRefresh
-            loading={apps.loading}
-            onRefresh={apps.refresh}
-          />
+          <>
+            <SettingsControlsBarButton icon={Sparkles} onClick={() => setCatalogOpen(true)}>{t("integrations.apps.browse")}</SettingsControlsBarButton>
+            <InventoryRefresh loading={apps.loading} onRefresh={apps.refresh} />
+          </>
           }
-          status={inventoryCount(apps.configurableApps.length, t)}
+          status={t(apps.configurableApps.length === 1 ? "integrations.apps.connectedCountOne" : "integrations.apps.connectedCountMany", { count: apps.configurableApps.length })}
         />}
       >
         {apps.loading && apps.configurableApps.length === 0 ? (
@@ -49,33 +79,44 @@ export function AppsSettings({ apps }: { apps: AppsController }) {
         ) : apps.configurableApps.length === 0 ? (
           <InventoryEmpty label={t("integrations.apps.empty")} />
         ) : (
-          apps.configurableApps.map((app) => (
+          apps.configurableApps.map((app) => {
+            const installed = apps.installedApps[app.id];
+            return (
             <IconCard
               icon={<Sparkles />}
               key={app.id}
-              subtitle={app.description ?? t("integrations.apps.fallback")}
+              subtitle={<>
+                {app.description ?? t("integrations.apps.fallback")}
+                {installed ? ` · ${installed.callable ? t("integrations.apps.callable") : t("integrations.apps.notCallable")}` : ""}
+              </>}
               title={app.name}
-              trailing={<label className="integration-toggle">
-                <input
-                  type="checkbox"
-                  checked={app.isEnabled}
-                  disabled={apps.updatingApps.includes(app.id)}
-                  onChange={(event) =>
-                    void apps.setEnabled(app, event.target.checked)
-                  }
-                />
-                <span>
-                  {app.isEnabled
-                    ? t("integrations.enabled")
-                    : t("integrations.disabled")}
-                </span>
-              </label>}
-            >
-              <code>{app.id}</code>
-            </IconCard>
-          ))
+              trailing={<div className="app-card-actions">
+                <RoundIconButton icon={Settings2} label={t("integrations.apps.configure")} onClick={() => openConfiguration(app)} size="medium" variant="secondary" />
+                <label className="integration-toggle">
+                  <input type="checkbox" checked={app.isEnabled} disabled={apps.updatingApps.includes(app.id)} onChange={(event) => void apps.setEnabled(app, event.target.checked)} />
+                  <span>{app.isEnabled ? t("integrations.enabled") : t("integrations.disabled")}</span>
+                </label>
+              </div>}
+            />
+            );
+          })
         )}
-      </CardStack>
+        </CardStack>
+      </div>
+      <AppDefaultsSettings apps={apps} />
+      {catalogOpen && <AppCatalogDialog
+        apps={apps}
+        onCancel={() => setCatalogOpen(false)}
+        onConfigure={(app) => { setCatalogOpen(false); openConfiguration(app); }}
+      />}
+      {editing && !editorData && <AppConfigurationLoadingDialog name={editing.name} onCancel={closeConfiguration} />}
+      {editing && editorData && <AppConfigurationDialog
+        key={editing.id}
+        data={editorData}
+        saving={apps.savingConfigurations.includes(editing.id)}
+        onCancel={closeConfiguration}
+        onSave={apps.saveConfiguration}
+      />}
     </section>
   );
 }

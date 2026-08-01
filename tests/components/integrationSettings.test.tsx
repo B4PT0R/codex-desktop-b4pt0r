@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   AppsSettings,
@@ -45,9 +45,15 @@ function appsController(
 ): AppsController {
   return {
     apps: [],
+    catalogApps: [],
     configurableApps: [],
+    installedApps: {},
     loading: false,
+    readConfiguration: vi.fn().mockResolvedValue(null),
+    openInstall: vi.fn(),
     refresh: vi.fn(),
+    saveConfiguration: vi.fn(),
+    savingConfigurations: [],
     setEnabled: vi.fn(),
     updatingApps: [],
     ...overrides,
@@ -101,6 +107,130 @@ describe("réglages des intégrations", () => {
     expect(screen.getByText(/activation s’applique globalement/i)).toBeVisible();
     fireEvent.click(screen.getByRole("checkbox", { name: "Activé" }));
     expect(apps.setEnabled).toHaveBeenCalledWith(github, false);
+  });
+
+  it("expose les valeurs par défaut directement sur la page Apps", async () => {
+    const saveConfiguration = vi.fn().mockResolvedValue(true);
+    render(<AppsSettings apps={appsController({
+      readConfiguration: vi.fn().mockResolvedValue({
+        config: {
+          enabled: true,
+          approvals_reviewer: null,
+          destructive_enabled: false,
+          open_world_enabled: true,
+          default_tools_approval_mode: "prompt",
+        },
+        defaults: { enabled: true },
+        tools: [],
+      }),
+      saveConfiguration,
+    })} />);
+
+    expect(await screen.findByText("Valeurs par défaut des Apps")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Valeurs par défaut" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Enregistrer" })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Outils destructifs"), { target: { value: "true" } });
+    await waitFor(() => expect(saveConfiguration).toHaveBeenCalledWith({
+      enabled: true,
+      approvalsReviewer: null,
+      destructiveEnabled: true,
+      openWorldEnabled: true,
+      defaultToolsApprovalMode: "prompt",
+    }));
+  });
+
+  it("configure progressivement la politique et les outils d’une App", async () => {
+    const github = {
+      id: "github",
+      name: "GitHub",
+      description: "Rechercher les dépôts et issues",
+      installUrl: null,
+      isAccessible: true,
+      isEnabled: true,
+      pluginDisplayNames: [],
+    };
+    const saveConfiguration = vi.fn().mockResolvedValue(true);
+    const readConfiguration = vi.fn().mockResolvedValue({
+      app: github,
+      config: {
+        enabled: true,
+        approvals_reviewer: null,
+        destructive_enabled: null,
+        open_world_enabled: null,
+        default_tools_approval_mode: null,
+        default_tools_enabled: null,
+        tools: {},
+      },
+      defaults: { enabled: true },
+      tools: [{
+        name: "search",
+        title: "Rechercher",
+        description: "Recherche les dépôts",
+        isEnabled: true,
+        disabledReason: null,
+        isReadOnly: true,
+      }],
+    });
+    render(<AppsSettings apps={appsController({
+      apps: [github],
+      configurableApps: [github],
+      readConfiguration,
+      saveConfiguration,
+    })} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Réglages" }));
+    await waitFor(() => expect(within(screen.getByRole("dialog", { name: "Configurer GitHub" })).getByLabelText("Outils destructifs")).toBeVisible());
+    const dialog = screen.getByRole("dialog", { name: "Configurer GitHub" });
+    expect(readConfiguration).toHaveBeenCalledWith(github);
+    expect(within(dialog).getByLabelText("Outils destructifs")).toHaveValue("inherit");
+
+    fireEvent.click(screen.getByRole("tab", { name: "Outils" }));
+    fireEvent.change(screen.getByLabelText("État de Rechercher"), { target: { value: "false" } });
+    fireEvent.change(screen.getByLabelText("Approbation de Rechercher"), { target: { value: "prompt" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Enregistrer" }));
+
+    await waitFor(() => expect(saveConfiguration).toHaveBeenCalledWith(expect.objectContaining({
+      appId: "github",
+      tools: { search: { enabled: false, approvalMode: "prompt" } },
+    })));
+  });
+
+  it("parcourt les Apps disponibles et délègue leur connexion au parcours fourni", async () => {
+    const drive = {
+      id: "google_drive",
+      name: "Google Drive",
+      description: "Rechercher des documents",
+      logoUrl: null,
+      logoUrlDark: null,
+      distributionChannel: "hosted",
+      branding: { category: "Productivité", developer: "Google", website: null, isDiscoverableApp: true },
+      appMetadata: null,
+      installUrl: "https://chatgpt.com/apps/google-drive",
+      isAccessible: false,
+      isEnabled: true,
+      pluginDisplayNames: [],
+    };
+    const openInstall = vi.fn().mockResolvedValue(true);
+    const readConfiguration = vi.fn().mockResolvedValue({
+      app: drive,
+      config: { enabled: true },
+      defaults: { enabled: true },
+      tools: [{ name: "search", title: "Rechercher", description: "Recherche Drive", isEnabled: true, disabledReason: null, isReadOnly: true }],
+    });
+    render(<AppsSettings apps={appsController({
+      catalogApps: [drive],
+      openInstall,
+      readConfiguration,
+    })} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Parcourir les Apps" }));
+    expect(screen.getByRole("dialog", { name: "Parcourir les Apps" })).toBeVisible();
+    fireEvent.click(screen.getByRole("tab", { name: "Disponibles" }));
+    fireEvent.click(screen.getByRole("button", { name: "Détails" }));
+    expect(await screen.findByText("Recherche Drive")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Connecter" }));
+    await waitFor(() => expect(openInstall).toHaveBeenCalledWith(drive));
+    expect(await screen.findByRole("button", { name: "Actualiser l’état de connexion" })).toBeVisible();
   });
 
   it("résume les outils et l’authentification MCP", () => {

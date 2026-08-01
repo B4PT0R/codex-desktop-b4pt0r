@@ -165,8 +165,30 @@ Advanced Configuration were captured before and after at 1164x860; the cleanup
 is visually neutral across the shared primitives and representative legacy
 domain widgets.
 
-Completed current bounded lots: global App activation and thread-scoped MCP
+Completed current bounded lots: guided MCP add/remove and thread-scoped MCP
 startup visibility.
+
+Completed current Apps configuration lot: the global activation list now adds
+runtime callable state from `app/installed`, catalog tool summaries from
+`app/read`, and the documented effective `apps` policy from `config/read`.
+Settings exposes shared defaults directly below the inventory through
+`IconSubheader` plus the shared `CardStack` / `IconCard` rows. Changes autosave
+after a short debounce; Essential / Tools remains a per-App modal and quick
+activation stays on each card. Related policy changes are written
+atomically with `config/batchWrite(reloadUserConfig: true)` and authoritative
+views are refreshed afterwards. Cards, both modal tabs and their narrow layout
+were reviewed in the live light-theme preview; the curated Apps baseline now
+records the resulting inventory.
+
+Completed Apps discovery lot: expose the non-accessible entries already returned
+by `app/list` in a searchable catalog modal, without inventing an `app/install`
+request that the installed protocol does not provide. Catalog cards distinguish
+connected and available Apps, progressively reveal `app/read` tool metadata,
+and open only the App Server-provided HTTP(S) `installUrl` through the existing
+managed-browser/system-browser boundary. Returning users explicitly refresh the
+authoritative `app/list` / `app/installed` state. Pagination is bounded to four
+pages / 200 entries. The inventory, catalog, detail and 840px layouts were
+reviewed in the live light-theme preview; both curated Apps captures are current.
 
 Current MCP addition lot: Settings opens an Add server modal from the inventory
 controls bar. It exposes the useful App Server configuration surface in
@@ -295,19 +317,23 @@ and Git/worktree management without a stable App Server product contract.
 - Settings primitive migration: 44 focused component tests across five files,
   passing; production build and full regression suite are listed below when
   rerun for the completed lot.
-- Deterministic frontend/unit suite: 631 tests across 125 files, passing.
+- Deterministic frontend/unit suite: 637 tests across 125 files, passing.
 - Installed App Server contract: 51 tests, passing against
   `codex-cli 0.145.0` (660 tests across 122 files including contract).
 - Electron/Node: 114 tests, passing.
-- Production Vite build: passing; main JS 639.81 kB, 184.23 kB gzip.
+- Production Vite build: passing; main JS 653.07 kB, 187.58 kB gzip.
 - Production dependency audit: zero vulnerabilities.
 - `git diff --check`: passing.
 - Settings primitive visual pass: Agent, Advanced Configuration, Plugin
   catalog, Remote Control and Import from Other Agents reviewed in light theme
   at 1164x860; Import also passes at 840x620. The local Remote Control card was
   recaptured after removing its bespoke dark icon tile.
-- Shared-browser Apps settings preview: passing at 1164x860 and 840x620 with no
-  overflow or console error; stable enabled and disabled states are represented.
+- Shared-browser Apps settings preview: inventory, Essential and Tools dialogs
+  pass at 1164x860 and 840x620 with no overflow or console error; stable enabled,
+  disabled, callable and non-callable states are represented.
+- Shared-browser Apps discovery preview: catalog search/filter, connected and
+  available rows, progressive detail/tool view and hosted-connect action pass at
+  1164x860 and 840x620 with no overflow or console error.
 - Shared-browser MCP addition preview: essential and advanced stdio/HTTP states
   reviewed in light theme at 1164x860; the advanced form also passes at 840x620
   with an independently scrolling body, persistent actions and aligned icon/title.
