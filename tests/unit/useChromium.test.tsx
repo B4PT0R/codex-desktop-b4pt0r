@@ -10,6 +10,14 @@ vi.mock("../../src/lib/nativeBridge", () => ({
 
 import { useChromium } from "../../src/lib/useChromium";
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((next) => {
+    resolve = next;
+  });
+  return { promise, resolve };
+}
+
 const missing = {
   available: false,
   enabled: false,
@@ -87,5 +95,49 @@ describe("navigateur Chromium partagé", () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.error).toBe("status unavailable");
     expect(result.current.refresh).toBeTypeOf("function");
+  });
+
+  it("sérialise activation, désactivation et relecture d’état", async () => {
+    const enabled = {
+      ...missing,
+      available: true,
+      enabled: true,
+      running: true,
+    };
+    const pendingInstall = deferred<typeof enabled>();
+    invokeMock
+      .mockResolvedValueOnce(enabled)
+      .mockReturnValueOnce(pendingInstall.promise);
+    const { result } = renderHook(useChromium);
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let installation!: Promise<void>;
+    await act(async () => {
+      installation = result.current.install();
+      await result.current.install();
+      await result.current.disable();
+      await result.current.refresh();
+    });
+    expect(invokeMock).toHaveBeenCalledTimes(2);
+    expect(invokeMock).toHaveBeenLastCalledWith("install_chromium", {
+      confirmed: true,
+    });
+
+    pendingInstall.resolve(enabled);
+    await act(async () => installation);
+  });
+
+  it("préserve l’erreur d’activation si la récupération d’état échoue", async () => {
+    invokeMock
+      .mockResolvedValueOnce(missing)
+      .mockRejectedValueOnce(new Error("installation failed"))
+      .mockRejectedValueOnce(new Error("status unavailable"));
+    const { result } = renderHook(useChromium);
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(result.current.install);
+
+    expect(result.current.error).toBe("installation failed");
+    expect(result.current.loading).toBe(false);
   });
 });

@@ -1,5 +1,5 @@
 import { invoke, isDesktopApp } from "./nativeBridge";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type ChromiumStatus = {
   available: boolean;
@@ -30,22 +30,38 @@ export function useChromium(): ChromiumController {
   const [status, setStatus] = useState<ChromiumStatus>();
   const [loading, setLoading] = useState(native);
   const [error, setError] = useState<string>();
+  const operationRef = useRef<"refresh" | "install" | "disable" | null>(null);
+
+  const readStatus = useCallback(
+    () => invoke<ChromiumStatus>("read_chromium_status"),
+    [],
+  );
+  const recoverStatus = useCallback(async () => {
+    try {
+      setStatus(await readStatus());
+    } catch {
+      // Keep the initiating operation's more actionable failure.
+    }
+  }, [readStatus]);
 
   const refresh = useCallback(async () => {
-    if (!native) return;
+    if (!native || operationRef.current) return;
+    operationRef.current = "refresh";
     setLoading(true);
     setError(undefined);
     try {
-      setStatus(await invoke<ChromiumStatus>("read_chromium_status"));
+      setStatus(await readStatus());
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
+      operationRef.current = null;
       setLoading(false);
     }
-  }, [native]);
+  }, [native, readStatus]);
 
   const install = useCallback(async (afterConfigure?: () => Promise<void>) => {
-    if (!native || loading) return;
+    if (!native || operationRef.current) return;
+    operationRef.current = "install";
     setLoading(true);
     setError(undefined);
     setStatus((current) =>
@@ -59,12 +75,14 @@ export function useChromium(): ChromiumController {
       );
       await afterConfigure?.();
     } catch (cause) {
-      setError(errorMessage(cause));
-      await refresh();
+      const operationError = errorMessage(cause);
+      await recoverStatus();
+      setError(operationError);
     } finally {
+      operationRef.current = null;
       setLoading(false);
     }
-  }, [loading, native, refresh]);
+  }, [native, recoverStatus]);
 
   const cancelInstall = useCallback(async () => {
     if (!native || !status?.installing) return;
@@ -78,20 +96,23 @@ export function useChromium(): ChromiumController {
 
   const disable = useCallback(
     async (afterConfigure?: () => Promise<void>) => {
-      if (!native || loading || !status?.enabled) return;
+      if (!native || operationRef.current || !status?.enabled) return;
+      operationRef.current = "disable";
       setLoading(true);
       setError(undefined);
       try {
         setStatus(await invoke<ChromiumStatus>("disable_chromium"));
         await afterConfigure?.();
       } catch (cause) {
-        setError(errorMessage(cause));
-        await refresh();
+        const operationError = errorMessage(cause);
+        await recoverStatus();
+        setError(operationError);
       } finally {
+        operationRef.current = null;
         setLoading(false);
       }
     },
-    [loading, native, refresh, status?.enabled],
+    [native, recoverStatus, status?.enabled],
   );
 
   useEffect(() => {
