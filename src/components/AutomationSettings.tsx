@@ -2,7 +2,6 @@ import {
   CalendarCheck2,
   CalendarClock,
   Pause,
-  Play,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -18,6 +17,7 @@ import { AutomationEditor } from "./AutomationEditor";
 import { IconCard } from "./IconCard";
 import { CardStack } from "./CardStack";
 import { IconButton } from "./IconButton";
+import { IconToggle } from "./IconToggle";
 import { SettingsPageHeader } from "./SettingsPageHeader";
 import { Alert } from "./Alert";
 import {
@@ -97,7 +97,6 @@ export function AutomationSettings({
               }
               onDelete={() => setConfirmingDelete(automation.id)}
               onEdit={() => setEditing(automation)}
-              onRun={() => void controller.runNow(automation.id)}
               onToggle={() =>
                 void controller.save({
                   ...draftFromAutomation(automation),
@@ -119,7 +118,6 @@ function AutomationRow({
   onConfirmDelete,
   onDelete,
   onEdit,
-  onRun,
   onToggle,
 }: {
   automation: Automation;
@@ -128,7 +126,6 @@ function AutomationRow({
   onConfirmDelete: () => void;
   onDelete: () => void;
   onEdit: () => void;
-  onRun: () => void;
   onToggle: () => void;
 }) {
   const { locale, t } = useI18n();
@@ -136,6 +133,7 @@ function AutomationRow({
     automation.schedule.type === "once" &&
     Boolean(automation.lastRunAt) &&
     !automation.activeRunId;
+  const oneShot = automation.schedule.type === "once";
   const nextRun = automation.nextRunAt
     ? new Intl.DateTimeFormat(locale, {
         dateStyle: "medium",
@@ -195,24 +193,25 @@ function AutomationRow({
           </div>
         ) : (
           <>
-            <IconButton
-              disabled={automation.lastStatus === "running"}
-              icon={Play}
-              aria-label={t("automations.runNow")}
-              onClick={onRun}
-              variant="tertiary"
-            />
             {!completedOnce && (
-              <IconButton
+              <IconToggle
+                checked={automation.enabled}
                 disabled={automation.lastStatus === "running"}
-                icon={automation.enabled ? Pause : Play}
-                aria-label={t(
-                  automation.enabled
-                    ? "automations.pause"
-                    : "automations.resume",
+                label={t(
+                  oneShot
+                    ? automation.enabled
+                      ? "automations.pauseOnce"
+                      : "automations.resumeOnce"
+                    : automation.enabled
+                      ? "automations.pause"
+                      : "automations.resume",
                 )}
-                onClick={onToggle}
-                variant="tertiary"
+                onCheckedChange={onToggle}
+                text={t(
+                  oneShot
+                    ? "automations.oneShotControl"
+                    : "automations.scheduleControl",
+                )}
               />
             )}
             <IconButton
@@ -226,7 +225,11 @@ function AutomationRow({
         )}
       </div>}
     >
-        <small>{t("automations.next", { date: nextRun })}</small>
+        <small>
+          {completedOnce
+            ? t("automations.completed")
+            : t("automations.next", { date: nextRun })}
+        </small>
         {automation.lastError && (
           <em>
             {automation.lastError === "automation-interrupted"

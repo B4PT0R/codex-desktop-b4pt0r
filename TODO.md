@@ -23,6 +23,10 @@ Stable GitHub releases are checked once at startup. A compact top-bar action
 installs a matching verified DEB automatically or opens the validated release
 for RPM, AppImage and unsupported automatic-install paths.
 
+Scheduler task cards present recurring schedules and pending one-shot execution
+as explicit toggle states; immediate execution remains an agent-facing command
+rather than a lifecycle-altering ordinary card action.
+
 DEB, RPM and AppImage packages are published for x86-64 Linux. Clean Debian
 stable and Fedora containers install their native package and smoke-test both
 the installed executable and AppImage under an unprivileged Xvfb/D-Bus session.
@@ -99,7 +103,7 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 684 deterministic frontend/unit tests across 129 files;
+- 686 deterministic frontend/unit tests across 129 files;
 - 129 Electron/Node tests, including App Server shutdown, recovery and the tray
   quick actions;
 - production Vite build;

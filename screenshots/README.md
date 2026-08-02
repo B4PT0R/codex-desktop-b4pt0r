@@ -24,6 +24,8 @@ every visual iteration. Historical captures remain available through Git.
   grouped into Application, Agents & Capabilities, Extensions and Advanced.
 - `settings-appearance-light-1164x860.png` — light-theme Appearance baseline
   showing aligned conversation-density controls and compact-view toggles.
+- `settings-scheduler-light-1164x860.png` — light-theme Scheduler baseline
+  distinguishing recurring schedule state from completed one-shot tasks.
 - `settings-skills-light-1164x860.png` — light-theme Skills baseline showing
   the dedicated Skills page and its inventory actions.
 - `settings-plugins-light-1164x860.png` — light-theme dedicated Plugins page

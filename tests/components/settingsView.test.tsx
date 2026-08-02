@@ -367,6 +367,61 @@ describe("centre de réglages", () => {
     );
   });
 
+  it("présente la planification d’une tâche récurrente comme un état", () => {
+    renderSettings({
+      automations: {
+        ...automations,
+        automations: [
+          {
+            id: "automation-paused",
+            name: "Revue quotidienne",
+            prompt: "Inspecte les changements récents",
+            enabled: false,
+            schedule: {
+              type: "weekly" as const,
+              time: "09:00",
+              days: [1, 2, 3, 4, 5],
+            },
+            target: { type: "defaultThread" as const },
+          },
+        ],
+      },
+      section: "automations",
+    });
+
+    expect(
+      screen.getByRole("switch", { name: "Réactiver la planification" }),
+    ).not.toBeChecked();
+    expect(screen.getByText("Planification")).toBeVisible();
+  });
+
+  it("présente une tâche ponctuelle terminée sans action de relance", () => {
+    renderSettings({
+      automations: {
+        ...automations,
+        automations: [
+          {
+            id: "automation-once",
+            name: "Contrôle après release",
+            prompt: "Vérifie la release",
+            enabled: false,
+            schedule: { type: "once" as const, at: Date.now() - 60_000 },
+            target: { type: "newThread" as const },
+            lastRunAt: Date.now() - 60_000,
+            lastStatus: "succeeded" as const,
+          },
+        ],
+      },
+      section: "automations",
+    });
+
+    expect(screen.getByText("Exécution unique terminée")).toBeVisible();
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /lancer|relancer/i }),
+    ).not.toBeInTheDocument();
+  });
+
   it("crée une tâche planifiée dans une nouvelle conversation", async () => {
     const save = vi.fn().mockResolvedValue({ id: "automation-1" });
     renderSettings({

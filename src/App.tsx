@@ -942,6 +942,40 @@ export default function App() {
     return threadHistory.resume(threadId);
   }
   const currentThread = threads.find((thread) => thread.id === threadId);
+  const displayedAutomations = isDemoPreview()
+    ? {
+        ...automations,
+        automations: [
+          {
+            id: "preview-paused-maintenance",
+            name: "Sanitary maintenance pass",
+            prompt: "Inspect one bounded sector and address the strongest findings.",
+            cwd: "/home/baptiste/dev/codex-desktop-linux",
+            enabled: false,
+            schedule: {
+              type: "interval" as const,
+              intervalMinutes: 30,
+            },
+            target: { type: "defaultThread" as const },
+          },
+          {
+            id: "preview-completed-one-shot",
+            name: "Release follow-up",
+            prompt: "Check the release health after installation.",
+            enabled: false,
+            schedule: {
+              type: "once" as const,
+              at: Date.UTC(2026, 7, 1, 10, 0),
+            },
+            target: { type: "newThread" as const },
+            lastRunAt: Date.UTC(2026, 7, 1, 10, 0),
+            lastStatus: "succeeded" as const,
+          },
+        ],
+        error: undefined,
+        loading: false,
+      }
+    : automations;
   const displayedApps = isDemoPreview()
     ? {
         ...apps,
@@ -1040,7 +1074,7 @@ export default function App() {
         account={account}
         appUpdate={appUpdate}
         apps={displayedApps}
-        automations={automations}
+        automations={displayedAutomations}
         capabilities={capabilities}
         configRequirements={configRequirements}
         defaultThread={defaultThread}
