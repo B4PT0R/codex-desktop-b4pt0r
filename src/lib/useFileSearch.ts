@@ -87,20 +87,29 @@ export function useFileSearch(active: boolean, root: string) {
 
   const search = useCallback((query: string) => {
     latestQuery.current = query;
-    if (timer.current) clearTimeout(timer.current);
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = undefined;
+    }
     if (!query.trim()) {
       setState(INITIAL_STATE);
       return;
     }
     setState((current) => ({ ...current, loading: true, error: undefined }));
     timer.current = setTimeout(() => {
+      timer.current = undefined;
       const sessionId = session.current;
       if (!sessionId) return;
       void request(
         "fuzzyFileSearch/sessionUpdate",
         fuzzyFileSearchSessionUpdateParams(sessionId, query),
       ).catch((cause) => {
-        if (session.current === sessionId)
+        // A rejection belongs to both its session and query. A newer query in
+        // the same session must keep ownership of the visible search state.
+        if (
+          session.current === sessionId &&
+          latestQuery.current === query
+        )
           setState({
             ...INITIAL_STATE,
             error: cause instanceof Error ? cause.message : String(cause),

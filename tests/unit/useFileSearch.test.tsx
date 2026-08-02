@@ -75,6 +75,43 @@ describe("recherche fuzzy de fichiers", () => {
     const { result } = renderHook(() => useFileSearch(true, "/work"));
     await waitFor(() => expect(result.current.error).toBe("backend absent"));
   });
+
+  it("ignore l’échec tardif d’une requête remplacée", async () => {
+    vi.useFakeTimers();
+    let rejectOldQuery: (cause: Error) => void = () => undefined;
+    requestMock.mockImplementation((method, params) => {
+      if (
+        method === "fuzzyFileSearch/sessionUpdate" &&
+        params.query === "old"
+      ) {
+        return new Promise((_, reject) => {
+          rejectOldQuery = reject;
+        });
+      }
+      return Promise.resolve({});
+    });
+    const { result } = renderHook(() => useFileSearch(true, "/work/project"));
+
+    act(() => result.current.search("old"));
+    await act(() => vi.advanceTimersByTimeAsync(120));
+    act(() => result.current.search("current"));
+    await act(() => vi.advanceTimersByTimeAsync(120));
+    emit("current", [
+      {
+        root: "/work/project",
+        path: "/work/project/current.ts",
+        file_name: "current.ts",
+        match_type: "file",
+      },
+    ]);
+    await act(async () => rejectOldQuery(new Error("stale failure")));
+
+    expect(result.current.error).toBeUndefined();
+    expect(result.current.results.map((item) => item.fileName)).toEqual([
+      "current.ts",
+    ]);
+    vi.useRealTimers();
+  });
 });
 
 function emit(query: string, files: unknown[]) {
