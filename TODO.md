@@ -340,8 +340,9 @@ on/off icons and state text accompany the switch without inheriting button
 variants. State text precedes the switch, and the outer control always omits
 border and background in every theme. Every instance uses the same
 `.icon-toggle` geometry instead of per-context size classes; selection
-checkboxes remain semantically distinct. In the light theme, the active rail
-uses the same `#e0e0da` outline as `IconCard` rather than a contrasting edge.
+checkboxes remain semantically distinct. In the light theme, the rail uses a
+neutral very-light/inactive and mid-grey/active scale; its active outline shares
+the `#e0e0da` border used by `IconCard`.
 Its curated light baseline is current.
 
 Application update checks and installs now share one synchronous operation

@@ -265,11 +265,11 @@
 
 :root[data-theme="light"] .icon-toggle[data-enabled="true"] .icon-toggle-track {
   border-color: #e0e0da;
-  background: #7d9b78;
+  background: #b8b8b1;
 }
 
 :root[data-theme="light"] .icon-toggle[data-enabled="true"] .icon-toggle-thumb {
-  color: #5f795a;
+  color: #62625d;
   background: #fff;
 }
 
