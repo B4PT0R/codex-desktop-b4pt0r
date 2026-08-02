@@ -66,7 +66,7 @@ Also run:
 - `npm run test:contract` for App Server requests or protocol changes;
 - `npm run electron:dev` for native lifecycle, tray, audio, permissions or
   packaging behavior;
-- `npm run electron:deb` when Debian packaging changes.
+- `npm run electron:linux` when Linux packaging changes.
 
 The default test command and continuous-integration workflow are deterministic
 and do not require a local Codex installation. The contract suite remains a

@@ -18,10 +18,10 @@ The installed schemas expose:
 | Server requests      |     10 |                    11 |
 | Server notifications |     70 |                    70 |
 
-The desktop client opts into `capabilities.experimentalApi`. It emits 63 product
+The desktop client opts into `capabilities.experimentalApi`. It emits 66 product
 request methods in addition to the one-shot `initialize` handshake:
 
-- 43 are stable;
+- 46 are stable;
 - 20 are experimental;
 - every request shape added or changed by this client is checked against the
   installed schema in the contract suite.
@@ -69,7 +69,7 @@ buttons.
 
 ## Emitted request inventory
 
-The 63 product methods currently emitted by the renderer are:
+The 66 product methods currently emitted by the renderer are:
 
 - **Threads and turns (23):** `thread/start`, `thread/resume`,
   `thread/list`, `thread/search`, `thread/turns/list`, `thread/name/set`,
@@ -80,15 +80,17 @@ The 63 product methods currently emitted by the renderer are:
   `thread/backgroundTerminals/list`,
   `thread/backgroundTerminals/terminate`, `turn/start`, `turn/steer`,
   `turn/interrupt`, `review/start`.
-- **Models, defaults and managed policy (7):** `model/list`,
+- **Models, defaults and managed policy (8):** `model/list`,
   `collaborationMode/list`, `permissionProfile/list`, `config/read`,
-  `config/value/write`, `configRequirements/read`, `config/mcpServer/reload`.
+  `config/value/write`, `config/batchWrite`, `configRequirements/read`,
+  `config/mcpServer/reload`.
 - **Local memory (1 experimental):** `memory/reset`.
 - **Remote control (7 experimental):** `remoteControl/enable`,
   `remoteControl/disable`, `remoteControl/status/read`,
   `remoteControl/pairing/start`, `remoteControl/pairing/status`,
   `remoteControl/client/list`, `remoteControl/client/revoke`.
-- **Integrations and discovery (13):** `app/list`, `skills/list`,
+- **Integrations and discovery (15):** `app/list`, `app/installed`, `app/read`,
+  `skills/list`,
   `skills/config/write`, `skills/extraRoots/set`, `hooks/list`, `mcpServerStatus/list`,
   `mcpServer/oauth/login`, `fuzzyFileSearch/sessionStart`,
   `fuzzyFileSearch/sessionUpdate`, `fuzzyFileSearch/sessionStop`,
@@ -143,9 +145,7 @@ It intentionally does not answer:
 | App Server daemon/socket hosting                                                                    | The Unix daemon is experimental in 0.145. Scheduler, transport and execution boundaries are separate so ownership can migrate later, but the production client keeps the proven child-process lifecycle for now.                        |
 | Automation CRUD/run                                                                                 | No public App Server automation surface exists in 0.145 or the audited official checkout. The native scheduler deliberately composes ordinary thread and turn methods; the chat-facing control uses the generic experimental dynamic-tool contract rather than guessing a future automation API. App-owned starts are serialized, but 0.145 has no public atomic start-if-idle primitive for excluding a simultaneous external client. |
 | `thread/rollback`                                                                                   | Deprecated and intentionally excluded.                                                                                                                                                                                                  |
-| `config/batchWrite` and generic structured config forms                                             | Arbitrary hand-authored TOML remains owned by the bounded raw editor. `config/value/write` is used only for focused controls whose comment-preserving behavior is verified upstream.                                                    |
-| `app/read`                                                                                          | `app/list` provides the connector data required by the current settings and mention flow. Plugin-owned detail may justify it later.                                                                                                     |
-| `app/installed`                                                                                     | Its effective enabled/callable runtime snapshot is relevant to a future thread integration view, but does not itself provide a thread-scoped mutation contract.                                                                         |
+| Generic structured config forms                                                                    | Arbitrary hand-authored TOML remains owned by the bounded raw editor. Targeted `config/value/write` and Apps-owned `config/batchWrite` are used only for focused controls whose shapes and ownership are verified.                        |
 | Marketplace/plugin share/install/uninstall                                                          | Discovery may become useful later, but official docs still mark production install/uninstall under development and explicitly prohibit production clients from calling them.                                                            |
 | `experimentalFeature/*`                                                                             | Global runtime feature mutation is not an ordinary desktop preference and can violate managed requirements.                                                                                                                             |
 | `thread/memoryMode/set`                                                                             | Per-thread memory controls remain experimental and are deferred until replay exposes the effective mode reliably.                                                                                                                       |
