@@ -342,7 +342,7 @@ border and background in every theme. Every instance uses the same
 `.icon-toggle` geometry instead of per-context size classes; selection
 checkboxes remain semantically distinct. In the light theme, the rail uses a
 neutral very-light/inactive and mid-grey/active scale; its active outline shares
-the `#e0e0da` border used by `IconCard`.
+the same `#e0e0da` border used by `IconCard` in both states.
 Its curated light baseline is current.
 
 Application update checks and installs now share one synchronous operation
