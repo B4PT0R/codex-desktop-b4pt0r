@@ -75,6 +75,7 @@ let tray;
 let automationScheduler;
 let appServerHealthMonitor;
 let trayRealtimeState = "unavailable";
+let traySharedBrowserEnabled = false;
 let appUpdateManager;
 let shutdownComplete = false;
 let shutdownPromise;
@@ -272,6 +273,8 @@ function registerIpc() {
       await updateSettings(settingsPath(app.getPath("home")), {
         sharedBrowserEnabled: true,
       });
+      traySharedBrowserEnabled = true;
+      updateTrayMenu();
       return status;
     });
   });
@@ -281,6 +284,8 @@ function registerIpc() {
       await updateSettings(settingsPath(app.getPath("home")), {
         sharedBrowserEnabled: false,
       });
+      traySharedBrowserEnabled = false;
+      updateTrayMenu();
       return sharedBrowser.deactivate();
     });
   });
@@ -421,10 +426,20 @@ function updateTrayMenu() {
     Menu.buildFromTemplate(
       trayMenuTemplate({
         realtimeState: trayRealtimeState,
+        sharedBrowserEnabled: traySharedBrowserEnabled,
         onOpen: () => mainWindow.show(),
         onNewChat: () => {
           send("new-chat");
           mainWindow.show();
+        },
+        onOpenScheduler: () => {
+          mainWindow.show();
+          send("open-scheduler-settings");
+        },
+        onOpenSharedBrowser: () => {
+          void sharedBrowser
+            .show(traySharedBrowserEnabled)
+            .catch(showSharedBrowserError);
         },
         onToggleRealtime: () => {
           const action = realtimeToggleAction(trayRealtimeState);
@@ -453,6 +468,21 @@ function showRealtimeError(message) {
   }
   tray?.displayBalloon?.({
     title: "Codex Desktop — Realtime",
+    content: body,
+  });
+}
+
+function showSharedBrowserError(error) {
+  const body = String(error?.message ?? error).slice(0, 1_024);
+  if (Notification.isSupported()) {
+    new Notification({
+      title: "Codex Desktop — Navigateur partagé",
+      body,
+    }).show();
+    return;
+  }
+  tray?.displayBalloon?.({
+    title: "Codex Desktop — Navigateur partagé",
     content: body,
   });
 }
@@ -495,9 +525,11 @@ else {
     createWindow();
     createTray();
     void readSettings(settingsPath(app.getPath("home")))
-      .then((settings) =>
-        sharedBrowser.startIfEnabled(settings.sharedBrowserEnabled === true),
-      )
+      .then((settings) => {
+        traySharedBrowserEnabled = settings.sharedBrowserEnabled === true;
+        updateTrayMenu();
+        return sharedBrowser.startIfEnabled(traySharedBrowserEnabled);
+      })
       .catch(() => undefined);
   });
 }

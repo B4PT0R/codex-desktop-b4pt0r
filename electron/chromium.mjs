@@ -139,6 +139,16 @@ export class SharedBrowserManager {
     return this.openTarget(url, enabled);
   }
 
+  async show(enabled) {
+    if (!enabled) throw new Error("Shared browser is disabled");
+    const executable = await this.#installedExecutable();
+    if (!executable)
+      throw new Error("Shared Playwright browser is not installed");
+    await this.#startServer(executable);
+    const client = await this.#connectClient();
+    await focusSharedBrowser(client);
+  }
+
   async startIfEnabled(enabled) {
     if (!enabled) return;
     const executable = await this.#installedExecutable();
@@ -356,6 +366,29 @@ export class SharedBrowserManager {
     );
   }
 
+}
+
+export async function focusSharedBrowser(client) {
+  const tabs = await client.callTool({
+    name: "browser_tabs",
+    arguments: { action: "list" },
+  });
+  if (tabs.isError) throw new Error(playwrightToolError(tabs));
+  const currentIndex = playwrightCurrentTabIndex(tabs) ?? 0;
+  const result = await client.callTool({
+    name: "browser_tabs",
+    arguments: { action: "select", index: currentIndex },
+  });
+  if (result.isError) throw new Error(playwrightToolError(result));
+}
+
+export function playwrightCurrentTabIndex(result) {
+  const text = result.content
+    ?.filter((entry) => entry.type === "text")
+    .map((entry) => entry.text)
+    .join("\n");
+  const match = text?.match(/^- (\d+): \(current\)/m);
+  return match ? Number.parseInt(match[1], 10) : undefined;
 }
 
 export function sharedBrowserPaths(home) {

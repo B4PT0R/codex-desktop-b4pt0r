@@ -9,8 +9,11 @@ export function rendererRealtimeState(value) {
 
 export function trayMenuTemplate({
   realtimeState,
+  sharedBrowserEnabled,
   onNewChat,
   onOpen,
+  onOpenScheduler,
+  onOpenSharedBrowser,
   onQuit,
   onToggleRealtime,
 }) {
@@ -21,6 +24,12 @@ export function trayMenuTemplate({
   return [
     { label: "Ouvrir Codex", click: onOpen },
     { label: "Nouveau chat", click: onNewChat },
+    { label: "Tâches planifiées", click: onOpenScheduler },
+    {
+      label: "Ouvrir le navigateur partagé",
+      enabled: sharedBrowserEnabled,
+      click: onOpenSharedBrowser,
+    },
     {
       label: "Realtime",
       type: "checkbox",

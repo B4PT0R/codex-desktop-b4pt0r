@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { openDialog as open } from "./lib/nativeBridge";
+import { listen, openDialog as open } from "./lib/nativeBridge";
 import { ApprovalDialog } from "./components/ApprovalDialog";
 import { ArchiveNotice } from "./components/ArchiveNotice";
 import { ChatFooter } from "./components/ChatFooter";
@@ -248,6 +248,21 @@ export default function App() {
       });
     return () => {
       disposed = true;
+    };
+  }, []);
+  useEffect(() => {
+    if (!isDesktopApp()) return;
+    let disposed = false;
+    let unlisten: (() => void) | undefined;
+    void listen("open-scheduler-settings", () => setSettings("automations"))
+      .then((cleanup) => {
+        if (disposed) cleanup();
+        else unlisten = cleanup;
+      })
+      .catch(() => undefined);
+    return () => {
+      disposed = true;
+      unlisten?.();
     };
   }, []);
   const integrations = useIntegrations({

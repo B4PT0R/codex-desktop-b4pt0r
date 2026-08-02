@@ -16,7 +16,8 @@ The daily workflow covers conversation replay and concurrent activity,
 streaming Markdown/LaTeX, reasoning, plans, tools, approvals, diffs, files,
 images, permissions, models, quotas, goals, dictation, Realtime voice, global
 configuration, Skills, Apps, MCP, memory, Remote Control, scheduled tasks and a
-shared Playwright Chromium session.
+shared Playwright Chromium session. The tray recalls Chromium and opens the
+Scheduler directly.
 
 DEB, RPM and AppImage packages are published for x86-64 Linux. Clean Debian
 stable and Fedora containers install their native package and smoke-test both
@@ -91,20 +92,20 @@ Server product contract.
 
 ## Latest verification
 
-Release v0.5.2 passed:
+The current tree passes:
 
 - strict TypeScript checking;
 - 681 deterministic frontend/unit tests across 129 files;
-- 51 installed-schema contract tests against `codex-cli 0.145.0`;
-- 126 Electron/Node tests, including App Server shutdown and recovery;
-- production Vite build and Linux DEB/RPM/AppImage packaging;
+- 129 Electron/Node tests, including App Server shutdown, recovery and the tray
+  quick actions;
+- production Vite build;
 - production dependency audit with zero vulnerabilities;
 - `git diff --check`.
 
-The multi-distribution baseline additionally has reproducible native/AppImage
-container smoke checks for Debian stable and Fedora. These were established
-during the v0.5.0 portability pass and were not rerun for the documentation-only
-cleanup after v0.5.2.
+Release v0.5.2 additionally passed 51 installed-schema contract tests against
+`codex-cli 0.145.0` and Linux DEB/RPM/AppImage packaging. The multi-distribution
+baseline has reproducible native/AppImage container smoke checks for Debian
+stable and Fedora; these were established during the v0.5.0 portability pass.
 
 The latest curated UI baselines cover the conversation themes and the Settings
 surfaces materially changed through v0.5.2. Native lifecycle changes still need

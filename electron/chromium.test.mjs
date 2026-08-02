@@ -1,11 +1,61 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  focusSharedBrowser,
   isOwnedSharedBrowserProcess,
+  playwrightCurrentTabIndex,
   SharedBrowserManager,
   sharedBrowserEndpoint,
   sharedBrowserPaths,
 } from "./chromium.mjs";
+
+test("focuses the existing shared browser tab without navigating it", async () => {
+  const calls = [];
+  await focusSharedBrowser({
+    callTool(request) {
+      calls.push(request);
+      return request.arguments.action === "list"
+        ? {
+            content: [
+              {
+                type: "text",
+                text: "- 0: [Docs](https://docs.google.com/)\n- 1: (current) [Drive](https://drive.google.com/)",
+              },
+            ],
+          }
+        : { content: [] };
+    },
+  });
+
+  assert.deepEqual(calls, [
+    {
+      name: "browser_tabs",
+      arguments: { action: "list" },
+    },
+    {
+      name: "browser_tabs",
+      arguments: { action: "select", index: 1 },
+    },
+  ]);
+  await assert.rejects(
+    focusSharedBrowser({
+      callTool() {
+        return {
+          isError: true,
+          content: [{ type: "text", text: "Unable to focus Chromium" }],
+        };
+      },
+    }),
+    /Unable to focus Chromium/,
+  );
+  assert.equal(
+    playwrightCurrentTabIndex({
+      content: [{ type: "text", text: "- 3: (current) [Tab](about:blank)" }],
+    }),
+    3,
+  );
+  assert.equal(playwrightCurrentTabIndex({ content: [] }), undefined);
+});
 
 test("requires release metadata for the app-owned MCP client", () => {
   assert.throws(

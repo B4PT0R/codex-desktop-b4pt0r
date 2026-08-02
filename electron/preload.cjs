@@ -41,6 +41,7 @@ const allowedEvents = new Set([
   "app-server-message",
   "app-server-exited",
   "new-chat",
+  "open-scheduler-settings",
   "automation-run-due",
   "realtime-tray-toggle",
   "window-shown",
