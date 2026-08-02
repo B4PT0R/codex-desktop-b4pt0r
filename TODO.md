@@ -9,7 +9,7 @@ detail belongs in `CHANGELOG.md` and Git.
 ## Baseline
 
 Codex Desktop Linux is a functional independent Electron client for the
-official `codex app-server`. The current public release is **v0.5.2**, verified
+official `codex app-server`. The current public release is **v0.5.3**, verified
 against installed `codex-cli 0.145.0`.
 
 The daily workflow covers conversation replay and concurrent activity,
@@ -114,13 +114,12 @@ The current tree passes:
 - production dependency audit with zero vulnerabilities;
 - `git diff --check`.
 
-Release v0.5.2 additionally passed 51 installed-schema contract tests against
-`codex-cli 0.145.0` and Linux DEB/RPM/AppImage packaging. The multi-distribution
-baseline has reproducible native/AppImage container smoke checks for Debian
-stable and Fedora; these were established during the v0.5.0 portability pass.
+Release v0.5.3 additionally passed 51 installed-schema contract tests against
+`codex-cli 0.145.0`, Linux DEB/RPM/AppImage packaging, and native/AppImage
+install and headless-launch smoke checks in Debian stable and Fedora containers.
 
 The latest curated UI baselines cover the conversation themes and the Settings
-surfaces materially changed through v0.5.2. Native lifecycle changes still need
+surfaces materially changed through v0.5.3. Native lifecycle changes still need
 focused packaged-Electron checks; browser preview validation is never a
 substitute for them.
 

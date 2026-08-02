@@ -3,6 +3,31 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.5.3] - 2026-08-02
+
+### Changed
+
+- Scheduled Task cards now distinguish pausing recurring work from cancelling
+  pending one-shot execution, with explicit labels instead of ambiguous
+  identical play actions.
+
+### Fixed
+
+- Conversation archive, deletion, restore, rename, compaction and fork actions
+  are serialized per thread, while independent conversations remain usable in
+  parallel.
+- Interactive approvals, user questions and MCP elicitations retain ownership
+  by request ID, so a late response cannot dismiss a newer prompt.
+- Account authentication, autostart, default-thread selection, configuration
+  editors, agent import and background-terminal termination reject duplicate or
+  obsolete mutations deterministically.
+- File search, Memory and global configuration ignore stale reads or errors
+  that would otherwise overwrite a newer successful result.
+- Sparse App Server rate-limit notifications merge with the last known quota
+  snapshot instead of clearing unaffected windows.
+- App Server restart requests are serialized so rapid recovery actions cannot
+  start overlapping lifecycle operations.
+
 ## [0.5.2] - 2026-08-02
 
 ### Added
