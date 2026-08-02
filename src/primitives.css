@@ -177,7 +177,9 @@
   gap: 6px;
   width: auto;
   padding: 0;
+  border: 0;
   border-radius: 999px;
+  background: transparent;
   cursor: pointer;
 }
 
@@ -270,11 +272,6 @@
   height: 11px;
 }
 
-.icon-toggle-labeled {
-  padding-left: 8px;
-  padding-right: 3px;
-}
-
 .icon-toggle-text {
   overflow: hidden;
   min-width: 0;
@@ -320,10 +317,10 @@
   background: #fff;
 }
 
-/* An unlabelled toggle is only the switch itself, without a button capsule. */
-:root .icon-toggle:not(.icon-toggle-labeled),
-:root .icon-toggle:not(.icon-toggle-labeled):hover:not(:disabled),
-:root .icon-toggle:not(.icon-toggle-labeled):focus-visible {
+/* The switch owns interaction feedback; its outer control never adds chrome. */
+:root .icon-toggle,
+:root .icon-toggle:hover:not(:disabled),
+:root .icon-toggle:focus-visible {
   border: 0;
   background: transparent;
 }

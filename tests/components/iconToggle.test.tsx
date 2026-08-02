@@ -20,7 +20,6 @@ describe("IconToggle", () => {
     );
     const toggle = screen.getByRole("switch", { name: "Activer" });
     expect(toggle).toHaveAttribute("aria-checked", "false");
-    expect(toggle).toHaveClass("icon-toggle-labeled");
     expect(toggle).toHaveTextContent("Inactif");
     expect(toggle.firstElementChild).toHaveClass("icon-toggle-text");
     expect(toggle.lastElementChild).toHaveClass("icon-toggle-track");
@@ -36,8 +35,12 @@ describe("IconToggle", () => {
       />,
     );
     expect(toggle).toHaveAttribute("aria-checked", "true");
-    expect(toggle).toHaveClass("icon-toggle-medium", "round-icon-secondary");
-    expect(toggle).not.toHaveClass("icon-toggle-labeled");
+    expect(toggle).toHaveClass("icon-toggle-medium");
+    expect(toggle).not.toHaveClass(
+      "round-icon-primary",
+      "round-icon-secondary",
+      "round-icon-tertiary",
+    );
 
     rerender(
       <IconToggle
@@ -45,9 +48,8 @@ describe("IconToggle", () => {
         label="Activer"
         onCheckedChange={onCheckedChange}
         size="large"
-        variant="tertiary"
       />,
     );
-    expect(toggle).toHaveClass("icon-toggle-large", "round-icon-tertiary");
+    expect(toggle).toHaveClass("icon-toggle-large");
   });
 });
