@@ -109,6 +109,49 @@ describe("éditeur AGENTS.md global", () => {
     await act(async () => saving);
     expect(result.current.saved).toBe(true);
   });
+
+  it("sérialise deux relectures et bloque la sauvegarde pendant leur exécution", async () => {
+    const pending = deferred<{
+      content: string;
+      exists: boolean;
+      filePath: string;
+      overrideActive: boolean;
+      overrideFilePath: string;
+      version: string;
+    }>();
+    invokeMock
+      .mockResolvedValueOnce({
+        content: "old",
+        exists: true,
+        filePath: "/home/test/.codex/AGENTS.md",
+        overrideActive: false,
+        overrideFilePath: "/home/test/.codex/AGENTS.override.md",
+        version: "v1",
+      })
+      .mockReturnValueOnce(pending.promise);
+    const { result } = renderHook(useGlobalAgents);
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    act(() => result.current.setDraft("draft"));
+
+    let loading!: Promise<void>;
+    await act(async () => {
+      loading = result.current.load();
+      await result.current.load();
+      await result.current.save();
+    });
+    expect(invokeMock).toHaveBeenCalledTimes(2);
+
+    pending.resolve({
+      content: "external",
+      exists: true,
+      filePath: "/home/test/.codex/AGENTS.md",
+      overrideActive: false,
+      overrideFilePath: "/home/test/.codex/AGENTS.override.md",
+      version: "v2",
+    });
+    await act(() => loading);
+    expect(result.current.draft).toBe("external");
+  });
 });
 
 function deferred<T>() {

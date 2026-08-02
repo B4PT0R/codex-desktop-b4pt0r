@@ -87,6 +87,40 @@ describe("éditeur de configuration Codex", () => {
     await act(async () => expect(await saving).toBe(true));
     expect(result.current.saved).toBe(true);
   });
+
+  it("sérialise deux relectures et bloque la sauvegarde pendant leur exécution", async () => {
+    const pending = deferred<{
+      content: string;
+      filePath: string;
+      version: string;
+    }>();
+    invokeMock
+      .mockResolvedValueOnce({
+        content: 'model = "old"\n',
+        filePath: "/home/test/.codex/config.toml",
+        version: "v1",
+      })
+      .mockReturnValueOnce(pending.promise);
+    const { result } = renderHook(useCodexConfig);
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    act(() => result.current.setDraft('model = "draft"\n'));
+
+    let loading!: Promise<void>;
+    await act(async () => {
+      loading = result.current.load();
+      await result.current.load();
+      expect(await result.current.save()).toBe(false);
+    });
+    expect(invokeMock).toHaveBeenCalledTimes(2);
+
+    pending.resolve({
+      content: 'model = "external"\n',
+      filePath: "/home/test/.codex/config.toml",
+      version: "v2",
+    });
+    await act(() => loading);
+    expect(result.current.draft).toBe('model = "external"\n');
+  });
 });
 
 function deferred<T>() {

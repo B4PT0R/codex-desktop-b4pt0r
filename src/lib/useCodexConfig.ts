@@ -22,10 +22,12 @@ export function useCodexConfig() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string>();
+  const loadInFlight = useRef(false);
   const saveInFlight = useRef(false);
 
   const load = useCallback(async () => {
-    if (saveInFlight.current) return;
+    if (loadInFlight.current || saveInFlight.current) return;
+    loadInFlight.current = true;
     setLoading(true);
     setError(undefined);
     setSaved(false);
@@ -38,6 +40,7 @@ export function useCodexConfig() {
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
+      loadInFlight.current = false;
       setLoading(false);
     }
   }, [native]);
@@ -47,7 +50,12 @@ export function useCodexConfig() {
   }, [load]);
 
   const save = useCallback(async () => {
-    if (!document || draft === document.content || saveInFlight.current) {
+    if (
+      !document ||
+      draft === document.content ||
+      loadInFlight.current ||
+      saveInFlight.current
+    ) {
       return false;
     }
     saveInFlight.current = true;

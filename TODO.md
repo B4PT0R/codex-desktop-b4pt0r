@@ -27,8 +27,9 @@ Scheduler task cards present recurring schedules and pending one-shot execution
 as explicit toggle states; immediate execution remains an agent-facing command
 rather than a lifecycle-altering ordinary card action.
 
-Recent controller audits covered external import, Account authentication and
-Memory settings concurrency; revisit them only with new dogfooding evidence.
+Recent controller audits covered external import, Account authentication,
+Memory settings and fixed-target native document editors; revisit them only
+with new dogfooding evidence.
 
 DEB, RPM and AppImage packages are published for x86-64 Linux. Clean Debian
 stable and Fedora containers install their native package and smoke-test both
@@ -106,7 +107,7 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 698 deterministic frontend/unit tests across 129 files;
+- 700 deterministic frontend/unit tests across 129 files;
 - 130 Electron/Node tests, including App Server shutdown, recovery and the tray
   quick actions;
 - production Vite build;
