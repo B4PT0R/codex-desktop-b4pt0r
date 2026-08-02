@@ -28,8 +28,8 @@ as explicit toggle states; immediate execution remains an agent-facing command
 rather than a lifecycle-altering ordinary card action.
 
 Recent controller audits covered external import, Account authentication,
-Memory settings and fixed-target native document editors; revisit them only
-with new dogfooding evidence.
+Memory settings, fixed-target native document editors and background terminals;
+revisit them only with new dogfooding evidence.
 
 DEB, RPM and AppImage packages are published for x86-64 Linux. Clean Debian
 stable and Fedora containers install their native package and smoke-test both
@@ -107,7 +107,7 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 700 deterministic frontend/unit tests across 129 files;
+- 701 deterministic frontend/unit tests across 129 files;
 - 130 Electron/Node tests, including App Server shutdown, recovery and the tray
   quick actions;
 - production Vite build;

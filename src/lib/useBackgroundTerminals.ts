@@ -54,7 +54,6 @@ export function useBackgroundTerminals({
     setError(undefined);
     setLoading(false);
     setTerminating([]);
-    terminatingProcesses.current.clear();
   }, [connected, threadId]);
 
   const refreshTerminals = useCallback(async (showLoading: boolean) => {
@@ -126,9 +125,11 @@ export function useBackgroundTerminals({
 
   const terminate = useCallback(
     async (processId: string) => {
-      if (!threadId || terminatingProcesses.current.has(processId)) return false;
+      if (!threadId) return false;
       const targetThreadId = threadId;
-      terminatingProcesses.current.add(processId);
+      const terminationKey = `${targetThreadId}\u0000${processId}`;
+      if (terminatingProcesses.current.has(terminationKey)) return false;
+      terminatingProcesses.current.add(terminationKey);
       setTerminating((items) => [...items, processId]);
       setError(undefined);
       try {
@@ -152,8 +153,10 @@ export function useBackgroundTerminals({
         }
         return false;
       } finally {
-        terminatingProcesses.current.delete(processId);
-        setTerminating((items) => items.filter((id) => id !== processId));
+        terminatingProcesses.current.delete(terminationKey);
+        if (activeThreadId.current === targetThreadId) {
+          setTerminating((items) => items.filter((id) => id !== processId));
+        }
       }
     },
     [refresh, threadId],

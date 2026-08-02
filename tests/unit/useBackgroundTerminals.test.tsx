@@ -225,4 +225,62 @@ describe("terminaux en arrière-plan", () => {
     });
     expect(result.current.terminals[0]?.itemId).toBe("fresh-server");
   });
+
+  it("isole l’arrêt d’un même processus entre deux threads", async () => {
+    const oldTermination = deferred<{ terminated: boolean }>();
+    const currentTermination = deferred<{ terminated: boolean }>();
+    requestMock.mockImplementation(
+      (method: string, params?: { threadId?: string }) => {
+        if (method === "thread/backgroundTerminals/list") {
+          return Promise.resolve({
+            data: [
+              {
+                itemId: `item-${params?.threadId}`,
+                processId: "42",
+                command: "sleep 30",
+                cwd: "/work/app",
+              },
+            ],
+            nextCursor: null,
+          });
+        }
+        return params?.threadId === "thread-old"
+          ? oldTermination.promise
+          : currentTermination.promise;
+      },
+    );
+    const { result, rerender } = renderHook(
+      ({ threadId }) =>
+        useBackgroundTerminals({ busy: false, connected: true, threadId }),
+      { initialProps: { threadId: "thread-old" } },
+    );
+    await waitFor(() => expect(result.current.terminals).toHaveLength(1));
+
+    let oldRequest!: Promise<boolean>;
+    act(() => {
+      oldRequest = result.current.terminate("42");
+    });
+    rerender({ threadId: "thread-current" });
+    await waitFor(() =>
+      expect(result.current.terminals[0]?.itemId).toBe("item-thread-current"),
+    );
+    let currentRequest!: Promise<boolean>;
+    act(() => {
+      currentRequest = result.current.terminate("42");
+    });
+
+    oldTermination.resolve({ terminated: true });
+    await act(() => oldRequest);
+    expect(result.current.terminating).toEqual(["42"]);
+    await expect(result.current.terminate("42")).resolves.toBe(false);
+    expect(
+      requestMock.mock.calls.filter(
+        ([method]) => method === "thread/backgroundTerminals/terminate",
+      ),
+    ).toHaveLength(2);
+
+    currentTermination.resolve({ terminated: true });
+    await act(() => currentRequest);
+    expect(result.current.terminating).toEqual([]);
+  });
 });
