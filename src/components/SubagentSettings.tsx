@@ -5,6 +5,7 @@ import type { Model } from "../types";
 import { CardStack } from "./CardStack";
 import { IconCard } from "./IconCard";
 import { IconSubheader } from "./IconSubheader";
+import { IconToggle } from "./IconToggle";
 
 const reasoningEfforts = [
   "minimal",
@@ -40,26 +41,22 @@ export function SubagentSettings({
       />
       <CardStack className="settings-fields">
         <IconCard
-          as="label"
           title={t("settings.agent.subagents.enabled")}
           subtitle={t("settings.agent.subagents.enabledDetail")}
-          trailing={<span className="startup-toggle">
-            <input
-              aria-label={t("settings.agent.subagents.enabled")}
+          trailing={<IconToggle
               checked={config.agentsEnabled}
               disabled={globalSettings.loading}
-              onChange={(event) =>
+              label={t("settings.agent.subagents.enabled")}
+              onCheckedChange={(checked) =>
                 void globalSettings.setAdvanced(
                   "agents.enabled",
-                  event.target.checked,
+                  checked,
                 )
               }
-              type="checkbox"
-            />
-            {config.agentsEnabled
+              text={config.agentsEnabled
               ? t("settings.agent.subagents.active")
               : t("settings.agent.subagents.inactive")}
-          </span>}
+            />}
         />
         <IconCard
           as="label"
@@ -146,26 +143,22 @@ export function SubagentSettings({
           </select>}
         />
         <IconCard
-          as="label"
           title={t("settings.agent.subagents.interrupt")}
           subtitle={t("settings.agent.subagents.interruptDetail")}
-          trailing={<span className="startup-toggle">
-            <input
-              aria-label={t("settings.agent.subagents.interrupt")}
+          trailing={<IconToggle
               checked={config.subagentInterruptMessage}
               disabled={disabled}
-              onChange={(event) =>
+              label={t("settings.agent.subagents.interrupt")}
+              onCheckedChange={(checked) =>
                 void globalSettings.setAdvanced(
                   "agents.interrupt_message",
-                  event.target.checked,
+                  checked,
                 )
               }
-              type="checkbox"
-            />
-            {config.subagentInterruptMessage
+              text={config.subagentInterruptMessage
               ? t("settings.agent.subagents.recorded")
               : t("settings.agent.subagents.silent")}
-          </span>}
+            />}
         />
       </CardStack>
     </>

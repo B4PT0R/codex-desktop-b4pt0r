@@ -82,7 +82,7 @@ describe("réglages des intégrations", () => {
     });
     render(<SkillsSettings integrations={integrations} />);
     expect(screen.getByText("Examiner les changements")).toBeVisible();
-    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("switch", { name: "review" }));
     expect(integrations.setSkillEnabled).toHaveBeenCalledWith(
       integrations.skills.data[0],
       false,
@@ -129,7 +129,7 @@ describe("réglages des intégrations", () => {
     render(<AppsSettings apps={apps} />);
     expect(screen.getByText("Rechercher les dépôts et issues")).toBeVisible();
     expect(screen.getByText(/activation s’applique globalement/i)).toBeVisible();
-    fireEvent.click(screen.getByRole("checkbox", { name: "Activé" }));
+    fireEvent.click(screen.getByRole("switch", { name: "GitHub" }));
     expect(apps.setEnabled).toHaveBeenCalledWith(github, false);
   });
 

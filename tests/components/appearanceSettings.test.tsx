@@ -18,10 +18,14 @@ const globalSettings = {
   setReasoningSummary: vi.fn().mockResolvedValue(true),
 };
 const presentation = {
+  keepActionGroupsCollapsed: false,
   loading: false,
   maxVisibleActions: 3,
   saving: false,
+  setKeepActionGroupsCollapsed: vi.fn().mockResolvedValue(true),
   setMaxVisibleActions: vi.fn().mockResolvedValue(true),
+  setShowReasoningItems: vi.fn().mockResolvedValue(true),
+  showReasoningItems: true,
 };
 
 beforeEach(() => {
@@ -40,6 +44,35 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("réglages d’apparence", () => {
+  it("expose les préférences de densité de la conversation", () => {
+    render(
+      <AppearanceProvider>
+        <I18nProvider>
+          <AppearanceSettings
+            globalSettings={globalSettings}
+            presentation={presentation}
+          />
+        </I18nProvider>
+      </AppearanceProvider>,
+    );
+
+    fireEvent.click(
+      screen.getByRole("switch", {
+        name: "Afficher le raisonnement dans le chat",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("switch", {
+        name: "Toujours replier les groupes d’actions",
+      }),
+    );
+
+    expect(presentation.setShowReasoningItems).toHaveBeenCalledWith(false);
+    expect(presentation.setKeepActionGroupsCollapsed).toHaveBeenCalledWith(
+      true,
+    );
+  });
+
   it("applique et conserve le thème et la taille de l’interface", async () => {
     render(
       <AppearanceProvider>

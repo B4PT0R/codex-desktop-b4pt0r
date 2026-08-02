@@ -168,3 +168,162 @@
   color: #34332f;
   background: #efefeb;
 }
+
+.icon-toggle {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: auto;
+  padding: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.icon-toggle-small {
+  min-height: 22px;
+}
+
+.icon-toggle-medium {
+  min-height: 28px;
+}
+
+.icon-toggle-large {
+  min-height: 38px;
+}
+
+.icon-toggle-track {
+  position: relative;
+  display: block;
+  width: 32px;
+  height: 18px;
+  flex: 0 0 auto;
+  border: 1px solid #595954;
+  border-radius: 999px;
+  background: #292927;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.icon-toggle-medium .icon-toggle-track {
+  width: 36px;
+  height: 20px;
+}
+
+.icon-toggle-large .icon-toggle-track {
+  width: 42px;
+  height: 24px;
+}
+
+.icon-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  display: grid;
+  width: 12px;
+  height: 12px;
+  place-items: center;
+  border-radius: 50%;
+  color: #676760;
+  background: #d0d0cc;
+  transition: transform 120ms ease, color 120ms ease, background 120ms ease;
+}
+
+.icon-toggle-medium .icon-toggle-thumb {
+  width: 14px;
+  height: 14px;
+}
+
+.icon-toggle-large .icon-toggle-thumb {
+  width: 18px;
+  height: 18px;
+}
+
+.icon-toggle[data-enabled="true"] .icon-toggle-track {
+  border-color: #7d9b78;
+  background: #4f654c;
+}
+
+.icon-toggle[data-enabled="true"] .icon-toggle-thumb {
+  color: #4f654c;
+  background: #f0f0ec;
+  transform: translateX(14px);
+}
+
+.icon-toggle-medium[data-enabled="true"] .icon-toggle-thumb {
+  transform: translateX(16px);
+}
+
+.icon-toggle-large[data-enabled="true"] .icon-toggle-thumb {
+  transform: translateX(18px);
+}
+
+.icon-toggle-glyph {
+  width: 8px;
+  height: 8px;
+  stroke: currentColor;
+  stroke-width: 2.2;
+}
+
+.icon-toggle-large .icon-toggle-glyph {
+  width: 11px;
+  height: 11px;
+}
+
+.icon-toggle-labeled {
+  padding-left: 8px;
+  padding-right: 3px;
+}
+
+.icon-toggle-text {
+  overflow: hidden;
+  min-width: 0;
+  font-size: 10px;
+  line-height: 1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.icon-toggle:hover:not(:disabled) .icon-toggle-track,
+.icon-toggle:focus-visible .icon-toggle-track {
+  border-color: #85857e;
+}
+
+.icon-toggle:focus-visible {
+  outline: 2px solid #85857e;
+  outline-offset: 2px;
+}
+
+.icon-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+:root[data-theme="light"] .icon-toggle-track {
+  border-color: #aaa9a2;
+  background: #efefeb;
+}
+
+:root[data-theme="light"] .icon-toggle-thumb {
+  color: #77716b;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(43 43 39 / 18%);
+}
+
+:root[data-theme="light"] .icon-toggle[data-enabled="true"] .icon-toggle-track {
+  border-color: #7d9b78;
+  background: #7d9b78;
+}
+
+:root[data-theme="light"] .icon-toggle[data-enabled="true"] .icon-toggle-thumb {
+  color: #5f795a;
+  background: #fff;
+}
+
+/* An unlabelled toggle is only the switch itself, without a button capsule. */
+:root .icon-toggle:not(.icon-toggle-labeled),
+:root .icon-toggle:not(.icon-toggle-labeled):hover:not(:disabled),
+:root .icon-toggle:not(.icon-toggle-labeled):focus-visible {
+  border: 0;
+  background: transparent;
+}

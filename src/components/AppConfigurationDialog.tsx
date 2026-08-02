@@ -8,6 +8,7 @@ import { useDialogFocus } from "../lib/useDialogFocus";
 import { CardStack } from "./CardStack";
 import { IconCard } from "./IconCard";
 import { RoundIcon, RoundIconButton } from "./RoundIcon";
+import { IconToggle } from "./IconToggle";
 
 type Tab = "essential" | "tools";
 type BooleanChoice = "inherit" | "true" | "false";
@@ -189,11 +190,16 @@ function EssentialConfiguration(props: {
   const { t } = useI18n();
   const p = props;
   return <>
-    <label className="app-config-enabled">
+    <div className="app-config-enabled">
       <span>{p.isDefaults ? t("integrations.apps.defaultEnabled") : t("integrations.apps.appEnabled")}</span>
-      <input checked={p.enabled} disabled={p.saving} onChange={(event) => p.setEnabled(event.target.checked)} type="checkbox" />
+      <IconToggle
+        checked={p.enabled}
+        disabled={p.saving}
+        label={p.isDefaults ? t("integrations.apps.defaultEnabled") : t("integrations.apps.appEnabled")}
+        onCheckedChange={p.setEnabled}
+      />
       <small>{p.isDefaults ? t("integrations.apps.defaultEnabledDetail") : t("integrations.apps.appEnabledDetail")}</small>
-    </label>
+    </div>
     <div className="settings-form-field-grid">
       {!p.isDefaults && <ChoiceField disabled={p.saving} label={t("integrations.apps.defaultToolsEnabled")} value={p.defaultToolsEnabled} onChange={p.setDefaultToolsEnabled} options={booleanOptions(t, true)} />}
       <ChoiceField disabled={p.saving} label={t("integrations.apps.destructiveEnabled")} value={p.destructiveEnabled} onChange={p.setDestructiveEnabled} options={booleanOptions(t, !p.isDefaults)} />

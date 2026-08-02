@@ -139,6 +139,21 @@ test("validates the persisted visible actions limit", async () => {
   );
 });
 
+test("validates persisted chat presentation preferences", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "codex-settings-"));
+  const file = path.join(directory, "settings.json");
+  const updated = await updateSettings(file, {
+    keepActionGroupsCollapsed: true,
+    showReasoningItems: false,
+  });
+  assert.equal(updated.keepActionGroupsCollapsed, true);
+  assert.equal(updated.showReasoningItems, false);
+  await assert.rejects(
+    updateSettings(file, { showReasoningItems: "no" }),
+    /Unsupported chat presentation preference/,
+  );
+});
+
 test("validates the persisted shared browser state", async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "codex-settings-"));
   const file = path.join(directory, "settings.json");

@@ -330,6 +330,18 @@ falls back to SIGTERM and SIGKILL. The health monitor likewise confirms process
 termination before publishing an exit that can trigger reconnection, preventing
 overlapping App Server/relay processes after an unresponsive-server recovery.
 
+Conversation presentation preferences now persist independently from App Server
+configuration. Reasoning can be omitted without leaving reasoning-only message
+segments that split adjacent action groups, and action groups can remain
+auto-collapsed during live work while retaining explicit manual inspection.
+Appearance exposes both controls with right-edge widget alignment. All true
+Settings toggles now use the shared accessible `IconToggle`, whose optional
+on/off icons and state text follow the same sizes and primary/secondary/tertiary
+variants as `RoundIconButton`. State text precedes the switch, while unlabelled
+toggles omit the outer button border and background in every theme; selection
+checkboxes remain semantically distinct.
+Its curated light baseline is current.
+
 Application update checks and installs now share one synchronous operation
 owner. Same-tick duplicate actions are rejected before React rerenders, and a
 new check cannot clear the candidate while its installation is still running.
@@ -413,20 +425,20 @@ and Git/worktree management without a stable App Server product contract.
 ## Latest verification
 
 - Strict TypeScript: passing.
-- Settings primitive migration: 44 focused component tests across five files,
-  passing; production build and full regression suite are listed below when
-  rerun for the completed lot.
-- Deterministic frontend/unit suite: 673 tests across 126 files, passing;
+- Chat presentation and shared toggle lot: 69 focused component/unit tests
+  across seven files, passing; wide and narrow Appearance plus labelled Apps
+  variants reviewed in the shared browser.
+- Deterministic frontend/unit suite: 680 tests across 128 files, passing;
   Apps, integrations, Account, capability catalogs, default-thread metadata,
   file-backed configuration editors, external-agent import, Memory, Remote
   Control, Voice settings, Scheduled Tasks, application updates and shared
   Chromium include focused concurrency, recovery and stale-response regressions.
 - Installed App Server contract: 51 tests, passing against
   `codex-cli 0.145.0` (722 tests across 127 files including contract).
-- Electron/Node: 125 tests, passing; App Server graceful shutdown, bounded
+- Electron/Node: 126 tests, passing; App Server graceful shutdown, bounded
   signal fallback, unresponsive-process termination ordering and initialized
   process reuse across renderer reconnection have focused lifecycle coverage.
-- Production Vite build: passing; main JS 660.78 kB, 189.61 kB gzip.
+- Production Vite build: passing; main JS 664.65 kB, 190.65 kB gzip.
 - Linux packaging: Debian (`amd64`), RPM (`x86_64`) and AppImage (`x86_64`)
   build in one pass; package metadata and embedded desktop/Skill resources were
   inspected locally. RPM builds require the `rpmbuild` executable. The native
@@ -447,6 +459,9 @@ and Git/worktree management without a stable App Server product contract.
   catalog, Remote Control and Import from Other Agents reviewed in light theme
   at 1164x860; Import also passes at 840x620. The local Remote Control card was
   recaptured after removing its bespoke dark icon tile.
+- Shared-browser Appearance preview: conversation presentation controls and
+  unlabelled toggles pass at 1164x860 and 840x620; labelled Apps toggles keep
+  text before the switch. No clipping, outer toggle chrome or console error.
 - Shared-browser Apps settings preview: inventory, Essential and Tools dialogs
   pass at 1164x860 and 840x620 with no overflow or console error; stable enabled,
   disabled, callable and non-callable states are represented.

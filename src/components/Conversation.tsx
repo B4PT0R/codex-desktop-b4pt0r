@@ -21,6 +21,7 @@ import { MemoryCitations } from "./MemoryCitations";
 import { ScheduledTaskMessage } from "./ScheduledTaskMessage";
 import { CommandResultMessage } from "./CommandResultMessage";
 import { presentSubagentTools } from "../lib/subagentPresentation";
+import { messagesForPresentation } from "../lib/chatPresentation";
 
 const loadingExitDurationMs = 180;
 const loadingLayerExitDurationMs = 400;
@@ -32,6 +33,7 @@ type ConversationProps = {
   canLoadOlder?: boolean;
   loadingThread?: boolean;
   loadingOlder?: boolean;
+  keepActionGroupsCollapsed?: boolean;
   maxVisibleActions?: number;
   messages: ChatMessage[];
   onLoadOlder?: () => void;
@@ -41,6 +43,7 @@ type ConversationProps = {
   onLinkError?: (error: unknown) => void;
   subagentError?: string;
   subagentTranscripts?: Record<string, SubagentTranscript>;
+  showReasoningItems?: boolean;
 };
 
 export function Conversation({
@@ -49,6 +52,7 @@ export function Conversation({
   canLoadOlder = false,
   loadingThread = false,
   loadingOlder = false,
+  keepActionGroupsCollapsed = false,
   maxVisibleActions = 3,
   messages,
   cwd,
@@ -58,10 +62,15 @@ export function Conversation({
   onReviewDiff,
   subagentError,
   subagentTranscripts = {},
+  showReasoningItems = true,
 }: ConversationProps) {
   const { t } = useI18n();
   const scroll = useConversationScroll(messages, activity);
   const plan = latestPlan(messages);
+  const presentedMessages = useMemo(
+    () => messagesForPresentation(messages, showReasoningItems),
+    [messages, showReasoningItems],
+  );
   const wasLoadingThread = useRef(loadingThread);
   const [loadingVisible, setLoadingVisible] = useState(loadingThread);
   const [loadingExiting, setLoadingExiting] = useState(false);
@@ -104,7 +113,7 @@ export function Conversation({
   }, [loadingThread]);
 
   const showingLoading = loadingThread || loadingVisible;
-  const contentState = messages.length === 0 ? " is-empty" : "";
+  const contentState = presentedMessages.length === 0 ? " is-empty" : "";
 
   return (
     <MarkdownLinkProvider value={{ cwd, fileOpener, onError: onLinkError }}>
@@ -157,7 +166,7 @@ export function Conversation({
                   </button>
                 </div>
               )}
-              {messages.length === 0 ? (
+              {presentedMessages.length === 0 ? (
                 <div className="empty codex-mark" aria-label="Codex">
                   <span className="hero-logo">
                     <Sparkles />
@@ -166,15 +175,17 @@ export function Conversation({
                   <p>{t("empty.subtitle")}</p>
                 </div>
               ) : (
-                messages.map((message, messageIndex) => {
+                presentedMessages.map((message, messageIndex) => {
                   const tracksSubagents = hasSubagentTool(message);
                   return (
                     <ConversationMessage
                       key={message.id}
                       message={message}
                       backgroundToolIds={backgroundToolIds}
+                      keepActionGroupsCollapsed={keepActionGroupsCollapsed}
                       maxVisibleActions={maxVisibleActions}
                       onReviewDiff={onReviewDiff}
+                      showReasoningItems={showReasoningItems}
                       subagentError={tracksSubagents ? subagentError : undefined}
                       subagentTranscripts={
                         tracksSubagents
@@ -182,8 +193,8 @@ export function Conversation({
                           : EMPTY_SUBAGENT_TRANSCRIPTS
                       }
                       stepClosed={
-                        messageIndex < messages.length - 1 ||
-                        (messageIndex === messages.length - 1 && activity === null)
+                        messageIndex < presentedMessages.length - 1 ||
+                        (messageIndex === presentedMessages.length - 1 && activity === null)
                       }
                     />
                   );
@@ -203,18 +214,22 @@ const ConversationMessage = memo(function ConversationMessage({
   message,
   backgroundToolIds,
   maxVisibleActions,
+  keepActionGroupsCollapsed,
   onReviewDiff,
   subagentError,
   subagentTranscripts,
+  showReasoningItems,
   stepClosed,
   depth = 0,
 }: {
   message: ChatMessage;
   backgroundToolIds?: ReadonlySet<string>;
   maxVisibleActions: number;
+  keepActionGroupsCollapsed: boolean;
   onReviewDiff?: (tool: ToolCall) => void;
   subagentError?: string;
   subagentTranscripts: Record<string, SubagentTranscript>;
+  showReasoningItems: boolean;
   stepClosed: boolean;
   depth?: number;
 }) {
@@ -303,6 +318,7 @@ const ConversationMessage = memo(function ConversationMessage({
         {presentedTools.tools.length > 0 && (
           <ToolGroup
             backgroundToolIds={presentedTools.backgroundToolIds}
+            keepCollapsed={keepActionGroupsCollapsed}
             maxVisibleActions={maxVisibleActions}
             tools={presentedTools.tools}
             onReviewDiff={onReviewDiff}
@@ -310,18 +326,23 @@ const ConversationMessage = memo(function ConversationMessage({
               depth >= 4
                 ? undefined
                 : (childMessages, childComplete) =>
-                    childMessages.map((childMessage, childIndex) => {
+                    messagesForPresentation(
+                      childMessages,
+                      showReasoningItems,
+                    ).map((childMessage, childIndex, presentedChildren) => {
                       const tracksSubagents = hasSubagentTool(childMessage);
                       return (
                         <ConversationMessage
                           backgroundToolIds={backgroundToolIds}
                           depth={depth + 1}
+                          keepActionGroupsCollapsed={keepActionGroupsCollapsed}
                           key={childMessage.id}
                           maxVisibleActions={maxVisibleActions}
                           message={childMessage}
                           onReviewDiff={onReviewDiff}
+                          showReasoningItems={showReasoningItems}
                           stepClosed={
-                            childIndex < childMessages.length - 1 ||
+                            childIndex < presentedChildren.length - 1 ||
                             childComplete
                           }
                           subagentError={

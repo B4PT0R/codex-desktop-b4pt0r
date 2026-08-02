@@ -174,10 +174,14 @@ const webSearch = {
   setAdvanced: vi.fn().mockResolvedValue(true),
 };
 const chatPresentation = {
+  keepActionGroupsCollapsed: false,
   loading: false,
   maxVisibleActions: 3,
   saving: false,
+  setKeepActionGroupsCollapsed: vi.fn().mockResolvedValue(true),
   setMaxVisibleActions: vi.fn().mockResolvedValue(true),
+  setShowReasoningItems: vi.fn().mockResolvedValue(true),
+  showReasoningItems: true,
 };
 const appServerRestart = {
   available: true,
@@ -383,7 +387,7 @@ describe("centre de réglages", () => {
       target: { value: "daily" },
     });
     fireEvent.click(
-      screen.getByRole("checkbox", {
+      screen.getByRole("switch", {
         name: /Exécution sans surveillance/,
       }),
     );
@@ -682,7 +686,7 @@ describe("centre de réglages", () => {
     });
 
     fireEvent.click(
-      screen.getByRole("checkbox", { name: "Activer la mémoire" }),
+      screen.getByRole("switch", { name: "Activer la mémoire" }),
     );
     expect(setEnabled).toHaveBeenCalledWith(true);
     fireEvent.click(screen.getByRole("button", { name: "Réinitialiser" }));
@@ -932,7 +936,7 @@ describe("centre de réglages", () => {
       screen.getByRole("heading", { name: "Web", level: 1 }),
     ).toBeVisible();
 
-    const enabled = await screen.findByRole("checkbox", {
+    const enabled = await screen.findByRole("switch", {
       name: "Activer le navigateur partagé",
     });
     await waitFor(() => expect(enabled).toBeEnabled());

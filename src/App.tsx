@@ -1171,12 +1171,16 @@ export default function App() {
             threadHistory.resuming || demoPlayback.loadingThread
           }
           loadingOlder={threadHistory.loadingOlder}
+          keepActionGroupsCollapsed={
+            chatPresentation.keepActionGroupsCollapsed
+          }
           maxVisibleActions={chatPresentation.maxVisibleActions}
           messages={messages}
           onLinkError={(error) => showError(t("link.openError"), error)}
           onLoadOlder={threadHistory.loadOlder}
           onReviewDiff={setWorkPanel}
           subagentError={subagents.error}
+          showReasoningItems={chatPresentation.showReasoningItems}
           subagentTranscripts={
             isDemoPreview() ? demoSubagentTranscripts : subagents.transcripts
           }

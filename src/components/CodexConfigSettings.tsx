@@ -10,6 +10,7 @@ import type {
 import { ConfigDocumentEditor } from "./ConfigDocumentEditor";
 import { DeveloperInstructionsSettings } from "./DeveloperInstructionsSettings";
 import { RoundIconButton } from "./RoundIcon";
+import { IconToggle } from "./IconToggle";
 import { Alert } from "./Alert";
 
 const compactLimits = [32_000, 64_000, 128_000];
@@ -128,24 +129,23 @@ export function CodexConfigSettings({
           subtitle={t("settings.config.runtime.description")}
         />
         <div className="settings-card settings-fields">
-          <label>
+          <div className="settings-toggle-row">
             <span className="settings-field-description">
               <strong>{t("settings.config.loginShell.title")}</strong>
               <small>{t("settings.config.loginShell.detail")}</small>
             </span>
-            <input
-              aria-label={t("settings.config.loginShell.title")}
-              type="checkbox"
+            <IconToggle
               checked={advanced.allowLoginShell}
               disabled={globalSettings.loading}
-              onChange={(event) =>
+              label={t("settings.config.loginShell.title")}
+              onCheckedChange={(checked) =>
                 void globalSettings.setAdvanced(
                   "allow_login_shell",
-                  event.target.checked,
+                  checked,
                 )
               }
             />
-          </label>
+          </div>
           <CredentialStoreSelect
             label={t("settings.config.cliCredentials.title")}
             detail={t("settings.config.cliCredentials.detail")}
@@ -171,7 +171,7 @@ export function CodexConfigSettings({
           subtitle={t("settings.config.experimental.description")}
         />
         <div className="settings-card settings-fields">
-          <label>
+          <div className="settings-toggle-row">
             <span className="settings-field-description">
               <strong>
                 {t("settings.config.suppressUnstableWarning.title")}
@@ -180,21 +180,18 @@ export function CodexConfigSettings({
                 {t("settings.config.suppressUnstableWarning.detail")}
               </small>
             </span>
-            <input
-              aria-label={t(
-                "settings.config.suppressUnstableWarning.title",
-              )}
-              type="checkbox"
+            <IconToggle
               checked={advanced.suppressUnstableFeaturesWarning}
               disabled={globalSettings.loading}
-              onChange={(event) =>
+              label={t("settings.config.suppressUnstableWarning.title")}
+              onCheckedChange={(checked) =>
                 void globalSettings.setAdvanced(
                   "suppress_unstable_features_warning",
-                  event.target.checked,
+                  checked,
                 )
               }
             />
-          </label>
+          </div>
         </div>
 
         {globalSettings.error && (

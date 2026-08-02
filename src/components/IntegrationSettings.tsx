@@ -18,6 +18,7 @@ import type { Translate } from "../i18n/translate";
 import { CardStack } from "./CardStack";
 import { IconCard } from "./IconCard";
 import { RoundIconButton } from "./RoundIcon";
+import { IconToggle } from "./IconToggle";
 import { SettingsPageHeader } from "./SettingsPageHeader";
 import { McpServerAddDialog } from "./McpServerAddDialog";
 import { McpServerRemoveDialog } from "./McpServerRemoveDialog";
@@ -94,10 +95,17 @@ export function AppsSettings({ apps }: { apps: AppsController }) {
               title={app.name}
               trailing={<div className="app-card-actions">
                 <RoundIconButton icon={Settings2} label={t("integrations.apps.configure")} onClick={() => openConfiguration(app)} size="medium" variant="secondary" />
-                <label className="integration-toggle">
-                  <input type="checkbox" checked={app.isEnabled} disabled={apps.updatingApps.includes(app.id)} onChange={(event) => void apps.setEnabled(app, event.target.checked)} />
-                  <span>{app.isEnabled ? t("integrations.enabled") : t("integrations.disabled")}</span>
-                </label>
+                <IconToggle
+                  checked={app.isEnabled}
+                  disabled={apps.updatingApps.includes(app.id)}
+                  label={app.name}
+                  onCheckedChange={(checked) =>
+                    void apps.setEnabled(app, checked)
+                  }
+                  text={app.isEnabled
+                    ? t("integrations.enabled")
+                    : t("integrations.disabled")}
+                />
               </div>}
             />
             );
@@ -159,24 +167,20 @@ export function SkillsSettings({
               key={skill.path}
               subtitle={skill.description || skill.path}
               title={skill.name}
-              trailing={<label className="integration-toggle">
-                <input
-                  type="checkbox"
+              trailing={<IconToggle
                   checked={skill.enabled}
                   disabled={integrations.updatingSkills.includes(skill.path)}
-                  onChange={(event) =>
+                  label={skill.name}
+                  onCheckedChange={(checked) =>
                     void integrations.setSkillEnabled(
                       skill,
-                      event.target.checked,
+                      checked,
                     )
                   }
-                />
-                <span>
-                  {skill.enabled
+                  text={skill.enabled
                     ? t("integrations.enabled")
                     : t("integrations.disabled")}
-                </span>
-              </label>}
+                />}
             >
               <code title={skill.path}>{skill.scope}</code>
             </IconCard>

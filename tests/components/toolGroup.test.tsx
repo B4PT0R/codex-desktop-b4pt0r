@@ -63,6 +63,26 @@ function finishLiveAction(stepClosed = false) {
 }
 
 describe("activité des outils", () => {
+  it("reste replié pendant une action quand la vue compacte est imposée", () => {
+    const first = command("first");
+    const { rerender } = render(
+      <ToolGroup keepCollapsed tools={[first]} />,
+    );
+    const summary = screen.getByRole("button", { name: /Action en cours/ });
+    expect(summary).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByText("npm run first")).not.toBeVisible();
+
+    fireEvent.click(summary);
+    expect(summary).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("npm run first")).toBeVisible();
+
+    rerender(
+      <ToolGroup keepCollapsed tools={[first, command("second")]} />,
+    );
+    expect(summary).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByText("npm run second")).not.toBeVisible();
+  });
+
   it("affiche immédiatement un en-tête de groupe et les détails de l’action active", () => {
     render(
       <ToolGroup

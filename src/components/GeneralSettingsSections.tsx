@@ -17,6 +17,7 @@ import { AppUpdateSettings } from "./AppUpdateSettings";
 import { CardStack } from "./CardStack";
 import { IconCard } from "./IconCard";
 import { RoundIconButton } from "./RoundIcon";
+import { IconToggle } from "./IconToggle";
 import { IconSubheader } from "./IconSubheader";
 import { Note } from "./Note";
 import { Alert } from "./Alert";
@@ -101,27 +102,23 @@ export function GeneralSettings({
         />
         <DefaultThreadSettingsField controller={defaultThread} />
         <IconCard
-          as="label"
           title={t("settings.startup.title")}
           subtitle={t("settings.startup.detail")}
-          trailing={<span className="startup-toggle">
-            <input
-              type="checkbox"
+          trailing={<IconToggle
               checked={launchAtLogin.enabled}
               disabled={!launchAtLogin.available || launchAtLogin.loading}
-              aria-label={t("settings.startup.title")}
-              onChange={(event) =>
-                void launchAtLogin.setEnabled(event.target.checked)
+              label={t("settings.startup.title")}
+              onCheckedChange={(checked) =>
+                void launchAtLogin.setEnabled(checked)
               }
-            />
-            {launchAtLogin.available
+              text={launchAtLogin.available
               ? t(
                   launchAtLogin.enabled
                     ? "settings.startup.enabled"
                     : "settings.startup.disabled",
                 )
               : t("settings.startup.nativeOnly")}
-          </span>}
+            />}
         />
         <IconCard
           title={t("settings.appServerRestart.title")}
@@ -222,33 +219,30 @@ export function BrowserSettings({
         </label>
       </div>
       <div className="settings-card settings-fields">
-        <label>
+        <div className="settings-toggle-row">
           <span className="settings-field-description">
             <strong>{t("settings.browser.enabledTitle")}</strong>
             <small>{t("settings.browser.enabledDetail")}</small>
           </span>
-          <span className="startup-toggle">
-            <input
-              type="checkbox"
+          <IconToggle
               checked={chromium.status?.enabled === true}
               disabled={
                 !chromium.native ||
                 chromium.loading ||
                 chromium.status?.installing === true
               }
-              aria-label={t("settings.browser.enabledTitle")}
-              onChange={(event) => {
-                if (event.target.checked) setConfirmInstall(true);
+              label={t("settings.browser.enabledTitle")}
+              onCheckedChange={(checked) => {
+                if (checked) setConfirmInstall(true);
                 else void chromium.disable(integrations.reloadMcp);
               }}
-            />
-            {t(
+              text={t(
               chromium.status?.enabled
                 ? "settings.browser.enabled"
                 : "settings.browser.disabled",
-            )}
-          </span>
-        </label>
+              )}
+            />
+        </div>
         <div className="settings-browser-row">
           <span className="settings-field-description">
             <strong>{t("settings.chromium.title")}</strong>

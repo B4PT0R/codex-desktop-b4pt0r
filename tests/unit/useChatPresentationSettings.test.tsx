@@ -44,4 +44,25 @@ describe("présentation du chat", () => {
       DEFAULT_MAX_VISIBLE_ACTIONS,
     );
   });
+
+  it("charge et persiste les préférences de densité du chat", async () => {
+    localStorage.setItem("codex-desktop.showReasoningItems", "false");
+    localStorage.setItem("codex-desktop.keepActionGroupsCollapsed", "true");
+    const { useChatPresentationSettings } =
+      await import("../../src/lib/useChatPresentationSettings");
+    const { result } = renderHook(() => useChatPresentationSettings());
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.showReasoningItems).toBe(false);
+    expect(result.current.keepActionGroupsCollapsed).toBe(true);
+
+    await act(() => result.current.setShowReasoningItems(true));
+    await act(() => result.current.setKeepActionGroupsCollapsed(false));
+    expect(localStorage.getItem("codex-desktop.showReasoningItems")).toBe(
+      "true",
+    );
+    expect(
+      localStorage.getItem("codex-desktop.keepActionGroupsCollapsed"),
+    ).toBe("false");
+  });
 });

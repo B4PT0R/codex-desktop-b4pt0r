@@ -6,6 +6,7 @@ import type {
   AutomationTarget,
 } from "../lib/automations";
 import { RoundIconButton } from "./RoundIcon";
+import { IconToggle } from "./IconToggle";
 
 type Frequency = "once" | "interval" | "daily" | "weekdays" | "weekly";
 type Target =
@@ -220,19 +221,20 @@ export function AutomationEditor({
           </select>
         </label>
       </div>
-      <label className="automation-unattended">
-        <input
-          type="checkbox"
-          checked={state.unattendedAccess}
-          onChange={(event) =>
-            setState({ ...state, unattendedAccess: event.target.checked })
-          }
-        />
+      <div className="automation-unattended">
         <span>
           <strong>{t("automations.unattended")}</strong>
           <small>{t("automations.unattendedDetail")}</small>
         </span>
-      </label>
+        <IconToggle
+          checked={state.unattendedAccess}
+          label={t("automations.unattended")}
+          onCheckedChange={(checked) =>
+            setState({ ...state, unattendedAccess: checked })
+          }
+          size="small"
+        />
+      </div>
       <footer>
         <RoundIconButton
           label={t("common.cancel")}

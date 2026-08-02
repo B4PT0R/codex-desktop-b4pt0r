@@ -4,6 +4,7 @@ import { useI18n } from "../i18n/I18nProvider";
 import { CardStack } from "./CardStack";
 import { IconCard } from "./IconCard";
 import { RoundIconButton } from "./RoundIcon";
+import { IconToggle } from "./IconToggle";
 import { IconSubheader } from "./IconSubheader";
 import { SettingsPageHeader } from "./SettingsPageHeader";
 import { Note } from "./Note";
@@ -162,12 +163,11 @@ function MemoryToggle({
       as="label"
       title={title}
       subtitle={detail}
-      trailing={<input
-        aria-label={title}
+      trailing={<IconToggle
         checked={checked}
         disabled={disabled}
-        type="checkbox"
-        onChange={(event) => void onChange(event.target.checked)}
+        label={title}
+        onCheckedChange={(value) => void onChange(value)}
       />}
     />
   );

@@ -33,6 +33,7 @@ import { ToolActivityRow } from "./ToolActivityRow";
 
 type ToolGroupProps = {
   backgroundToolIds?: ReadonlySet<string>;
+  keepCollapsed?: boolean;
   maxVisibleActions?: number;
   onReviewDiff?: (tool: ToolCall) => void;
   renderSubagentMessages?: (
@@ -58,6 +59,7 @@ export {
 
 export const ToolGroup = memo(function ToolGroup({
   backgroundToolIds = EMPTY_TOOL_IDS,
+  keepCollapsed = false,
   maxVisibleActions = 3,
   onReviewDiff,
   renderSubagentMessages,
@@ -84,10 +86,10 @@ export const ToolGroup = memo(function ToolGroup({
   const previousCount = useRef(count);
   const manuallyOpened = useRef(false);
   const [presentedCount, setPresentedCount] = useState(
-    runningCount > 0 ? Math.min(1, count) : count,
+    keepCollapsed ? count : runningCount > 0 ? Math.min(1, count) : count,
   );
   const [collapsedThrough, setCollapsedThrough] = useState(
-    runningCount > 0 ? 0 : count,
+    keepCollapsed ? count : runningCount > 0 ? 0 : count,
   );
   const [hiddenBefore, setHiddenBefore] = useState(() =>
     Math.max(0, count - maxVisibleActions),
@@ -97,7 +99,7 @@ export const ToolGroup = memo(function ToolGroup({
   );
   const [showHistory, setShowHistory] = useState(false);
   const [groupPhase, setGroupPhase] = useState<GroupPhase>(
-    closeRequested && allResolved ? "closed" : "open",
+    keepCollapsed || (closeRequested && allResolved) ? "closed" : "open",
   );
   const presentationActive =
     hidingIndex !== undefined ||
@@ -114,8 +116,26 @@ export const ToolGroup = memo(function ToolGroup({
     liveSequence.current = true;
     manuallyOpened.current = false;
     setShowHistory(false);
+    if (keepCollapsed) {
+      setPresentedCount(count);
+      setCollapsedThrough(count);
+      setHiddenBefore(Math.max(0, count - maxVisibleActions));
+      setHidingIndex(undefined);
+      setGroupPhase("closed");
+      return;
+    }
     setGroupPhase("open");
-  }, [count]);
+  }, [count, keepCollapsed, maxVisibleActions]);
+
+  useLayoutEffect(() => {
+    if (!keepCollapsed) return;
+    manuallyOpened.current = false;
+    setPresentedCount(count);
+    setCollapsedThrough(count);
+    setHiddenBefore(Math.max(0, count - maxVisibleActions));
+    setHidingIndex(undefined);
+    setGroupPhase("closed");
+  }, [count, keepCollapsed, maxVisibleActions]);
 
   useEffect(() => {
     const minimumHidden = Math.max(0, presentedCount - maxVisibleActions);
@@ -159,6 +179,10 @@ export const ToolGroup = memo(function ToolGroup({
   }, [count, hidingIndex]);
 
   useEffect(() => {
+    if (keepCollapsed && !manuallyOpened.current) {
+      if (groupPhase !== "closed") setGroupPhase("closed");
+      return;
+    }
     if (!canAutomaticallyClose) {
       if (groupPhase !== "open") setGroupPhase("open");
       return;
@@ -174,7 +198,7 @@ export const ToolGroup = memo(function ToolGroup({
       : TOOL_GROUP_DWELL_MS;
     const timer = window.setTimeout(() => setGroupPhase("closing"), dwell);
     return () => window.clearTimeout(timer);
-  }, [canAutomaticallyClose, groupPhase, stepClosed]);
+  }, [canAutomaticallyClose, groupPhase, keepCollapsed, stepClosed]);
 
   useEffect(() => {
     if (groupPhase !== "closing") return;

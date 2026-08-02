@@ -14,6 +14,7 @@ import {
   MIN_VISIBLE_ACTIONS,
   type ChatPresentationSettingsController,
 } from "../lib/useChatPresentationSettings";
+import { IconToggle } from "./IconToggle";
 
 const reasoningSummaryModes: ReasoningSummaryMode[] = [
   "auto",
@@ -135,6 +136,34 @@ export function AppearanceSettings({
             ))}
           </select>
         </label>
+        <div className="settings-toggle-row">
+          <span className="settings-field-description">
+            <strong>{t("settings.appearance.showReasoning.title")}</strong>
+            <small>{t("settings.appearance.showReasoning.detail")}</small>
+          </span>
+          <IconToggle
+            checked={presentation.showReasoningItems}
+            disabled={presentation.loading || presentation.saving}
+            label={t("settings.appearance.showReasoning.title")}
+            onCheckedChange={(checked) =>
+              void presentation.setShowReasoningItems(checked)
+            }
+          />
+        </div>
+        <div className="settings-toggle-row">
+          <span className="settings-field-description">
+            <strong>{t("settings.appearance.keepActionsCollapsed.title")}</strong>
+            <small>{t("settings.appearance.keepActionsCollapsed.detail")}</small>
+          </span>
+          <IconToggle
+            checked={presentation.keepActionGroupsCollapsed}
+            disabled={presentation.loading || presentation.saving}
+            label={t("settings.appearance.keepActionsCollapsed.title")}
+            onCheckedChange={(checked) =>
+              void presentation.setKeepActionGroupsCollapsed(checked)
+            }
+          />
+        </div>
       </div>
       {appearance.persistenceError && (
         <Alert tone="error">
@@ -143,7 +172,7 @@ export function AppearanceSettings({
       )}
       {presentation.error && (
         <Alert tone="error">
-          {t("settings.appearance.visibleActions.error")} {presentation.error}
+          {t("settings.appearance.presentation.error")} {presentation.error}
         </Alert>
       )}
     </section>

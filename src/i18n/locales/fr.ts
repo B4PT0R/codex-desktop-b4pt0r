@@ -962,6 +962,16 @@ export const fr = {
     "Nombre maximal d’actions récentes conservées sous le résumé d’activité.",
   "settings.appearance.visibleActions.error":
     "Impossible d’enregistrer la limite des actions visibles :",
+  "settings.appearance.showReasoning.title":
+    "Afficher le raisonnement dans le chat",
+  "settings.appearance.showReasoning.detail":
+    "Affiche les résumés de raisonnement entre les réponses et groupes d’actions.",
+  "settings.appearance.keepActionsCollapsed.title":
+    "Toujours replier les groupes d’actions",
+  "settings.appearance.keepActionsCollapsed.detail":
+    "N’ouvre pas automatiquement le détail des actions pendant le travail de Codex.",
+  "settings.appearance.presentation.error":
+    "Impossible d’enregistrer les préférences d’affichage du chat :",
   "settings.persistence.error":
     "Impossible d’enregistrer les préférences de l’application :",
   "settings.startup.title": "Lancer Codex à la connexion",

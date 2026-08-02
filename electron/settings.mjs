@@ -9,10 +9,12 @@ const writableSettings = new Set([
   "defaultThreadId",
   "fontSize",
   "interfaceScale",
+  "keepActionGroupsCollapsed",
   "lastWorkspace",
   "locale",
   "maxVisibleActionsPerGroup",
   "realtimeVoice",
+  "showReasoningItems",
   "sharedBrowserEnabled",
   "sidebarWidth",
   "theme",
@@ -118,6 +120,11 @@ function validatePatch(patch) {
       patch.maxVisibleActionsPerGroup > 6)
   ) {
     throw new Error("Unsupported visible actions limit");
+  }
+  for (const key of ["showReasoningItems", "keepActionGroupsCollapsed"]) {
+    if (Object.hasOwn(patch, key) && typeof patch[key] !== "boolean") {
+      throw new Error("Unsupported chat presentation preference");
+    }
   }
   if (
     Object.hasOwn(patch, "sharedBrowserEnabled") &&

@@ -121,21 +121,14 @@
 }
 
 .automation-unattended {
-  align-items: start;
+  align-items: center;
   background: #28211e;
   border: 1px solid #5a463d;
   border-radius: 8px;
   display: grid;
   gap: 9px;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
   padding: 10px;
-}
-
-.automation-unattended > input {
-  accent-color: #b56e52;
-  height: 14px;
-  margin: 1px 0 0;
-  width: 14px;
 }
 
 .automation-unattended > span {

@@ -8,7 +8,9 @@ export type DesktopSettings = {
   theme?: "system" | "dark" | "light";
   fontSize?: "small" | "default" | "large";
   interfaceScale?: number;
+  keepActionGroupsCollapsed?: boolean;
   maxVisibleActionsPerGroup?: number;
+  showReasoningItems?: boolean;
   defaultThreadId?: string;
   realtimeVoice?: string;
   sidebarWidth?: number;
@@ -22,7 +24,9 @@ export type DesktopSettingsPatch = Partial<
     | "theme"
     | "fontSize"
     | "interfaceScale"
+    | "keepActionGroupsCollapsed"
     | "maxVisibleActionsPerGroup"
+    | "showReasoningItems"
     | "defaultThreadId"
     | "realtimeVoice"
     | "sidebarWidth"
@@ -36,6 +40,9 @@ const browserVoiceKey = "codex-desktop.realtimeVoice";
 const browserDefaultThreadKey = "codex-desktop.defaultThreadId";
 const browserSidebarWidthKey = "codex-desktop.sidebarWidth";
 const browserMaxVisibleActionsKey = "codex-desktop.maxVisibleActionsPerGroup";
+const browserShowReasoningKey = "codex-desktop.showReasoningItems";
+const browserKeepActionsCollapsedKey =
+  "codex-desktop.keepActionGroupsCollapsed";
 let loadPromise: Promise<DesktopSettings> | undefined;
 let writeQueue: Promise<DesktopSettings> = Promise.resolve({ version: 1 });
 
@@ -102,6 +109,14 @@ function browserSettings(): DesktopSettings {
     ...parseBrowserMaxVisibleActions(
       localStorage.getItem(browserMaxVisibleActionsKey),
     ),
+    ...parseBrowserBoolean(
+      "showReasoningItems",
+      localStorage.getItem(browserShowReasoningKey),
+    ),
+    ...parseBrowserBoolean(
+      "keepActionGroupsCollapsed",
+      localStorage.getItem(browserKeepActionsCollapsedKey),
+    ),
   };
 }
 
@@ -136,6 +151,18 @@ function writeBrowserSettings(settings: DesktopSettings) {
     localStorage.setItem(
       browserMaxVisibleActionsKey,
       String(settings.maxVisibleActionsPerGroup),
+    );
+  }
+  if (settings.showReasoningItems !== undefined) {
+    localStorage.setItem(
+      browserShowReasoningKey,
+      String(settings.showReasoningItems),
+    );
+  }
+  if (settings.keepActionGroupsCollapsed !== undefined) {
+    localStorage.setItem(
+      browserKeepActionsCollapsedKey,
+      String(settings.keepActionGroupsCollapsed),
     );
   }
 }
@@ -198,6 +225,22 @@ function validatePatch(patch: DesktopSettingsPatch) {
   ) {
     throw new Error("Unsupported visible actions limit");
   }
+  for (const value of [
+    patch.showReasoningItems,
+    patch.keepActionGroupsCollapsed,
+  ]) {
+    if (value !== undefined && typeof value !== "boolean") {
+      throw new Error("Unsupported chat presentation preference");
+    }
+  }
+}
+
+function parseBrowserBoolean<K extends keyof DesktopSettings>(
+  key: K,
+  value: string | null,
+): Pick<DesktopSettings, K> | Record<never, never> {
+  if (value !== "true" && value !== "false") return {};
+  return { [key]: value === "true" } as Pick<DesktopSettings, K>;
 }
 
 function parseBrowserMaxVisibleActions(

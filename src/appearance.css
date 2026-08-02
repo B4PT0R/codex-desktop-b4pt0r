@@ -721,7 +721,7 @@
 
 :root[data-theme="light"] .tool-list > .tool-row,
 :root[data-theme="light"] .signal-body,
-:root[data-theme="light"] .settings-fields > label,
+:root[data-theme="light"] .settings-fields > :is(label, .settings-toggle-row),
 :root[data-theme="light"] .settings-browser-row {
   border-color: #e0e0da;
 }
@@ -874,10 +874,6 @@
   border-color: #decbbd;
   color: #865b41;
   background: #f7eee8;
-}
-
-:root[data-theme="light"] .integration-toggle {
-  color: #6d6d68;
 }
 
 :root[data-theme="light"] .app-default-control {

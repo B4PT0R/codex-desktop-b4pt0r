@@ -11,6 +11,7 @@ import { SettingsPageHeader } from "./SettingsPageHeader";
 import { IconCard } from "./IconCard";
 import { CardStack } from "./CardStack";
 import { RoundIconButton } from "./RoundIcon";
+import { IconToggle } from "./IconToggle";
 import { IconSubheader } from "./IconSubheader";
 import { Note } from "./Note";
 import type { RemoteControlClient } from "../lib/appServerTypes";
@@ -66,17 +67,16 @@ export function RemoteControlSettings({
             <span className={`remote-control-status-badge ${status}`}>
               {t(`settings.remoteControl.status.${status}`)}
             </span>
-            <input
-              aria-label={t("settings.remoteControl.enabled")}
+            <IconToggle
               checked={enabled}
               disabled={
                 busy ||
                 !controller.available ||
                 (!controller.allowed && !enabled)
               }
-              type="checkbox"
-              onChange={(event) =>
-                void (event.target.checked
+              label={t("settings.remoteControl.enabled")}
+              onCheckedChange={(checked) =>
+                void (checked
                   ? controller.enable()
                   : controller.disable())
               }

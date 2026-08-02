@@ -942,6 +942,15 @@ export const en: Record<MessageKey, string> = {
     "Maximum number of recent actions kept below the activity summary.",
   "settings.appearance.visibleActions.error":
     "Unable to save the visible actions limit:",
+  "settings.appearance.showReasoning.title": "Show reasoning in chat",
+  "settings.appearance.showReasoning.detail":
+    "Display reasoning summaries between responses and action groups.",
+  "settings.appearance.keepActionsCollapsed.title":
+    "Keep action groups collapsed",
+  "settings.appearance.keepActionsCollapsed.detail":
+    "Do not expand action details automatically while Codex is working.",
+  "settings.appearance.presentation.error":
+    "Unable to save conversation display preferences:",
   "settings.persistence.error": "Unable to save app preferences:",
   "settings.startup.title": "Launch Codex at login",
   "settings.startup.detail":
