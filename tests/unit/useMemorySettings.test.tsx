@@ -56,6 +56,28 @@ describe("réglages globaux de mémoire", () => {
     expect(requestMock).toHaveBeenLastCalledWith("memory/reset");
   });
 
+  it("ne laisse pas une hydratation obsolète annuler une écriture", async () => {
+    const hydration =
+      deferred<{ config: { features: { memories: boolean } } }>();
+    requestMock.mockImplementation((method: string) =>
+      method === "config/read" ? hydration.promise : Promise.resolve({}),
+    );
+    const { result } = renderHook(() => useMemorySettings(true));
+    await waitFor(() => expect(result.current.loading).toBe(true));
+
+    await act(async () => {
+      expect(await result.current.setEnabled(true)).toBe(true);
+    });
+    expect(result.current.enabled).toBe(true);
+    expect(result.current.loading).toBe(false);
+
+    hydration.resolve({ config: { features: { memories: false } } });
+    await act(async () => hydration.promise);
+
+    expect(result.current.enabled).toBe(true);
+    expect(result.current.loading).toBe(false);
+  });
+
   it("refuse deux réinitialisations dans le même rendu", async () => {
     const pending = deferred<Record<string, never>>();
     requestMock

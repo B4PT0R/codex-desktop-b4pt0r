@@ -82,10 +82,17 @@ export function useMemorySettings(connected: boolean): MemorySettingsController 
         return true;
       }
       writeInFlight.current = true;
+      // A value write is authoritative over reads that started before it.
+      generation.current += 1;
+      setLoading(false);
       setSaving(true);
       setError(undefined);
       try {
         await request("config/value/write", configValueWriteParams(keyPath, value));
+        // Also invalidate a reconnect read that may have started while the
+        // write was pending; a later refresh remains free to hydrate again.
+        generation.current += 1;
+        setLoading(false);
         apply(value);
         return true;
       } catch (cause) {
