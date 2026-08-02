@@ -47,6 +47,14 @@ function callbacks() {
   };
 }
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((next) => {
+    resolve = next;
+  });
+  return { promise, resolve };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   receiveMessage = undefined;
@@ -165,6 +173,27 @@ describe("connexion App Server", () => {
     });
     expect(options.onInitialized).toHaveBeenCalledTimes(2);
     expect(result.current.restartError).toBeUndefined();
+  });
+
+  it("ne lance qu’un redémarrage App Server dans le même rendu", async () => {
+    const options = callbacks();
+    const restart = deferred<void>();
+    mockedRestart.mockReturnValueOnce(restart.promise);
+    const { result } = renderHook(() => useAppServerConnection(options));
+    await waitFor(() => expect(options.onInitialized).toHaveBeenCalledOnce());
+
+    let first!: Promise<boolean>;
+    let second!: Promise<boolean>;
+    act(() => {
+      first = result.current.restart();
+      second = result.current.restart();
+    });
+    await expect(second).resolves.toBe(false);
+    expect(mockedRestart).toHaveBeenCalledOnce();
+
+    restart.resolve();
+    await act(async () => expect(await first).toBe(true));
+    expect(result.current.restarting).toBe(false);
   });
 
   it("se reconnecte automatiquement puis réhydrate le thread actif", async () => {

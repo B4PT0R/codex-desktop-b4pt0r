@@ -187,7 +187,7 @@ export function useAppServerConnection(options: Options) {
   }
 
   async function restartCodexAppServer() {
-    if (restarting) return false;
+    if (restartingRef.current) return false;
     restartingRef.current = true;
     setRestarting(true);
     setRestartError(undefined);
