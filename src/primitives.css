@@ -176,6 +176,7 @@
   justify-content: center;
   gap: 6px;
   width: auto;
+  min-height: 28px;
   padding: 0;
   border: 0;
   border-radius: 999px;
@@ -183,23 +184,11 @@
   cursor: pointer;
 }
 
-.icon-toggle-small {
-  min-height: 22px;
-}
-
-.icon-toggle-medium {
-  min-height: 28px;
-}
-
-.icon-toggle-large {
-  min-height: 38px;
-}
-
 .icon-toggle-track {
   position: relative;
   display: block;
-  width: 32px;
-  height: 18px;
+  width: 36px;
+  height: 20px;
   flex: 0 0 auto;
   border: 1px solid #595954;
   border-radius: 999px;
@@ -207,38 +196,18 @@
   transition: border-color 120ms ease, background 120ms ease;
 }
 
-.icon-toggle-medium .icon-toggle-track {
-  width: 36px;
-  height: 20px;
-}
-
-.icon-toggle-large .icon-toggle-track {
-  width: 42px;
-  height: 24px;
-}
-
 .icon-toggle-thumb {
   position: absolute;
   top: 2px;
   left: 2px;
   display: grid;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   place-items: center;
   border-radius: 50%;
   color: #676760;
   background: #d0d0cc;
   transition: transform 120ms ease, color 120ms ease, background 120ms ease;
-}
-
-.icon-toggle-medium .icon-toggle-thumb {
-  width: 14px;
-  height: 14px;
-}
-
-.icon-toggle-large .icon-toggle-thumb {
-  width: 18px;
-  height: 18px;
 }
 
 .icon-toggle[data-enabled="true"] .icon-toggle-track {
@@ -249,15 +218,7 @@
 .icon-toggle[data-enabled="true"] .icon-toggle-thumb {
   color: #4f654c;
   background: #f0f0ec;
-  transform: translateX(14px);
-}
-
-.icon-toggle-medium[data-enabled="true"] .icon-toggle-thumb {
   transform: translateX(16px);
-}
-
-.icon-toggle-large[data-enabled="true"] .icon-toggle-thumb {
-  transform: translateX(18px);
 }
 
 .icon-toggle-glyph {
@@ -265,11 +226,6 @@
   height: 8px;
   stroke: currentColor;
   stroke-width: 2.2;
-}
-
-.icon-toggle-large .icon-toggle-glyph {
-  width: 11px;
-  height: 11px;
 }
 
 .icon-toggle-text {

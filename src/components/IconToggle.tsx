@@ -14,7 +14,6 @@ export type IconToggleProps = Omit<
   checkedIcon?: ToggleIcon;
   label: string;
   onCheckedChange: (checked: boolean) => void;
-  size?: "small" | "medium" | "large";
   text?: ReactNode;
   uncheckedIcon?: ToggleIcon;
 };
@@ -26,7 +25,6 @@ export function IconToggle({
   disabled,
   label,
   onCheckedChange,
-  size = "medium",
   text,
   type = "button",
   uncheckedIcon: UncheckedIcon,
@@ -37,7 +35,7 @@ export function IconToggle({
     <button
       aria-checked={checked}
       aria-label={label}
-      className={`icon-toggle icon-toggle-${size} ${className}`.trim()}
+      className={`icon-toggle ${className}`.trim()}
       data-enabled={checked}
       disabled={disabled}
       onClick={() => onCheckedChange(!checked)}

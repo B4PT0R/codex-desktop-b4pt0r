@@ -338,8 +338,9 @@ Appearance exposes both controls with right-edge widget alignment. All true
 Settings toggles now use the shared accessible `IconToggle`, whose optional
 on/off icons and state text accompany the switch without inheriting button
 variants. State text precedes the switch, and the outer control always omits
-border and background in every theme; selection checkboxes remain semantically
-distinct.
+border and background in every theme. Every instance uses the same
+`.icon-toggle` geometry instead of per-context size classes; selection
+checkboxes remain semantically distinct.
 Its curated light baseline is current.
 
 Application update checks and installs now share one synchronous operation

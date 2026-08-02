@@ -232,7 +232,6 @@ export function AutomationEditor({
           onCheckedChange={(checked) =>
             setState({ ...state, unattendedAccess: checked })
           }
-          size="small"
         />
       </div>
       <footer>

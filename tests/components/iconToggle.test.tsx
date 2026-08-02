@@ -35,21 +35,11 @@ describe("IconToggle", () => {
       />,
     );
     expect(toggle).toHaveAttribute("aria-checked", "true");
-    expect(toggle).toHaveClass("icon-toggle-medium");
+    expect(toggle).toHaveClass("icon-toggle");
     expect(toggle).not.toHaveClass(
       "round-icon-primary",
       "round-icon-secondary",
       "round-icon-tertiary",
     );
-
-    rerender(
-      <IconToggle
-        checked
-        label="Activer"
-        onCheckedChange={onCheckedChange}
-        size="large"
-      />,
-    );
-    expect(toggle).toHaveClass("icon-toggle-large");
   });
 });
