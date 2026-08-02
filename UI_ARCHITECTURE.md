@@ -196,9 +196,12 @@ client n’est présenté comme autoritaire.
   utiles, directement traduites vers `mcp_servers`. Les réglages rares restent
   dans `config.toml`. La suppression n’est proposée que pour une table utilisateur
   modifiable ; OAuth et startup restent App Server-owned.
-- **Plugins** : un Plugin agrège potentiellement Apps, Skills et MCP. Le
-  catalogue reste en lecture seule tant que les mutations marketplace sont
-  interdites aux clients de production.
+- **Plugins** : `plugin/installed` expose l’inventaire effectif avec provenance,
+  version et politiques. L’activation écrit `plugins.<id>` via
+  `config/value/write`, comme la CLI officielle, puis recharge les capacités
+  dépendantes. Le catalogue complet reste annoncé sans action tant que
+  `plugin/list`, `plugin/read`, l’installation et la désinstallation sont
+  interdits aux clients de production.
 - **Hooks** : l’interface expose origine, confiance et commande effectives sans
   inventer d’API d’édition.
 

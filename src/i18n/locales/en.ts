@@ -363,9 +363,17 @@ export const en: Record<MessageKey, string> = {
   "integrations.skills.createInstructionsPlaceholder": "# Workflow\n\nInspect the diff, run focused checks, and report findings by severity.",
   "integrations.enabled": "Enabled",
   "integrations.disabled": "Disabled",
-  "integrations.plugins.title": "Plugin catalog",
   "integrations.plugins.description": "Bundles that can add Apps, Skills, and MCP integrations to Codex.",
-  "integrations.plugins.detail":
+  "integrations.plugins.installedTitle": "Installed plugins",
+  "integrations.plugins.loading": "Looking for installed plugins…",
+  "integrations.plugins.empty": "No plugin is installed for this workspace.",
+  "integrations.plugins.from": "Provided by {marketplace}",
+  "integrations.plugins.version": "version {version}",
+  "integrations.plugins.managed": "Managed by administrator",
+  "integrations.plugins.errorOne": "1 plugin marketplace could not be loaded.",
+  "integrations.plugins.errorMany": "{count} plugin marketplaces could not be loaded.",
+  "integrations.plugins.catalogTitle": "Plugin catalog",
+  "integrations.plugins.catalogDetail":
     "The official API is still development-only and will be connected once it is declared ready for clients.",
   "integrations.planned": "Planned",
   "integrations.mcp.description":

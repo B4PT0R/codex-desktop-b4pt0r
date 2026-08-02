@@ -166,7 +166,7 @@ function SettingsSection(props: SettingsViewProps) {
     case "skills":
       return <SkillsSettings integrations={props.integrations} />;
     case "plugins":
-      return <PluginsSettings />;
+      return <PluginsSettings integrations={props.integrations} />;
     case "mcp":
       return <McpSettings integrations={props.integrations} />;
     case "hooks":

@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [react()],
   define: {
     __APP_VERSION__: JSON.stringify(packageMetadata.version),
+    __PROJECT_REPOSITORY__: JSON.stringify(packageMetadata.repository.url),
   },
   clearScreen: false,
   server: {

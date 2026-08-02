@@ -59,6 +59,32 @@ beforeEach(() => {
 });
 
 describe("historique paginé", () => {
+  it("résout et transmet les instructions développeur à la reprise", async () => {
+    const callbacks = {
+      ...options(),
+      resolveDeveloperInstructions: vi
+        .fn()
+        .mockResolvedValue("Desktop developer instructions"),
+    };
+    requestMock.mockResolvedValue({ thread: { id: "thread-1" } });
+    const { result } = renderHook(() => useThreadHistory(callbacks));
+
+    await act(() => result.current.resume("thread-1"));
+
+    expect(callbacks.resolveDeveloperInstructions).toHaveBeenCalledWith(
+      "thread-1",
+    );
+    expect(requestMock).toHaveBeenCalledWith("thread/resume", {
+      threadId: "thread-1",
+      developerInstructions: "Desktop developer instructions",
+      initialTurnsPage: {
+        limit: 30,
+        sortDirection: "desc",
+        itemsView: "full",
+      },
+    });
+  });
+
   it("hydrate la page récente et expose la pagination", async () => {
     const callbacks = options();
     requestMock.mockResolvedValue({

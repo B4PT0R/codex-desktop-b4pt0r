@@ -192,15 +192,62 @@ export function SkillsSettings({
   );
 }
 
-export function PluginsSettings() {
+export function PluginsSettings({
+  integrations,
+}: {
+  integrations: IntegrationsController;
+}) {
   const { t } = useI18n();
+  const { plugins } = integrations;
   return <section className="settings-page integrations-page">
     <SettingsPageHeader description={t("integrations.plugins.description")} />
+    {plugins.error && <InventoryError message={plugins.error} />}
+    <CardStack
+      className="integration-list"
+      controlBar={<SettingsControlsBar
+        actions={<InventoryRefresh
+          loading={plugins.loading}
+          onRefresh={integrations.refreshPlugins}
+        />}
+        label={t("integrations.plugins.installedTitle")}
+        status={inventoryCount(plugins.data.length, t)}
+      />}
+    >
+      {plugins.loading && plugins.data.length === 0 ? (
+        <InventoryLoading label={t("integrations.plugins.loading")} />
+      ) : plugins.data.length === 0 ? (
+        <InventoryEmpty label={t("integrations.plugins.empty")} />
+      ) : plugins.data.map((plugin) => {
+        const managed = plugin.availability === "DISABLED_BY_ADMIN";
+        const marketplace = plugin.marketplaceDisplayName || plugin.marketplaceName;
+        const version = plugin.localVersion || plugin.version;
+        return <IconCard
+          icon={<Puzzle />}
+          key={plugin.id}
+          subtitle={plugin.description || t("integrations.plugins.from", { marketplace })}
+          title={plugin.displayName || plugin.name}
+          trailing={<IconToggle
+            checked={plugin.enabled}
+            disabled={managed || integrations.updatingPlugins.includes(plugin.id)}
+            label={plugin.displayName || plugin.name}
+            onCheckedChange={(checked) => void integrations.setPluginEnabled(plugin, checked)}
+            text={managed
+              ? t("integrations.plugins.managed")
+              : plugin.enabled
+                ? t("integrations.enabled")
+                : t("integrations.disabled")}
+          />}
+        >
+          <code>{marketplace}</code>
+          {version && <small>{t("integrations.plugins.version", { version })}</small>}
+        </IconCard>;
+      })}
+    </CardStack>
     <CardStack className="planned-settings integration-planned">
       <IconCard
         icon={<Puzzle />}
-        subtitle={t("integrations.plugins.detail")}
-        title={t("integrations.plugins.title")}
+        subtitle={t("integrations.plugins.catalogDetail")}
+        title={t("integrations.plugins.catalogTitle")}
         trailing={<em>{t("integrations.planned")}</em>}
       />
     </CardStack>

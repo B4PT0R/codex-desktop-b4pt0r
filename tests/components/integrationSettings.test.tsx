@@ -34,12 +34,16 @@ function controller(
     hooks: { data: [], loading: false, warnings: [] },
     mcpServers: { data: [], loading: false },
     mcpStartup: {},
+    plugins: { data: [], loading: false },
     skills: { data: [], loading: false },
     refreshMcp: vi.fn(),
+    refreshPlugins: vi.fn(),
     refreshHooks: vi.fn(),
     refreshSkills: vi.fn(),
     setSkillEnabled: vi.fn(),
+    setPluginEnabled: vi.fn(),
     updatingSkills: [],
+    updatingPlugins: [],
     ...overrides,
   };
 }
@@ -90,10 +94,53 @@ describe("réglages des intégrations", () => {
     expect(screen.queryByText(/API officielle est encore réservée/)).not.toBeInTheDocument();
   });
 
-  it("présente les plugins dans une section autonome", () => {
-    render(<PluginsSettings />);
-    expect(screen.getByText(/Apps, des Skills et des intégrations MCP/)).toBeVisible();
+  it("présente les plugins installés et permet de les désactiver", () => {
+    const integrations = controller({
+      plugins: {
+        data: [{
+          id: "drive@openai",
+          name: "drive",
+          displayName: "Google Drive",
+          description: "Accéder aux fichiers Drive",
+          marketplaceName: "openai",
+          marketplaceDisplayName: "OpenAI",
+          installed: true,
+          enabled: true,
+          availability: "AVAILABLE",
+          localVersion: "1.2.3",
+        }],
+        loading: false,
+      },
+    });
+    render(<PluginsSettings integrations={integrations} />);
+    expect(screen.getByText("Accéder aux fichiers Drive")).toBeVisible();
+    expect(screen.getByText("OpenAI")).toBeVisible();
+    expect(screen.getByText("version 1.2.3")).toBeVisible();
+    fireEvent.click(screen.getByRole("switch", { name: "Google Drive" }));
+    expect(integrations.setPluginEnabled).toHaveBeenCalledWith(
+      integrations.plugins.data[0],
+      false,
+    );
     expect(screen.getByText(/API officielle est encore réservée/)).toBeVisible();
+  });
+
+  it("verrouille un plugin désactivé par l’administrateur", () => {
+    const integrations = controller({
+      plugins: {
+        data: [{
+          id: "managed@workspace",
+          name: "managed",
+          marketplaceName: "workspace",
+          installed: true,
+          enabled: false,
+          availability: "DISABLED_BY_ADMIN",
+        }],
+        loading: false,
+      },
+    });
+    render(<PluginsSettings integrations={integrations} />);
+    expect(screen.getByRole("switch", { name: "managed" })).toBeDisabled();
+    expect(screen.getByText("Géré par l’administrateur")).toBeVisible();
   });
 
   it("assiste la création progressive d’un skill", async () => {

@@ -37,6 +37,94 @@ beforeEach(() => {
 });
 
 describe("inventaire des intégrations", () => {
+  it("charge les plugins installés et normalise leur marketplace", async () => {
+    requestMock.mockResolvedValue({
+      marketplaces: [{
+        name: "openai-curated",
+        interface: { displayName: "OpenAI" },
+        plugins: [{
+          id: "drive@openai",
+          name: "drive",
+          installed: true,
+          enabled: true,
+          availability: "AVAILABLE",
+          localVersion: "1.2.3",
+          interface: {
+            displayName: "Google Drive",
+            shortDescription: "Access Drive files",
+          },
+        }],
+      }],
+      marketplaceLoadErrors: [],
+    });
+    const { result } = renderHook(() => useIntegrations({
+      cwd: "/project",
+      enabled: false,
+      pluginsEnabled: true,
+    }));
+    await waitFor(() => expect(result.current.plugins.loading).toBe(false));
+    expect(requestMock).toHaveBeenCalledWith("plugin/installed", {
+      cwds: ["/project"],
+      installSuggestionPluginNames: null,
+    });
+    expect(result.current.plugins.data).toEqual([expect.objectContaining({
+      id: "drive@openai",
+      displayName: "Google Drive",
+      marketplaceDisplayName: "OpenAI",
+      localVersion: "1.2.3",
+      enabled: true,
+    })]);
+  });
+
+  it("bascule un plugin via la configuration App Server puis recharge ses capacités", async () => {
+    requestMock.mockImplementation((method: string) => {
+      if (method === "config/value/write") return Promise.resolve({});
+      if (method === "skills/list") return Promise.resolve({ data: [] });
+      if (method === "mcpServerStatus/list")
+        return Promise.resolve({ data: [], nextCursor: null });
+      if (method === "config/read") return Promise.resolve({ layers: [] });
+      return Promise.resolve({});
+    });
+    const { result } = renderHook(() => useIntegrations({
+      cwd: "/project",
+      enabled: false,
+    }));
+    const plugin = {
+      id: "drive@openai",
+      name: "drive",
+      marketplaceName: "openai",
+      installed: true,
+      enabled: true,
+      availability: "AVAILABLE" as const,
+    };
+    await act(() => result.current.setPluginEnabled(plugin, false));
+    expect(requestMock).toHaveBeenCalledWith("config/value/write", {
+      keyPath: "plugins.drive@openai",
+      value: { enabled: false },
+      mergeStrategy: "upsert",
+    });
+    expect(requestMock).toHaveBeenCalledWith("skills/list", {
+      cwds: ["/project"],
+      forceReload: true,
+    });
+    expect(requestMock).toHaveBeenCalledWith(
+      "mcpServerStatus/list",
+      expect.any(Object),
+    );
+  });
+
+  it("refuse de modifier un plugin désactivé par l’administrateur", async () => {
+    const { result } = renderHook(() => useIntegrations({ cwd: "/project", enabled: false }));
+    await act(() => result.current.setPluginEnabled({
+      id: "managed@workspace",
+      name: "managed",
+      marketplaceName: "workspace",
+      installed: true,
+      enabled: false,
+      availability: "DISABLED_BY_ADMIN",
+    }, true));
+    expect(requestMock).not.toHaveBeenCalled();
+  });
   it("crée un skill borné puis recharge l’inventaire App Server", async () => {
     requestMock.mockResolvedValue({ data: [{ cwd: "/project", skills: [], errors: [] }] });
     const { result } = renderHook(() => useIntegrations({ cwd: "/project", enabled: false }));

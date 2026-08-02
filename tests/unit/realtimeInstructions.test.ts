@@ -10,6 +10,12 @@ vi.mock("../../src/lib/nativeBridge", () => ({
 vi.mock("../../src/lib/codex", () => ({ request: requestMock }));
 
 import { realtimeInstructionItems } from "../../src/lib/realtimeInstructions";
+import { codexDesktopDeveloperInstructions } from "../../src/lib/clientContext";
+
+const versions = {
+  clientVersion: "0.5.1",
+  codexVersion: "codex-cli 0.145.0",
+};
 
 beforeEach(() => {
   invokeMock.mockReset();
@@ -21,15 +27,25 @@ beforeEach(() => {
 
 describe("instructions initiales Realtime", () => {
   it("convertit les instructions attestées en item développeur", async () => {
-    invokeMock.mockResolvedValue({
-      content: "Effective AGENTS.md instructions",
-      sourceCount: 2,
-    });
+    invokeMock.mockImplementation((method) =>
+      method === "read_app_versions"
+        ? Promise.resolve(versions)
+        : Promise.resolve({
+            content: "Effective AGENTS.md instructions",
+            sourceCount: 2,
+          }),
+    );
 
     await expect(
       realtimeInstructionItems("thread-1", "/workspace"),
     ).resolves.toEqual([
-      { role: "developer", text: "Effective AGENTS.md instructions" },
+      {
+        role: "developer",
+        text: codexDesktopDeveloperInstructions(
+          "Effective AGENTS.md instructions",
+          versions,
+        ),
+      },
     ]);
     expect(requestMock).toHaveBeenCalledWith("config/read", {
       cwd: "/workspace",
@@ -41,10 +57,19 @@ describe("instructions initiales Realtime", () => {
     });
   });
 
-  it("reste vide sans source ou hors Electron", async () => {
+  it("conserve le contexte Desktop sans source et reste vide hors Electron", async () => {
     requestMock.mockResolvedValue({ config: {} });
-    invokeMock.mockResolvedValue({ content: "", sourceCount: 0 });
-    await expect(realtimeInstructionItems("thread-1")).resolves.toEqual([]);
+    invokeMock.mockImplementation((method) =>
+      method === "read_app_versions"
+        ? Promise.resolve(versions)
+        : Promise.resolve({ content: "", sourceCount: 0 }),
+    );
+    await expect(realtimeInstructionItems("thread-1")).resolves.toEqual([
+      {
+        role: "developer",
+        text: codexDesktopDeveloperInstructions(undefined, versions),
+      },
+    ]);
 
     isDesktopAppMock.mockReturnValue(false);
     await expect(realtimeInstructionItems("preview")).resolves.toEqual([]);
@@ -57,6 +82,7 @@ describe("instructions initiales Realtime", () => {
     await expect(realtimeInstructionItems("thread-1")).rejects.toThrow(
       "config unavailable",
     );
-    expect(invokeMock).not.toHaveBeenCalled();
+    expect(invokeMock).toHaveBeenCalledOnce();
+    expect(invokeMock).toHaveBeenCalledWith("read_app_versions");
   });
 });

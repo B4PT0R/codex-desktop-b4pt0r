@@ -42,6 +42,8 @@ import {
   mcpServerConfigRemoveParams,
   hooksListParams,
   permissionProfileListParams,
+  pluginEnabledWriteParams,
+  pluginInstalledParams,
   skillsConfigWriteParams,
   skillsExtraRootsSetParams,
   skillsListParams,
@@ -277,7 +279,15 @@ describe("contrat Codex installé", () => {
   it("accepte thread/start", () =>
     validates(
       "ThreadStartParams",
-      threadStartParams("/tmp/project", "gpt-5.4", ":workspace"),
+      threadStartParams(
+        "/tmp/project",
+        "gpt-5.4",
+        ":workspace",
+        undefined,
+        undefined,
+        undefined,
+        "Desktop developer instructions",
+      ),
     ));
   it("accepte les outils dynamiques du scheduler et leur réponse", () => {
     validates(
@@ -361,7 +371,10 @@ describe("contrat Codex installé", () => {
   it("accepte la création d’une branche", () =>
     validates("ThreadForkParams", threadForkParams("thr_1")));
   it("accepte une reprise avec une page initiale récente", () =>
-    validates("ThreadResumeParams", threadResumeParams("thr_1")));
+    validates(
+      "ThreadResumeParams",
+      threadResumeParams("thr_1", "Desktop developer instructions"),
+    ));
   it("expose les réglages effectifs après création et reprise", () => {
     for (const name of ["ThreadStartResponse", "ThreadResumeResponse"]) {
       const properties = schema(name).properties as Record<string, unknown>;
@@ -462,6 +475,13 @@ describe("contrat Codex installé", () => {
         },
       ),
     ));
+  it("accepte l’inventaire et le toggle des plugins installés", () => {
+    validates("PluginInstalledParams", pluginInstalledParams("/tmp/project"));
+    validates(
+      "ConfigValueWriteParams",
+      pluginEnabledWriteParams("drive@openai", false),
+    );
+  });
   it("accepte turn/steer", () =>
     validates(
       "TurnSteerParams",

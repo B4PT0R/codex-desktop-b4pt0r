@@ -3,6 +3,26 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.5.4] - 2026-08-02
+
+### Added
+
+- Plugins settings now shows the authoritative installed-plugin inventory from
+  App Server, including bundled provenance, versions, load errors and supported
+  enable/disable controls.
+- A verified, idempotent Computer Use dependency installer provisions
+  `ydotool` 1.x, persistent `/dev/uinput` access and its user daemon on
+  Debian/Ubuntu and Fedora systems.
+
+### Changed
+
+- New and resumed sessions receive a bounded Codex Desktop Linux identity in
+  their effective developer instructions, including client and backend
+  versions and the canonical project repository. App Server continues to apply
+  workspace `AGENTS.md` separately.
+- Realtime uses the same client identity, while ordinary turns no longer append
+  repeated application context items to conversation history.
+
 ## [0.5.3] - 2026-08-02
 
 ### Changed

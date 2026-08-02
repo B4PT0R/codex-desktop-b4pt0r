@@ -34,6 +34,9 @@ type ThreadHistoryOptions = {
   onMessagesReplaced: (messages: ChatMessage[]) => void;
   onThreadResumeFailed: (threadId: string) => void;
   onThreadResumeStarted: (threadId: string) => void;
+  resolveDeveloperInstructions?: (
+    threadId: string,
+  ) => Promise<string | undefined>;
   onThreadResumed: (
     threadId: string,
     settings: ThreadRuntimeSettings,
@@ -51,6 +54,7 @@ export function useThreadHistory({
   onThreadResumeFailed,
   onThreadResumeStarted,
   onThreadResumed,
+  resolveDeveloperInstructions,
 }: ThreadHistoryOptions) {
   const { t } = useI18n();
   const [cursor, setCursor] = useState<string>();
@@ -65,6 +69,7 @@ export function useThreadHistory({
     onThreadResumeFailed,
     onThreadResumeStarted,
     onThreadResumed,
+    resolveDeveloperInstructions,
   });
   callbacks.current = {
     onError,
@@ -73,6 +78,7 @@ export function useThreadHistory({
     onThreadResumeFailed,
     onThreadResumeStarted,
     onThreadResumed,
+    resolveDeveloperInstructions,
   };
 
   const reset = useCallback(() => {
@@ -93,9 +99,11 @@ export function useThreadHistory({
       setResuming(true);
       callbacks.current.onThreadResumeStarted(threadId);
       try {
+        const developerInstructions =
+          await callbacks.current.resolveDeveloperInstructions?.(threadId);
         const response = await request<ThreadResumeResponse>(
           "thread/resume",
-          threadResumeParams(threadId),
+          threadResumeParams(threadId, developerInstructions),
         );
         if (resumeGeneration.current !== generation) return false;
         const page = response.initialTurnsPage;

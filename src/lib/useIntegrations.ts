@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   AppServerSkill,
+  AppServerPlugin,
   AppServerHook,
   HooksListResponse,
   ListMcpServerStatusResponse,
   McpServerStatus,
   McpServerStartupStatus,
   SkillsListResponse,
+  PluginInstalledResponse,
 } from "./appServerTypes";
 import { isDesktopApp, request, subscribeAppServerMessages } from "./codex";
 import {
@@ -18,12 +20,18 @@ import {
   mcpServerConfigWriteParams,
   mcpServerConfigRemoveParams,
   configReadParams,
+  pluginEnabledWriteParams,
+  pluginInstalledParams,
   type McpServerDraft,
 } from "./protocol";
 import { useI18n } from "../i18n/I18nProvider";
 import type { Translate } from "../i18n/translate";
 import { openExternalTarget, safeExternalHttpUrl } from "./externalTarget";
 import { invoke } from "./nativeBridge";
+import {
+  normalizeInstalledPlugins,
+  pluginMarketplaceErrorCount,
+} from "./pluginInventory";
 
 export type SkillDraft = {
   name: string;
@@ -43,6 +51,7 @@ export type IntegrationsController = {
   mcpServers: IntegrationInventory<McpServerStatus>;
   mcpStartup: Record<string, McpServerStartupStatus>;
   skills: IntegrationInventory<AppServerSkill>;
+  plugins: IntegrationInventory<AppServerPlugin>;
   refreshMcp: () => Promise<void>;
   reloadMcp: () => Promise<void>;
   reloadingMcp: boolean;
@@ -58,6 +67,9 @@ export type IntegrationsController = {
   removableMcpServers: string[];
   setSkillEnabled: (skill: AppServerSkill, enabled: boolean) => Promise<void>;
   updatingSkills: string[];
+  refreshPlugins: () => Promise<void>;
+  setPluginEnabled: (plugin: AppServerPlugin, enabled: boolean) => Promise<void>;
+  updatingPlugins: string[];
   createSkill: (draft: SkillDraft) => Promise<boolean>;
   creatingSkill: boolean;
 };
@@ -67,6 +79,7 @@ type UseIntegrationsOptions = {
   enabled: boolean;
   threadId?: string;
   hooksEnabled?: boolean;
+  pluginsEnabled?: boolean;
 };
 
 export function useIntegrations({
@@ -74,9 +87,14 @@ export function useIntegrations({
   enabled,
   threadId,
   hooksEnabled = false,
+  pluginsEnabled = false,
 }: UseIntegrationsOptions): IntegrationsController {
   const { t } = useI18n();
   const [skills, setSkills] = useState<IntegrationInventory<AppServerSkill>>({
+    data: [],
+    loading: false,
+  });
+  const [plugins, setPlugins] = useState<IntegrationInventory<AppServerPlugin>>({
     data: [],
     loading: false,
   });
@@ -89,6 +107,7 @@ export function useIntegrations({
     IntegrationInventory<McpServerStatus>
   >({ data: [], loading: false });
   const [updatingSkills, setUpdatingSkills] = useState<string[]>([]);
+  const [updatingPlugins, setUpdatingPlugins] = useState<string[]>([]);
   const [creatingSkill, setCreatingSkill] = useState(false);
   const [authenticatingMcp, setAuthenticatingMcp] = useState<string[]>([]);
   const [mcpAuthNotice, setMcpAuthNotice] = useState<string>();
@@ -98,12 +117,14 @@ export function useIntegrations({
     Record<string, McpServerStartupStatus>
   >({});
   const skillsGeneration = useRef(0);
+  const pluginsGeneration = useRef(0);
   const hooksGeneration = useRef(0);
   const mcpGeneration = useRef(0);
   // Every MCP mutation owns a write/reload/refresh transaction.
   const mcpMutationInFlight = useRef(false);
   // Skill toggles conflict only when they target the same file.
   const updatingSkillPaths = useRef(new Set<string>());
+  const updatingPluginIds = useRef(new Set<string>());
   const creatingSkillInFlight = useRef(false);
   const mcpAuthInFlight = useRef(new Set<string>());
 
@@ -133,6 +154,35 @@ export function useIntegrations({
     } catch (error) {
       if (generation === skillsGeneration.current) {
         setSkills((state) => ({
+          ...state,
+          error: errorMessage(error),
+          loading: false,
+        }));
+      }
+    }
+  }, [cwd, t]);
+
+  const refreshPlugins = useCallback(async () => {
+    const generation = ++pluginsGeneration.current;
+    if (!isDesktopApp()) {
+      setPlugins({ data: [], error: t("integrations.nativeOnly"), loading: false });
+      return;
+    }
+    setPlugins((state) => ({ ...state, error: undefined, loading: true }));
+    try {
+      const response = await request<PluginInstalledResponse>(
+        "plugin/installed",
+        pluginInstalledParams(cwd),
+      );
+      if (generation !== pluginsGeneration.current) return;
+      setPlugins({
+        data: normalizeInstalledPlugins(response),
+        error: pluginErrors(response, t),
+        loading: false,
+      });
+    } catch (error) {
+      if (generation === pluginsGeneration.current) {
+        setPlugins((state) => ({
           ...state,
           error: errorMessage(error),
           loading: false,
@@ -325,6 +375,37 @@ export function useIntegrations({
     [],
   );
 
+  const setPluginEnabled = useCallback(
+    async (plugin: AppServerPlugin, nextEnabled: boolean) => {
+      if (
+        plugin.availability === "DISABLED_BY_ADMIN" ||
+        updatingPluginIds.current.has(plugin.id)
+      ) return;
+      updatingPluginIds.current.add(plugin.id);
+      setUpdatingPlugins((ids) => [...ids, plugin.id]);
+      try {
+        await request(
+          "config/value/write",
+          pluginEnabledWriteParams(plugin.id, nextEnabled),
+        );
+        setPlugins((state) => ({
+          ...state,
+          error: undefined,
+          data: state.data.map((item) =>
+            item.id === plugin.id ? { ...item, enabled: nextEnabled } : item,
+          ),
+        }));
+        await Promise.all([refreshSkills(), refreshMcp()]);
+      } catch (error) {
+        setPlugins((state) => ({ ...state, error: errorMessage(error) }));
+      } finally {
+        updatingPluginIds.current.delete(plugin.id);
+        setUpdatingPlugins((ids) => ids.filter((id) => id !== plugin.id));
+      }
+    },
+    [refreshMcp, refreshSkills],
+  );
+
   const createSkill = useCallback(async (draft: SkillDraft) => {
     if (creatingSkillInFlight.current || !isDesktopApp()) return false;
     creatingSkillInFlight.current = true;
@@ -389,6 +470,10 @@ export function useIntegrations({
   }, [hooksEnabled, refreshHooks]);
 
   useEffect(() => {
+    if (pluginsEnabled) void refreshPlugins();
+  }, [pluginsEnabled, refreshPlugins]);
+
+  useEffect(() => {
     setMcpStartup({});
   }, [threadId]);
 
@@ -443,6 +528,7 @@ export function useIntegrations({
     mcpAuthNotice,
     mcpServers,
     mcpStartup,
+    plugins,
     refreshMcp,
     removeMcpServer,
     removingMcpServers,
@@ -450,11 +536,25 @@ export function useIntegrations({
     reloadMcp,
     reloadingMcp,
     refreshHooks,
+    refreshPlugins,
     refreshSkills,
     setSkillEnabled,
+    setPluginEnabled,
     skills,
     updatingSkills,
+    updatingPlugins,
   };
+}
+
+function pluginErrors(response: PluginInstalledResponse, t: Translate) {
+  const count = pluginMarketplaceErrorCount(response);
+  if (!count) return undefined;
+  return t(
+    count === 1
+      ? "integrations.plugins.errorOne"
+      : "integrations.plugins.errorMany",
+    { count },
+  );
 }
 
 function removableMcpServerNames(response: unknown) {

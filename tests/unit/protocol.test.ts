@@ -17,6 +17,8 @@ import {
   mcpServerOauthLoginParams,
   mcpServerConfigWriteParams,
   mcpServerConfigRemoveParams,
+  pluginEnabledWriteParams,
+  pluginInstalledParams,
   hooksListParams,
   quotasFromRateLimits,
   consumeRateLimitResetCreditParams,
@@ -55,7 +57,45 @@ import {
   turnSteerParams,
   scheduledTaskPrompt,
 } from "../../src/lib/protocol";
+import {
+  codexDesktopContext,
+  codexDesktopDeveloperInstructions,
+} from "../../src/lib/clientContext";
 describe("constructeurs JSON-RPC", () => {
+  it("construit l’inventaire et le toggle des plugins installés", () => {
+    expect(pluginInstalledParams("/project")).toEqual({
+      cwds: ["/project"],
+      installSuggestionPluginNames: null,
+    });
+    expect(pluginEnabledWriteParams("drive@openai", false)).toEqual({
+      keyPath: "plugins.drive@openai",
+      value: { enabled: false },
+      mergeStrategy: "upsert",
+    });
+  });
+  it("identifie Codex Desktop dans les instructions de session", () => {
+    const expected = codexDesktopDeveloperInstructions("Global instructions");
+    expect(
+      threadStartParams(undefined, "gpt-test", undefined, undefined, undefined, undefined, expected),
+    ).toMatchObject({ developerInstructions: expected });
+    expect(threadResumeParams("thr", expected)).toMatchObject({
+      developerInstructions: expected,
+    });
+    expect(expected).toContain("Global instructions");
+    expect(expected).toContain("<codex_desktop_context>");
+  });
+  it("précise les versions natives du client et du backend", () => {
+    const context = codexDesktopContext({
+      clientVersion: "0.5.1",
+      codexVersion: "codex-cli 0.145.0",
+    });
+    expect(context).toContain(
+      "Codex Desktop Linux client version: 0.5.1. Codex CLI backend version: codex-cli 0.145.0.",
+    );
+    expect(context).toContain(
+      "Codex Desktop Linux project repository: https://github.com/B4PT0R/codex-desktop-b4pt0r.",
+    );
+  });
   it("construit la lecture et l'écriture atomique de la configuration Apps", () => {
     expect(appsInstalledParams("thread-1", true)).toEqual({ threadId: "thread-1", forceRefresh: true });
     expect(appsListParams("thread-1", true, "next-page")).toEqual({ cursor: "next-page", limit: 200, threadId: "thread-1", forceRefetch: true });

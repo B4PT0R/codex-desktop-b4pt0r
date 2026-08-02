@@ -20,17 +20,20 @@ import {
 } from "./lib/codex";
 import type {
   AppInfo,
+  ConfigReadResponse,
   ThreadListResponse,
   ThreadStartResponse,
 } from "./lib/appServerTypes";
 import { finishDictationCapture, startDictationCapture } from "./lib/dictation";
 import {
+  configReadParams,
   threadCwdUpdateParams,
   threadStartParams,
   turnStartParams,
   turnSteerParams,
   type TurnContextItem,
 } from "./lib/protocol";
+import { appServerRecord, appServerString } from "./lib/appServerValues";
 import type { AgentActivity } from "./lib/activity";
 import {
   demoTelemetry,
@@ -57,6 +60,7 @@ import {
 import { useCapabilityCatalog } from "./lib/useCapabilityCatalog";
 import { useAccount } from "./lib/useAccount";
 import { useAppUpdate } from "./lib/useAppUpdate";
+import { codexDesktopDeveloperInstructions } from "./lib/clientContext";
 import { useApps } from "./lib/useApps";
 import { useAutomations } from "./lib/useAutomations";
 import { useSchedulerTools } from "./lib/useSchedulerTools";
@@ -270,6 +274,7 @@ export default function App() {
     cwd,
     enabled: settings === "skills" || settings === "mcp",
     hooksEnabled: settings === "hooks",
+    pluginsEnabled: settings === "plugins",
     threadId,
   });
   const capabilities = useCapabilityCatalog({
@@ -278,6 +283,10 @@ export default function App() {
   });
   const account = useAccount(settings === "account");
   const appUpdate = useAppUpdate(true, true);
+  const clientVersions = {
+    clientVersion: appUpdate.versions?.clientVersion ?? __APP_VERSION__,
+    codexVersion: appUpdate.versions?.codexVersion,
+  };
   const externalAgentImport = useExternalAgentImport({
     cwd,
     enabled: settings === "advanced",
@@ -431,6 +440,10 @@ export default function App() {
       setActivity(null);
       setBusy(false);
       setTurnId(undefined);
+    },
+    resolveDeveloperInstructions: async (id) => {
+      const targetCwd = threads.find((item) => item.id === id)?.cwd;
+      return readDesktopDeveloperInstructions(targetCwd);
     },
     onThreadResumed: (id, runtimeSettings, runState, summary) => {
       conversationEvents.completeScopeTransition(id);
@@ -671,6 +684,9 @@ export default function App() {
   }
   async function createThread() {
     const creationGeneration = threadNavigationGuard.beginCreation();
+    const developerInstructions = await readDesktopDeveloperInstructions(
+      cwd || undefined,
+    );
     const r = await request<ThreadStartResponse>(
       "thread/start",
       threadStartParams(
@@ -680,6 +696,7 @@ export default function App() {
         personalityForModel,
         runtime.approvalPolicyForStart,
         runtime.serviceTierForStart,
+        developerInstructions,
       ),
     );
     const id = r.thread.id as string;
@@ -695,6 +712,18 @@ export default function App() {
       setThreadId(id);
     }
     return { id, activated };
+  }
+
+  async function readDesktopDeveloperInstructions(targetCwd?: string) {
+    const response = await request<ConfigReadResponse>(
+      "config/read",
+      configReadParams(targetCwd),
+    );
+    const config = appServerRecord(response.config);
+    return codexDesktopDeveloperInstructions(
+      appServerString(config?.developer_instructions),
+      clientVersions,
+    );
   }
 
   async function send(text: string, context: TurnContextItem[]) {
@@ -1062,6 +1091,35 @@ export default function App() {
             error: "Authentication must be renewed before this server can start.",
             failureReason: "reauthenticationRequired",
           },
+        },
+        plugins: {
+          data: [
+            {
+              id: "google-drive@openai-curated-remote",
+              name: "google-drive",
+              displayName: "Google Drive",
+              description: "Work with Drive, Docs, Sheets, and Slides.",
+              marketplaceName: "openai-curated-remote",
+              marketplaceDisplayName: "OpenAI",
+              installed: true,
+              enabled: true,
+              availability: "AVAILABLE",
+              localVersion: "0.1.11",
+            },
+            {
+              id: "spreadsheets@openai-primary-runtime",
+              name: "spreadsheets",
+              displayName: "Spreadsheets",
+              description: "Create, edit, analyze, and verify spreadsheet files.",
+              marketplaceName: "openai-primary-runtime",
+              marketplaceDisplayName: "OpenAI runtime",
+              installed: true,
+              enabled: true,
+              availability: "AVAILABLE",
+              localVersion: "26.715.12143",
+            },
+          ],
+          loading: false,
         },
         removableMcpServers: ["github", "project_docs"],
         removingMcpServers: [],

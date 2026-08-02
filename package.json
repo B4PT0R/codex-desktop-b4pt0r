@@ -2,9 +2,13 @@
   "name": "codex-desktop-linux",
   "productName": "Codex Desktop",
   "desktopName": "codex-desktop.desktop",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Independent desktop client for Codex on Linux",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/B4PT0R/codex-desktop-b4pt0r.git"
+  },
   "author": {
     "name": "Codex Desktop Linux contributors",
     "email": "noreply@codex-desktop-linux.local"

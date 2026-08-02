@@ -228,6 +228,41 @@ export type SkillsListResponse = {
   }>;
 };
 
+export type AppServerPlugin = {
+  id: string;
+  name: string;
+  marketplaceName: string;
+  marketplaceDisplayName?: string;
+  installed: boolean;
+  enabled: boolean;
+  availability: "AVAILABLE" | "DISABLED_BY_ADMIN";
+  localVersion?: string;
+  version?: string;
+  displayName?: string;
+  description?: string;
+};
+
+export type PluginInstalledResponse = {
+  marketplaces: Array<{
+    name: string;
+    interface?: { displayName?: string | null } | null;
+    plugins: Array<{
+      id: string;
+      name: string;
+      installed: boolean;
+      enabled: boolean;
+      availability?: "AVAILABLE" | "DISABLED_BY_ADMIN";
+      localVersion?: string | null;
+      version?: string | null;
+      interface?: {
+        displayName?: string | null;
+        shortDescription?: string | null;
+      } | null;
+    }>;
+  }>;
+  marketplaceLoadErrors?: Array<{ marketplacePath: string; message: string }>;
+};
+
 export type AppServerHook = {
   key: string;
   eventName: string;

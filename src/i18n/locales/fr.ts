@@ -368,9 +368,17 @@ export const fr = {
   "integrations.skills.createInstructionsPlaceholder": "# Workflow\n\nInspecter le diff, exécuter les vérifications ciblées et classer les constats par sévérité.",
   "integrations.enabled": "Activé",
   "integrations.disabled": "Désactivé",
-  "integrations.plugins.title": "Catalogue de plugins",
   "integrations.plugins.description": "Bundles pouvant ajouter des Apps, des Skills et des intégrations MCP à Codex.",
-  "integrations.plugins.detail":
+  "integrations.plugins.installedTitle": "Plugins installés",
+  "integrations.plugins.loading": "Recherche des plugins installés…",
+  "integrations.plugins.empty": "Aucun plugin installé pour cet espace de travail.",
+  "integrations.plugins.from": "Fourni par {marketplace}",
+  "integrations.plugins.version": "version {version}",
+  "integrations.plugins.managed": "Géré par l’administrateur",
+  "integrations.plugins.errorOne": "1 catalogue de plugins n’a pas pu être chargé.",
+  "integrations.plugins.errorMany": "{count} catalogues de plugins n’ont pas pu être chargés.",
+  "integrations.plugins.catalogTitle": "Catalogue de plugins",
+  "integrations.plugins.catalogDetail":
     "L’API officielle est encore réservée au développement et sera branchée lorsqu’elle sera déclarée prête pour les clients.",
   "integrations.planned": "Prévu",
   "integrations.mcp.description":

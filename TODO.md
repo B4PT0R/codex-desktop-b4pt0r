@@ -9,7 +9,7 @@ detail belongs in `CHANGELOG.md` and Git.
 ## Baseline
 
 Codex Desktop Linux is a functional independent Electron client for the
-official `codex app-server`. The current public release is **v0.5.3**, verified
+official `codex app-server`. The current public release is **v0.5.4**, verified
 against installed `codex-cli 0.145.0`.
 
 The daily workflow covers conversation replay and concurrent activity,
@@ -43,6 +43,22 @@ handoff to the validated release.
 Keep the current functional surface frozen while running bounded stabilization,
 failure-path, simplification and maintainability passes. Prefer evidence from
 daily use and focused tests over speculative rewrites or new settings.
+
+Client-context lot: thread creation and resume read the configured developer
+instructions effective for the target workspace, append a bounded Codex Desktop
+Linux identity with client/backend versions and the package-embedded canonical
+project repository URL, and pass the composed value as the
+App Server session's `developerInstructions`. App Server still discovers and
+applies AGENTS.md separately, preserving its project hierarchy, and turns no
+longer persist repeated `additionalContext` items in rollout history. Realtime
+receives the same identity in its effective instruction bundle.
+
+Installed-plugin lot: the Plugins settings page now reads the authoritative
+`plugin/installed` inventory for the active workspace and toggles supported
+plugins through App Server's targeted `config/value/write` path. Marketplace
+provenance, versions, partial-load failures and administrator-disabled state are
+visible. The development-only catalog/read/install/uninstall methods remain
+unused and clearly separated from the functional installed view.
 
 ## Durable constraints
 
@@ -81,8 +97,9 @@ daily use and focused tests over speculative rewrites or new settings.
   including tray, audio, suspend/resume and long-idle network recovery.
 - The lazy Markdown/KaTeX chunk remains large but isolated and is not a release
   blocker.
-- Plugin marketplace mutations remain intentionally disabled while the official
-  production contract forbids clients from relying on them.
+- Plugin catalog/read/install/uninstall mutations remain intentionally disabled
+  while the official production contract forbids clients from relying on them;
+  installed-plugin inventory and enablement use the supported App Server paths.
 
 ## Next bounded work
 
@@ -107,19 +124,30 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 705 deterministic frontend/unit tests across 129 files;
+- 713 deterministic frontend/unit tests across 130 files;
 - 130 Electron/Node tests, including App Server shutdown, recovery and the tray
   quick actions;
 - production Vite build;
 - production dependency audit with zero vulnerabilities;
 - `git diff --check`.
 
-Release v0.5.3 additionally passed 51 installed-schema contract tests against
+Release v0.5.4 additionally passed 52 installed-schema contract tests against
 `codex-cli 0.145.0`, Linux DEB/RPM/AppImage packaging, and native/AppImage
 install and headless-launch smoke checks in Debian stable and Fedora containers.
 
+The installed-plugin lot passes 52 installed-schema contract tests against
+`codex-cli 0.145.0`; its functional installed and deferred-catalog states were
+also reviewed in the deterministic light-theme browser preview with no console
+errors, and the curated Plugins baseline was refreshed. A fresh v0.5.3 Debian
+package was rebuilt, reinstalled over the existing package, verified against
+its installed `app.asar`, and launched from `/opt/Codex Desktop`.
+
+The Computer Use host-dependency installer now provisions a verified upstream
+`ydotool` 1.x build, persistent `/dev/uinput` access and the user daemon on
+APT- and DNF-based systems.
+
 The latest curated UI baselines cover the conversation themes and the Settings
-surfaces materially changed through v0.5.3. Native lifecycle changes still need
+surfaces materially changed through v0.5.4. Native lifecycle changes still need
 focused packaged-Electron checks; browser preview validation is never a
 substitute for them.
 

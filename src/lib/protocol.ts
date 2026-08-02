@@ -33,6 +33,7 @@ export function threadStartParams(
   personality?: Personality,
   approvalPolicy?: ApprovalPolicy,
   serviceTier?: string | null,
+  developerInstructions?: string,
 ) {
   return {
     ...(cwd ? { cwd } : {}),
@@ -41,6 +42,7 @@ export function threadStartParams(
     ...(approvalPolicy ? { approvalPolicy } : {}),
     ...(personality ? { personality } : {}),
     ...(serviceTier !== undefined ? { serviceTier } : {}),
+    ...(developerInstructions ? { developerInstructions } : {}),
     dynamicTools: schedulerDynamicTools(),
   };
 }
@@ -312,7 +314,11 @@ export function turnSteerParams(
   const input: Array<Record<string, string>> = [];
   if (text) input.push({ type: "text", text });
   input.push(...context);
-  return { threadId, expectedTurnId, input };
+  return {
+    threadId,
+    expectedTurnId,
+    input,
+  };
 }
 export function realtimeStartParams(
   threadId: string,
@@ -439,9 +445,13 @@ export function subagentDescendantsListParams(ancestorThreadId: string) {
     ] as const,
   };
 }
-export function threadResumeParams(threadId: string) {
+export function threadResumeParams(
+  threadId: string,
+  developerInstructions?: string,
+) {
   return {
     threadId,
+    ...(developerInstructions ? { developerInstructions } : {}),
     initialTurnsPage: {
       limit: 30,
       sortDirection: "desc" as const,
@@ -472,6 +482,19 @@ export function hooksListParams(cwd: string) {
 }
 export function skillsConfigWriteParams(path: string, enabled: boolean) {
   return { path, name: null, enabled };
+}
+export function pluginInstalledParams(cwd: string) {
+  return {
+    cwds: cwd ? [cwd] : [],
+    installSuggestionPluginNames: null,
+  };
+}
+export function pluginEnabledWriteParams(pluginId: string, enabled: boolean) {
+  return {
+    keyPath: `plugins.${pluginId}`,
+    value: { enabled },
+    mergeStrategy: "upsert" as const,
+  };
 }
 export function mcpServerStatusListParams(threadId?: string, cursor?: string) {
   return {

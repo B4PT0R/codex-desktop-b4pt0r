@@ -3,6 +3,10 @@ import type { ConfigReadResponse } from "./appServerTypes";
 import { appServerRecord, appServerString } from "./appServerValues";
 import { request } from "./codex";
 import { configReadParams } from "./protocol";
+import {
+  codexDesktopDeveloperInstructions,
+  type ClientVersions,
+} from "./clientContext";
 
 export type RealtimeInitialItem = {
   role: "developer" | "user" | "assistant";
@@ -19,6 +23,7 @@ export async function realtimeInstructionItems(
   cwd?: string,
 ): Promise<RealtimeInitialItem[]> {
   if (!isDesktopApp()) return [];
+  const versions = await invoke<ClientVersions>("read_app_versions");
   const response = await request<ConfigReadResponse>(
     "config/read",
     configReadParams(cwd),
@@ -30,7 +35,11 @@ export async function realtimeInstructionItems(
     "read_thread_instructions",
     { threadId, developerInstructions },
   );
-  return instructions.content.trim()
-    ? [{ role: "developer", text: instructions.content }]
-    : [];
+  const effectiveInstructions = instructions.content.trim();
+  return [
+    {
+      role: "developer",
+      text: codexDesktopDeveloperInstructions(effectiveInstructions, versions),
+    },
+  ];
 }

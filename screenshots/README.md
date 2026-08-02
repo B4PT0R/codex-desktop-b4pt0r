@@ -29,7 +29,8 @@ every visual iteration. Historical captures remain available through Git.
 - `settings-skills-light-1164x860.png` — light-theme Skills baseline showing
   the dedicated Skills page and its inventory actions.
 - `settings-plugins-light-1164x860.png` — light-theme dedicated Plugins page
-  showing the separate bundle-level surface.
+  showing installed bundle provenance, versions, enablement and the deferred
+  catalog boundary.
 - `settings-skills-create-light-1164x860.png` — light-theme guided skill
   creation modal at its essential-information step.
 
