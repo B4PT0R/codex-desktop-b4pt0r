@@ -264,7 +264,7 @@
 }
 
 :root[data-theme="light"] .icon-toggle[data-enabled="true"] .icon-toggle-track {
-  border-color: #7d9b78;
+  border-color: #e0e0da;
   background: #7d9b78;
 }
 
