@@ -254,12 +254,14 @@ Une défaillance confirmée remplace App Server ; le renderer réattache ses
 listeners, recharge les catalogues et réhydrate le thread visible avant que le
 Scheduler ne réclame de nouveau travail.
 
-La recherche de mise à jour est explicite. Le processus natif détecte AppImage
-ou la famille de distribution via `/etc/os-release`, sélectionne uniquement
-l’artefact de même format et architecture, puis valide URL GitHub, taille et
-SHA-256. Seul le DEB suit l’installation Polkit/APT après validation de ses
-métadonnées. RPM, AppImage et familles inconnues ouvrent la release validée sans
-exécuter d’installation privilégiée.
+La recherche de mise à jour s’exécute une fois au démarrage et reste disponible
+à la demande dans Settings. Une version plus récente apparaît comme une action
+compacte dans la top bar. Le processus natif détecte AppImage ou la famille de
+distribution via `/etc/os-release`, sélectionne uniquement l’artefact de même
+format et architecture, puis valide URL GitHub, taille et SHA-256. Seul le DEB
+suit l’installation Polkit/APT après validation de ses métadonnées. RPM,
+AppImage et familles inconnues ouvrent la release validée sans exécuter
+d’installation privilégiée.
 
 Installation, mise à jour et démarrage ne réécrivent pas les préférences,
 `config.toml` ou les métadonnées de thread sans action explicite ou migration

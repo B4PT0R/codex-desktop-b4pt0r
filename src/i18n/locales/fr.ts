@@ -1011,6 +1011,10 @@ export const fr = {
     "Relance Codex Desktop pour utiliser la nouvelle version.",
   "settings.updates.error": "Impossible d’effectuer la mise à jour :",
   "settings.updates.codexError": "Impossible de lire la version de Codex :",
+  "updates.topbar.available":
+    "La version {version} est disponible. Mettre Codex Desktop à jour",
+  "updates.topbar.installing": "Installation de la mise à jour…",
+  "updates.topbar.label": "Mise à jour · {version}",
   "settings.chromium.title": "Navigateur Chromium partagé",
   "settings.chromium.detail":
     "Une session Playwright privée, visible et commune à l’application et à l’agent Codex.",

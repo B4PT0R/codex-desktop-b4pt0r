@@ -143,9 +143,11 @@ codex-desktop
 
 ## Update
 
-The version panel under **Settings > General** checks GitHub Releases for the
-matching architecture and installation format. Release asset URLs, sizes, and
-SHA-256 digests are validated before an update is offered.
+The app checks GitHub Releases once at startup and shows a compact top-bar
+action when a newer stable version is available. The version panel under
+**Settings > General** provides the same controls on demand. Matching release
+asset URLs, sizes, and SHA-256 digests are validated before an update is
+offered.
 
 - **Debian/Ubuntu:** the app can download the DEB, verify its package metadata,
   and ask Polkit to authorize an explicit APT upgrade. Restart after it reports

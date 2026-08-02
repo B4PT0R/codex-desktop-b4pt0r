@@ -607,6 +607,9 @@ header button svg {
   align-items: center;
   gap: 14px;
 }
+.header-update-button {
+  max-width: 180px;
+}
 .status {
   font-size: 11px;
   color: #888;
@@ -1989,6 +1992,10 @@ footer {
 
   .header-actions {
     gap: 9px;
+  }
+
+  .header-update-button .icon-button-label {
+    max-width: 92px;
   }
 
   .conversation {

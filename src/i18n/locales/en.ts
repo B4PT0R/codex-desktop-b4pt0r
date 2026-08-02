@@ -989,6 +989,9 @@ export const en: Record<MessageKey, string> = {
     "Restart Codex Desktop to use the new version.",
   "settings.updates.error": "Unable to update:",
   "settings.updates.codexError": "Unable to read the Codex version:",
+  "updates.topbar.available": "Version {version} is available. Update Codex Desktop",
+  "updates.topbar.installing": "Installing update…",
+  "updates.topbar.label": "Update · {version}",
   "settings.chromium.title": "Shared Chromium browser",
   "settings.chromium.detail":
     "A private, visible Playwright session shared by the app and the Codex agent.",

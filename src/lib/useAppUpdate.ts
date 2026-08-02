@@ -31,7 +31,10 @@ export type AppUpdateController = {
   openRelease: () => Promise<boolean>;
 };
 
-export function useAppUpdate(enabled: boolean): AppUpdateController {
+export function useAppUpdate(
+  enabled: boolean,
+  checkOnLoad = false,
+): AppUpdateController {
   const native = isDesktopApp();
   const [versions, setVersions] = useState<AppVersions>();
   const [status, setStatus] = useState<UpdateStatus>();
@@ -41,6 +44,7 @@ export function useAppUpdate(enabled: boolean): AppUpdateController {
   const [updateInstalled, setUpdateInstalled] = useState(false);
   const [error, setError] = useState<string>();
   const operationRef = useRef<"check" | "install" | null>(null);
+  const initialCheckStartedRef = useRef(false);
 
   useEffect(() => {
     if (!enabled) return;
@@ -84,6 +88,19 @@ export function useAppUpdate(enabled: boolean): AppUpdateController {
       setChecking(false);
     }
   }, [native]);
+
+  useEffect(() => {
+    if (
+      !enabled ||
+      !native ||
+      !checkOnLoad ||
+      initialCheckStartedRef.current
+    ) {
+      return;
+    }
+    initialCheckStartedRef.current = true;
+    void check();
+  }, [check, checkOnLoad, enabled, native]);
 
   const install = useCallback(async () => {
     if (

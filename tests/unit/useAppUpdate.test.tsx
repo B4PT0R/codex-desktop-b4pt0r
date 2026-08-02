@@ -30,6 +30,42 @@ beforeEach(() => {
 });
 
 describe("mise à jour de l’application", () => {
+  it("contrôle une fois la release au démarrage lorsque demandé", async () => {
+    bridge.invoke.mockImplementation(async (command) => {
+      if (command === "read_app_versions") {
+        return { clientVersion: "0.5.2" };
+      }
+      if (command === "check_for_updates") {
+        return {
+          assetAvailable: false,
+          currentVersion: "0.5.2",
+          installMode: "unavailable",
+          latestVersion: "0.5.2",
+          packageFormat: "unknown",
+          releaseUrl:
+            "https://github.com/B4PT0R/codex-desktop-b4pt0r/releases/tag/v0.5.2",
+          updateAvailable: false,
+        };
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    });
+    const { rerender } = renderHook(
+      ({ enabled }) => useAppUpdate(enabled, true),
+      { initialProps: { enabled: true } },
+    );
+
+    await waitFor(() =>
+      expect(bridge.invoke).toHaveBeenCalledWith("check_for_updates"),
+    );
+    rerender({ enabled: false });
+    rerender({ enabled: true });
+    expect(
+      bridge.invoke.mock.calls.filter(([command]) =>
+        command === "check_for_updates",
+      ),
+    ).toHaveLength(1);
+  });
+
   it("lit les versions seulement lorsque Général est ouvert", async () => {
     bridge.invoke.mockResolvedValue({
       clientVersion: "0.3.12",

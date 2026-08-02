@@ -44,6 +44,7 @@ import {
   browserPreviewResponse,
   isDemoPreview,
   isReadmeDemoPreview,
+  isUpdateDemoPreview,
 } from "./lib/demoConversation";
 import { useThreadHistory } from "./lib/useThreadHistory";
 import { useDemoPlayback } from "./lib/useDemoPlayback";
@@ -276,7 +277,7 @@ export default function App() {
     enabled: settings === "agent" || settings === "permissions",
   });
   const account = useAccount(settings === "account");
-  const appUpdate = useAppUpdate(settings === "general");
+  const appUpdate = useAppUpdate(true, true);
   const externalAgentImport = useExternalAgentImport({
     cwd,
     enabled: settings === "advanced",
@@ -1141,6 +1142,35 @@ export default function App() {
           threadId={threadId}
           title={
             currentThread?.name ?? currentThread?.preview ?? t("app.newChat")
+          }
+          update={
+            isUpdateDemoPreview()
+              ? {
+                  installing: false,
+                  latestVersion: "0.5.3",
+                  onActivate: () => undefined,
+                }
+              : appUpdate.status?.updateAvailable && !appUpdate.updateInstalled
+                ? {
+                    installing: appUpdate.installing,
+                    latestVersion: appUpdate.status.latestVersion,
+                    onActivate: () => {
+                      const canInstall =
+                        appUpdate.status?.assetAvailable === true &&
+                        appUpdate.status.installMode === "automatic";
+                      void (async () => {
+                        if (canInstall) {
+                          await appUpdate.install();
+                          setSettings("general");
+                          return;
+                        }
+                        if (!(await appUpdate.openRelease())) {
+                          setSettings("general");
+                        }
+                      })();
+                    },
+                  }
+                : undefined
           }
           commandRequest={composerCommands.headerRequest}
           defaultThread={defaultThread.defaultThreadId === threadId}

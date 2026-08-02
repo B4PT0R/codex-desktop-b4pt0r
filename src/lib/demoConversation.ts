@@ -401,6 +401,13 @@ export function isReadmeDemoPreview() {
   );
 }
 
+export function isUpdateDemoPreview() {
+  return (
+    isDemoPreview() &&
+    new URLSearchParams(window.location.search).get("update") === "available"
+  );
+}
+
 export const demoSkills: AppServerSkill[] = [
   {
     name: "use-shared-browser",

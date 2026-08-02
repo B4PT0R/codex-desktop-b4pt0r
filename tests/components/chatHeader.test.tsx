@@ -15,6 +15,41 @@ afterEach(cleanup);
 beforeEach(() => localStorage.setItem("codex-desktop.locale", "fr"));
 
 describe("en-tête de conversation", () => {
+  it("signale discrètement une mise à jour et lance son action", () => {
+    const onActivate = vi.fn();
+    render(
+      <I18nProvider>
+        <ChatHeader
+          busy={false}
+          connected
+          nativeApp
+          reconnecting={false}
+          sidebarOpen
+          title="Conversation"
+          update={{
+            installing: false,
+            latestVersion: "0.5.3",
+            onActivate,
+          }}
+          onCompact={vi.fn()}
+          onDelete={vi.fn()}
+          onFork={vi.fn()}
+          onOpenSidebar={vi.fn()}
+          onReconnect={vi.fn()}
+          onReload={vi.fn()}
+          onRename={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "La version 0.5.3 est disponible. Mettre Codex Desktop à jour",
+      }),
+    );
+    expect(onActivate).toHaveBeenCalledOnce();
+  });
+
   it("pilote la lecture et l’arrêt de la démo visuelle", () => {
     const onPlay = vi.fn();
     const onStop = vi.fn();

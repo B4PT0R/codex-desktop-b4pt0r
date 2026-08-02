@@ -1,4 +1,5 @@
 import {
+  ArrowDownToLine,
   Check,
   ChevronDown,
   GitFork,
@@ -36,6 +37,11 @@ type ChatHeaderProps = {
   sidebarOpen: boolean;
   threadId?: string;
   title: string;
+  update?: {
+    installing: boolean;
+    latestVersion: string;
+    onActivate: () => void;
+  };
   demoPlayback?: {
     hasPlayed: boolean;
     running: boolean;
@@ -66,6 +72,7 @@ export function ChatHeader({
   sidebarOpen,
   threadId,
   title,
+  update,
   demoPlayback,
   commandRequest,
   onCompact,
@@ -351,6 +358,31 @@ export function ChatHeader({
           <div className="thread-title">{title}</div>
         )}
         <div className="header-actions">
+          {update && (
+            <IconButton
+              aria-label={
+                update.installing
+                  ? t("updates.topbar.installing")
+                  : t("updates.topbar.available", {
+                      version: update.latestVersion,
+                    })
+              }
+              className="header-update-button"
+              disabled={update.installing}
+              icon={update.installing ? LoaderCircle : ArrowDownToLine}
+              iconClassName={update.installing ? "spin" : undefined}
+              label={
+                update.installing
+                  ? t("updates.topbar.installing")
+                  : t("updates.topbar.label", {
+                      version: update.latestVersion,
+                    })
+              }
+              onClick={update.onActivate}
+              size="medium"
+              variant="secondary"
+            />
+          )}
           {demoPlayback && (
             <>
               {demoPlayback.onPreviewThreadLoading && (

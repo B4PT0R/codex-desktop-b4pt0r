@@ -19,6 +19,10 @@ configuration, Skills, Apps, MCP, memory, Remote Control, scheduled tasks and a
 shared Playwright Chromium session. The tray recalls Chromium and opens the
 Scheduler directly.
 
+Stable GitHub releases are checked once at startup. A compact top-bar action
+installs a matching verified DEB automatically or opens the validated release
+for RPM, AppImage and unsupported automatic-install paths.
+
 DEB, RPM and AppImage packages are published for x86-64 Linux. Clean Debian
 stable and Fedora containers install their native package and smoke-test both
 the installed executable and AppImage under an unprivileged Xvfb/D-Bus session.
@@ -95,7 +99,7 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 681 deterministic frontend/unit tests across 129 files;
+- 684 deterministic frontend/unit tests across 129 files;
 - 129 Electron/Node tests, including App Server shutdown, recovery and the tray
   quick actions;
 - production Vite build;
