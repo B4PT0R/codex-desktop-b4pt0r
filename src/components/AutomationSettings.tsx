@@ -17,7 +17,7 @@ import {
 import { AutomationEditor } from "./AutomationEditor";
 import { IconCard } from "./IconCard";
 import { CardStack } from "./CardStack";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 import { SettingsPageHeader } from "./SettingsPageHeader";
 import { Alert } from "./Alert";
 import {
@@ -179,13 +179,13 @@ function AutomationRow({
         {confirmingDelete ? (
           <div className="automation-delete-confirm" role="group">
             <span>{t("automations.confirmDelete")}</span>
-            <RoundIconButton
+            <IconButton
               label={t("common.cancel")}
               onClick={onCancelDelete}
               size="small"
               variant="secondary"
             />
-            <RoundIconButton
+            <IconButton
               className="danger"
               label={t("automations.delete")}
               onClick={onConfirmDelete}
@@ -195,7 +195,7 @@ function AutomationRow({
           </div>
         ) : (
           <>
-            <RoundIconButton
+            <IconButton
               disabled={automation.lastStatus === "running"}
               icon={Play}
               aria-label={t("automations.runNow")}
@@ -203,7 +203,7 @@ function AutomationRow({
               variant="tertiary"
             />
             {!completedOnce && (
-              <RoundIconButton
+              <IconButton
                 disabled={automation.lastStatus === "running"}
                 icon={automation.enabled ? Pause : Play}
                 aria-label={t(
@@ -215,7 +215,7 @@ function AutomationRow({
                 variant="tertiary"
               />
             )}
-            <RoundIconButton
+            <IconButton
               disabled={automation.lastStatus === "running"}
               icon={Trash2}
               aria-label={t("automations.delete")}

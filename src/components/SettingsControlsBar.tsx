@@ -3,7 +3,7 @@ import type {
   ComponentType,
   ReactNode,
 } from "react";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 
 export function SettingsControlsBar({
   actions,
@@ -36,7 +36,7 @@ export function SettingsControlsBarButton({
   iconClassName?: string;
 }) {
   return (
-    <RoundIconButton
+    <IconButton
       className="settings-controls-bar-button"
       icon={Icon}
       iconClassName={iconClassName}

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import { CardStack } from "./CardStack";
 import { IconCard } from "./IconCard";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 import { IconToggle } from "./IconToggle";
 import { IconSubheader } from "./IconSubheader";
 import { SettingsPageHeader } from "./SettingsPageHeader";
@@ -107,13 +107,13 @@ export function MemorySettings({
           subtitle={t("settings.memory.resetDetail")}
           trailing={confirmReset ? (
           <span className="memory-reset-confirm">
-            <RoundIconButton
+            <IconButton
               label={t("common.cancel")}
               onClick={() => setConfirmReset(false)}
               size="medium"
               variant="secondary"
             />
-            <RoundIconButton
+            <IconButton
               className="danger"
               disabled={controller.resetting}
               label={t("settings.memory.resetConfirm")}
@@ -125,7 +125,7 @@ export function MemorySettings({
             />
           </span>
         ) : (
-          <RoundIconButton
+          <IconButton
             disabled={controller.resetting}
             icon={RotateCcw}
             label={t("settings.memory.resetAction")}

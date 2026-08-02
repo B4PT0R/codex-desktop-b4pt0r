@@ -7,7 +7,7 @@ import {
 } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import { useDialogFocus } from "../lib/useDialogFocus";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 import { CardStack } from "./CardStack";
 import { IconCard } from "./IconCard";
 import { Alert } from "./Alert";
@@ -100,7 +100,7 @@ export function ConfigDocumentEditor({
           subtitle={filePath}
           trailing={<>
             {!native && <em>{t("settings.config.preview")}</em>}
-            <RoundIconButton
+            <IconButton
               icon={FilePenLine}
               label={t("settings.config.edit")}
               onClick={() => setOpen(true)}
@@ -143,7 +143,7 @@ export function ConfigDocumentEditor({
                 <small>{filePath}</small>
               </span>
               {!native && <em>{t("settings.config.preview")}</em>}
-              <RoundIconButton
+              <IconButton
                 aria-label={t("settings.config.closeEditor")}
                 icon={X}
                 onClick={requestClose}
@@ -187,12 +187,12 @@ export function ConfigDocumentEditor({
               {confirmingClose ? (
                 <span className="config-editor-discard">
                   <small>{t("settings.config.discardConfirm")}</small>
-                  <RoundIconButton
+                  <IconButton
                     label={t("common.cancel")}
                     onClick={() => setConfirmingClose(false)}
                     variant="secondary"
                   />
-                  <RoundIconButton
+                  <IconButton
                     className="danger"
                     label={t("settings.config.discard")}
                     onClick={() => {
@@ -205,14 +205,14 @@ export function ConfigDocumentEditor({
                 </span>
               ) : (
                 <>
-                  <RoundIconButton
+                  <IconButton
                     disabled={loading || saving}
                     icon={RotateCcw}
                     label={t("settings.config.reload")}
                     onClick={() => void onReload()}
                     variant="secondary"
                   />
-                  <RoundIconButton
+                  <IconButton
                     disabled={!dirty || loading || saving}
                     icon={Save}
                     label={

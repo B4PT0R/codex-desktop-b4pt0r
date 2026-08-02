@@ -5,7 +5,7 @@ import type {
   AutomationDraft,
   AutomationTarget,
 } from "../lib/automations";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 import { IconToggle } from "./IconToggle";
 
 type Frequency = "once" | "interval" | "daily" | "weekdays" | "weekly";
@@ -235,14 +235,14 @@ export function AutomationEditor({
         />
       </div>
       <footer>
-        <RoundIconButton
+        <IconButton
           label={t("common.cancel")}
           onClick={onCancel}
           size="small"
           type="button"
           variant="secondary"
         />
-        <RoundIconButton
+        <IconButton
           disabled={!canSave || saving}
           label={saving ? t("automations.saving") : t("automations.save")}
           size="small"

@@ -3,7 +3,8 @@ import { useState, type ReactNode } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { McpServerDraft } from "../lib/protocol";
 import { useDialogFocus } from "../lib/useDialogFocus";
-import { RoundIcon, RoundIconButton } from "./RoundIcon";
+import { RoundIcon } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 
 type Tab = "essential" | "advanced";
 
@@ -199,8 +200,8 @@ export function McpServerAddDialog({
           </div>
         </div>
         <div className="modal-actions">
-          <RoundIconButton disabled={adding} label={t("common.cancel")} onClick={onCancel} variant="secondary" />
-          <RoundIconButton disabled={!valid || adding} icon={Plus} label={adding ? t("integrations.mcp.adding") : t("integrations.mcp.addAction")} type="submit" variant="primary" />
+          <IconButton disabled={adding} label={t("common.cancel")} onClick={onCancel} variant="secondary" />
+          <IconButton disabled={!valid || adding} icon={Plus} label={adding ? t("integrations.mcp.adding") : t("integrations.mcp.addAction")} type="submit" variant="primary" />
         </div>
       </form>
     </div>

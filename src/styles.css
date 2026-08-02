@@ -418,21 +418,21 @@ textarea:focus-visible {
 .sidebar-bottom button {
   font-size: 12px;
 }
-.sidebar-bottom .round-icon-button.round-icon-button-labeled {
+.sidebar-bottom .icon-button.icon-button-labeled {
   width: 100%;
   padding: 9px 10px;
   border-radius: 7px;
 }
 .sidebar-bottom
-  .round-icon-button.round-icon-button-labeled
-  .round-icon-button-glyph {
+  .icon-button.icon-button-labeled
+  .icon-button-glyph {
   width: 18px;
   height: 18px;
   margin-left: 0;
 }
 .sidebar-bottom
-  .round-icon-button.round-icon-button-labeled
-  .round-icon-button-glyph
+  .icon-button.icon-button-labeled
+  .icon-button-glyph
   > svg {
   width: 16px;
   height: 16px;
@@ -1803,7 +1803,7 @@ footer {
   gap: 8px;
   margin-top: 20px;
 }
-.modal-actions button:not(.round-icon-button) {
+.modal-actions button:not(.icon-button) {
   padding: 8px 14px;
   border: 1px solid #41413d;
   border-radius: 7px;

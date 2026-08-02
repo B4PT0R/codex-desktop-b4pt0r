@@ -1,7 +1,8 @@
 import { Trash2 } from "lucide-react";
 import { useI18n } from "../i18n/I18nProvider";
 import { useDialogFocus } from "../lib/useDialogFocus";
-import { RoundIcon, RoundIconButton } from "./RoundIcon";
+import { RoundIcon } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 
 type ThreadDeleteDialogProps = {
   deleting: boolean;
@@ -48,14 +49,14 @@ export function ThreadDeleteDialog({
           <p className="thread-delete-warning">{t("thread.delete.warning")}</p>
         </div>
         <div className="modal-actions">
-          <RoundIconButton
+          <IconButton
             data-dialog-initial-focus
             disabled={deleting}
             label={t("common.cancel")}
             onClick={onCancel}
             variant="secondary"
           />
-          <RoundIconButton
+          <IconButton
             className="danger"
             disabled={deleting}
             icon={Trash2}

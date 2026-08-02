@@ -5,7 +5,7 @@ import {
   type BackgroundTerminal,
   type BackgroundTerminalsController,
 } from "../lib/useBackgroundTerminals";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 
 type BackgroundTerminalsButtonProps = {
   controller: BackgroundTerminalsController;
@@ -46,7 +46,7 @@ export function BackgroundTerminalsButton({
   if (controller.terminals.length === 0) return null;
   return (
     <div className="background-terminals" ref={root}>
-      <RoundIconButton
+      <IconButton
         ref={opener}
         className="background-terminals-trigger"
         aria-expanded={open}
@@ -79,7 +79,7 @@ export function BackgroundTerminalsButton({
               <strong>{t("backgroundTerminals.title")}</strong>
               <small>{t("backgroundTerminals.detail")}</small>
             </span>
-            <RoundIconButton
+            <IconButton
               aria-label={t("backgroundTerminals.refresh")}
               disabled={controller.loading}
               icon={RefreshCw}
@@ -160,7 +160,7 @@ function TerminalRow({
           </span>
         </div>
       ) : (
-        <RoundIconButton
+        <IconButton
           className="background-terminal-stop"
           aria-label={t("backgroundTerminals.stopCommand", {
             command: terminal.command,

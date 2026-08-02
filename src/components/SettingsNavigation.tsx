@@ -26,7 +26,7 @@ import {
   type SettingsSectionGroupId,
   type SettingsSectionId,
 } from "../lib/settingsSections";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 
 const icons: Record<SettingsSectionId, ComponentType> = {
   general: Settings,
@@ -72,7 +72,7 @@ export function SettingsNavigation({
       className="settings-navigation"
       aria-label={t("settings.navigation")}
     >
-      <RoundIconButton
+      <IconButton
         className="settings-back"
         icon={ArrowLeft}
         label={t("settings.back")}
@@ -94,7 +94,7 @@ export function SettingsNavigation({
           return <section className="settings-navigation-group" key={group.id} aria-labelledby={`settings-group-${group.id}`}>
             <h2 id={`settings-group-${group.id}`}>{group.label}</h2>
             {items.map((item) => (
-              <RoundIconButton
+              <IconButton
                 key={item.id}
                 aria-current={activeSection === item.id ? "page" : undefined}
                 gap="large"

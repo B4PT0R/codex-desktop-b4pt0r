@@ -3,17 +3,15 @@ import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import { ShieldCheck } from "lucide-react";
 import { describe, expect, it } from "vitest";
-import {
-  RoundIcon,
-  RoundIconButton,
-} from "../../src/components/RoundIcon";
+import { IconButton } from "../../src/components/IconButton";
+import { RoundIcon } from "../../src/components/RoundIcon";
 
-describe("primitive d’icône ronde", () => {
+describe("primitives d’icône", () => {
   it("partage tailles et niveaux d’accent entre icônes et boutons", () => {
     const { container } = render(
       <>
         <RoundIcon icon={ShieldCheck} size="small" variant="secondary" />
-        <RoundIconButton
+        <IconButton
           aria-label="Sécurité"
           gap="large"
           icon={ShieldCheck}
@@ -21,8 +19,8 @@ describe("primitive d’icône ronde", () => {
           size="medium"
           variant="primary"
         />
-        <RoundIconButton label="Élevé" size="medium" variant="secondary" />
-        <RoundIconButton
+        <IconButton label="Élevé" size="medium" variant="secondary" />
+        <IconButton
           aria-label="Envoyer"
           enabled
           icon={ShieldCheck}
@@ -38,16 +36,16 @@ describe("primitive d’icône ronde", () => {
     expect(screen.getByRole("button", { name: "Sécurité" })).toHaveClass(
       "round-icon-medium",
       "round-icon-primary",
-      "round-icon-button-labeled",
-      "round-icon-gap-large",
+      "icon-button-labeled",
+      "icon-button-gap-large",
     );
     expect(
       screen.getByRole("button", { name: "Sécurité" }),
     ).toHaveTextContent("Sécurité");
     expect(screen.getByRole("button", { name: "Élevé" })).toHaveClass(
-      "round-icon-button-label-only",
-      "round-icon-button-labeled",
-      "round-icon-gap-medium",
+      "icon-button-label-only",
+      "icon-button-labeled",
+      "icon-button-gap-medium",
     );
     expect(
       screen.getByRole("button", { name: "Élevé" }).querySelector("svg"),

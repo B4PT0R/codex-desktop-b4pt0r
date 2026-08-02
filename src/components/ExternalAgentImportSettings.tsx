@@ -14,7 +14,7 @@ import type {
   ExternalAgentMigrationItemType,
   ExternalAgentMigrationSource,
 } from "../lib/appServerTypes";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 import { CardStack } from "./CardStack";
 import { IconCard } from "./IconCard";
 import { SettingsControlsBar } from "./SettingsControlsBar";
@@ -78,7 +78,7 @@ export function ExternalAgentImportSettings({
         <IconCard
           title={t("externalImport.detect")}
           subtitle={t("externalImport.description")}
-          trailing={<RoundIconButton
+          trailing={<IconButton
             disabled={controller.detecting || controller.importing}
             icon={controller.detecting ? RefreshCw : Search}
             iconClassName={controller.detecting ? "spinning" : undefined}
@@ -120,7 +120,7 @@ export function ExternalAgentImportSettings({
                     count: selectedItems.length,
                   })}
               actions={!confirming ? (
-                <RoundIconButton
+                <IconButton
                   disabled={selectedItems.length === 0 || controller.importing}
                   icon={Download}
                   label={t("externalImport.prepare")}
@@ -129,13 +129,13 @@ export function ExternalAgentImportSettings({
                 />
               ) : (
                 <span className="external-agent-import-confirm" role="group">
-                  <RoundIconButton
+                  <IconButton
                     disabled={controller.importing}
                     label={t("externalImport.cancel")}
                     onClick={() => setConfirming(false)}
                     variant="secondary"
                   />
-                  <RoundIconButton
+                  <IconButton
                     disabled={controller.importing}
                     icon={Download}
                     label={t("externalImport.confirm")}
@@ -196,7 +196,7 @@ export function ExternalAgentImportSettings({
                 failures: totals.failures,
               })}
             trailing={controller.completed ? (
-            <RoundIconButton
+            <IconButton
               label={t("externalImport.dismiss")}
               onClick={controller.clearResult}
               variant="secondary"
@@ -219,8 +219,7 @@ export function ExternalAgentImportSettings({
         className="external-agent-import-history"
         controlBar={<SettingsControlsBar
           label={t("externalImport.history")}
-          actions={<RoundIconButton
-            className="icon-button"
+          actions={<IconButton
             aria-label={t("externalImport.refreshHistory")}
             disabled={controller.historyLoading}
             icon={RefreshCw}

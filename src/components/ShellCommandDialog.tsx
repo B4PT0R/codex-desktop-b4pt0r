@@ -2,7 +2,7 @@ import { TerminalSquare } from "lucide-react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { ShellCommandController } from "../lib/useShellCommand";
 import { useDialogFocus } from "../lib/useDialogFocus";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 
 export function ShellCommandDialog({
   controller,
@@ -37,14 +37,14 @@ export function ShellCommandDialog({
           <code>{controller.pending}</code>
         </div>
         <div className="modal-actions">
-          <RoundIconButton
+          <IconButton
             data-dialog-initial-focus
             disabled={controller.executing}
             label={t("common.cancel")}
             onClick={controller.cancel}
             variant="secondary"
           />
-          <RoundIconButton
+          <IconButton
             className="danger"
             disabled={controller.executing}
             icon={TerminalSquare}

@@ -17,7 +17,7 @@ import { useI18n } from "../i18n/I18nProvider";
 import type { Translate } from "../i18n/translate";
 import { CardStack } from "./CardStack";
 import { IconCard } from "./IconCard";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 import { IconToggle } from "./IconToggle";
 import { SettingsPageHeader } from "./SettingsPageHeader";
 import { McpServerAddDialog } from "./McpServerAddDialog";
@@ -94,7 +94,7 @@ export function AppsSettings({ apps }: { apps: AppsController }) {
               </>}
               title={app.name}
               trailing={<div className="app-card-actions">
-                <RoundIconButton icon={Settings2} label={t("integrations.apps.configure")} onClick={() => openConfiguration(app)} size="medium" variant="secondary" />
+                <IconButton icon={Settings2} label={t("integrations.apps.configure")} onClick={() => openConfiguration(app)} size="medium" variant="secondary" />
                 <IconToggle
                   checked={app.isEnabled}
                   disabled={apps.updatingApps.includes(app.id)}
@@ -290,7 +290,7 @@ export function McpSettings({
               title={server.serverInfo?.title ?? server.name}
               trailing={(signInRequired || removable) ? <div className="mcp-server-actions">
                 {signInRequired && (
-                  <RoundIconButton
+                  <IconButton
                     disabled={integrations.authenticatingMcp.includes(
                       server.name,
                     )}
@@ -304,7 +304,7 @@ export function McpSettings({
                   />
                 )}
                 {removable && (
-                  <RoundIconButton
+                  <IconButton
                     disabled={integrations.removingMcpServers.includes(server.name)}
                     icon={Trash2}
                     label={t("integrations.mcp.remove")}

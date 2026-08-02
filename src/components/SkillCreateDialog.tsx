@@ -3,7 +3,8 @@ import { useMemo, useState, type ReactNode } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { SkillDraft } from "../lib/useIntegrations";
 import { useDialogFocus } from "../lib/useDialogFocus";
-import { RoundIcon, RoundIconButton } from "./RoundIcon";
+import { RoundIcon } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 
 type Tab = "essential" | "instructions";
 
@@ -57,8 +58,8 @@ export function SkillCreateDialog({ creating, onCancel, onCreate }: {
         </div>
       </div>
       <div className="modal-actions">
-        <RoundIconButton icon={Plus} label={t("integrations.skills.createAction")} disabled={!valid || creating} type="submit" variant="primary" />
-        <RoundIconButton label={t("common.cancel")} disabled={creating} onClick={onCancel} type="button" variant="secondary" />
+        <IconButton icon={Plus} label={t("integrations.skills.createAction")} disabled={!valid || creating} type="submit" variant="primary" />
+        <IconButton label={t("common.cancel")} disabled={creating} onClick={onCancel} type="button" variant="secondary" />
       </div>
     </form>
   </div>;

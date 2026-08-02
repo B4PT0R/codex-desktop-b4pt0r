@@ -4,7 +4,7 @@ import type { RateLimitsController } from "../lib/useRateLimits";
 import { useI18n } from "../i18n/I18nProvider";
 import { IconCard } from "./IconCard";
 import { CardStack } from "./CardStack";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 import { Alert } from "./Alert";
 
 export function RateLimitResetCard({
@@ -43,8 +43,8 @@ export function RateLimitResetCard({
             aria-label={t("reset.confirmationLabel")}
           >
             <span>{t("reset.question")}</span>
-            <RoundIconButton label={t("common.cancel")} onClick={() => setConfirming(false)} size="medium" variant="secondary" />
-            <RoundIconButton
+            <IconButton label={t("common.cancel")} onClick={() => setConfirming(false)} size="medium" variant="secondary" />
+            <IconButton
               disabled={controller.consuming}
               icon={RotateCcw}
               label={controller.consuming ? t("reset.running") : t("common.confirm")}
@@ -57,7 +57,7 @@ export function RateLimitResetCard({
             />
           </div>
         ) : (
-          <RoundIconButton
+          <IconButton
             disabled={available < 1 || controller.consuming}
             icon={RotateCcw}
             iconClassName={controller.consuming ? "spin" : undefined}

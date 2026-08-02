@@ -123,10 +123,12 @@ Remote Control's restrained light-theme treatment instead of retaining the
 legacy dark red inventory banner.
 The Clear local memory action is also composed from the same primitives, including
 its inline confirmation state; the bespoke reset-card border and layout are gone.
-General, Updates and Memory card actions share the `RoundIconButton` primitive
+General, Updates and Memory card actions share the `IconButton` primitive
 rather than restart-specific CSS. Settings controls bars, Voice, MCP
 authentication, Account, reset credits, Remote Control and external import use
-the same primitive too. All `*Dialog` action buttons now use it with semantic
+the same primitive too. The former `RoundIconButton` name and CSS selectors are
+fully retired; `RoundIcon` remains the non-interactive icon primitive. All
+`*Dialog` action buttons now use `IconButton` with semantic
 primary, secondary, tertiary or danger treatments; only whole-card interactive
 surfaces remain ordinary buttons. Labeled primitive buttons centrally own their
 11px type and disabled state, and obsolete local geometry/palette rules are gone.
@@ -352,6 +354,13 @@ neutral/success/warning/danger/experimental tones are centralized in
 `primitives.css`; the former header, remote, hook and account badge palettes
 have been removed. Conversation attachment chips remain a separate semantic
 surface.
+
+Generic Settings field groups now use `CardStack` consistently in Appearance,
+Web and guided Configuration. Their field-row layout remains the shared
+`settings-fields` responsibility, while border, radius, background and shadow
+come exclusively from the primitive. `settings-card` remains only on genuinely
+domain-specific panels (Scheduler editor, account usage/messages and Remote
+Control pairing); the empty external-import `icon-button` override is gone.
 
 Application update checks and installs now share one synchronous operation
 owner. Same-tick duplicate actions are rejected before React rerenders, and a

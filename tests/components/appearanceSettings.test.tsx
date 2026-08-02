@@ -45,7 +45,7 @@ afterEach(cleanup);
 
 describe("réglages d’apparence", () => {
   it("expose les préférences de densité de la conversation", () => {
-    render(
+    const { container } = render(
       <AppearanceProvider>
         <I18nProvider>
           <AppearanceSettings
@@ -55,6 +55,11 @@ describe("réglages d’apparence", () => {
         </I18nProvider>
       </AppearanceProvider>,
     );
+
+    expect(container.querySelectorAll(".card-stack.settings-fields"))
+      .toHaveLength(2);
+    expect(container.querySelector(".settings-card.settings-fields"))
+      .toBeNull();
 
     fireEvent.click(
       screen.getByRole("switch", {

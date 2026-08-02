@@ -247,7 +247,7 @@
   background: #e9e9e4;
 }
 
-:root[data-theme="light"] .modal-actions button:not(.round-icon-button, .danger) {
+:root[data-theme="light"] .modal-actions button:not(.icon-button, .danger) {
   color: #555550;
   border-color: #d5d5cf;
   background: #f3f3ef;
@@ -255,7 +255,7 @@
 
 :root[data-theme="light"]
   .modal-actions
-  button:not(.round-icon-button, .danger):hover:not(:disabled) {
+  button:not(.icon-button, .danger):hover:not(:disabled) {
   color: var(--reader-ink);
   border-color: #bdbdb6;
   background: #e9e9e4;

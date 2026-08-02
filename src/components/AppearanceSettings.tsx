@@ -15,6 +15,7 @@ import {
   type ChatPresentationSettingsController,
 } from "../lib/useChatPresentationSettings";
 import { IconToggle } from "./IconToggle";
+import { CardStack } from "./CardStack";
 
 const reasoningSummaryModes: ReasoningSummaryMode[] = [
   "auto",
@@ -43,7 +44,7 @@ export function AppearanceSettings({
         title={t("settings.appearance.interface.title")}
         subtitle={t("settings.appearance.interface.description")}
       />
-      <div className="settings-card settings-fields">
+      <CardStack className="settings-fields">
         <label>
           <span className="settings-field-description">
             <strong>{t("settings.appearance.theme")}</strong>
@@ -80,12 +81,12 @@ export function AppearanceSettings({
             <option value="large">{t("settings.appearance.large")}</option>
           </select>
         </label>
-      </div>
+      </CardStack>
       <IconSubheader
         title={t("settings.appearance.conversation.title")}
         subtitle={t("settings.appearance.conversation.description")}
       />
-      <div className="settings-card settings-fields">
+      <CardStack className="settings-fields">
         <label>
           <span className="settings-field-description">
             <strong>{t("settings.reasoningSummary.title")}</strong>
@@ -164,7 +165,7 @@ export function AppearanceSettings({
             }
           />
         </div>
-      </div>
+      </CardStack>
       {appearance.persistenceError && (
         <Alert tone="error">
           {t("settings.persistence.error")} {appearance.persistenceError}

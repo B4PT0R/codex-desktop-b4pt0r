@@ -5,7 +5,7 @@ import type { RealtimeSettingsController } from "../lib/useRealtimeSettings";
 import { SettingsPageHeader } from "./SettingsPageHeader";
 import { CardStack } from "./CardStack";
 import { IconCard } from "./IconCard";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 import { Alert } from "./Alert";
 
 export function VoiceSettings({
@@ -39,7 +39,7 @@ export function VoiceSettings({
                 </option>
               ))}
             </select>
-            <RoundIconButton
+            <IconButton
               disabled={controller.loading}
               icon={RefreshCw}
               iconClassName={controller.loading ? "spinning" : undefined}

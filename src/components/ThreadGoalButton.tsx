@@ -4,7 +4,7 @@ import { useI18n } from "../i18n/I18nProvider";
 import type { MessageKey } from "../i18n/locales/fr";
 import { useThreadGoal } from "../lib/useThreadGoal";
 import "../thread-goal.css";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 
 export function ThreadGoalButton({
   connected,
@@ -88,7 +88,7 @@ export function ThreadGoalButton({
       ref={root}
     >
       {!hideTrigger && (
-        <RoundIconButton
+        <IconButton
           ref={opener}
           className={controller.goal ? "thread-goal-trigger active" : "thread-goal-trigger"}
           aria-expanded={open}
@@ -185,7 +185,7 @@ export function ThreadGoalButton({
                 </button>
               </span>
             ) : controller.goal ? (
-              <RoundIconButton
+              <IconButton
                 aria-label={t("goal.clear")}
                 className="goal-clear"
                 icon={Trash2}

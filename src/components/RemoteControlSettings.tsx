@@ -10,7 +10,7 @@ import { useI18n } from "../i18n/I18nProvider";
 import { SettingsPageHeader } from "./SettingsPageHeader";
 import { IconCard } from "./IconCard";
 import { CardStack } from "./CardStack";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 import { IconToggle } from "./IconToggle";
 import { IconSubheader } from "./IconSubheader";
 import { Note } from "./Note";
@@ -87,7 +87,7 @@ export function RemoteControlSettings({
         />
       </CardStack>
       {status === "errored" && (
-        <RoundIconButton
+        <IconButton
           className="remote-control-refresh"
           disabled={controller.loading}
           icon={RefreshCw}
@@ -107,7 +107,7 @@ export function RemoteControlSettings({
                 subtitle={t("settings.remoteControl.pairingDetail")}
               />
               {!controller.pairing && (
-                <RoundIconButton
+                <IconButton
                   disabled={controller.pairingLoading}
                   icon={Link2}
                   label={controller.pairingLoading
@@ -149,7 +149,7 @@ export function RemoteControlSettings({
                 title={t("settings.remoteControl.devicesTitle")}
                 subtitle={t("settings.remoteControl.devicesDetail")}
               />
-              <RoundIconButton
+              <IconButton
                 disabled={controller.clientsLoading}
                 icon={RefreshCw}
                 label={t("settings.remoteControl.refresh")}
@@ -196,7 +196,7 @@ export function RemoteControlSettings({
               )}
             </CardStack>
             {controller.nextCursor && (
-              <RoundIconButton
+              <IconButton
                 className="remote-control-load-more"
                 disabled={controller.clientsLoading}
                 label={t("settings.remoteControl.loadMore")}
@@ -259,8 +259,8 @@ function RemoteControlDevice({
       trailing={confirming ? (
         <span className="remote-control-revoke-confirm">
           <small>{t("settings.remoteControl.revokeConfirm")}</small>
-          <RoundIconButton label={t("common.cancel")} onClick={onCancel} variant="secondary" />
-          <RoundIconButton
+          <IconButton label={t("common.cancel")} onClick={onCancel} variant="secondary" />
+          <IconButton
             className="danger"
             disabled={revoking}
             label={t("settings.remoteControl.revoke")}
@@ -269,7 +269,7 @@ function RemoteControlDevice({
           />
         </span>
       ) : (
-        <RoundIconButton
+        <IconButton
           aria-label={t("settings.remoteControl.revokeNamed", {
             name:
               client.displayName ??

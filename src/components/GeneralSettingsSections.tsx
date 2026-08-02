@@ -16,7 +16,7 @@ import type { AppUpdateController } from "../lib/useAppUpdate";
 import { AppUpdateSettings } from "./AppUpdateSettings";
 import { CardStack } from "./CardStack";
 import { IconCard } from "./IconCard";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 import { IconToggle } from "./IconToggle";
 import { IconSubheader } from "./IconSubheader";
 import { Note } from "./Note";
@@ -124,7 +124,7 @@ export function GeneralSettings({
           title={t("settings.appServerRestart.title")}
           subtitle={t("settings.appServerRestart.detail")}
           trailing={<div className="settings-browser-status">
-            <RoundIconButton
+            <IconButton
               disabled={
                 !appServerRestart.available || appServerRestart.restarting
               }
@@ -187,7 +187,7 @@ export function BrowserSettings({
   return (
     <section className="settings-page">
       <SettingsPageHeader description={t("settings.browser.description")} />
-      <div className="settings-card settings-fields">
+      <CardStack className="settings-fields">
         <label>
           <span className="settings-field-description">
             <strong>{t("webSearch.title")}</strong>
@@ -217,8 +217,8 @@ export function BrowserSettings({
             ))}
           </select>
         </label>
-      </div>
-      <div className="settings-card settings-fields">
+      </CardStack>
+      <CardStack className="settings-fields">
         <div className="settings-toggle-row">
           <span className="settings-field-description">
             <strong>{t("settings.browser.enabledTitle")}</strong>
@@ -266,7 +266,7 @@ export function BrowserSettings({
                     .filter(Boolean)
                     .join(" · ")}
                 </small>
-                <RoundIconButton
+                <IconButton
                   disabled={chromium.loading}
                   icon={RefreshCw}
                   label={t("settings.chromium.repair")}
@@ -277,7 +277,7 @@ export function BrowserSettings({
             ) : chromium.status?.enabled && chromium.status.available ? (
               <>
                 <strong>{t("settings.chromium.needsRepair")}</strong>
-                <RoundIconButton
+                <IconButton
                   disabled={chromium.loading}
                   icon={RefreshCw}
                   label={t("settings.chromium.repair")}
@@ -286,17 +286,17 @@ export function BrowserSettings({
                 />
               </>
             ) : chromium.status?.installing ? (
-              <RoundIconButton label={t("settings.chromium.cancel")} onClick={() => void chromium.cancelInstall()} variant="secondary" />
+              <IconButton label={t("settings.chromium.cancel")} onClick={() => void chromium.cancelInstall()} variant="secondary" />
             ) : confirmInstall ? (
               <div className="settings-browser-confirm" role="group">
                 <small>{t("settings.chromium.confirm")}</small>
                 <span>
-                  <RoundIconButton
+                  <IconButton
                     label={t("common.cancel")}
                     onClick={() => setConfirmInstall(false)}
                     variant="secondary"
                   />
-                  <RoundIconButton
+                  <IconButton
                     disabled={!chromium.status?.installSupported}
                     label={t("common.confirm")}
                     onClick={() => {
@@ -316,7 +316,7 @@ export function BrowserSettings({
             )}
           </div>
         </div>
-      </div>
+      </CardStack>
       <Note
         title={t("settings.browser.routingTitle")}
       >

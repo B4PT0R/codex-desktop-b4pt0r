@@ -13,7 +13,7 @@ import type { ThreadSearchController } from "../lib/useThreadSearch";
 import { ThreadDeleteDialog } from "./ThreadDeleteDialog";
 import { SidebarThreadGroup } from "./SidebarThreadGroup";
 import { SidebarThreadRow } from "./SidebarThreadRow";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 
 type SidebarProps = {
   cwd: string;
@@ -141,7 +141,7 @@ export function Sidebar({
           <Sparkles />
         </span>
         <strong>Codex</strong>
-        <RoundIconButton
+        <IconButton
           aria-label={t("sidebar.hide")}
           icon={PanelLeft}
           onClick={onClose}
@@ -230,7 +230,7 @@ export function Sidebar({
         )}
       </nav>
       <div className="sidebar-bottom">
-        <RoundIconButton
+        <IconButton
           className="sidebar-bottom-action"
           gap="large"
           icon={Folder}
@@ -244,7 +244,7 @@ export function Sidebar({
           title={t("sidebar.changeFolder")}
           variant="tertiary"
         />
-        <RoundIconButton
+        <IconButton
           className="sidebar-bottom-action"
           gap="large"
           icon={Settings2}

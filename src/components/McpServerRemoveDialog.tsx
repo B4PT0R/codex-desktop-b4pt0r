@@ -1,7 +1,8 @@
 import { Trash2 } from "lucide-react";
 import { useI18n } from "../i18n/I18nProvider";
 import { useDialogFocus } from "../lib/useDialogFocus";
-import { RoundIcon, RoundIconButton } from "./RoundIcon";
+import { RoundIcon } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 
 export function McpServerRemoveDialog({
   name,
@@ -39,8 +40,8 @@ export function McpServerRemoveDialog({
           <p className="thread-delete-warning">{t("integrations.mcp.removeWarning")}</p>
         </div>
         <div className="modal-actions">
-          <RoundIconButton data-dialog-initial-focus disabled={removing} label={t("common.cancel")} onClick={onCancel} variant="secondary" />
-          <RoundIconButton className="danger" disabled={removing} icon={Trash2} label={removing ? t("integrations.mcp.removing") : t("integrations.mcp.removeConfirm")} onClick={onConfirm} variant="secondary" />
+          <IconButton data-dialog-initial-focus disabled={removing} label={t("common.cancel")} onClick={onCancel} variant="secondary" />
+          <IconButton className="danger" disabled={removing} icon={Trash2} label={removing ? t("integrations.mcp.removing") : t("integrations.mcp.removeConfirm")} onClick={onConfirm} variant="secondary" />
         </div>
       </div>
     </div>

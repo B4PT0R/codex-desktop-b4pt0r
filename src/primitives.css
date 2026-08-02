@@ -1,5 +1,5 @@
 .round-icon,
-.round-icon-button {
+.icon-button {
   display: grid;
   flex: 0 0 auto;
   box-sizing: border-box;
@@ -8,7 +8,7 @@
   border-radius: 50%;
 }
 
-.round-icon-button-glyph {
+.icon-button-glyph {
   display: grid;
   width: 100%;
   height: 100%;
@@ -16,7 +16,7 @@
   place-items: center;
 }
 
-.round-icon-button.round-icon-button-labeled {
+.icon-button.icon-button-labeled {
   display: inline-flex;
   width: auto;
   max-width: 100%;
@@ -27,19 +27,19 @@
   line-height: 1;
 }
 
-.round-icon-gap-small {
+.icon-button-gap-small {
   gap: 4px;
 }
 
-.round-icon-gap-medium {
+.icon-button-gap-medium {
   gap: 6px;
 }
 
-.round-icon-gap-large {
+.icon-button-gap-large {
   gap: 8px;
 }
 
-.round-icon-button-labeled .round-icon-button-glyph {
+.icon-button-labeled .icon-button-glyph {
   width: var(--round-icon-labeled-glyph-size);
   height: var(--round-icon-labeled-glyph-size);
   margin-left: calc(
@@ -47,16 +47,16 @@
   );
 }
 
-.round-icon-button-labeled .round-icon-button-glyph > svg {
+.icon-button-labeled .icon-button-glyph > svg {
   width: 100%;
   height: 100%;
 }
 
-.round-icon-button.round-icon-button-label-only {
+.icon-button.icon-button-label-only {
   padding-inline: 9px;
 }
 
-.round-icon-button-label {
+.icon-button-label {
   flex: 0 1 auto;
   overflow: hidden;
   min-width: 0;
@@ -104,7 +104,7 @@
 }
 
 .round-icon > svg,
-.round-icon-button-glyph > svg {
+.icon-button-glyph > svg {
   display: block;
   width: 50%;
   height: 50%;
@@ -112,30 +112,30 @@
   stroke: currentColor;
 }
 
-.round-icon-button {
+.icon-button {
   cursor: pointer;
 }
 
-.round-icon-button:disabled {
+.icon-button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }
 
-.round-icon-button.round-icon-primary:hover,
-.round-icon-button.round-icon-primary:focus-visible {
+.icon-button.round-icon-primary:hover,
+.icon-button.round-icon-primary:focus-visible {
   border-color: #85857e;
   background: #484843;
 }
 
-.round-icon-button.round-icon-secondary:hover,
-.round-icon-button.round-icon-secondary:focus-visible {
+.icon-button.round-icon-secondary:hover,
+.icon-button.round-icon-secondary:focus-visible {
   color: #d0d0cc;
   border-color: #595954;
   background: #30302d;
 }
 
-.round-icon-button.round-icon-tertiary:hover,
-.round-icon-button.round-icon-tertiary:focus-visible {
+.icon-button.round-icon-tertiary:hover,
+.icon-button.round-icon-tertiary:focus-visible {
   color: #d0d0cc;
   background: #30302d;
 }
@@ -155,16 +155,16 @@
   color: #77716b;
 }
 
-:root[data-theme="light"] .round-icon-button.round-icon-primary:hover,
-:root[data-theme="light"] .round-icon-button.round-icon-primary:focus-visible {
+:root[data-theme="light"] .icon-button.round-icon-primary:hover,
+:root[data-theme="light"] .icon-button.round-icon-primary:focus-visible {
   border-color: #6a6861;
   background: #5b5953;
 }
 
-:root[data-theme="light"] .round-icon-button.round-icon-secondary:hover,
-:root[data-theme="light"] .round-icon-button.round-icon-secondary:focus-visible,
-:root[data-theme="light"] .round-icon-button.round-icon-tertiary:hover,
-:root[data-theme="light"] .round-icon-button.round-icon-tertiary:focus-visible {
+:root[data-theme="light"] .icon-button.round-icon-secondary:hover,
+:root[data-theme="light"] .icon-button.round-icon-secondary:focus-visible,
+:root[data-theme="light"] .icon-button.round-icon-tertiary:hover,
+:root[data-theme="light"] .icon-button.round-icon-tertiary:focus-visible {
   color: #34332f;
   background: #efefeb;
 }

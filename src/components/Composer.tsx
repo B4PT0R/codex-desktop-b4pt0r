@@ -19,7 +19,7 @@ import type { AppInfo, AppServerSkill } from "../lib/appServerTypes";
 import type { TurnContextItem } from "../lib/protocol";
 import { useI18n } from "../i18n/I18nProvider";
 import { useFileSearch, type FileSearchResult } from "../lib/useFileSearch";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 import type { ComposerCommandChoiceRequest } from "../lib/commands";
 
 type ComposerProps = {
@@ -450,7 +450,7 @@ export function Composer({
       />
       <div className="composer-actions">
         <div>
-          <RoundIconButton
+          <IconButton
             ref={addButton}
             aria-label={t("composer.context.add")}
             aria-haspopup="menu"
@@ -492,7 +492,7 @@ export function Composer({
               )}
             </span>
           )}
-          <RoundIconButton
+          <IconButton
             className={recording ? "active" : ""}
             aria-label={t("composer.voice")}
             disabled={dictating || loadingThread}
@@ -500,7 +500,7 @@ export function Composer({
             onClick={onToggleVoice}
             variant="tertiary"
           />
-          <RoundIconButton
+          <IconButton
             className={dictating ? "active dictating" : ""}
             aria-label={t("composer.dictation")}
             disabled={recording || dictationProcessing || loadingThread}
@@ -509,7 +509,7 @@ export function Composer({
             variant="tertiary"
           />
           {busy && (
-            <RoundIconButton
+            <IconButton
               className="stop"
               aria-label={t("composer.stop")}
               icon={Square}
@@ -517,7 +517,7 @@ export function Composer({
               variant="primary"
             />
           )}
-          <RoundIconButton
+          <IconButton
             className="send"
             aria-label={busy ? t("composer.steer") : t("composer.send")}
             disabled={!canSubmit}

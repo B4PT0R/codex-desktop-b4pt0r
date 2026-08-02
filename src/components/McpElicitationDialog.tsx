@@ -2,7 +2,8 @@ import { openUrl } from "../lib/nativeBridge";
 import { ExternalLink, ListChecks } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useI18n } from "../i18n/I18nProvider";
-import { RoundIcon, RoundIconButton } from "./RoundIcon";
+import { RoundIcon } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 import {
   mcpElicitationResponse,
   type McpElicitationField,
@@ -120,12 +121,12 @@ export function McpElicitationDialog({
         {request.mode === "url" && request.url && (
           <div className="mcp-elicitation-url">
             <code>{request.url}</code>
-            <RoundIconButton icon={ExternalLink} label={t("mcpElicitation.openChromium")} onClick={() => void openTarget()} variant="secondary" />
+            <IconButton icon={ExternalLink} label={t("mcpElicitation.openChromium")} onClick={() => void openTarget()} variant="secondary" />
             {openError && (
               <div role="alert">
                 <span>{t("mcpElicitation.openError")}</span>
                 <small>{openError}</small>
-                <RoundIconButton label={t("mcpElicitation.openSystem")} onClick={() => void openTarget(true)} variant="secondary" />
+                <IconButton label={t("mcpElicitation.openSystem")} onClick={() => void openTarget(true)} variant="secondary" />
               </div>
             )}
           </div>
@@ -138,13 +139,13 @@ export function McpElicitationDialog({
         )}
 
         <div className="modal-actions mcp-elicitation-actions">
-          <RoundIconButton
+          <IconButton
             disabled={submitting}
             label={t("common.cancel")}
             onClick={() => onSubmit(mcpElicitationResponse("cancel"))}
             variant="secondary"
           />
-          <RoundIconButton
+          <IconButton
             disabled={submitting}
             label={t("mcpElicitation.decline")}
             onClick={() => onSubmit(mcpElicitationResponse("decline"))}
@@ -152,7 +153,7 @@ export function McpElicitationDialog({
           />
           {approvalOnly &&
             request.persistModes.map((mode) => (
-              <RoundIconButton
+              <IconButton
                 disabled={submitting}
                 key={mode}
                 label={mode === "session"
@@ -165,7 +166,7 @@ export function McpElicitationDialog({
               />
             ))}
           {request.mode !== "unsupported" && (
-            <RoundIconButton
+            <IconButton
               disabled={submitting}
               label={submitting
                 ? t("mcpElicitation.sending")

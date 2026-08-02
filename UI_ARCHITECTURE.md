@@ -165,8 +165,14 @@ n’en conserve aucun élément.
   droite. Sa variante compacte sert aux grands inventaires.
 - `CardStack` possède contour, fond, coins, ombre et séparateurs d’un groupe de
   cartes ainsi qu’une barre de contrôle facultative.
-- `RoundIcon` et `RoundIconButton` centralisent géométrie, niveaux visuels,
+- Les groupes génériques de champs composent `CardStack` avec la classe de
+  disposition `settings-fields`; seuls les panneaux métier autonomes gardent
+  une enveloppe spécifique.
+- `RoundIcon` et `IconButton` centralisent géométrie, niveaux visuels,
   libellés et états désactivés des actions compactes.
+- `IconToggle` porte les bascules non natives et `Badge` les étiquettes
+  non interactives; tailles, variantes et tons restent définis dans
+  `primitives.css` plutôt que dans les features.
 
 Les styles de feature décrivent uniquement les widgets et états métier. Ils ne
 reconstruisent ni carte, ni bouton, ni palette par thème. Le bloc titre d’une

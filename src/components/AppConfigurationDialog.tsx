@@ -7,7 +7,8 @@ import type { AppConfigurationDraft } from "../lib/protocol";
 import { useDialogFocus } from "../lib/useDialogFocus";
 import { CardStack } from "./CardStack";
 import { IconCard } from "./IconCard";
-import { RoundIcon, RoundIconButton } from "./RoundIcon";
+import { RoundIcon } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 import { IconToggle } from "./IconToggle";
 
 type Tab = "essential" | "tools";
@@ -21,7 +22,7 @@ export function AppConfigurationLoadingDialog({ name, onCancel }: { name?: strin
   return <div className="overlay"><div ref={dialogRef} className="modal settings-form-dialog app-configuration-dialog" role="dialog" aria-modal="true" aria-labelledby="app-configuration-loading-title" onKeyDown={onDialogKeyDown} tabIndex={-1}>
     <div className="settings-form-dialog-heading"><RoundIcon icon={Settings2} size="large" variant="primary" /><h2 id="app-configuration-loading-title">{name ? t("integrations.apps.configureTitle", { name }) : t("integrations.apps.defaultsTitle")}</h2></div>
     <div className="inventory-loading">{t("integrations.apps.configurationLoading")}</div>
-    <div className="modal-actions"><RoundIconButton label={t("common.cancel")} onClick={onCancel} variant="secondary" /></div>
+    <div className="modal-actions"><IconButton label={t("common.cancel")} onClick={onCancel} variant="secondary" /></div>
   </div></div>;
 }
 
@@ -153,8 +154,8 @@ export function AppConfigurationDialog({
           </div>
         </div>
         <div className="modal-actions">
-          <RoundIconButton data-dialog-initial-focus disabled={saving} label={t("common.cancel")} onClick={onCancel} variant="secondary" />
-          <RoundIconButton disabled={saving} label={saving ? t("common.saving") : t("common.save")} type="submit" variant="primary" />
+          <IconButton data-dialog-initial-focus disabled={saving} label={t("common.cancel")} onClick={onCancel} variant="secondary" />
+          <IconButton disabled={saving} label={saving ? t("common.saving") : t("common.save")} type="submit" variant="primary" />
         </div>
       </form>
     </div>

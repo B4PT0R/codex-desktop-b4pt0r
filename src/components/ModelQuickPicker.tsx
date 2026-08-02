@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import { reasoningEffortLabel } from "../lib/reasoningEffort";
 import type { CollaborationMode, Model } from "../types";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 
 type ModelQuickPickerProps = {
   effort: string;
@@ -139,7 +139,7 @@ export function ModelQuickPicker({
             </div>
             <div aria-label={t("modelPicker.effort")} role="radiogroup">
               {efforts.map((option) => (
-                <RoundIconButton
+                <IconButton
                   aria-checked={option.reasoningEffort === effort}
                   className={
                     option.reasoningEffort === effort ? "selected" : ""
@@ -173,7 +173,7 @@ export function ModelQuickPicker({
                 aria-label={t("modelPicker.serviceTier")}
                 role="radiogroup"
               >
-                <RoundIconButton
+                <IconButton
                   aria-checked={serviceTier === null}
                   className={serviceTier === null ? "selected" : ""}
                   label={t("settings.global.automatic")}
@@ -186,7 +186,7 @@ export function ModelQuickPicker({
                   variant={serviceTier === null ? "primary" : "secondary"}
                 />
                 {serviceTiers.map((tier) => (
-                  <RoundIconButton
+                  <IconButton
                     aria-checked={tier.id === serviceTier}
                     className={tier.id === serviceTier ? "selected" : ""}
                     key={tier.id}

@@ -2,7 +2,8 @@ import { ShieldCheck } from "lucide-react";
 import type { Approval } from "../types";
 import { useDialogFocus } from "../lib/useDialogFocus";
 import { useI18n } from "../i18n/I18nProvider";
-import { RoundIcon, RoundIconButton } from "./RoundIcon";
+import { RoundIcon } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 
 type ApprovalDecision = "accept" | "session" | "decline";
 
@@ -37,11 +38,11 @@ export function ApprovalDialog({ approval, onDecide }: ApprovalDialogProps) {
         <p>{approval.description}</p>
         {approval.command && <code>{approval.command}</code>}
         <div className="modal-actions">
-          <RoundIconButton data-dialog-initial-focus label={t("approval.decline")} onClick={() => onDecide("decline")} variant="secondary" />
+          <IconButton data-dialog-initial-focus label={t("approval.decline")} onClick={() => onDecide("decline")} variant="secondary" />
           {approval.allowSession && (
-            <RoundIconButton label={t("approval.session")} onClick={() => onDecide("session")} variant="secondary" />
+            <IconButton label={t("approval.session")} onClick={() => onDecide("session")} variant="secondary" />
           )}
-          <RoundIconButton label={t("approval.once")} onClick={() => onDecide("accept")} variant="primary" />
+          <IconButton label={t("approval.once")} onClick={() => onDecide("accept")} variant="primary" />
         </div>
       </div>
     </div>

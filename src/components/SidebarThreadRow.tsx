@@ -1,7 +1,7 @@
 import { Archive, Trash2 } from "lucide-react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { ThreadSummary } from "../types";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 
 type SidebarThreadRowProps = {
   actions?: boolean;
@@ -42,7 +42,7 @@ export function SidebarThreadRow({
       </button>
       {actions && (
         <>
-          <RoundIconButton
+          <IconButton
             className="thread-archive"
             aria-label={`${t("sidebar.archive")} ${label}`}
             icon={Archive}
@@ -50,7 +50,7 @@ export function SidebarThreadRow({
             onClick={() => onArchive(thread)}
             variant="tertiary"
           />
-          <RoundIconButton
+          <IconButton
             className="thread-delete"
             aria-label={`${t("sidebar.delete")} ${label}`}
             icon={Trash2}

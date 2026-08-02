@@ -12,7 +12,7 @@ import { invoke, isDesktopApp } from "../lib/nativeBridge";
 import { useDialogFocus } from "../lib/useDialogFocus";
 import type { ToolArtifact } from "../types";
 import "../generated-image.css";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 
 type GeneratedImageArtifact = Extract<
   ToolArtifact,
@@ -112,14 +112,14 @@ export function GeneratedImageWidget({
                   )}
                   <span className="generated-image-actions">
                     {artifact.dataUrl && (
-                      <RoundIconButton
+                      <IconButton
                         aria-label={t("imageWidget.expand")}
                         icon={Expand}
                         onClick={() => setExpanded(artifact)}
                         variant="tertiary"
                       />
                     )}
-                    <RoundIconButton
+                    <IconButton
                       aria-label={t("imageWidget.download")}
                       disabled={saving || (!artifact.dataUrl && !artifact.path)}
                       icon={Download}
@@ -156,14 +156,14 @@ export function GeneratedImageWidget({
               src={expanded.dataUrl}
             />
             <span>
-              <RoundIconButton
+              <IconButton
                 aria-label={t("imageWidget.download")}
                 disabled={saving}
                 icon={Download}
                 onClick={() => void save(expanded)}
                 variant="tertiary"
               />
-              <RoundIconButton
+              <IconButton
                 aria-label={t("imageWidget.close")}
                 data-image-lightbox-close
                 icon={X}

@@ -1,7 +1,7 @@
 import { RotateCcw } from "lucide-react";
 import { useEffect, useState, type ComponentType } from "react";
 import { useI18n } from "../i18n/I18nProvider";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 import type { SettingsViewProps } from "./SettingsView";
 
 let settingsModule: Promise<ComponentType<SettingsViewProps>> | undefined;
@@ -47,8 +47,8 @@ export function SettingsLoader(props: SettingsViewProps) {
           <strong>{t("settings.loadError")}</strong>
           <small>{error}</small>
           <span>
-            <RoundIconButton label={t("settings.back")} onClick={props.onClose} variant="secondary" />
-            <RoundIconButton
+            <IconButton label={t("settings.back")} onClick={props.onClose} variant="secondary" />
+            <IconButton
               icon={RotateCcw}
               label={t("settings.retry")}
               onClick={() => setAttempt((value) => value + 1)}

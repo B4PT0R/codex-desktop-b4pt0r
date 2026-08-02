@@ -3,7 +3,7 @@ import { useI18n } from "../i18n/I18nProvider";
 import type { AppUpdateController } from "../lib/useAppUpdate";
 import { CardStack } from "./CardStack";
 import { IconCard } from "./IconCard";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 import { Alert } from "./Alert";
 
 export function AppUpdateSettings({
@@ -48,7 +48,7 @@ export function AppUpdateSettings({
           subtitle={updateMessage(controller, t)}
           trailing={<div className="settings-browser-status">
             {controller.updateInstalled ? (
-              <RoundIconButton
+              <IconButton
                 disabled
                 icon={Check}
                 label={t("settings.updates.installed")}
@@ -56,7 +56,7 @@ export function AppUpdateSettings({
                 variant="tertiary"
               />
             ) : canInstall ? (
-              <RoundIconButton
+              <IconButton
                 disabled={controller.installing}
                 icon={Download}
                 label={t(
@@ -69,7 +69,7 @@ export function AppUpdateSettings({
                 variant="tertiary"
               />
             ) : canOpenRelease ? (
-              <RoundIconButton
+              <IconButton
                 icon={ExternalLink}
                 label={t("settings.updates.openRelease")}
                 onClick={() => void controller.openRelease()}
@@ -77,7 +77,7 @@ export function AppUpdateSettings({
                 variant="tertiary"
               />
             ) : (
-              <RoundIconButton
+              <IconButton
                 disabled={
                   !controller.native ||
                   controller.checking ||

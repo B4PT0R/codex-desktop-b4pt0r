@@ -21,7 +21,7 @@ import { ThreadDeleteDialog } from "./ThreadDeleteDialog";
 import { BackgroundTerminalsLoader } from "./BackgroundTerminalsLoader";
 import { ThreadGoalButton } from "./ThreadGoalButton";
 import { WorkspaceAgentsButton } from "./WorkspaceAgentsButton";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 import type { BackgroundTerminalsController } from "../lib/useBackgroundTerminals";
 import type { HeaderCommandRequest } from "../lib/commands";
 
@@ -160,7 +160,7 @@ export function ChatHeader({
     <>
       <header>
         {!sidebarOpen && (
-          <RoundIconButton
+          <IconButton
             aria-label={t("chat.sidebar.show")}
             icon={Menu}
             onClick={onOpenSidebar}
@@ -210,7 +210,7 @@ export function ChatHeader({
                           }
                         }}
                       />
-                      <RoundIconButton
+                      <IconButton
                         aria-label={t("common.cancel")}
                         icon={X}
                         onClick={() => {
@@ -219,7 +219,7 @@ export function ChatHeader({
                         }}
                         variant="tertiary"
                       />
-                      <RoundIconButton
+                      <IconButton
                         aria-label={t("chat.actions.saveName")}
                         disabled={!name.trim() || name.trim() === title || saving}
                         icon={Check}
@@ -233,7 +233,7 @@ export function ChatHeader({
                     <small>{t("chat.actions.name")}</small>
                     <span>
                       <strong title={title}>{title}</strong>
-                      <RoundIconButton
+                      <IconButton
                         aria-label={t("chat.actions.editName")}
                         icon={Pencil}
                         onClick={() => setEditingName(true)}
@@ -354,7 +354,7 @@ export function ChatHeader({
           {demoPlayback && (
             <>
               {demoPlayback.onPreviewThreadLoading && (
-                <RoundIconButton
+                <IconButton
                   className="demo-playback-button"
                   disabled={demoPlayback.loadingThread || demoPlayback.running}
                   icon={LoaderCircle}
@@ -371,7 +371,7 @@ export function ChatHeader({
                   variant="secondary"
                 />
               )}
-              <RoundIconButton
+              <IconButton
                 className="demo-playback-button"
                 disabled={demoPlayback.loadingThread}
                 icon={

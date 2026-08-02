@@ -6,7 +6,8 @@ import type { AppConfigurationEditorData, AppsController } from "../lib/useApps"
 import { useDialogFocus } from "../lib/useDialogFocus";
 import { CardStack } from "./CardStack";
 import { IconCard } from "./IconCard";
-import { RoundIcon, RoundIconButton } from "./RoundIcon";
+import { RoundIcon } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 
 type CatalogFilter = "all" | "connected" | "available";
 
@@ -155,7 +156,7 @@ export function AppCatalogDialog({
                       {app.isAccessible ? <Check aria-hidden="true" /> : null}
                       {t(app.isAccessible ? "integrations.apps.connected" : "integrations.apps.availableToConnect")}
                     </span>
-                    <RoundIconButton label={t("integrations.apps.viewDetails")} onClick={() => openDetails(app)} size="small" variant="secondary" />
+                    <IconButton label={t("integrations.apps.viewDetails")} onClick={() => openDetails(app)} size="small" variant="secondary" />
                   </div>}
                 />)}
               </CardStack>
@@ -164,7 +165,7 @@ export function AppCatalogDialog({
         </>}
       </div>
       <div className="modal-actions">
-        <RoundIconButton label={t("common.close")} onClick={onCancel} variant="secondary" />
+        <IconButton label={t("common.close")} onClick={onCancel} variant="secondary" />
       </div>
     </div>
   </div>;
@@ -220,11 +221,11 @@ function AppDetails({ app, details, openedInstall, onBack, onConfigure, onInstal
     </div>}
     <div className="app-catalog-primary-action">
       {app.isAccessible
-        ? <RoundIconButton icon={Settings2} label={t("integrations.apps.configure")} onClick={onConfigure} variant="primary" />
+        ? <IconButton icon={Settings2} label={t("integrations.apps.configure")} onClick={onConfigure} variant="primary" />
         : openedInstall
-          ? <RoundIconButton label={t("integrations.apps.refreshConnection")} onClick={() => void onRefresh()} variant="primary" />
+          ? <IconButton label={t("integrations.apps.refreshConnection")} onClick={() => void onRefresh()} variant="primary" />
           : app.installUrl
-            ? <RoundIconButton icon={ExternalLink} label={t("integrations.apps.connect")} onClick={() => void onInstall()} variant="primary" />
+            ? <IconButton icon={ExternalLink} label={t("integrations.apps.connect")} onClick={() => void onInstall()} variant="primary" />
             : <span className="app-catalog-unavailable">{t("integrations.apps.installUnavailable")}</span>}
     </div>
     <h4><Wrench aria-hidden="true" />{t("integrations.apps.exposedTools")}</h4>

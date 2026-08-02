@@ -9,9 +9,10 @@ import type {
 } from "../lib/useCodexGlobalSettings";
 import { ConfigDocumentEditor } from "./ConfigDocumentEditor";
 import { DeveloperInstructionsSettings } from "./DeveloperInstructionsSettings";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 import { IconToggle } from "./IconToggle";
 import { Alert } from "./Alert";
+import { CardStack } from "./CardStack";
 
 const compactLimits = [32_000, 64_000, 128_000];
 const toolOutputLimits = [4_000, 8_000, 12_000, 24_000];
@@ -44,7 +45,7 @@ export function CodexConfigSettings({
           title={t("settings.config.context.title")}
           subtitle={t("settings.config.context.description")}
         />
-        <div className="settings-card settings-fields">
+        <CardStack className="settings-fields">
           <GuidedSelect
             label={t("settings.config.compactLimit.title")}
             detail={t("settings.config.compactLimit.detail")}
@@ -70,13 +71,13 @@ export function CodexConfigSettings({
               globalSettings.setAdvanced("tool_output_token_limit", value)
             }
           />
-        </div>
+        </CardStack>
 
         <IconSubheader
           title={t("settings.config.projectDocs.title")}
           subtitle={t("settings.config.projectDocs.description")}
         />
-        <div className="settings-card settings-fields">
+        <CardStack className="settings-fields">
           <GuidedSelect
             label={t("settings.config.projectDocLimit.title")}
             detail={t("settings.config.projectDocLimit.detail")}
@@ -113,7 +114,7 @@ export function CodexConfigSettings({
                 placeholder={t("settings.config.fallbackFiles.placeholder")}
                 onChange={(event) => setFallbackDraft(event.target.value)}
               />
-              <RoundIconButton
+              <IconButton
                 aria-label={t("settings.config.fallbackFiles.save")}
                 disabled={globalSettings.loading}
                 icon={Save}
@@ -122,13 +123,13 @@ export function CodexConfigSettings({
               />
             </span>
           </form>
-        </div>
+        </CardStack>
 
         <IconSubheader
           title={t("settings.config.runtime.title")}
           subtitle={t("settings.config.runtime.description")}
         />
-        <div className="settings-card settings-fields">
+        <CardStack className="settings-fields">
           <div className="settings-toggle-row">
             <span className="settings-field-description">
               <strong>{t("settings.config.loginShell.title")}</strong>
@@ -164,13 +165,13 @@ export function CodexConfigSettings({
               globalSettings.setAdvanced("mcp_oauth_credentials_store", value)
             }
           />
-        </div>
+        </CardStack>
 
         <IconSubheader
           title={t("settings.config.experimental.title")}
           subtitle={t("settings.config.experimental.description")}
         />
-        <div className="settings-card settings-fields">
+        <CardStack className="settings-fields">
           <div className="settings-toggle-row">
             <span className="settings-field-description">
               <strong>
@@ -192,7 +193,7 @@ export function CodexConfigSettings({
               }
             />
           </div>
-        </div>
+        </CardStack>
 
         {globalSettings.error && (
           <Alert tone="error">

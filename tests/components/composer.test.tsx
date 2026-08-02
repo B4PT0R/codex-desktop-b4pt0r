@@ -435,7 +435,7 @@ describe("composer", () => {
     expect(props.onSend).toHaveBeenCalledWith("Vérifie aussi les tests", []);
     expect(props.onStop).not.toHaveBeenCalled();
     const stop = screen.getByRole("button", { name: "Arrêter le tour" });
-    expect(stop.querySelector(".round-icon-button-label")).toBeNull();
+    expect(stop.querySelector(".icon-button-label")).toBeNull();
     fireEvent.click(stop);
     expect(props.onStop).toHaveBeenCalledOnce();
   });

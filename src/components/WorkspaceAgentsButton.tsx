@@ -4,7 +4,7 @@ import { useI18n } from "../i18n/I18nProvider";
 import { useDialogFocus } from "../lib/useDialogFocus";
 import { useWorkspaceAgents } from "../lib/useWorkspaceAgents";
 import "../workspace-agents.css";
-import { RoundIconButton } from "./RoundIcon";
+import { IconButton } from "./IconButton";
 
 export function WorkspaceAgentsButton({
   cwd,
@@ -62,7 +62,7 @@ export function WorkspaceAgentsButton({
   return (
     <>
       {!hideTrigger && (
-        <RoundIconButton
+        <IconButton
           className="workspace-agents-trigger"
           aria-expanded={open}
           aria-haspopup="dialog"
@@ -107,7 +107,7 @@ export function WorkspaceAgentsButton({
                 </small>
               </span>
               {!nativeApp && <em>{t("agents.preview")}</em>}
-              <RoundIconButton
+              <IconButton
                 aria-label={t("agents.close")}
                 icon={X}
                 onClick={requestClose}
