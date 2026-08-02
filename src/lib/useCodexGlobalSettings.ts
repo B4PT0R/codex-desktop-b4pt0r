@@ -138,7 +138,7 @@ export function useCodexGlobalSettings(
   const writeInFlight = useRef(false);
 
   const refresh = useCallback(async () => {
-    if (!connected || !isDesktopApp()) return;
+    if (!connected || !isDesktopApp() || writeInFlight.current) return;
     const version = ++refreshVersion.current;
     setLoading(true);
     try {
@@ -226,6 +226,8 @@ export function useCodexGlobalSettings(
         return true;
       }
       writeInFlight.current = true;
+      refreshVersion.current += 1;
+      setLoading(false);
       setUpdating(nextMode);
       setError(undefined);
       try {
@@ -258,6 +260,8 @@ export function useCodexGlobalSettings(
         return true;
       }
       writeInFlight.current = true;
+      refreshVersion.current += 1;
+      setLoading(false);
       setError(undefined);
       try {
         await request("config/value/write", params);

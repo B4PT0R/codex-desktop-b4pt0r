@@ -12,6 +12,14 @@ import { useCodexGlobalSettings } from "../../src/lib/useCodexGlobalSettings";
 
 beforeEach(() => requestMock.mockReset());
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+
 describe("réglage global de recherche web", () => {
   it("hydrate la valeur utilisateur puis l'écrit via App Server", async () => {
     requestMock.mockResolvedValueOnce({
@@ -179,6 +187,26 @@ describe("réglage global de recherche web", () => {
     });
     expect(result.current.mode).toBe("cached");
     expect(result.current.error).toBe("écriture refusée");
+  });
+
+  it("ignore une lecture antérieure à une écriture réussie", async () => {
+    const staleRead = deferred<{ config: { web_search: "cached" } }>();
+    requestMock
+      .mockReturnValueOnce(staleRead.promise)
+      .mockResolvedValueOnce({ status: "ok" });
+    const { result } = renderHook(() => useCodexGlobalSettings(true));
+    await waitFor(() => expect(result.current.loading).toBe(true));
+
+    await act(async () => {
+      expect(await result.current.setMode("live")).toBe(true);
+    });
+    expect(result.current.mode).toBe("live");
+    expect(result.current.loading).toBe(false);
+
+    staleRead.resolve({ config: { web_search: "cached" } });
+    await act(() => staleRead.promise);
+    expect(result.current.mode).toBe("live");
+    expect(result.current.loading).toBe(false);
   });
 
   it("écrit une valeur guidée et retire une limite automatique", async () => {
