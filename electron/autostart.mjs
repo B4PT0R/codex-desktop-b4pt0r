@@ -32,6 +32,9 @@ export async function readLaunchAtLogin(file, executable) {
 
 export async function setLaunchAtLogin(file, executable, enabled) {
   validateExecutable(executable);
+  if (typeof enabled !== "boolean") {
+    throw new Error("Invalid launch-at-login state");
+  }
   if (enabled) {
     await writeFileAtomically(file, desktopEntry(executable), {
       createDirectory: true,

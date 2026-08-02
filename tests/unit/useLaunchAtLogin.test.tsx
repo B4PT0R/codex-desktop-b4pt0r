@@ -37,4 +37,33 @@ describe("démarrage automatique", () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.error).toBe("autostart unavailable");
   });
+
+  it("sérialise deux choix déclenchés avant le rerender", async () => {
+    let resolveMutation: (enabled: boolean) => void = () => undefined;
+    invokeMock.mockResolvedValueOnce(false).mockImplementationOnce(
+      () =>
+        new Promise<boolean>((resolve) => {
+          resolveMutation = resolve;
+        }),
+    );
+    const { result } = renderHook(useLaunchAtLogin);
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let first: Promise<void> | undefined;
+    let second: Promise<void> | undefined;
+    act(() => {
+      first = result.current.setEnabled(true);
+      second = result.current.setEnabled(false);
+    });
+
+    expect(invokeMock).toHaveBeenCalledTimes(2);
+    expect(invokeMock).toHaveBeenLastCalledWith("set_launch_at_login", {
+      enabled: true,
+    });
+    await act(async () => {
+      resolveMutation(true);
+      await Promise.all([first, second]);
+    });
+    expect(result.current.enabled).toBe(true);
+  });
 });

@@ -219,7 +219,7 @@ function registerIpc() {
     return setLaunchAtLogin(
       autostartPath(app.getPath("home"), process.env),
       process.execPath,
-      Boolean(args?.enabled),
+      args?.enabled,
     );
   });
   ipcMain.handle("desktop:transcribe_dictation", (event, args) => {

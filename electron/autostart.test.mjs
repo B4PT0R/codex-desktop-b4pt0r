@@ -67,3 +67,14 @@ test("does not trust a symlinked or foreign desktop entry", async () => {
     false,
   );
 });
+
+test("rejects a malformed launch-at-login state", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "codex-autostart-"));
+  const file = path.join(directory, "autostart", "codex-desktop.desktop");
+
+  await assert.rejects(
+    setLaunchAtLogin(file, "/opt/Codex Desktop/codex-desktop", "true"),
+    /Invalid launch-at-login state/,
+  );
+  await assert.rejects(readFile(file, "utf8"), { code: "ENOENT" });
+});

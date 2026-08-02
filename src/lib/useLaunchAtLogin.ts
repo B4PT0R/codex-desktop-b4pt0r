@@ -1,5 +1,5 @@
 import { invoke, isDesktopApp } from "./nativeBridge";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type LaunchAtLoginController = {
   available: boolean;
@@ -14,9 +14,11 @@ export function useLaunchAtLogin(): LaunchAtLoginController {
   const [enabled, setCurrentEnabled] = useState(false);
   const [loading, setLoading] = useState(available);
   const [error, setError] = useState<string>();
+  const operation = useRef(false);
 
   const refresh = useCallback(async () => {
-    if (!available) return;
+    if (!available || operation.current) return;
+    operation.current = true;
     setLoading(true);
     setError(undefined);
     try {
@@ -24,13 +26,15 @@ export function useLaunchAtLogin(): LaunchAtLoginController {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
+      operation.current = false;
       setLoading(false);
     }
   }, [available]);
 
   const setEnabled = useCallback(
     async (nextEnabled: boolean) => {
-      if (!available || loading) return;
+      if (!available || operation.current) return;
+      operation.current = true;
       setLoading(true);
       setError(undefined);
       try {
@@ -42,10 +46,11 @@ export function useLaunchAtLogin(): LaunchAtLoginController {
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : String(cause));
       } finally {
+        operation.current = false;
         setLoading(false);
       }
     },
-    [available, loading],
+    [available],
   );
 
   useEffect(() => {
