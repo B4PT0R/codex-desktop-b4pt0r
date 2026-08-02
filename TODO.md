@@ -27,6 +27,9 @@ Scheduler task cards present recurring schedules and pending one-shot execution
 as explicit toggle states; immediate execution remains an agent-facing command
 rather than a lifecycle-altering ordinary card action.
 
+External-agent import keeps detection, import and history errors ordered across
+concurrent requests, so late background failures cannot replace newer state.
+
 DEB, RPM and AppImage packages are published for x86-64 Linux. Clean Debian
 stable and Fedora containers install their native package and smoke-test both
 the installed executable and AppImage under an unprivileged Xvfb/D-Bus session.
@@ -103,7 +106,7 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 691 deterministic frontend/unit tests across 129 files;
+- 693 deterministic frontend/unit tests across 129 files;
 - 130 Electron/Node tests, including App Server shutdown, recovery and the tray
   quick actions;
 - production Vite build;

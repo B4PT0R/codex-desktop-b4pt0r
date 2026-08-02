@@ -15,10 +15,12 @@ import { useExternalAgentImport } from "../../src/lib/useExternalAgentImport";
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((next) => {
+  let reject!: (cause: unknown) => void;
+  const promise = new Promise<T>((next, fail) => {
     resolve = next;
+    reject = fail;
   });
-  return { promise, resolve };
+  return { promise, reject, resolve };
 }
 
 beforeEach(() => {
@@ -166,5 +168,42 @@ describe("contrôleur d’import d’agents", () => {
 
     expect(result.current.detecting).toBe(false);
     expect(result.current.items).toEqual([]);
+  });
+
+  it("ignore l’échec tardif d’un historique antérieur à une détection", async () => {
+    const history = deferred<{ data: unknown[] }>();
+    requestMock.mockImplementation((method: string) =>
+      method === "externalAgentConfig/import/readHistories"
+        ? history.promise
+        : Promise.resolve({
+            items: [{ itemType: "CONFIG", description: "Configuration" }],
+          }),
+    );
+    const { result } = renderHook(() =>
+      useExternalAgentImport({ cwd: "/project", enabled: true }),
+    );
+
+    await act(() => result.current.detect("claude-code"));
+    history.reject(new Error("stale history failure"));
+    await waitFor(() => expect(result.current.historyLoading).toBe(false));
+
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.error).toBeUndefined();
+  });
+
+  it("efface une erreur d’historique après un rafraîchissement réussi", async () => {
+    requestMock
+      .mockRejectedValueOnce(new Error("history unavailable"))
+      .mockResolvedValueOnce({ data: [] });
+    const { result } = renderHook(() =>
+      useExternalAgentImport({ cwd: "/project", enabled: true }),
+    );
+    await waitFor(() =>
+      expect(result.current.error).toBe("history unavailable"),
+    );
+
+    await act(() => result.current.refreshHistory());
+
+    expect(result.current.error).toBeUndefined();
   });
 });

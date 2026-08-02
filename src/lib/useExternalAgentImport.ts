@@ -56,6 +56,9 @@ export function useExternalAgentImport({
   const detectionGeneration = useRef(0);
   const detectionCwd = useRef(cwd);
   const historyGeneration = useRef(0);
+  // Detection, import and history share one visible error; only the latest
+  // operation may replace it so a slow background response cannot regress UI.
+  const errorGeneration = useRef(0);
   const queuedNotifications = useRef(
     new Map<
       string,
@@ -65,6 +68,7 @@ export function useExternalAgentImport({
 
   const refreshHistory = useCallback(async () => {
     const generation = ++historyGeneration.current;
+    const operationErrorGeneration = ++errorGeneration.current;
     if (!isDesktopApp()) {
       setHistoryLoading(false);
       return;
@@ -78,6 +82,9 @@ export function useExternalAgentImport({
       if (generation === historyGeneration.current) {
         const normalized = normalizeExternalAgentHistories(response.data);
         setHistories(normalized);
+        if (operationErrorGeneration === errorGeneration.current) {
+          setError(undefined);
+        }
         const recovered = normalized.find(
           (history) => history.importId === activeImportId.current,
         );
@@ -90,7 +97,10 @@ export function useExternalAgentImport({
         }
       }
     } catch (cause) {
-      if (generation === historyGeneration.current) {
+      if (
+        generation === historyGeneration.current &&
+        operationErrorGeneration === errorGeneration.current
+      ) {
         setError(errorMessage(cause));
       }
     } finally {
@@ -100,6 +110,7 @@ export function useExternalAgentImport({
 
   const detect = useCallback(async (source: ExternalAgentMigrationSource) => {
     const generation = ++detectionGeneration.current;
+    const operationErrorGeneration = ++errorGeneration.current;
     if (!isDesktopApp()) {
       setItems([]);
       setError(t("externalImport.nativeOnly"));
@@ -125,7 +136,8 @@ export function useExternalAgentImport({
     } catch (cause) {
       if (
         generation === detectionGeneration.current &&
-        cwd === detectionCwd.current
+        cwd === detectionCwd.current &&
+        operationErrorGeneration === errorGeneration.current
       )
         setError(errorMessage(cause));
     } finally {
@@ -140,6 +152,7 @@ export function useExternalAgentImport({
   const importItems = useCallback(
     async (selectedItems: ExternalAgentMigrationItem[]) => {
       if (importInFlight.current || selectedItems.length === 0) return;
+      const operationErrorGeneration = ++errorGeneration.current;
       if (!isDesktopApp()) {
         setError(t("externalImport.nativeOnly"));
         return;
@@ -172,7 +185,9 @@ export function useExternalAgentImport({
       } catch (cause) {
         importInFlight.current = false;
         setImporting(false);
-        setError(errorMessage(cause));
+        if (operationErrorGeneration === errorGeneration.current) {
+          setError(errorMessage(cause));
+        }
       }
     },
     [refreshHistory, t],
@@ -190,10 +205,13 @@ export function useExternalAgentImport({
   }, [enabled, refreshHistory]);
 
   useEffect(() => {
+    if (detectionCwd.current === cwd) return;
     detectionCwd.current = cwd;
     detectionGeneration.current += 1;
+    errorGeneration.current += 1;
     setDetecting(false);
     setItems([]);
+    setError(undefined);
   }, [cwd]);
 
   useEffect(() => {
@@ -238,6 +256,7 @@ export function useExternalAgentImport({
     () => () => {
       detectionGeneration.current += 1;
       historyGeneration.current += 1;
+      errorGeneration.current += 1;
     },
     [],
   );
