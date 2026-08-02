@@ -27,9 +27,9 @@ Scheduler task cards present recurring schedules and pending one-shot execution
 as explicit toggle states; immediate execution remains an agent-facing command
 rather than a lifecycle-altering ordinary card action.
 
-Recent controller audits covered external import, Account authentication,
-Memory settings, fixed-target native document editors and background terminals;
-revisit them only with new dogfooding evidence.
+Recent controller audits covered Memory settings, fixed-target native document
+editors, background terminals and rate limits. Earlier import and Account
+passes remain in Git history; revisit these sectors only with new evidence.
 
 DEB, RPM and AppImage packages are published for x86-64 Linux. Clean Debian
 stable and Fedora containers install their native package and smoke-test both

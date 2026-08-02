@@ -84,6 +84,12 @@ describe("limites d’utilisation", () => {
           windowDurationMins: 300,
           resetsAt: 15,
         },
+        secondary: {
+          usedPercent: 50,
+          windowDurationMins: 10_080,
+          resetsAt: 30,
+        },
+        rateLimitReachedType: "workspace_member_usage_limit_reached",
       },
     });
     const { result } = renderHook(() => useRateLimits(true));
@@ -103,14 +109,21 @@ describe("limites d’utilisation", () => {
           rateLimits: {
             primary: {
               usedPercent: 4,
-              windowDurationMins: 300,
-              resetsAt: 40,
             },
+            secondary: null,
+            rateLimitReachedType: null,
           },
         },
       }),
     );
-    expect(result.current.quotas[0]).toMatchObject({ used: 4, resetsAt: 40 });
+    expect(result.current.quotas[0]).toMatchObject({ used: 4, resetsAt: 15 });
+    expect(result.current.quotas[1]).toMatchObject({
+      used: 50,
+      resetsAt: 30,
+    });
+    expect(result.current.reachedType).toBe(
+      "workspace_member_usage_limit_reached",
+    );
   });
 
   it("ne laisse pas une lecture obsolète écraser une notification récente", async () => {

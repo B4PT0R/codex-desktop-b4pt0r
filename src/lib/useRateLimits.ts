@@ -3,6 +3,7 @@ import type {
   AccountRateLimitsResponse,
   ConsumeRateLimitResetCreditResponse,
   RateLimitSnapshot,
+  RateLimitWindow,
   RateLimitResetCreditsSummary,
   SendCreditsNudgeResponse,
 } from "./appServerTypes";
@@ -43,6 +44,7 @@ export function useRateLimits(enabled: boolean): RateLimitsController {
   const [error, setError] = useState<string>();
   const [resetMessage, setResetMessage] = useState<string>();
   const refreshVersion = useRef(0);
+  const latestSnapshot = useRef<RateLimitSnapshot | undefined>(undefined);
   const consumeInFlight = useRef(false);
   const nudgeInFlight = useRef(false);
   const pendingAttempt = useRef<
@@ -54,6 +56,7 @@ export function useRateLimits(enabled: boolean): RateLimitsController {
   >(undefined);
 
   const apply = useCallback((snapshot: RateLimitSnapshot | undefined) => {
+    latestSnapshot.current = snapshot;
     setQuotas(quotasFromRateLimits(snapshot));
     setReachedType(snapshot?.rateLimitReachedType);
   }, []);
@@ -150,9 +153,10 @@ export function useRateLimits(enabled: boolean): RateLimitsController {
       refreshVersion.current += 1;
       setLoading(false);
       const params = record(message.params);
-      const snapshot = record(params?.rateLimits) as
-        RateLimitSnapshot | undefined;
-      apply(snapshot);
+      const update = sparseRateLimitSnapshot(params?.rateLimits);
+      if (!update) return;
+      apply(mergeRateLimitSnapshot(latestSnapshot.current, update));
+      setError(undefined);
     });
   }, [apply, enabled]);
 
@@ -202,6 +206,98 @@ export function millisecondsUntilQuotaRefresh(
 function record(value: unknown): Record<string, unknown> | undefined {
   return value !== null && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
+    : undefined;
+}
+
+type SparseRateLimitSnapshot = {
+  primary?: Partial<RateLimitWindow> & Pick<RateLimitWindow, "usedPercent">;
+  secondary?: Partial<RateLimitWindow> & Pick<RateLimitWindow, "usedPercent">;
+  rateLimitReachedType?: NonNullable<
+    RateLimitSnapshot["rateLimitReachedType"]
+  >;
+};
+
+function sparseRateLimitSnapshot(
+  value: unknown,
+): SparseRateLimitSnapshot | undefined {
+  const snapshot = record(value);
+  if (!snapshot) return undefined;
+  const primary = rateLimitWindow(snapshot.primary);
+  const secondary = rateLimitWindow(snapshot.secondary);
+  const reachedType = rateLimitReachedType(snapshot.rateLimitReachedType);
+  return {
+    ...(primary ? { primary } : {}),
+    ...(secondary ? { secondary } : {}),
+    ...(reachedType ? { rateLimitReachedType: reachedType } : {}),
+  };
+}
+
+function mergeRateLimitSnapshot(
+  current: RateLimitSnapshot | undefined,
+  update: SparseRateLimitSnapshot,
+): RateLimitSnapshot {
+  return {
+    ...current,
+    ...(update.primary
+      ? { primary: mergeRateLimitWindow(current?.primary, update.primary) }
+      : {}),
+    ...(update.secondary
+      ? { secondary: mergeRateLimitWindow(current?.secondary, update.secondary) }
+      : {}),
+    ...(update.rateLimitReachedType
+      ? { rateLimitReachedType: update.rateLimitReachedType }
+      : {}),
+  };
+}
+
+function mergeRateLimitWindow(
+  current: RateLimitWindow | null | undefined,
+  update: SparseRateLimitSnapshot["primary"],
+): RateLimitWindow {
+  return {
+    usedPercent: update?.usedPercent ?? current?.usedPercent ?? 0,
+    windowDurationMins:
+      update?.windowDurationMins ?? current?.windowDurationMins ?? null,
+    resetsAt: update?.resetsAt ?? current?.resetsAt ?? null,
+  };
+}
+
+function rateLimitWindow(value: unknown): SparseRateLimitSnapshot["primary"] {
+  const window = record(value);
+  if (
+    !window ||
+    typeof window.usedPercent !== "number" ||
+    !Number.isFinite(window.usedPercent)
+  ) {
+    return undefined;
+  }
+  const windowDurationMins = finiteNumber(window.windowDurationMins);
+  const resetsAt = finiteNumber(window.resetsAt);
+  return {
+    usedPercent: window.usedPercent,
+    ...(windowDurationMins !== undefined ? { windowDurationMins } : {}),
+    ...(resetsAt !== undefined ? { resetsAt } : {}),
+  };
+}
+
+function finiteNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : undefined;
+}
+
+function rateLimitReachedType(
+  value: unknown,
+): RateLimitSnapshot["rateLimitReachedType"] | undefined {
+  return typeof value === "string" &&
+    [
+      "rate_limit_reached",
+      "workspace_owner_credits_depleted",
+      "workspace_member_credits_depleted",
+      "workspace_owner_usage_limit_reached",
+      "workspace_member_usage_limit_reached",
+    ].includes(value)
+    ? (value as NonNullable<RateLimitSnapshot["rateLimitReachedType"]>)
     : undefined;
 }
 
