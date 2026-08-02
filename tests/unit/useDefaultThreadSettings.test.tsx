@@ -50,4 +50,47 @@ describe("thread par défaut", () => {
     expect(result.current.defaultThreadId).toBe("thread-a");
     expect(result.current.error).toBe("write denied");
   });
+
+  it("refuse un choix tant que la préférence initiale est en lecture", async () => {
+    const initial = deferred<{ version: number; defaultThreadId: string }>();
+    loadMock.mockReturnValueOnce(initial.promise);
+    const { result } = renderHook(() => useDefaultThreadSettings([]));
+
+    expect(await result.current.setDefaultThreadId("thread-b")).toBe(false);
+    expect(updateMock).not.toHaveBeenCalled();
+    initial.resolve({ version: 1, defaultThreadId: "thread-a" });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.defaultThreadId).toBe("thread-a");
+  });
+
+  it("sérialise deux choix déclenchés avant le rerender", async () => {
+    const update = deferred<{ version: number; defaultThreadId: string }>();
+    updateMock.mockReturnValueOnce(update.promise);
+    const { result } = renderHook(() => useDefaultThreadSettings([]));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let first: Promise<boolean> | undefined;
+    let second: Promise<boolean> | undefined;
+    act(() => {
+      first = result.current.setDefaultThreadId("thread-b");
+      second = result.current.setDefaultThreadId("thread-c");
+    });
+
+    expect(updateMock).toHaveBeenCalledOnce();
+    expect(updateMock).toHaveBeenCalledWith({ defaultThreadId: "thread-b" });
+    update.resolve({ version: 1, defaultThreadId: "thread-b" });
+    await act(async () => {
+      expect(await first).toBe(true);
+      expect(await second).toBe(false);
+    });
+    expect(result.current.defaultThreadId).toBe("thread-b");
+  });
 });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}

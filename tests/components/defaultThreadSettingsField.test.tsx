@@ -108,4 +108,23 @@ describe("réglage de la conversation par défaut", () => {
       screen.queryByText("Conversation configurée"),
     ).not.toBeInTheDocument();
   });
+
+  it("bloque la sélection pendant l’hydratation initiale", () => {
+    render(
+      <I18nProvider>
+        <DefaultThreadSettingsField
+          controller={{
+            loading: true,
+            saving: false,
+            setDefaultThreadId: vi.fn(),
+            threadOptions: [],
+          }}
+        />
+      </I18nProvider>,
+    );
+
+    expect(
+      screen.getByRole("combobox", { name: "Default conversation" }),
+    ).toBeDisabled();
+  });
 });

@@ -103,7 +103,7 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 688 deterministic frontend/unit tests across 129 files;
+- 691 deterministic frontend/unit tests across 129 files;
 - 130 Electron/Node tests, including App Server shutdown, recovery and the tray
   quick actions;
 - production Vite build;

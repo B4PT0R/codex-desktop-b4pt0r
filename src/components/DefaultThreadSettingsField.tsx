@@ -26,7 +26,7 @@ export function DefaultThreadSettingsField({
         className="default-thread-select"
         aria-label={t("settings.defaultThread.title")}
         value={controller.defaultThreadId ?? ""}
-        disabled={controller.saving}
+        disabled={controller.loading || controller.saving}
         onChange={(event) =>
           void controller.setDefaultThreadId(event.target.value || undefined)
         }

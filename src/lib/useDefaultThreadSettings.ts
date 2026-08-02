@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ThreadSummary } from "../types";
 import {
   loadDesktopSettings,
@@ -21,6 +21,7 @@ export function useDefaultThreadSettings(
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
+  const operation = useRef(true);
 
   useEffect(() => {
     let disposed = false;
@@ -32,7 +33,10 @@ export function useDefaultThreadSettings(
         if (!disposed) setError(errorMessage(cause));
       })
       .finally(() => {
-        if (!disposed) setLoading(false);
+        if (!disposed) {
+          operation.current = false;
+          setLoading(false);
+        }
       });
     return () => {
       disposed = true;
@@ -41,7 +45,8 @@ export function useDefaultThreadSettings(
 
   const setDefaultThreadId = useCallback(
     async (nextThreadId?: string) => {
-      if (saving || nextThreadId === defaultThreadId) return false;
+      if (operation.current || nextThreadId === defaultThreadId) return false;
+      operation.current = true;
       const previous = defaultThreadId;
       setDefaultThreadIdState(nextThreadId);
       setSaving(true);
@@ -54,10 +59,11 @@ export function useDefaultThreadSettings(
         setError(errorMessage(cause));
         return false;
       } finally {
+        operation.current = false;
         setSaving(false);
       }
     },
-    [defaultThreadId, saving],
+    [defaultThreadId],
   );
 
   return {
