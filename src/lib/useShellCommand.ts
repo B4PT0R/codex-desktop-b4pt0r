@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import { request } from "./codex";
 import { threadShellCommandParams } from "./protocol";
@@ -28,6 +28,7 @@ export function useShellCommand({
   const { t } = useI18n();
   const [pending, setPending] = useState<string>();
   const [executing, setExecuting] = useState(false);
+  const executionInFlight = useRef(false);
 
   const requestExecution = useCallback(
     (command: string) => {
@@ -36,7 +37,7 @@ export function useShellCommand({
         onError(t("shellCommand.invalid"), t("shellCommand.empty"), threadId);
         return;
       }
-      if (busy) {
+      if (busy || executionInFlight.current) {
         onError(
           t("shellCommand.unavailable"),
           t("shellCommand.busy"),
@@ -50,12 +51,14 @@ export function useShellCommand({
   );
 
   const cancel = useCallback(() => {
-    if (!executing) setPending(undefined);
-  }, [executing]);
+    if (!executionInFlight.current) setPending(undefined);
+  }, []);
 
   const confirm = useCallback(async () => {
-    if (!pending || executing) return;
+    if (!pending || executionInFlight.current) return;
+    executionInFlight.current = true;
     setExecuting(true);
+    const command = pending;
     let targetThreadId = threadId;
     try {
       const created = threadId ? undefined : await createThread();
@@ -66,18 +69,19 @@ export function useShellCommand({
       const resolvedThreadId = threadId ?? created?.id;
       if (!resolvedThreadId) return;
       targetThreadId = resolvedThreadId;
-      onStarted(pending, resolvedThreadId);
+      onStarted(command, resolvedThreadId);
       await request(
         "thread/shellCommand",
-        threadShellCommandParams(resolvedThreadId, pending),
+        threadShellCommandParams(resolvedThreadId, command),
       );
-      setPending(undefined);
+      setPending((current) => (current === command ? undefined : current));
     } catch (error) {
       onError(t("shellCommand.startError"), error, targetThreadId);
     } finally {
+      executionInFlight.current = false;
       setExecuting(false);
     }
-  }, [createThread, executing, onError, onStarted, pending, t, threadId]);
+  }, [createThread, onError, onStarted, pending, t, threadId]);
 
   return { pending, executing, requestExecution, cancel, confirm };
 }
