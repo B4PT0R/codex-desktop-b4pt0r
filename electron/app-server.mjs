@@ -75,6 +75,7 @@ export class AppServerTransport {
   #probeSequence = 0;
   #send;
   #startPromise;
+  #terminationPromise;
   #spawnProcess;
   #resolveExecutable;
 
@@ -177,23 +178,35 @@ export class AppServerTransport {
     return promise;
   }
 
-  terminateUnresponsive() {
+  async terminateUnresponsive({ terminateTimeoutMs = 1_500 } = {}) {
     const child = this.#child;
     if (!child) return false;
     this.#child = undefined;
     this.#initialized = false;
     this.#instructionSources.clear();
     this.#settleProbe(this.#probe?.id, "unavailable");
-    child.kill();
-    this.#send("app-server-exited", {
-      code: null,
-      message: null,
-      reason: "unresponsive",
+    const termination = terminateChild(child, {
+      gracefulTimeoutMs: 0,
+      killTimeoutMs: 500,
+      terminateTimeoutMs,
     });
-    return true;
+    this.#terminationPromise = termination;
+    try {
+      await termination;
+      this.#send("app-server-exited", {
+        code: null,
+        message: null,
+        reason: "unresponsive",
+      });
+      return true;
+    } finally {
+      if (this.#terminationPromise === termination) {
+        this.#terminationPromise = undefined;
+      }
+    }
   }
 
-  stop() {
+  async stop({ gracefulTimeoutMs = 1_500, terminateTimeoutMs = 1_500 } = {}) {
     this.#lifecycleGeneration += 1;
     this.#startPromise = undefined;
     const child = this.#child;
@@ -201,11 +214,28 @@ export class AppServerTransport {
     this.#initialized = false;
     this.#instructionSources.clear();
     this.#settleProbe(this.#probe?.id, "unavailable");
-    child?.kill();
+    const previousTermination = this.#terminationPromise;
+    if (!child) return previousTermination;
+
+    // Closing stdin lets App Server finish its own relay and persistence work.
+    // Signals remain bounded fallbacks so application quit cannot hang forever.
+    const termination = terminateChild(child, {
+      gracefulTimeoutMs,
+      killTimeoutMs: 500,
+      terminateTimeoutMs,
+    });
+    this.#terminationPromise = termination;
+    try {
+      await Promise.all([previousTermination, termination]);
+    } finally {
+      if (this.#terminationPromise === termination) {
+        this.#terminationPromise = undefined;
+      }
+    }
   }
 
   async restart() {
-    this.stop();
+    await this.stop();
     return this.start();
   }
 
@@ -261,6 +291,48 @@ export class AppServerTransport {
     clearTimeout(probe.timer);
     probe.resolve(status);
   }
+}
+
+function waitForChildExit(child) {
+  if (child.exitCode !== null && child.exitCode !== undefined) {
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    const settle = () => {
+      child.off("exit", settle);
+      child.off("error", settle);
+      resolve();
+    };
+    child.once("exit", settle);
+    child.once("error", settle);
+  });
+}
+
+async function terminateChild(
+  child,
+  { gracefulTimeoutMs, killTimeoutMs, terminateTimeoutMs },
+) {
+  const exited = waitForChildExit(child);
+  child.stdin.once("error", () => undefined);
+  if (gracefulTimeoutMs > 0) {
+    child.stdin.end();
+    if (await settlesWithin(exited, gracefulTimeoutMs)) return;
+  }
+  child.kill("SIGTERM");
+  if (await settlesWithin(exited, terminateTimeoutMs)) return;
+  child.kill("SIGKILL");
+  await settlesWithin(exited, killTimeoutMs);
+}
+
+function settlesWithin(promise, timeoutMs) {
+  if (timeoutMs <= 0) return Promise.resolve(false);
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(false), timeoutMs);
+    promise.then(() => {
+      clearTimeout(timer);
+      resolve(true);
+    });
+  });
 }
 
 function parseOutboundMessage(message) {

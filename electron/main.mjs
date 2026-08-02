@@ -76,6 +76,8 @@ let automationScheduler;
 let appServerHealthMonitor;
 let trayRealtimeState = "unavailable";
 let appUpdateManager;
+let shutdownComplete = false;
+let shutdownPromise;
 const sharedBrowserOperations = new OperationQueue();
 const rendererRecoveryBudget = new RendererRecoveryBudget();
 
@@ -500,10 +502,18 @@ else {
   });
 }
 
-app.on("before-quit", () => {
+app.on("before-quit", (event) => {
   app.isQuitting = true;
+  if (shutdownComplete) return;
+  event.preventDefault();
+  if (shutdownPromise) return;
   automationScheduler?.stop();
   appServerHealthMonitor?.stop();
-  appServer.stop();
-  void stopManagedChromium(sharedBrowser);
+  shutdownPromise = Promise.allSettled([
+    appServer.stop(),
+    stopManagedChromium(sharedBrowser),
+  ]).finally(() => {
+    shutdownComplete = true;
+    app.quit();
+  });
 });

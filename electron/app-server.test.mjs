@@ -9,14 +9,18 @@ import {
   findCodexExecutable,
 } from "./app-server.mjs";
 
-function fakeChild() {
+function fakeChild({ exitOnStdinEnd = true, exitOnSignal } = {}) {
   const child = new EventEmitter();
   child.stdin = new PassThrough();
   child.stdout = new PassThrough();
   child.stderr = new PassThrough();
-  child.kill = () => {
+  child.kill = (signal = "SIGTERM") => {
     child.killed = true;
+    child.killSignals ??= [];
+    child.killSignals.push(signal);
+    if (signal === exitOnSignal) queueMicrotask(() => child.emit("exit", null));
   };
+  if (exitOnStdinEnd) child.stdin.once("finish", () => child.emit("exit", 0));
   return child;
 }
 
@@ -151,6 +155,52 @@ test("cancels a pending start before restart creates the replacement", async () 
   transport.stop();
 });
 
+test("stops App Server gracefully by closing stdin before sending signals", async () => {
+  const child = fakeChild();
+  const transport = new AppServerTransport(() => undefined, {
+    resolveExecutable: async () => "/opt/codex/bin/codex",
+    spawnProcess: () => child,
+  });
+  await transport.start();
+  await transport.stop({ gracefulTimeoutMs: 50, terminateTimeoutMs: 50 });
+
+  assert.equal(child.stdin.writableEnded, true);
+  assert.deepEqual(child.killSignals ?? [], []);
+});
+
+test("bounds App Server shutdown with TERM then KILL fallbacks", async () => {
+  const child = fakeChild({ exitOnStdinEnd: false, exitOnSignal: "SIGKILL" });
+  const transport = new AppServerTransport(() => undefined, {
+    resolveExecutable: async () => "/opt/codex/bin/codex",
+    spawnProcess: () => child,
+  });
+  await transport.start();
+
+  await transport.stop({ gracefulTimeoutMs: 1, terminateTimeoutMs: 1 });
+
+  assert.equal(child.stdin.writableEnded, true);
+  assert.deepEqual(child.killSignals, ["SIGTERM", "SIGKILL"]);
+});
+
+test("reuses a live initialized App Server after renderer reconnection", async () => {
+  const child = fakeChild();
+  let spawnCount = 0;
+  const transport = new AppServerTransport(() => undefined, {
+    resolveExecutable: async () => "/opt/codex/bin/codex",
+    spawnProcess: () => {
+      spawnCount += 1;
+      return child;
+    },
+  });
+  assert.equal(await transport.start(), true);
+  transport.send(JSON.stringify({ method: "initialized", params: {} }));
+
+  assert.equal(await transport.start(), false);
+  assert.equal(spawnCount, 1);
+
+  await transport.stop({ gracefulTimeoutMs: 50, terminateTimeoutMs: 50 });
+});
+
 test("probes App Server through stdio without leaking the response to the renderer", async () => {
   const child = fakeChild();
   const events = [];
@@ -223,7 +273,9 @@ test("reports a confirmed unresponsive transport once before terminating it", as
   await transport.start();
   transport.send(JSON.stringify({ method: "initialized", params: {} }));
   assert.equal(await transport.probe(5), "unresponsive");
-  assert.equal(transport.terminateUnresponsive(), true);
+  const termination = transport.terminateUnresponsive({ terminateTimeoutMs: 1 });
+  child.emit("exit", null);
+  assert.equal(await termination, true);
   assert.equal(child.killed, true);
   assert.deepEqual(events, [
     {
@@ -231,5 +283,5 @@ test("reports a confirmed unresponsive transport once before terminating it", as
       payload: { code: null, message: null, reason: "unresponsive" },
     },
   ]);
-  assert.equal(transport.terminateUnresponsive(), false);
+  assert.equal(await transport.terminateUnresponsive(), false);
 });

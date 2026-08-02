@@ -83,7 +83,8 @@ export class AppServerHealthMonitor {
       return this.#runCheck(generation);
     }
     this.#failures = 0;
-    this.#transport.terminateUnresponsive();
+    await this.#transport.terminateUnresponsive();
+    if (generation !== this.#generation) return "stopped";
     return "restarting";
   }
 }

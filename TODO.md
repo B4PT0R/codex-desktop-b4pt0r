@@ -323,6 +323,13 @@ generation ordering as status reads and pushed status notifications. A newer
 notification invalidates a pending response, and disconnected transports ignore
 late status pushes, preventing stale relay state from being resurrected.
 
+App Server lifecycle now preserves the Remote Control relay across window hiding
+and renderer recovery, reusing the native initialized process without another
+handshake. Full application quit waits for bounded graceful stdin closure, then
+falls back to SIGTERM and SIGKILL. The health monitor likewise confirms process
+termination before publishing an exit that can trigger reconnection, preventing
+overlapping App Server/relay processes after an unresponsive-server recovery.
+
 Application update checks and installs now share one synchronous operation
 owner. Same-tick duplicate actions are rejected before React rerenders, and a
 new check cannot clear the candidate while its installation is still running.
@@ -416,7 +423,9 @@ and Git/worktree management without a stable App Server product contract.
   Chromium include focused concurrency, recovery and stale-response regressions.
 - Installed App Server contract: 51 tests, passing against
   `codex-cli 0.145.0` (722 tests across 127 files including contract).
-- Electron/Node: 122 tests, passing.
+- Electron/Node: 125 tests, passing; App Server graceful shutdown, bounded
+  signal fallback, unresponsive-process termination ordering and initialized
+  process reuse across renderer reconnection have focused lifecycle coverage.
 - Production Vite build: passing; main JS 660.78 kB, 189.61 kB gzip.
 - Linux packaging: Debian (`amd64`), RPM (`x86_64`) and AppImage (`x86_64`)
   build in one pass; package metadata and embedded desktop/Skill resources were

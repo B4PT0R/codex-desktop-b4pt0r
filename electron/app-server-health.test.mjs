@@ -9,7 +9,7 @@ test("requires two failed probes before terminating App Server", async () => {
       calls.push(timeoutMs);
       return "unresponsive";
     },
-    terminateUnresponsive() {
+    async terminateUnresponsive() {
       calls.push("terminate");
     },
   };
@@ -30,7 +30,7 @@ test("does not restart a responsive or not-yet-initialized server", async () => 
     async probe() {
       return statuses.shift();
     },
-    terminateUnresponsive() {
+    async terminateUnresponsive() {
       terminated = true;
     },
   });
@@ -48,7 +48,7 @@ test("does not terminate after the monitor stops during a retry", async () => {
       async probe() {
         return "unresponsive";
       },
-      terminateUnresponsive() {
+      async terminateUnresponsive() {
         terminated = true;
       },
     },
