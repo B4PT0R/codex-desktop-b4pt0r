@@ -3,6 +3,34 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.5.2] - 2026-08-02
+
+### Added
+
+- Appearance settings can hide reasoning-only chat items without splitting
+  adjacent action groups, and can keep live action groups collapsed until the
+  user explicitly opens them.
+
+### Changed
+
+- Settings now consistently composes page headers, subheaders, card stacks,
+  icon cards, control bars, badges, toggles, icon buttons, alerts and notes from
+  shared primitives instead of feature-local card and control styling.
+- Generic Appearance, Web and guided Configuration field groups now inherit
+  their complete chrome from `CardStack`; compact actions use the clearer
+  `IconButton` name throughout the application.
+- Light-theme toggles use a restrained neutral scale with the same subtle
+  outline in active and inactive states.
+
+### Fixed
+
+- App Server shutdown closes stdin gracefully before bounded TERM/KILL
+  fallbacks, preventing overlapping processes during quit or recovery.
+- Renderer recovery reuses an initialized App Server and preserves the Remote
+  Control relay instead of repeating the one-shot handshake.
+- The App Server health monitor confirms process termination before publishing
+  an exit and attempting reconnection.
+
 ## [0.5.1] - 2026-08-02
 
 ### Fixed

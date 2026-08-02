@@ -2,7 +2,7 @@
   "name": "codex-desktop-linux",
   "productName": "Codex Desktop",
   "desktopName": "codex-desktop.desktop",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Independent desktop client for Codex on Linux",
   "license": "MIT",
   "author": {
