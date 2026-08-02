@@ -47,6 +47,14 @@ function useHarness() {
   return { actions, busy, ...callbacks, threads };
 }
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((next) => {
+    resolve = next;
+  });
+  return { promise, resolve };
+}
+
 beforeEach(() => {
   mockedRequest.mockReset();
   localeState.current = "fr";
@@ -175,6 +183,28 @@ describe("actions de conversation", () => {
       "thread-2",
     ]);
     expect(result.current.onActiveThreadRemoved).toHaveBeenCalledOnce();
+  });
+
+  it("sérialise les actions incompatibles d’une même conversation", async () => {
+    const deletion = deferred<Record<string, never>>();
+    mockedRequest.mockReturnValueOnce(deletion.promise);
+    const { result } = renderHook(useHarness);
+
+    let deleting!: Promise<boolean>;
+    let archiving!: Promise<boolean>;
+    act(() => {
+      deleting = result.current.actions.deleteThread();
+      archiving = result.current.actions.archive("thread-1");
+    });
+
+    await expect(archiving).resolves.toBe(false);
+    expect(mockedRequest).toHaveBeenCalledOnce();
+    expect(mockedRequest).toHaveBeenCalledWith("thread/delete", {
+      threadId: "thread-1",
+    });
+
+    deletion.resolve({});
+    await act(async () => expect(await deleting).toBe(true));
   });
 
   it("rend l’échec d’une branche visible et rétablit l’état", async () => {
