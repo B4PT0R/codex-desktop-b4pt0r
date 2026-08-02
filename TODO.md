@@ -27,8 +27,8 @@ Scheduler task cards present recurring schedules and pending one-shot execution
 as explicit toggle states; immediate execution remains an agent-facing command
 rather than a lifecycle-altering ordinary card action.
 
-Recent audits covered background terminals, rate limits, App Server restart and
-per-thread action ownership. Earlier controller passes remain in Git history;
+Recent audits covered rate limits, App Server restart, per-thread actions and
+interactive request ownership. Earlier controller passes remain in Git history;
 revisit these sectors only with new evidence.
 
 DEB, RPM and AppImage packages are published for x86-64 Linux. Clean Debian
@@ -107,7 +107,7 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 703 deterministic frontend/unit tests across 129 files;
+- 704 deterministic frontend/unit tests across 129 files;
 - 130 Electron/Node tests, including App Server shutdown, recovery and the tray
   quick actions;
 - production Vite build;

@@ -17,18 +17,20 @@ type InteractiveRequestOptions = {
   onError: (title: string, error: unknown) => void;
 };
 
+type RequestId = number | string;
+
 /** Owns interactive requests and safe client-provided responses from App Server. */
 export function useInteractiveRequests({ onError }: InteractiveRequestOptions) {
   const { t } = useI18n();
   const [approval, setApproval] = useState<Approval>();
   const [userInput, setUserInput] = useState<UserInputRequest>();
-  const [submittingUserInput, setSubmittingUserInput] = useState(false);
+  const [submittingUserInputId, setSubmittingUserInputId] =
+    useState<RequestId>();
   const [mcpElicitation, setMcpElicitation] = useState<McpElicitationRequest>();
-  const [submittingMcpElicitation, setSubmittingMcpElicitation] = useState(false);
+  const [submittingMcpElicitationId, setSubmittingMcpElicitationId] =
+    useState<RequestId>();
   const mcpRequestVersion = useRef(0);
-  const approvalInFlight = useRef(false);
-  const userInputInFlight = useRef(false);
-  const mcpElicitationInFlight = useRef(false);
+  const responsesInFlight = useRef(new Set<RequestId>());
 
   const handleMessage = useCallback(
     (message: AppServerMessage) => {
@@ -80,15 +82,19 @@ export function useInteractiveRequests({ onError }: InteractiveRequestOptions) {
 
   const decideApproval = useCallback(
     async (decision: "accept" | "session" | "decline") => {
-      if (!approval || approvalInFlight.current) return;
-      approvalInFlight.current = true;
+      if (!approval || responsesInFlight.current.has(approval.requestId))
+        return;
+      const pending = approval;
+      responsesInFlight.current.add(pending.requestId);
       try {
-        await respond(approval.requestId, approvalResponse(approval, decision));
-        setApproval(undefined);
+        await respond(pending.requestId, approvalResponse(pending, decision));
+        setApproval((current) =>
+          current?.requestId === pending.requestId ? undefined : current,
+        );
       } catch (error) {
         onError(t("approval.error"), error);
       } finally {
-        approvalInFlight.current = false;
+        responsesInFlight.current.delete(pending.requestId);
       }
     },
     [approval, onError, t],
@@ -96,17 +102,23 @@ export function useInteractiveRequests({ onError }: InteractiveRequestOptions) {
 
   const answerUserInput = useCallback(
     async (response: UserInputResponse) => {
-      if (!userInput || userInputInFlight.current) return;
-      userInputInFlight.current = true;
-      setSubmittingUserInput(true);
+      if (!userInput || responsesInFlight.current.has(userInput.requestId))
+        return;
+      const pending = userInput;
+      responsesInFlight.current.add(pending.requestId);
+      setSubmittingUserInputId(pending.requestId);
       try {
-        await respond(userInput.requestId, response);
-        setUserInput(undefined);
+        await respond(pending.requestId, response);
+        setUserInput((current) =>
+          current?.requestId === pending.requestId ? undefined : current,
+        );
       } catch (error) {
         onError(t("userInput.error"), error);
       } finally {
-        userInputInFlight.current = false;
-        setSubmittingUserInput(false);
+        responsesInFlight.current.delete(pending.requestId);
+        setSubmittingUserInputId((current) =>
+          current === pending.requestId ? undefined : current,
+        );
       }
     },
     [onError, t, userInput],
@@ -114,17 +126,26 @@ export function useInteractiveRequests({ onError }: InteractiveRequestOptions) {
 
   const answerMcpElicitation = useCallback(
     async (response: McpElicitationResponse) => {
-      if (!mcpElicitation || mcpElicitationInFlight.current) return;
-      mcpElicitationInFlight.current = true;
-      setSubmittingMcpElicitation(true);
+      if (
+        !mcpElicitation ||
+        responsesInFlight.current.has(mcpElicitation.requestId)
+      )
+        return;
+      const pending = mcpElicitation;
+      responsesInFlight.current.add(pending.requestId);
+      setSubmittingMcpElicitationId(pending.requestId);
       try {
-        await respond(mcpElicitation.requestId, response);
-        setMcpElicitation(undefined);
+        await respond(pending.requestId, response);
+        setMcpElicitation((current) =>
+          current?.requestId === pending.requestId ? undefined : current,
+        );
       } catch (error) {
         onError(t("mcpElicitation.error"), error);
       } finally {
-        mcpElicitationInFlight.current = false;
-        setSubmittingMcpElicitation(false);
+        responsesInFlight.current.delete(pending.requestId);
+        setSubmittingMcpElicitationId((current) =>
+          current === pending.requestId ? undefined : current,
+        );
       }
     },
     [mcpElicitation, onError, t],
@@ -137,8 +158,9 @@ export function useInteractiveRequests({ onError }: InteractiveRequestOptions) {
     decideApproval,
     handleMessage,
     mcpElicitation,
-    submittingMcpElicitation,
-    submittingUserInput,
+    submittingMcpElicitation:
+      submittingMcpElicitationId === mcpElicitation?.requestId,
+    submittingUserInput: submittingUserInputId === userInput?.requestId,
     userInput,
   };
 }

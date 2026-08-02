@@ -88,6 +88,49 @@ describe("requêtes interactives", () => {
     await act(() => Promise.all([first, second]));
   });
 
+  it("isole la réponse tardive d’une nouvelle approbation", async () => {
+    const firstResponse = deferred<void>();
+    const secondResponse = deferred<void>();
+    respondMock
+      .mockReturnValueOnce(firstResponse.promise)
+      .mockReturnValueOnce(secondResponse.promise);
+    const { result } = renderHook(() =>
+      useInteractiveRequests({ onError: vi.fn() }),
+    );
+    act(() => {
+      result.current.handleMessage({
+        id: 7,
+        method: "item/commandExecution/requestApproval",
+        params: { command: "cargo test" },
+      });
+    });
+
+    let first!: Promise<void>;
+    act(() => {
+      first = result.current.decideApproval("accept");
+    });
+    act(() => {
+      result.current.handleMessage({
+        id: 8,
+        method: "item/commandExecution/requestApproval",
+        params: { command: "npm test" },
+      });
+    });
+    let second!: Promise<void>;
+    act(() => {
+      second = result.current.decideApproval("decline");
+    });
+    expect(respondMock).toHaveBeenCalledTimes(2);
+
+    firstResponse.resolve();
+    await act(() => first);
+    expect(result.current.approval?.requestId).toBe(8);
+
+    secondResponse.resolve();
+    await act(() => second);
+    expect(result.current.approval).toBeUndefined();
+  });
+
   it("ferme une question résolue automatiquement", () => {
     const { result } = renderHook(() =>
       useInteractiveRequests({ onError: vi.fn() }),
