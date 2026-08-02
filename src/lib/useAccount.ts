@@ -55,6 +55,8 @@ export function useAccount(enabled: boolean): AccountController {
   const generation = useRef(0);
   const loginGeneration = useRef(0);
   const loginStarting = useRef(false);
+  const cancelingLoginId = useRef<string | undefined>(undefined);
+  const logoutInFlight = useRef(false);
   const pendingLogin = useRef<{
     authUrl: string;
     loginId: string;
@@ -132,24 +134,38 @@ export function useAccount(enabled: boolean): AccountController {
 
   const reopenLogin = useCallback(async () => {
     if (!authPending) return;
+    const current = loginGeneration.current;
+    const loginId = authPending.loginId;
     try {
       const openMode = await openExternalTarget(authPending.authUrl);
-      if (pendingLogin.current?.loginId === authPending.loginId) {
+      if (
+        current === loginGeneration.current &&
+        pendingLogin.current?.loginId === loginId
+      ) {
         setAuthOpenMode(openMode);
       }
     } catch (cause) {
-      setAuthError(cause instanceof Error ? cause.message : String(cause));
+      if (
+        current === loginGeneration.current &&
+        pendingLogin.current?.loginId === loginId
+      ) {
+        setAuthError(cause instanceof Error ? cause.message : String(cause));
+      }
     }
   }, [authPending]);
 
   const cancelLogin = useCallback(async () => {
     if (!authPending) return;
+    const loginId = authPending.loginId;
+    if (cancelingLoginId.current === loginId) return;
+    cancelingLoginId.current = loginId;
+    const current = loginGeneration.current;
     try {
-      await request(
-        "account/login/cancel",
-        cancelLoginParams(authPending.loginId),
-      );
-      if (pendingLogin.current?.loginId === authPending.loginId) {
+      await request("account/login/cancel", cancelLoginParams(loginId));
+      if (
+        current === loginGeneration.current &&
+        pendingLogin.current?.loginId === loginId
+      ) {
         loginGeneration.current += 1;
         pendingLogin.current = null;
         setAuthPending(null);
@@ -157,11 +173,22 @@ export function useAccount(enabled: boolean): AccountController {
         setAuthError(undefined);
       }
     } catch (cause) {
-      setAuthError(cause instanceof Error ? cause.message : String(cause));
+      if (
+        current === loginGeneration.current &&
+        pendingLogin.current?.loginId === loginId
+      ) {
+        setAuthError(cause instanceof Error ? cause.message : String(cause));
+      }
+    } finally {
+      if (cancelingLoginId.current === loginId) {
+        cancelingLoginId.current = undefined;
+      }
     }
   }, [authPending]);
 
   const logout = useCallback(async () => {
+    if (logoutInFlight.current) return;
+    logoutInFlight.current = true;
     setLoggingOut(true);
     setAuthError(undefined);
     try {
@@ -170,6 +197,7 @@ export function useAccount(enabled: boolean): AccountController {
     } catch (cause) {
       setAuthError(cause instanceof Error ? cause.message : String(cause));
     } finally {
+      logoutInFlight.current = false;
       setLoggingOut(false);
     }
   }, [refresh]);

@@ -27,10 +27,12 @@ function EnglishProvider({ children }: { children: ReactNode }) {
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((next) => {
+  let reject!: (cause: unknown) => void;
+  const promise = new Promise<T>((next, fail) => {
     resolve = next;
+    reject = fail;
   });
-  return { promise, resolve };
+  return { promise, reject, resolve };
 }
 
 beforeEach(() => {
@@ -287,5 +289,131 @@ describe("compte Codex", () => {
     expect(result.current.authPending).toBeNull();
     expect(result.current.authOpenMode).toBeUndefined();
     expect(result.current.authError).toBeUndefined();
+  });
+
+  it("ignore un échec de réouverture reçu après la complétion du login", async () => {
+    requestMock.mockImplementation((method: string) =>
+      Promise.resolve(
+        method === "account/login/start"
+          ? {
+              type: "chatgpt",
+              loginId: "login-reopen",
+              authUrl: "https://chatgpt.com/reopen",
+            }
+          : method === "account/workspaceMessages/read"
+            ? { featureEnabled: false, messages: [] }
+            : { account: null, requiresOpenaiAuth: true },
+      ),
+    );
+    const { result } = renderHook(() => useAccount(true));
+    await waitFor(() => expect(subscribeMock).toHaveBeenCalledOnce());
+    await act(() => result.current.startLogin());
+    const reopening = deferred<void>();
+    openChromiumMock.mockReturnValueOnce(reopening.promise);
+
+    let pending!: Promise<void>;
+    act(() => {
+      pending = result.current.reopenLogin();
+    });
+    act(() =>
+      subscribeMock.mock.calls[0][0]({
+        method: "account/login/completed",
+        params: { loginId: "login-reopen", success: true },
+      }),
+    );
+    reopening.reject(new Error("late browser failure"));
+    await act(() => pending);
+
+    expect(result.current.authPending).toBeNull();
+    expect(result.current.authError).toBeUndefined();
+  });
+
+  it("ne soumet qu’une annulation par login en attente", async () => {
+    const cancellation = deferred<unknown>();
+    requestMock.mockImplementation((method: string) => {
+      if (method === "account/login/start") {
+        return Promise.resolve({
+          type: "chatgpt",
+          loginId: "login-cancel",
+          authUrl: "https://chatgpt.com/cancel",
+        });
+      }
+      if (method === "account/login/cancel") return cancellation.promise;
+      throw new Error(`Unexpected request: ${method}`);
+    });
+    const { result } = renderHook(() => useAccount(false));
+    await act(() => result.current.startLogin());
+
+    let first!: Promise<void>;
+    act(() => {
+      first = result.current.cancelLogin();
+      void result.current.cancelLogin();
+    });
+    expect(
+      requestMock.mock.calls.filter(
+        ([method]) => method === "account/login/cancel",
+      ),
+    ).toHaveLength(1);
+
+    cancellation.resolve({});
+    await act(() => first);
+    expect(result.current.authPending).toBeNull();
+  });
+
+  it("ignore un échec d’annulation reçu après la complétion du login", async () => {
+    const cancellation = deferred<unknown>();
+    requestMock.mockImplementation((method: string) => {
+      if (method === "account/login/start") {
+        return Promise.resolve({
+          type: "chatgpt",
+          loginId: "login-cancel-race",
+          authUrl: "https://chatgpt.com/cancel-race",
+        });
+      }
+      if (method === "account/login/cancel") return cancellation.promise;
+      if (method === "account/workspaceMessages/read") {
+        return Promise.resolve({ featureEnabled: false, messages: [] });
+      }
+      return Promise.resolve({ account: null, requiresOpenaiAuth: true });
+    });
+    const { result } = renderHook(() => useAccount(true));
+    await waitFor(() => expect(subscribeMock).toHaveBeenCalledOnce());
+    await act(() => result.current.startLogin());
+
+    let pending!: Promise<void>;
+    act(() => {
+      pending = result.current.cancelLogin();
+    });
+    act(() =>
+      subscribeMock.mock.calls[0][0]({
+        method: "account/login/completed",
+        params: { loginId: "login-cancel-race", success: true },
+      }),
+    );
+    cancellation.reject(new Error("late cancellation failure"));
+    await act(() => pending);
+
+    expect(result.current.authPending).toBeNull();
+    expect(result.current.authError).toBeUndefined();
+  });
+
+  it("ne soumet qu’une déconnexion à la fois", async () => {
+    const logout = deferred<unknown>();
+    requestMock.mockImplementation((method: string) => {
+      if (method === "account/logout") return logout.promise;
+      throw new Error(`Unexpected request: ${method}`);
+    });
+    const { result } = renderHook(() => useAccount(false));
+
+    let first!: Promise<void>;
+    act(() => {
+      first = result.current.logout();
+      void result.current.logout();
+    });
+    expect(requestMock).toHaveBeenCalledTimes(1);
+
+    logout.resolve({});
+    await act(() => first);
+    expect(result.current.loggingOut).toBe(false);
   });
 });
