@@ -14,6 +14,7 @@ import type { MessageKey } from "../i18n/locales/fr";
 import { IconCard } from "./IconCard";
 import { CardStack } from "./CardStack";
 import { Alert } from "./Alert";
+import { Badge } from "./Badge";
 
 export function AccountSettings({
   controller,
@@ -67,7 +68,7 @@ export function AccountSettings({
             icon={<UserRound />}
             subtitle={identity.detail}
             title={identity.title}
-            trailing={<em className="account-plan-badge">{identity.plan}</em>}
+            trailing={<Badge label={identity.plan} />}
           />
       </CardStack>
       <AccountAuthActions controller={controller} />

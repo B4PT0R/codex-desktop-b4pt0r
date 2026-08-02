@@ -2,10 +2,7 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import {
-  SettingsPageHeader,
-  SettingsPageHeaderBadge,
-} from "../../src/components/SettingsPageHeader";
+import { SettingsPageHeader } from "../../src/components/SettingsPageHeader";
 import {
   SettingsControlsBar,
   SettingsControlsBarButton,
@@ -24,22 +21,24 @@ describe("en-tête commun des réglages", () => {
     );
 
     expect(container.querySelector(".settings-page-header")).not.toBeNull();
-    expect(screen.getByText("Configuration globale")).toHaveClass(
-      "settings-page-header-badge",
-      "neutral",
+    expect(screen.getByText("Configuration globale").closest(".badge")).toHaveClass(
+      "badge-small",
+      "badge-secondary",
+      "badge-neutral",
     );
     expect(container.querySelector(".settings-page-header button")).toBeNull();
   });
 
   it("réutilise le même badge dans les sous-sections globales", () => {
     render(
-      <SettingsPageHeaderBadge tone="experimental">
-        Expérimental
-      </SettingsPageHeaderBadge>,
+      <SettingsPageHeader
+        badge="Expérimental"
+        badgeTone="experimental"
+        description="Fonction en préversion."
+      />,
     );
-    expect(screen.getByText("Expérimental")).toHaveClass(
-      "settings-page-header-badge",
-      "experimental",
+    expect(screen.getByText("Expérimental").closest(".badge")).toHaveClass(
+      "badge-experimental",
     );
   });
 

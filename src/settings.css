@@ -253,21 +253,6 @@
   gap: 8px;
 }
 
-.settings-page-header-badge {
-  padding: 4px 8px;
-  border: 1px solid #3b3b37;
-  border-radius: 999px;
-  color: #8d8d88;
-  background: #20201e;
-  font-size: 9px;
-  line-height: 1.2;
-  white-space: nowrap;
-}
-
-.settings-page-header-badge.experimental {
-  border-style: dashed;
-}
-
 .card-stack {
   overflow: hidden;
   min-width: 0;
@@ -734,29 +719,6 @@
 }
 
 .remote-control-local.errored .icon-card-icon {
-  color: #d09a8e;
-}
-
-.remote-control-status-badge {
-  padding: 4px 7px;
-  border: 1px solid #42423e;
-  border-radius: 999px;
-  color: #8c8c86;
-  font-size: 9px;
-}
-
-.remote-control-status-badge.connected {
-  border-color: #4d664a;
-  color: #9fc599;
-}
-
-.remote-control-status-badge.connecting {
-  border-color: #655b3f;
-  color: #c0ae7d;
-}
-
-.remote-control-status-badge.errored {
-  border-color: #6b4942;
   color: #d09a8e;
 }
 
@@ -1542,25 +1504,6 @@
   justify-content: flex-end;
   gap: 4px;
 }
-.hook-badges span,
-.hook-badges small {
-  padding: 3px 6px;
-  border: 1px solid #3b3b37;
-  border-radius: 999px;
-  color: #858580;
-  font-size: 9px;
-  white-space: nowrap;
-}
-.hook-badges .trusted,
-.hook-badges .enabled {
-  border-color: #39453b;
-  color: #9fb3a2;
-}
-.hook-badges .warning {
-  border-color: #554439;
-  color: #c89b7a;
-}
-
 .inventory-empty {
   display: flex;
   min-height: 88px;
@@ -1573,15 +1516,6 @@
 
 .integration-planned {
   border-style: dashed;
-}
-
-.account-plan-badge {
-  padding: 4px 8px;
-  border: 1px solid #454541;
-  border-radius: 999px;
-  color: #aaa9a3;
-  font-size: 9px;
-  font-style: normal;
 }
 
 .account-auth-actions {
@@ -2232,7 +2166,7 @@
     display: none;
   }
 
-  .remote-control-status-badge {
+  .remote-control-local .badge {
     display: none;
   }
 

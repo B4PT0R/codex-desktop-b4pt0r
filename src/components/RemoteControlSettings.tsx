@@ -17,6 +17,7 @@ import { Note } from "./Note";
 import type { RemoteControlClient } from "../lib/appServerTypes";
 import type { RemoteControlController } from "../lib/useRemoteControl";
 import { Alert } from "./Alert";
+import { Badge } from "./Badge";
 
 export function RemoteControlSettings({
   controller,
@@ -64,9 +65,10 @@ export function RemoteControlSettings({
             t("settings.remoteControl.thisDevice")
           }
           trailing={<>
-            <span className={`remote-control-status-badge ${status}`}>
-              {t(`settings.remoteControl.status.${status}`)}
-            </span>
+            <Badge
+              label={t(`settings.remoteControl.status.${status}`)}
+              tone={remoteStatusTone(status)}
+            />
             <IconToggle
               checked={enabled}
               disabled={
@@ -213,6 +215,13 @@ export function RemoteControlSettings({
       )}
     </section>
   );
+}
+
+function remoteStatusTone(status: string) {
+  if (status === "connected") return "success" as const;
+  if (status === "connecting") return "warning" as const;
+  if (status === "errored") return "danger" as const;
+  return "neutral" as const;
 }
 
 function RemoteControlDevice({

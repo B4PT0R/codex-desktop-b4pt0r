@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Badge } from "./Badge";
 
 export function SettingsPageHeader({
   badge,
@@ -14,23 +15,9 @@ export function SettingsPageHeader({
       <p className="settings-page-header-description">{description}</p>
       {badge && (
         <div className="settings-page-header-trailing">
-          <SettingsPageHeaderBadge tone={badgeTone}>
-            {badge}
-          </SettingsPageHeaderBadge>
+          <Badge label={badge} tone={badgeTone} />
         </div>
       )}
     </header>
-  );
-}
-
-export function SettingsPageHeaderBadge({
-  children,
-  tone = "neutral",
-}: {
-  children: ReactNode;
-  tone?: "neutral" | "experimental";
-}) {
-  return (
-    <span className={`settings-page-header-badge ${tone}`}>{children}</span>
   );
 }

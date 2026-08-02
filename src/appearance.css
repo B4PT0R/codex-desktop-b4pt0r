@@ -63,12 +63,6 @@
   color: #6d6d68;
 }
 
-:root[data-theme="light"] .settings-page-header-badge {
-  color: #6d6d68;
-  border-color: #d5d5cf;
-  background: #f7f7f4;
-}
-
 :root[data-theme="light"] .settings-page-header {
   border-color: #e0e0da;
 }

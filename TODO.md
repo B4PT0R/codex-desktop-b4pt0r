@@ -345,6 +345,14 @@ neutral very-light/inactive and mid-grey/active scale; its active outline shares
 the same `#e0e0da` border used by `IconCard` in both states.
 Its curated light baseline is current.
 
+Settings badges now share the non-interactive `Badge` primitive across page
+headers, Remote Control status, Hooks metadata and Account identity. Optional
+icons, small/medium/large sizing, primary/secondary/tertiary variants and
+neutral/success/warning/danger/experimental tones are centralized in
+`primitives.css`; the former header, remote, hook and account badge palettes
+have been removed. Conversation attachment chips remain a separate semantic
+surface.
+
 Application update checks and installs now share one synchronous operation
 owner. Same-tick duplicate actions are rejected before React rerenders, and a
 new check cannot clear the candidate while its installation is still running.
@@ -431,7 +439,7 @@ and Git/worktree management without a stable App Server product contract.
 - Chat presentation and shared toggle lot: 69 focused component/unit tests
   across seven files, passing; wide and narrow Appearance plus labelled Apps
   variants reviewed in the shared browser.
-- Deterministic frontend/unit suite: 680 tests across 128 files, passing;
+- Deterministic frontend/unit suite: 681 tests across 129 files, passing;
   Apps, integrations, Account, capability catalogs, default-thread metadata,
   file-backed configuration editors, external-agent import, Memory, Remote
   Control, Voice settings, Scheduled Tasks, application updates and shared

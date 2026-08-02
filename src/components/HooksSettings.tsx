@@ -11,6 +11,7 @@ import type { IntegrationsController } from "../lib/useIntegrations";
 import { IconCard } from "./IconCard";
 import { CardStack } from "./CardStack";
 import { Alert } from "./Alert";
+import { Badge } from "./Badge";
 
 export function HooksSettings({
   integrations,
@@ -85,13 +86,15 @@ function HookRow({ hook }: { hook: AppServerHook }) {
       }
       title={hook.statusMessage || hook.key}
       trailing={<div className="hook-badges">
-        <span className={hook.enabled ? "enabled" : "disabled"}>
-          {t(hook.enabled ? "integrations.enabled" : "integrations.disabled")}
-        </span>
-        <span className={trustClass(hook.trustStatus)}>
-          {t(trustKey(hook.trustStatus))}
-        </span>
-        <small>{t(sourceKey(hook.source))}</small>
+        <Badge
+          label={t(hook.enabled ? "integrations.enabled" : "integrations.disabled")}
+          tone={hook.enabled ? "success" : "neutral"}
+        />
+        <Badge
+          label={t(trustKey(hook.trustStatus))}
+          tone={trustTone(hook.trustStatus)}
+        />
+        <Badge label={t(sourceKey(hook.source))} />
       </div>}
     >
       <div className="hook-copy">
@@ -126,8 +129,10 @@ function trustKey(trust: string): MessageKey {
   return "integrations.hooks.trust.untrusted";
 }
 
-function trustClass(trust: string) {
-  return trust === "trusted" || trust === "managed" ? "trusted" : "warning";
+function trustTone(trust: string) {
+  return trust === "trusted" || trust === "managed"
+    ? "success" as const
+    : "warning" as const;
 }
 
 function sourceKey(source: string): MessageKey {
