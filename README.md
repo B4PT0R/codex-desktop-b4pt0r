@@ -121,13 +121,13 @@ Download the package for your system from
 ### Debian and Ubuntu
 
 ```bash
-sudo apt install ./codex-desktop-linux_0.5.4_amd64.deb
+sudo apt install ./codex-desktop-linux_0.5.5_amd64.deb
 ```
 
 ### Fedora and RPM distributions
 
 ```bash
-sudo dnf install ./codex-desktop-linux_0.5.4_x86_64.rpm
+sudo dnf install ./codex-desktop-linux_0.5.5_x86_64.rpm
 ```
 
 Use the distribution's ordinary local-RPM installation command when it does
@@ -136,15 +136,15 @@ not use DNF.
 ### AppImage
 
 ```bash
-chmod +x codex-desktop-linux_0.5.4_x86_64.AppImage
-./codex-desktop-linux_0.5.4_x86_64.AppImage
+chmod +x codex-desktop-linux_0.5.5_x86_64.AppImage
+./codex-desktop-linux_0.5.5_x86_64.AppImage
 ```
 
 AppImage normally uses FUSE. On a system where FUSE is unavailable, use its
 built-in extraction path:
 
 ```bash
-APPIMAGE_EXTRACT_AND_RUN=1 ./codex-desktop-linux_0.5.4_x86_64.AppImage
+APPIMAGE_EXTRACT_AND_RUN=1 ./codex-desktop-linux_0.5.5_x86_64.AppImage
 ```
 
 The AppImage is portable and does not install a desktop-menu entry automatically.
@@ -185,7 +185,7 @@ Install the locked dependencies and build the Debian package:
 ```bash
 npm ci
 npm run electron:deb
-sudo apt install ./dist/codex-desktop-linux_0.5.4_amd64.deb
+sudo apt install ./dist/codex-desktop-linux_0.5.5_amd64.deb
 ```
 
 The packaging manifest also supports native RPM and portable AppImage builds:

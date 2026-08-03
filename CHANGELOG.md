@@ -3,6 +3,29 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.5.5] - 2026-08-03
+
+### Added
+
+- Conversations can be pinned through App Server and appear in a compact,
+  dedicated sidebar section backed by the authoritative paginated catalog.
+- Codex CLI compatibility and update status now appears alongside application
+  updates, with upgrades delegated to the selected `codex` executable.
+
+### Changed
+
+- Action cards derive their labels from structured tool data while preserving
+  agent commentary as separate intermediate narration in the conversation.
+- Long Settings inventories scroll after six entries without hiding their
+  controls or chaining wheel input into the surrounding page.
+
+### Fixed
+
+- Shell commands are serialized so duplicate execution cannot race, and their
+  non-zero exit codes remain visible in command details.
+- Replayed and streaming action commentary remains associated with the
+  conversation without being incorrectly consumed as an individual tool title.
+
 ## [0.5.4] - 2026-08-02
 
 ### Added
