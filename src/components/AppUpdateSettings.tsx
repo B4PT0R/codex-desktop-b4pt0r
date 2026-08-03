@@ -25,28 +25,13 @@ export function AppUpdateSettings({
       <CardStack className="settings-fields app-update-card">
         <IconCard
           title={t("settings.updates.client")}
-          subtitle={t("settings.updates.clientDetail")}
-          trailing={<code className="app-version-value">
-            {controller.versions
-              ? `v${controller.versions.clientVersion}`
-              : t("settings.updates.loading")}
-          </code>}
-        />
-        <IconCard
-          title={t("settings.updates.codex")}
-          subtitle={t("settings.updates.codexDetail")}
-          trailing={<code className="app-version-value">
-            {controller.versions?.codexVersion ??
-              (controller.loadingVersions
-                ? t("settings.updates.loading")
-                : t("settings.updates.unavailable"))}
-          </code>}
-        />
-        <IconCard
-          className="app-update-action-row"
-          title={t("settings.updates.title")}
           subtitle={updateMessage(controller, t)}
           trailing={<div className="settings-browser-status">
+            <code className="app-version-value">
+              {controller.versions
+                ? `v${controller.versions.clientVersion}`
+                : t("settings.updates.loading")}
+            </code>
             {controller.updateInstalled ? (
               <IconButton
                 disabled
@@ -59,11 +44,9 @@ export function AppUpdateSettings({
               <IconButton
                 disabled={controller.installing}
                 icon={Download}
-                label={t(
-                  controller.installing
-                    ? "settings.updates.installing"
-                    : "settings.updates.install",
-                )}
+                label={t(controller.installing
+                  ? "settings.updates.installing"
+                  : "settings.updates.install")}
                 onClick={() => void controller.install()}
                 size="medium"
                 variant="tertiary"
@@ -78,19 +61,42 @@ export function AppUpdateSettings({
               />
             ) : (
               <IconButton
-                disabled={
-                  !controller.native ||
-                  controller.checking ||
-                  controller.loadingVersions
-                }
+                disabled={!controller.native || controller.checking || controller.loadingVersions}
                 icon={RefreshCw}
                 iconClassName={controller.checking ? "spin" : ""}
-                label={t(
-                  controller.checking
-                    ? "settings.updates.checking"
-                    : "settings.updates.check",
-                )}
+                label={t(controller.checking
+                  ? "settings.updates.checking"
+                  : "settings.updates.check")}
                 onClick={() => void controller.check()}
+                size="medium"
+                variant="tertiary"
+              />
+            )}
+          </div>}
+        />
+        <IconCard
+          title={t("settings.updates.codex")}
+          subtitle={t("settings.updates.codexDetail", {
+            version: controller.versions?.minimumCodexVersion ?? "0.146.0",
+          })}
+          trailing={<div className="settings-browser-status">
+            <code className="app-version-value">
+              {controller.versions?.codexVersion ??
+                (controller.loadingVersions
+                  ? t("settings.updates.loading")
+                  : t("settings.updates.unavailable"))}
+            </code>
+            {(controller.status?.codexUpdate.updateAvailable ||
+              controller.versions?.codexCompatible === false) && (
+              <IconButton
+                disabled={controller.codexUpdating}
+                icon={controller.codexUpdateInstalled ? Check : Download}
+                label={t(controller.codexUpdateInstalled
+                  ? "settings.updates.codexInstalled"
+                  : controller.codexUpdating
+                    ? "settings.updates.codexUpdating"
+                    : "settings.updates.install")}
+                onClick={() => void controller.updateCodex()}
                 size="medium"
                 variant="tertiary"
               />
@@ -108,6 +114,24 @@ export function AppUpdateSettings({
           {t("settings.updates.restartRequired")}
         </Alert>
       )}
+      {controller.codexUpdateInstalled && (
+        <Alert
+          className="app-update-restart-message"
+          tone="neutral"
+          aria-live="polite"
+        >
+          <Check />
+          {t("settings.updates.codexRestartRequired")}
+        </Alert>
+      )}
+      {controller.versions?.codexCompatible === false &&
+        !controller.codexUpdateInstalled && (
+          <Alert tone="warning">
+            {t("settings.updates.codexIncompatible", {
+              version: controller.versions.minimumCodexVersion,
+            })}
+          </Alert>
+        )}
       {controller.error && (
         <Alert tone="error">
           {t("settings.updates.error")} {controller.error}
@@ -117,6 +141,11 @@ export function AppUpdateSettings({
         <Alert>
           {t("settings.updates.codexError")}{" "}
           {controller.versions.codexError}
+        </Alert>
+      )}
+      {controller.status?.codexUpdate.error && (
+        <Alert>
+          {t("settings.updates.codexCheckError")} {controller.status.codexUpdate.error}
         </Alert>
       )}
     </>

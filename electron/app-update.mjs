@@ -13,6 +13,8 @@ import {
 const REPOSITORY = "B4PT0R/codex-desktop-b4pt0r";
 const RELEASE_API =
   `https://api.github.com/repos/${REPOSITORY}/releases/latest`;
+const CODEX_RELEASE_API =
+  "https://api.github.com/repos/openai/codex/releases/latest";
 const MAX_PACKAGE_BYTES = 1_000_000_000;
 
 export class AppUpdateManager {
@@ -20,43 +22,116 @@ export class AppUpdateManager {
   #candidate;
   #clientVersion;
   #fetch;
+  #execFile;
   #installing = false;
   #installPackage;
+  #minimumCodexVersion;
   #packageFormat;
+  #resolveExecutable;
   #tempRoot;
 
   constructor({
     architecture,
     clientVersion,
+    execFileImpl = execFile,
     fetchImpl,
     installPackage = installDebianPackage,
+    minimumCodexVersion,
     packageFormat = detectLinuxPackageFormat(),
+    resolveExecutable = findCodexExecutable,
     tempRoot,
   }) {
     this.#architecture = architecture;
     this.#clientVersion = clientVersion;
+    this.#execFile = execFileImpl;
     this.#fetch = fetchImpl;
     this.#installPackage = installPackage;
+    this.#minimumCodexVersion = normalizeVersion(minimumCodexVersion);
     this.#packageFormat = packageFormat;
+    this.#resolveExecutable = resolveExecutable;
     this.#tempRoot = tempRoot;
   }
 
   versions() {
-    return readAppVersions(this.#clientVersion);
+    return readAppVersions(this.#clientVersion, this.#minimumCodexVersion, {
+      execFileImpl: this.#execFile,
+      resolveExecutable: this.#resolveExecutable,
+    });
+  }
+
+  async updateCodex(confirmed) {
+    if (confirmed !== true) {
+      throw new Error("Codex update requires explicit confirmation");
+    }
+    if (this.#installing) {
+      throw new Error("Another update is already in progress");
+    }
+    this.#installing = true;
+    try {
+      const executable = await this.#resolveExecutable();
+      await executeFile(
+        executable,
+        ["update"],
+        this.#execFile,
+        10 * 60_000,
+        environmentForCodex(executable),
+      );
+      return await this.versions();
+    } finally {
+      this.#installing = false;
+    }
   }
 
   async check() {
     this.#candidate = undefined;
-    const candidate = await checkLatestRelease({
-      architecture: this.#architecture,
-      currentVersion: this.#clientVersion,
-      fetchImpl: this.#fetch,
-      packageFormat: this.#packageFormat,
-    });
-    if (candidate.updateAvailable && candidate.asset) {
+    const [candidateResult, versions] = await Promise.all([
+      Promise.resolve().then(() =>
+        checkLatestRelease({
+          architecture: this.#architecture,
+          currentVersion: this.#clientVersion,
+          fetchImpl: this.#fetch,
+          packageFormat: this.#packageFormat,
+        }),
+      ).then(
+        (value) => ({ value }),
+        (error) => ({ error: errorMessage(error) }),
+      ),
+      this.versions(),
+    ]);
+    const candidate = candidateResult.value;
+    if (candidate?.updateAvailable && candidate.asset) {
       this.#candidate = candidate;
     }
-    return publicUpdateStatus(candidate);
+    let codexUpdate;
+    try {
+      codexUpdate = await checkLatestCodexRelease({
+        currentVersion: versions.codexVersion,
+        fetchImpl: this.#fetch,
+        minimumVersion: versions.minimumCodexVersion,
+      });
+    } catch (error) {
+      codexUpdate = {
+        compatible: versions.codexCompatible,
+        currentVersion: versions.codexVersion,
+        error: errorMessage(error),
+        minimumVersion: versions.minimumCodexVersion,
+      };
+    }
+    return {
+      ...(candidate
+        ? publicUpdateStatus(candidate)
+        : {
+            assetAvailable: false,
+            currentVersion: normalizeVersion(this.#clientVersion),
+            installMode: "unavailable",
+            latestVersion: normalizeVersion(this.#clientVersion),
+            packageFormat: this.#packageFormat,
+            releaseUrl: "",
+            updateAvailable: false,
+          }),
+      ...(candidateResult.error ? { clientError: candidateResult.error } : {}),
+      codexUpdate,
+    };
   }
 
   async install(confirmed) {
@@ -156,19 +231,32 @@ export async function installDebianPackage(
 
 export async function readAppVersions(
   clientVersion,
+  minimumCodexVersion,
   {
     execFileImpl = execFile,
     resolveExecutable = findCodexExecutable,
   } = {},
 ) {
-  const result = { clientVersion: normalizeVersion(clientVersion) };
+  const minimumVersion = normalizeVersion(minimumCodexVersion);
+  const result = {
+    clientVersion: normalizeVersion(clientVersion),
+    minimumCodexVersion: minimumVersion,
+  };
   try {
     const executable = await resolveExecutable();
     result.codexVersion = await executableVersion(executable, execFileImpl);
+    result.codexCompatible =
+      compareVersions(codexSemanticVersion(result.codexVersion), minimumVersion) >= 0;
   } catch (error) {
     result.codexError = errorMessage(error);
   }
   return result;
+}
+
+export function codexSemanticVersion(value) {
+  const match = /(?:^|\s)v?(\d+\.\d+\.\d+)(?:\s|$)/.exec(String(value ?? ""));
+  if (!match) throw new Error("Codex returned an invalid version");
+  return normalizeVersion(match[1]);
 }
 
 export async function checkLatestRelease({
@@ -194,6 +282,48 @@ export async function checkLatestRelease({
     architecture,
     packageFormat,
   );
+}
+
+export async function checkLatestCodexRelease({
+  currentVersion,
+  fetchImpl = globalThis.fetch,
+  minimumVersion,
+}) {
+  const normalizedMinimum = normalizeVersion(minimumVersion);
+  if (!currentVersion) {
+    throw new Error("The installed Codex version is unavailable");
+  }
+  const normalizedCurrent = codexSemanticVersion(currentVersion);
+  const response = await fetchImpl(CODEX_RELEASE_API, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      "User-Agent": "codex-desktop-linux-cli-updater",
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!response.ok) {
+    throw new Error(`Codex release check returned HTTP ${response.status}`);
+  }
+  const release = objectValue(await response.json());
+  const tagMatch = /^rust-v(\d+\.\d+\.\d+)$/.exec(String(release.tag_name ?? ""));
+  if (!tagMatch) throw new Error("GitHub returned an invalid Codex release");
+  const latestVersion = normalizeVersion(tagMatch[1]);
+  const releaseUrl = new URL(String(release.html_url ?? ""));
+  if (
+    releaseUrl.protocol !== "https:" ||
+    releaseUrl.hostname !== "github.com" ||
+    releaseUrl.pathname !== `/openai/codex/releases/tag/rust-v${latestVersion}`
+  ) {
+    throw new Error("GitHub returned an invalid Codex release URL");
+  }
+  return {
+    compatible: compareVersions(normalizedCurrent, normalizedMinimum) >= 0,
+    currentVersion: normalizedCurrent,
+    latestVersion,
+    minimumVersion: normalizedMinimum,
+    updateAvailable: compareVersions(latestVersion, normalizedCurrent) > 0,
+  };
 }
 
 export function releaseCandidate(
@@ -460,13 +590,20 @@ function errorMessage(error) {
   return error instanceof Error ? error.message : String(error);
 }
 
-function executeFile(executable, args, execFileImpl, timeout = 30_000) {
+function executeFile(
+  executable,
+  args,
+  execFileImpl,
+  timeout = 30_000,
+  env,
+) {
   return new Promise((resolve, reject) => {
     execFileImpl(
       executable,
       args,
       {
         encoding: "utf8",
+        ...(env ? { env } : {}),
         maxBuffer: 1024 * 1024,
         timeout,
         windowsHide: true,

@@ -10,7 +10,7 @@ every visual iteration. Historical captures remain available through Git.
 - `showcase-dark-1240x820.png` — English dark-theme continuation showing the
   Realtime hierarchy and active Plan immediately above the composer.
 - `update-available-light-1164x860.png` — light-theme conversation showing the
-  compact actionable update notice in the top bar.
+  separate compact client and CLI update actions in the top bar.
 - `settings-mcp-light-1164x860.png` — light-theme Settings baseline showing the
   shared page header, operational toolbar, MCP server cards, status badges and
   recoverable authentication failure.

@@ -7,6 +7,7 @@ const manifest = JSON.parse(
 );
 
 test("ships the renderer and native runtime without native test sources", async () => {
+  assert.equal(manifest.codexCompatibility.minimumVersion, "0.146.0");
   assert.deepEqual(manifest.build.files, [
     "dist/index.html",
     "dist/favicon.svg",

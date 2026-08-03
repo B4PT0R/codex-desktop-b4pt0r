@@ -3,6 +3,9 @@
   "productName": "Codex Desktop",
   "desktopName": "codex-desktop.desktop",
   "version": "0.5.4",
+  "codexCompatibility": {
+    "minimumVersion": "0.146.0"
+  },
   "description": "Independent desktop client for Codex on Linux",
   "license": "MIT",
   "repository": {

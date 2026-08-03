@@ -75,6 +75,8 @@ const account = {
 };
 const appUpdate = {
   checking: false,
+  codexUpdateInstalled: false,
+  codexUpdating: false,
   error: undefined,
   updateInstalled: false,
   installing: false,
@@ -82,11 +84,14 @@ const appUpdate = {
   native: true,
   versions: {
     clientVersion: "0.3.12",
+    codexCompatible: true,
     codexVersion: "codex-cli 0.145.0",
+    minimumCodexVersion: "0.145.0",
   },
   status: undefined,
   check: vi.fn().mockResolvedValue(true),
   install: vi.fn().mockResolvedValue(true),
+  updateCodex: vi.fn().mockResolvedValue(true),
   openRelease: vi.fn().mockResolvedValue(true),
 };
 const apps = {
@@ -320,6 +325,13 @@ describe("centre de réglages", () => {
           releaseUrl:
             "https://github.com/B4PT0R/codex-desktop-b4pt0r/releases/tag/v0.3.13",
           updateAvailable: true,
+          codexUpdate: {
+            compatible: true,
+            currentVersion: "0.145.0",
+            latestVersion: "0.145.0",
+            minimumVersion: "0.145.0",
+            updateAvailable: false,
+          },
         },
       },
     });
@@ -571,6 +583,13 @@ describe("centre de réglages", () => {
           releaseUrl:
             "https://github.com/B4PT0R/codex-desktop-b4pt0r/releases/tag/v0.3.13",
           updateAvailable: true,
+          codexUpdate: {
+            compatible: true,
+            currentVersion: "0.145.0",
+            latestVersion: "0.145.0",
+            minimumVersion: "0.145.0",
+            updateAvailable: false,
+          },
         },
       },
     });
@@ -580,6 +599,43 @@ describe("centre de réglages", () => {
       screen.getByRole("button", { name: "Mettre à jour" }),
     );
     expect(install).toHaveBeenCalledOnce();
+  });
+
+  it("avertit et propose la mise à jour d’une CLI trop ancienne", () => {
+    const updateCodex = vi.fn().mockResolvedValue(true);
+    renderSettings({
+      appUpdate: {
+        ...appUpdate,
+        updateCodex,
+        versions: {
+          clientVersion: "0.5.4",
+          codexCompatible: false,
+          codexVersion: "codex-cli 0.145.0",
+          minimumCodexVersion: "0.146.0",
+        },
+        status: {
+          assetAvailable: false,
+          currentVersion: "0.5.4",
+          installMode: "unavailable",
+          latestVersion: "0.5.4",
+          packageFormat: "deb",
+          releaseUrl:
+            "https://github.com/B4PT0R/codex-desktop-b4pt0r/releases/tag/v0.5.4",
+          updateAvailable: false,
+          codexUpdate: {
+            compatible: false,
+            currentVersion: "0.145.0",
+            latestVersion: "0.146.0",
+            minimumVersion: "0.146.0",
+            updateAvailable: true,
+          },
+        },
+      },
+    });
+
+    expect(screen.getByText(/nécessite Codex CLI v0.146.0/)).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Mettre à jour" }));
+    expect(updateCodex).toHaveBeenCalledOnce();
   });
 
   it("ouvre la release au lieu d’installer un paquet RPM automatiquement", () => {
@@ -597,6 +653,13 @@ describe("centre de réglages", () => {
           releaseUrl:
             "https://github.com/B4PT0R/codex-desktop-b4pt0r/releases/tag/v0.3.13",
           updateAvailable: true,
+          codexUpdate: {
+            compatible: true,
+            currentVersion: "0.145.0",
+            latestVersion: "0.145.0",
+            minimumVersion: "0.145.0",
+            updateAvailable: false,
+          },
         },
       },
     });

@@ -11,6 +11,7 @@ const allowedCommands = new Set([
   "read_app_versions",
   "check_for_updates",
   "install_update",
+  "update_codex",
   "set_tray_realtime_state",
   "read_codex_config",
   "write_codex_config",

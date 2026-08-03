@@ -998,13 +998,20 @@ export const fr = {
   "settings.startup.disabled": "Désactivé",
   "settings.startup.nativeOnly": "Disponible dans l’application native",
   "settings.startup.error": "Impossible de modifier le démarrage automatique :",
-  "settings.updates.title": "Mises à jour",
   "settings.updates.detail":
     "Vérifie la dernière release GitHub stable et utilise le paquet validé pour cette installation.",
   "settings.updates.client": "Codex Desktop",
-  "settings.updates.clientDetail": "Version du client Linux indépendant",
   "settings.updates.codex": "Codex",
-  "settings.updates.codexDetail": "Version de la CLI et d’App Server installée",
+  "settings.updates.codexDetail":
+    "Version de la CLI et d’App Server installée · minimum compatible v{version}",
+  "settings.updates.codexUpdating": "Mise à jour…",
+  "settings.updates.codexInstalled": "Mise à jour",
+  "settings.updates.codexRestartRequired":
+    "Redémarre App Server pour utiliser la CLI Codex mise à jour.",
+  "settings.updates.codexIncompatible":
+    "Ce client nécessite Codex CLI v{version} ou plus récent. Mets la CLI à jour avant de continuer.",
+  "settings.updates.codexCheckError":
+    "Impossible de rechercher une mise à jour de Codex CLI :",
   "settings.updates.loading": "Lecture…",
   "settings.updates.unavailable": "Indisponible",
   "settings.updates.nativeOnly":
@@ -1031,7 +1038,11 @@ export const fr = {
   "updates.topbar.available":
     "La version {version} est disponible. Mettre Codex Desktop à jour",
   "updates.topbar.installing": "Installation de la mise à jour…",
-  "updates.topbar.label": "Mise à jour · {version}",
+  "updates.topbar.label": "Mettre à jour client · {version}",
+  "updates.topbar.codexAvailable":
+    "Codex CLI {version} est disponible. Mettre la CLI à jour",
+  "updates.topbar.codexInstalling": "Mise à jour de Codex CLI…",
+  "updates.topbar.codexLabel": "Mettre à jour CLI · {version}",
   "settings.chromium.title": "Navigateur Chromium partagé",
   "settings.chromium.detail":
     "Une session Playwright privée, visible et commune à l’application et à l’agent Codex.",

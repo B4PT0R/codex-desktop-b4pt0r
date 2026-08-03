@@ -1,4 +1,5 @@
 import path from "node:path";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import {
   app,
@@ -69,6 +70,9 @@ import {
 } from "./app-update.mjs";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const packageMetadata = JSON.parse(
+  readFileSync(path.join(root, "package.json"), "utf8"),
+);
 const isDevelopment = !app.isPackaged;
 let mainWindow;
 let tray;
@@ -151,6 +155,10 @@ function registerIpc() {
   ipcMain.handle("desktop:install_update", async (event, args) => {
     trusted(event);
     return appUpdateManager.install(args?.confirmed);
+  });
+  ipcMain.handle("desktop:update_codex", async (event, args) => {
+    trusted(event);
+    return appUpdateManager.updateCodex(args?.confirmed);
   });
   ipcMain.handle("desktop:set_tray_realtime_state", (event, args) => {
     trusted(event);
@@ -508,6 +516,7 @@ else {
       architecture: process.arch,
       clientVersion: app.getVersion(),
       fetchImpl: net.fetch,
+      minimumCodexVersion: packageMetadata.codexCompatibility.minimumVersion,
       packageFormat: detectLinuxPackageFormat(),
       tempRoot: app.getPath("temp"),
     });

@@ -72,6 +72,12 @@ metadata update contract. The sidebar now consumes every page of the interactive
 thread catalog, keeps pinned conversations in a compact dedicated section and
 uses the server response as the source of truth for every toggle.
 
+Runtime compatibility: the packaged client declares Codex CLI 0.146.0 as its
+minimum supported backend. Stable client and CLI releases are polled together
+at startup and hourly; General and the top bar expose separate update actions.
+CLI installation remains owned by the selected binary through `codex update`,
+with App Server restart left explicit after success.
+
 ## Durable constraints
 
 - App Server-hydrated thread state is authoritative. A notification may alter
@@ -136,8 +142,8 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 720 deterministic frontend/unit tests across 129 files;
-- 130 Electron/Node tests, including App Server shutdown, recovery and the tray
+- 717 deterministic frontend/unit tests across 129 files;
+- 132 Electron/Node tests, including App Server shutdown, recovery and the tray
   quick actions;
 - production Vite build;
 - production dependency audit with zero vulnerabilities;

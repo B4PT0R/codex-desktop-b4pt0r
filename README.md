@@ -93,7 +93,8 @@ unavailable.
 ## Requirements
 
 - A recent x86-64 Linux desktop environment with GTK 3, NSS, and ALSA.
-- An installed and authenticated Codex CLI available as `codex` in `PATH`.
+- Codex CLI **0.146.0 or newer**, installed, authenticated, and available as
+  `codex` in `PATH`.
 - Node.js 22.12 or newer when building from source.
 
 Set `CODEX_EXECUTABLE` to the absolute path of the Codex binary if automatic
@@ -156,11 +157,16 @@ codex-desktop
 
 ## Update
 
-The app checks GitHub Releases once at startup and shows a compact top-bar
-action when a newer stable version is available. The version panel under
-**Settings > General** provides the same controls on demand. Matching release
-asset URLs, sizes, and SHA-256 digests are validated before an update is
-offered.
+The app checks the stable Codex Desktop and Codex CLI releases at startup and
+every hour. Each newer version gets its own compact top-bar action; the version
+panel under **Settings > General** keeps the detected and minimum compatible CLI
+versions visible alongside the same controls.
+
+CLI upgrades are delegated to the selected executable through the official
+`codex update` command, so Codex retains ownership of its installation method.
+Restart App Server from General after a successful CLI upgrade. Matching client
+release asset URLs, sizes, and SHA-256 digests are validated before a desktop
+update is offered.
 
 - **Debian/Ubuntu:** the app can download the DEB, verify its package metadata,
   and ask Polkit to authorize an explicit APT upgrade. Restart after it reports

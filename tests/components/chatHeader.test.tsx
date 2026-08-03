@@ -50,6 +50,39 @@ describe("en-tête de conversation", () => {
     expect(onActivate).toHaveBeenCalledOnce();
   });
 
+  it("propose séparément la mise à jour rapide de la CLI", () => {
+    const onActivate = vi.fn();
+    render(
+      <I18nProvider>
+        <ChatHeader
+          busy={false}
+          codexUpdate={{
+            installing: false,
+            latestVersion: "0.146.0",
+            onActivate,
+          }}
+          connected
+          nativeApp
+          reconnecting={false}
+          sidebarOpen
+          title="Conversation"
+          onCompact={vi.fn()}
+          onDelete={vi.fn()}
+          onFork={vi.fn()}
+          onOpenSidebar={vi.fn()}
+          onReconnect={vi.fn()}
+          onReload={vi.fn()}
+          onRename={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", {
+      name: "Codex CLI 0.146.0 est disponible. Mettre la CLI à jour",
+    }));
+    expect(onActivate).toHaveBeenCalledOnce();
+  });
+
   it("pilote la lecture et l’arrêt de la démo visuelle", () => {
     const onPlay = vi.fn();
     const onStop = vi.fn();

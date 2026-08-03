@@ -976,13 +976,19 @@ export const en: Record<MessageKey, string> = {
   "settings.startup.disabled": "Disabled",
   "settings.startup.nativeOnly": "Available in the native app",
   "settings.startup.error": "Unable to change automatic startup:",
-  "settings.updates.title": "Updates",
   "settings.updates.detail":
     "Check the latest stable GitHub release and use its verified package for this installation.",
   "settings.updates.client": "Codex Desktop",
-  "settings.updates.clientDetail": "Independent Linux client version",
   "settings.updates.codex": "Codex",
-  "settings.updates.codexDetail": "Installed CLI and App Server version",
+  "settings.updates.codexDetail":
+    "Installed CLI and App Server version · minimum compatible v{version}",
+  "settings.updates.codexUpdating": "Updating…",
+  "settings.updates.codexInstalled": "Updated",
+  "settings.updates.codexRestartRequired":
+    "Restart App Server to use the updated Codex CLI.",
+  "settings.updates.codexIncompatible":
+    "This client requires Codex CLI v{version} or newer. Update the CLI before continuing.",
+  "settings.updates.codexCheckError": "Unable to check for a Codex CLI update:",
   "settings.updates.loading": "Reading…",
   "settings.updates.unavailable": "Unavailable",
   "settings.updates.nativeOnly":
@@ -1008,7 +1014,11 @@ export const en: Record<MessageKey, string> = {
   "settings.updates.codexError": "Unable to read the Codex version:",
   "updates.topbar.available": "Version {version} is available. Update Codex Desktop",
   "updates.topbar.installing": "Installing update…",
-  "updates.topbar.label": "Update · {version}",
+  "updates.topbar.label": "Update Client · {version}",
+  "updates.topbar.codexAvailable":
+    "Codex CLI {version} is available. Update the CLI",
+  "updates.topbar.codexInstalling": "Updating Codex CLI…",
+  "updates.topbar.codexLabel": "Update CLI · {version}",
   "settings.chromium.title": "Shared Chromium browser",
   "settings.chromium.detail":
     "A private, visible Playwright session shared by the app and the Codex agent.",

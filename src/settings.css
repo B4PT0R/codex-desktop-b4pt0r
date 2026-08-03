@@ -857,10 +857,6 @@
   white-space: nowrap;
 }
 
-.app-update-action-row .settings-field-description {
-  min-width: 0;
-}
-
 .settings-browser-confirm {
   display: grid;
   justify-items: end;

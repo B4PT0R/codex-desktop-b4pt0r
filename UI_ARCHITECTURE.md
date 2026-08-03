@@ -257,9 +257,15 @@ Une défaillance confirmée remplace App Server ; le renderer réattache ses
 listeners, recharge les catalogues et réhydrate le thread visible avant que le
 Scheduler ne réclame de nouveau travail.
 
-La recherche de mise à jour s’exécute une fois au démarrage et reste disponible
-à la demande dans Settings. Une version plus récente apparaît comme une action
-compacte dans la top bar. Le processus natif détecte AppImage ou la famille de
+Les releases stables du client et de Codex CLI sont sondées au démarrage puis
+toutes les heures. Chaque version plus récente apparaît comme une action
+compacte distincte dans la top bar et sur sa propre ligne de version dans
+General. Le minimum CLI compatible est embarqué dans les métadonnées de release
+du client ; une installation trop ancienne reste visible comme état dégradé.
+La mise à jour CLI délègue exclusivement à `codex update`, puis demande de
+redémarrer App Server au lieu de deviner le gestionnaire d’installation.
+
+Pour le client, le processus natif détecte AppImage ou la famille de
 distribution via `/etc/os-release`, sélectionne uniquement l’artefact de même
 format et architecture, puis valide URL GitHub, taille et SHA-256. Seul le DEB
 suit l’installation Polkit/APT après validation de ses métadonnées. RPM,

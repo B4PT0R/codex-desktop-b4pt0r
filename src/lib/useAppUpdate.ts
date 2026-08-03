@@ -3,8 +3,19 @@ import { invoke, isDesktopApp, openUrl } from "./nativeBridge";
 
 export type AppVersions = {
   clientVersion: string;
+  codexCompatible?: boolean;
   codexVersion?: string;
   codexError?: string;
+  minimumCodexVersion: string;
+};
+
+export type CodexUpdateStatus = {
+  compatible?: boolean;
+  currentVersion?: string;
+  error?: string;
+  latestVersion?: string;
+  minimumVersion: string;
+  updateAvailable?: boolean;
 };
 
 export type UpdateStatus = {
@@ -15,10 +26,14 @@ export type UpdateStatus = {
   packageFormat: "appimage" | "deb" | "rpm" | "unknown";
   releaseUrl: string;
   updateAvailable: boolean;
+  codexUpdate: CodexUpdateStatus;
+  clientError?: string;
 };
 
 export type AppUpdateController = {
   checking: boolean;
+  codexUpdateInstalled: boolean;
+  codexUpdating: boolean;
   error?: string;
   updateInstalled: boolean;
   installing: boolean;
@@ -28,6 +43,7 @@ export type AppUpdateController = {
   status?: UpdateStatus;
   check: () => Promise<boolean>;
   install: () => Promise<boolean>;
+  updateCodex: () => Promise<boolean>;
   openRelease: () => Promise<boolean>;
 };
 
@@ -42,14 +58,19 @@ export function useAppUpdate(
   const [checking, setChecking] = useState(false);
   const [installing, setInstalling] = useState(false);
   const [updateInstalled, setUpdateInstalled] = useState(false);
+  const [codexUpdateInstalled, setCodexUpdateInstalled] = useState(false);
+  const [codexUpdating, setCodexUpdating] = useState(false);
   const [error, setError] = useState<string>();
-  const operationRef = useRef<"check" | "install" | null>(null);
+  const operationRef = useRef<"check" | "install" | "codex" | null>(null);
   const initialCheckStartedRef = useRef(false);
 
   useEffect(() => {
     if (!enabled) return;
     if (!native) {
-      setVersions({ clientVersion: __APP_VERSION__ });
+      setVersions({
+        clientVersion: __APP_VERSION__,
+        minimumCodexVersion: "0.146.0",
+      });
       return;
     }
     let disposed = false;
@@ -74,11 +95,11 @@ export function useAppUpdate(
     operationRef.current = "check";
     setChecking(true);
     setUpdateInstalled(false);
-    setStatus(undefined);
     setError(undefined);
     try {
       const next = await invoke<UpdateStatus>("check_for_updates");
       setStatus(next);
+      if (next.clientError) setError(next.clientError);
       return true;
     } catch (cause) {
       setError(errorMessage(cause));
@@ -100,6 +121,12 @@ export function useAppUpdate(
     }
     initialCheckStartedRef.current = true;
     void check();
+  }, [check, checkOnLoad, enabled, native]);
+
+  useEffect(() => {
+    if (!enabled || !native || !checkOnLoad) return;
+    const interval = window.setInterval(() => void check(), 60 * 60 * 1_000);
+    return () => window.clearInterval(interval);
   }, [check, checkOnLoad, enabled, native]);
 
   const install = useCallback(async () => {
@@ -139,9 +166,37 @@ export function useAppUpdate(
     }
   }, [native, status]);
 
+  const updateCodex = useCallback(async () => {
+    if (!native || operationRef.current) return false;
+    operationRef.current = "codex";
+    setCodexUpdating(true);
+    setCodexUpdateInstalled(false);
+    setError(undefined);
+    try {
+      const next = await invoke<AppVersions>("update_codex", {
+        confirmed: true,
+      });
+      const nextStatus = await invoke<UpdateStatus>("check_for_updates");
+      setVersions(next);
+      setStatus(nextStatus);
+      const completed = nextStatus.codexUpdate.updateAvailable !== true;
+      setCodexUpdateInstalled(completed);
+      if (!completed) setError("Codex CLI remains outdated after the update.");
+      return completed;
+    } catch (cause) {
+      setError(errorMessage(cause));
+      return false;
+    } finally {
+      operationRef.current = null;
+      setCodexUpdating(false);
+    }
+  }, [native]);
+
   return {
     check,
     checking,
+    codexUpdateInstalled,
+    codexUpdating,
     error,
     install,
     updateInstalled,
@@ -150,6 +205,7 @@ export function useAppUpdate(
     native,
     openRelease,
     status,
+    updateCodex,
     versions,
   };
 }

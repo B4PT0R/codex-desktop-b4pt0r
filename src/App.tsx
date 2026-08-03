@@ -1275,6 +1275,28 @@ export default function App() {
                   }
                 : undefined
           }
+          codexUpdate={
+            isUpdateDemoPreview()
+              ? {
+                  installing: false,
+                  latestVersion: "0.146.0",
+                  onActivate: () => undefined,
+                }
+              : appUpdate.status?.codexUpdate.updateAvailable &&
+                  appUpdate.status.codexUpdate.latestVersion &&
+                  !appUpdate.codexUpdateInstalled
+                ? {
+                  installing: appUpdate.codexUpdating,
+                  latestVersion: appUpdate.status.codexUpdate.latestVersion,
+                  onActivate: () => {
+                    void (async () => {
+                      await appUpdate.updateCodex();
+                      setSettings("general");
+                    })();
+                  },
+                  }
+                : undefined
+          }
           commandRequest={composerCommands.headerRequest}
           defaultThread={defaultThread.defaultThreadId === threadId}
           demoPlayback={

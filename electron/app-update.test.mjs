@@ -6,6 +6,7 @@ import path from "node:path";
 import test from "node:test";
 import {
   AppUpdateManager,
+  checkLatestCodexRelease,
   checkLatestRelease,
   compareVersions,
   detectLinuxPackageFormat,
@@ -50,7 +51,7 @@ test("compares stable semantic versions", () => {
 });
 
 test("reads the client and Codex versions without exposing the executable", async () => {
-  const result = await readAppVersions("0.3.12", {
+  const result = await readAppVersions("0.3.12", "0.145.0", {
     resolveExecutable: async () => "/opt/codex/bin/codex",
     execFileImpl: (executable, args, options, callback) => {
       assert.equal(executable, "/opt/codex/bin/codex");
@@ -62,7 +63,32 @@ test("reads the client and Codex versions without exposing the executable", asyn
 
   assert.deepEqual(result, {
     clientVersion: "0.3.12",
+    codexCompatible: true,
     codexVersion: "codex-cli 0.145.0",
+    minimumCodexVersion: "0.145.0",
+  });
+});
+
+test("checks the official Codex release and minimum compatibility", async () => {
+  const result = await checkLatestCodexRelease({
+    currentVersion: "codex-cli 0.145.0",
+    minimumVersion: "0.146.0",
+    fetchImpl: async (url, options) => {
+      assert.equal(url, "https://api.github.com/repos/openai/codex/releases/latest");
+      assert.equal(options.headers.Accept, "application/vnd.github+json");
+      return new Response(JSON.stringify({
+        tag_name: "rust-v0.146.0",
+        html_url: "https://github.com/openai/codex/releases/tag/rust-v0.146.0",
+      }));
+    },
+  });
+
+  assert.deepEqual(result, {
+    compatible: false,
+    currentVersion: "0.145.0",
+    latestVersion: "0.146.0",
+    minimumVersion: "0.146.0",
+    updateAvailable: true,
   });
 });
 
@@ -218,6 +244,7 @@ test("requires a fresh checked candidate and explicit install confirmation", asy
   const manager = new AppUpdateManager({
     architecture: "x64",
     clientVersion: "0.3.12",
+    minimumCodexVersion: "0.145.0",
     fetchImpl: async (url) =>
       String(url).includes("/releases/latest")
         ? new Response(JSON.stringify(release()))
@@ -244,11 +271,45 @@ test("requires a fresh checked candidate and explicit install confirmation", asy
   await assert.rejects(manager.install(true), /Check for an available update/);
 });
 
+test("delegates CLI updates to the selected Codex executable", async () => {
+  const calls = [];
+  let version = "codex-cli 0.145.0\n";
+  const manager = new AppUpdateManager({
+    architecture: "x64",
+    clientVersion: "0.3.12",
+    minimumCodexVersion: "0.146.0",
+    fetchImpl: async () => new Response(JSON.stringify(release())),
+    resolveExecutable: async () => "/opt/codex/bin/codex",
+    execFileImpl: (executable, args, options, callback) => {
+      calls.push({ executable, args, options });
+      if (args[0] === "update") version = "codex-cli 0.146.0\n";
+      callback(null, args[0] === "--version" ? version : "Updated\n", "");
+    },
+    tempRoot: os.tmpdir(),
+  });
+
+  await assert.rejects(manager.updateCodex(false), /explicit confirmation/);
+  assert.deepEqual(await manager.updateCodex(true), {
+    clientVersion: "0.3.12",
+    codexCompatible: true,
+    codexVersion: "codex-cli 0.146.0",
+    minimumCodexVersion: "0.146.0",
+  });
+  assert.deepEqual(calls.map(({ args }) => args), [
+    ["update"],
+    ["--version"],
+  ]);
+  assert.equal(calls[0].executable, "/opt/codex/bin/codex");
+  assert.equal(calls[0].options.timeout, 10 * 60_000);
+  assert.match(calls[0].options.env.PATH, /^\/opt\/codex\/bin/);
+});
+
 test("never sends RPM or AppImage assets to the Debian installer", async () => {
   const installed = [];
   const manager = new AppUpdateManager({
     architecture: "x64",
     clientVersion: "0.3.12",
+    minimumCodexVersion: "0.145.0",
     fetchImpl: async () => new Response(JSON.stringify(release())),
     installPackage: async (...args) => installed.push(args),
     packageFormat: "rpm",

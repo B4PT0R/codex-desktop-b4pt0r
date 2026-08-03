@@ -42,6 +42,11 @@ type ChatHeaderProps = {
     latestVersion: string;
     onActivate: () => void;
   };
+  codexUpdate?: {
+    installing: boolean;
+    latestVersion: string;
+    onActivate: () => void;
+  };
   demoPlayback?: {
     hasPlayed: boolean;
     running: boolean;
@@ -73,6 +78,7 @@ export function ChatHeader({
   threadId,
   title,
   update,
+  codexUpdate,
   demoPlayback,
   commandRequest,
   onCompact,
@@ -379,7 +385,34 @@ export function ChatHeader({
                     })
               }
               onClick={update.onActivate}
-              size="medium"
+              gap="small"
+              size="small"
+              variant="secondary"
+            />
+          )}
+          {codexUpdate && (
+            <IconButton
+              aria-label={
+                codexUpdate.installing
+                  ? t("updates.topbar.codexInstalling")
+                  : t("updates.topbar.codexAvailable", {
+                      version: codexUpdate.latestVersion,
+                    })
+              }
+              className="header-update-button"
+              disabled={codexUpdate.installing}
+              icon={codexUpdate.installing ? LoaderCircle : ArrowDownToLine}
+              iconClassName={codexUpdate.installing ? "spin" : undefined}
+              label={
+                codexUpdate.installing
+                  ? t("updates.topbar.codexInstalling")
+                  : t("updates.topbar.codexLabel", {
+                      version: codexUpdate.latestVersion,
+                    })
+              }
+              onClick={codexUpdate.onActivate}
+              gap="small"
+              size="small"
               variant="secondary"
             />
           )}
