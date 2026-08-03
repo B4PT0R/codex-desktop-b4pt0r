@@ -1,6 +1,6 @@
 # Codex Desktop Linux — Handoff
 
-Last updated: 2026-08-02
+Last updated: 2026-08-03
 
 Read `AGENTS.md` before contributing. Durable protocol and interface decisions
 belong in `APP_SERVER_COVERAGE.md` and `UI_ARCHITECTURE.md`; completed release
@@ -9,8 +9,8 @@ detail belongs in `CHANGELOG.md` and Git.
 ## Baseline
 
 Codex Desktop Linux is a functional independent Electron client for the
-official `codex app-server`. The current public release is **v0.5.4**, verified
-against installed `codex-cli 0.145.0`.
+official `codex app-server`. The current public release is **v0.5.4**. The local
+development baseline now uses installed `codex-cli 0.146.0`.
 
 The daily workflow covers conversation replay and concurrent activity,
 streaming Markdown/LaTeX, reasoning, plans, tools, approvals, diffs, files,
@@ -76,8 +76,8 @@ unused and clearly separated from the functional installed view.
   across renderer recovery. Full application quit attempts bounded graceful
   shutdown before escalating to process signals.
 - Realtime uses ephemeral voice forks and injects finalized exchanges into the
-  persistent parent in order. App Server 0.145 does not replay every injected
-  voice item as ordinary chat, so the visual cache remains bounded and local.
+  persistent parent in order. Injected voice items are not assumed to replay as
+  ordinary chat, so the visual cache remains bounded and local.
 - Client preferences live in `~/.codex/codex-desktop-linux.json`; official
   Codex configuration remains in `config.toml`. Installation, update and normal
   startup do not rewrite either domain or server-owned thread metadata.
@@ -95,7 +95,7 @@ unused and clearly separated from the functional installed view.
 
 - Scheduled tasks require the app to remain running in the tray and the machine
   awake; missed intervals are not replayed in a burst.
-- App Server 0.145 exposes no atomic start-if-idle request, so another App
+- App Server 0.146 exposes no atomic start-if-idle request, so another App
   Server client can still race between idle observation and `turn/start`.
 - Quitting interrupts scheduled work; closing the window preserves the hidden
   renderer and App Server.
@@ -131,12 +131,18 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 714 deterministic frontend/unit tests across 130 files;
+- 715 deterministic frontend/unit tests across 129 files;
 - 130 Electron/Node tests, including App Server shutdown, recovery and the tray
   quick actions;
 - production Vite build;
 - production dependency audit with zero vulnerabilities;
 - `git diff --check`.
+
+The Codex 0.146 compatibility pass generated and compared stable and
+experimental schemas, reviewed the official `rust-v0.146.0` source delta, and
+passed all 52 installed-schema contract tests. Changes are additive for the
+client's current surface; the removed experimental `AppMetadata.firstPartyType`
+field was never consumed, so no implementation adaptation is required.
 
 Release v0.5.4 additionally passed 52 installed-schema contract tests against
 `codex-cli 0.145.0`, Linux DEB/RPM/AppImage packaging, and native/AppImage
