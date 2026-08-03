@@ -518,7 +518,9 @@ describe("activité des outils", () => {
 
     expect(screen.getByText("1 action completed")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: /1 action completed/ }));
-    fireEvent.click(screen.getByRole("button", { name: /Commande test/ }));
+    const header = screen.getByRole("button", { name: /Commande test/ });
+    expect(header).not.toHaveAccessibleName(/Exit code/);
+    fireEvent.click(header);
     expect(screen.getByText("Input")).toBeVisible();
     expect(screen.getByText("Output")).toBeVisible();
     expect(screen.getByText("Exit code 0")).toBeVisible();

@@ -241,19 +241,13 @@ function ToolIcon({ kind }: { kind: ToolCall["kind"] }) {
 }
 
 function ToolMetrics({ tool }: { tool: ToolCall }) {
-  const { t } = useI18n();
-  if (tool.exitCode === undefined && tool.durationMs === undefined) return null;
+  if (tool.durationMs === undefined) return null;
   const duration =
-    tool.durationMs === undefined
-      ? undefined
-      : tool.durationMs < 1000
-        ? `${tool.durationMs} ms`
-        : `${Math.round(tool.durationMs / 100) / 10} s`;
+    tool.durationMs < 1000
+      ? `${tool.durationMs} ms`
+      : `${Math.round(tool.durationMs / 100) / 10} s`;
   return (
     <small className="tool-metrics">
-      {tool.exitCode !== undefined &&
-        t("tool.metric.exitCode", { code: tool.exitCode })}
-      {tool.exitCode !== undefined && duration && " · "}
       {duration}
     </small>
   );
@@ -292,6 +286,11 @@ function ToolDetails({
   );
   return (
     <div className="tool-details">
+      {tool.exitCode !== undefined && (
+        <div className="tool-detail-meta">
+          {t("tool.metric.exitCode", { code: tool.exitCode })}
+        </div>
+      )}
       <section>
         <span>{t("tool.details.input")}</span>
         <pre>{tool.detail}</pre>

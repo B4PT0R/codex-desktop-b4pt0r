@@ -299,6 +299,12 @@
   margin: 2px 0 7px 22px;
 }
 
+.tool-detail-meta {
+  color: #777772;
+  font-size: 9px;
+  text-align: right;
+}
+
 .tool-details section > span {
   display: block;
   margin-bottom: 5px;
