@@ -92,4 +92,59 @@ describe("refus de relecture automatique", () => {
     });
     expect(result.current.forThread("thread-1")).toEqual([]);
   });
+
+  it("conserve deux refus de même identifiant appartenant à des threads distincts", () => {
+    const { result } = renderHook(() => useAutoReviewDenials());
+    act(() => {
+      emitDenial("thread-1", "review-1", "git push origin one");
+      emitDenial("thread-2", "review-1", "git push origin two");
+    });
+
+    expect(result.current.forThread("thread-1")).toMatchObject([
+      { action: { command: "git push origin one" } },
+    ]);
+    expect(result.current.forThread("thread-2")).toMatchObject([
+      { action: { command: "git push origin two" } },
+    ]);
+  });
+
+  it("refuse deux injections concurrentes pour la même autorisation", async () => {
+    const injection = deferred<Record<string, never>>();
+    requestMock.mockReturnValueOnce(injection.promise);
+    const { result } = renderHook(() => useAutoReviewDenials());
+    act(() => emitDenial("thread-1", "review-1", "git push"));
+
+    let first!: Promise<boolean>;
+    let second!: Promise<boolean>;
+    act(() => {
+      first = result.current.approve("thread-1", "review-1");
+      second = result.current.approve("thread-1", "review-1");
+    });
+
+    await expect(second).resolves.toBe(false);
+    expect(requestMock).toHaveBeenCalledOnce();
+    injection.resolve({});
+    await act(async () => expect(await first).toBe(true));
+    expect(result.current.forThread("thread-1")).toEqual([]);
+  });
 });
+
+function emitDenial(threadId: string, reviewId: string, command: string) {
+  subscription.handler?.({
+    method: "item/autoApprovalReview/completed",
+    params: {
+      threadId,
+      reviewId,
+      review: { status: "denied", rationale: "Needs user approval" },
+      action: { type: "command", command, cwd: "/work/repo", source: "shell" },
+    },
+  });
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
