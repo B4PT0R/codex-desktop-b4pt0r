@@ -107,8 +107,12 @@ comme une réponse de l’agent.
 
 Les outils d’une même vague partagent un groupe stable. Les cartes restent
 repliables et les jobs de fond conservent leur statut sans bloquer visuellement
-les actions suivantes. Les sous-agents sont des actions ordinaires dont le détail
-contient un transcript enfant borné et réhydratable.
+les actions suivantes. Un `agentMessage` explicitement classé `commentary`,
+court et immédiatement suivi d’un outil devient l’intitulé principal de cette
+carte ; le type d’action reste affiché en second. Les phases finales, inconnues
+ou les narrations longues restent des messages afin de ne pas inventer une
+association absente du protocole. Les sous-agents sont des actions ordinaires
+dont le détail contient un transcript enfant borné et réhydratable.
 
 L’historique est paginé. Les deltas fréquents sont regroupés dans des mises à
 jour React interruptibles ; le compositeur, les demandes bloquantes et la

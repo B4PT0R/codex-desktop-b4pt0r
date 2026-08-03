@@ -11,6 +11,8 @@ export type ToolCall = {
     | "sleep"
     | "imageGeneration";
   title: string;
+  /** Short agent commentary immediately introducing this action. */
+  description?: string;
   detail: string;
   status: "running" | "done" | "error";
   output?: string;
@@ -68,6 +70,8 @@ export type ChatMessage = {
   /** Keeps an accepted text delta hidden until the preceding activity folds. */
   revealAfter?: number;
   role: "user" | "assistant";
+  /** App Server classification used to distinguish narration from final text. */
+  phase?: "commentary" | "final_answer";
   /** Distinguishes assistant and client-owned presentation surfaces. */
   modality?:
     | "realtimeVoice"

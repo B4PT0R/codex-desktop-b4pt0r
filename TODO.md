@@ -78,6 +78,11 @@ at startup and hourly; General and the top bar expose separate update actions.
 CLI installation remains owned by the selected binary through `codex update`,
 with App Server restart left explicit after success.
 
+Action narration: short App Server `agentMessage` items explicitly marked as
+`commentary` are attached to the immediately following tool card and shown as
+its primary header. Final, unclassified and long messages retain their ordinary
+conversation presentation; replay and streaming use the same association rule.
+
 ## Durable constraints
 
 - App Server-hydrated thread state is authoritative. A notification may alter
@@ -142,7 +147,7 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 717 deterministic frontend/unit tests across 129 files;
+- 722 deterministic frontend/unit tests across 129 files;
 - 132 Electron/Node tests, including App Server shutdown, recovery and the tray
   quick actions;
 - production Vite build;

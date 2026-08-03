@@ -81,6 +81,9 @@ function messagesFromTurns(
             id: item.id,
             role: "assistant",
             content: text,
+            ...(item.phase === "commentary" || item.phase === "final_answer"
+              ? { phase: item.phase }
+              : {}),
             ...(isRealtimeVoiceItemId(item.id)
               ? { modality: "realtimeVoice" as const }
               : {}),

@@ -144,6 +144,7 @@ function appendAgentMessageDelta(
           itemId ?? message.id,
         )}`,
         sourceItemId: itemId ?? message.sourceItemId ?? message.id,
+        ...(message.phase ? { phase: message.phase } : {}),
         revealAfter: Date.now() + closedStepRevealDelay(message.tools.length),
         role: "assistant",
         content: delta,
@@ -209,20 +210,35 @@ function startItem(
 ): ChatMessage[] {
   const userMessage = userMessageFromItem(item);
   if (userMessage) return reconcileUserMessage(messages, userMessage);
-  const tool = toolFromItem(item, t);
+  if (item?.type === "agentMessage" && item.id) {
+    if (messages.some((message) => message.id === item.id)) return messages;
+    const phase = messagePhase(item.phase);
+    return [
+      ...messages,
+      {
+        id: item.id,
+        role: "assistant",
+        content: stringValue(item.text) ?? "",
+        ...(phase ? { phase } : {}),
+        streaming: true,
+      },
+    ];
+  }
+  let tool = toolFromItem(item, t);
   const signal = signalFromItem(item, t);
   let next = messages;
 
   if (tool) {
+    const toolId = tool.id;
     const existingIndex = findLastIndex(next, (message) =>
-      Boolean(message.tools?.some((existing) => existing.id === tool.id)),
+      Boolean(message.tools?.some((existing) => existing.id === toolId)),
     );
     if (existingIndex >= 0) {
       const existingMessage = next[existingIndex];
       next = replaceAt(next, existingIndex, {
         ...existingMessage,
         tools: existingMessage.tools?.map((existing) => {
-          if (existing.id !== tool.id || existing.status !== "running") {
+          if (existing.id !== toolId || existing.status !== "running") {
             return existing;
           }
           return {
@@ -236,13 +252,28 @@ function startItem(
       });
       return signal ? appendSignal(next, signal) : next;
     }
-    next = trimTrailingEmptyAssistantMessages(next);
     const last = next.at(-1);
+    const description =
+      last?.role === "assistant" && last.phase === "commentary"
+        ? shortToolDescription(last.content)
+        : undefined;
+    if (description && last) {
+      tool = { ...tool, description };
+      next = replaceAt(next, next.length - 1, {
+        ...last,
+        content: "",
+        streaming: false,
+        tools: [...(last.tools ?? []), tool],
+      });
+      return signal ? appendSignal(next, signal) : next;
+    }
+    next = trimTrailingEmptyAssistantMessages(next);
+    const toolHost = next.at(-1);
     next =
-      last?.role === "assistant"
+      toolHost?.role === "assistant"
         ? replaceAt(next, next.length - 1, {
-            ...last,
-            tools: [...(last.tools ?? []), tool],
+            ...toolHost,
+            tools: [...(toolHost.tools ?? []), tool],
           })
         : [
             ...next,
@@ -326,10 +357,17 @@ function completeItem(
     const message = messages[index];
     const hasTool = message.tools?.some((tool) => tool.id === item.id);
     const hasSignal = message.signals?.some((signal) => signal.id === item.id);
+    const completedAgentText =
+      item.type === "agentMessage" &&
+      !(message.phase === "commentary" &&
+        message.tools?.some((tool) => tool.description))
+        ? stringValue(item.text)
+        : undefined;
     next = replaceAt(messages, index, {
       ...message,
       ...(message.id === item.id || message.sourceItemId === item.id
         ? {
+            ...(completedAgentText ? { content: completedAgentText } : {}),
             streaming: false,
             memoryCitations: memoryCitations(item.memoryCitation),
           }
@@ -381,6 +419,17 @@ function completeItem(
     );
   }
   return next;
+}
+
+function shortToolDescription(value: string) {
+  const description = value.replace(/\s+/g, " ").trim();
+  return description && description.length <= 280 ? description : undefined;
+}
+
+function messagePhase(value: unknown): ChatMessage["phase"] {
+  return value === "commentary" || value === "final_answer"
+    ? value
+    : undefined;
 }
 
 function mergeCompletedTool(

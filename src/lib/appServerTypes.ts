@@ -115,6 +115,7 @@ export type SendCreditsNudgeResponse = {
 export type AppServerInput = {
   type: string;
   text?: string;
+  phase?: "commentary" | "final_answer" | null;
   name?: string;
   path?: string;
 };

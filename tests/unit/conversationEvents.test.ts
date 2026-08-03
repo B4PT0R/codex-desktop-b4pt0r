@@ -197,6 +197,103 @@ describe("événements de conversation", () => {
     ]);
   });
 
+  it("déplace un commentaire court dans l’en-tête de l’outil suivant", () => {
+    let messages = applyConversationEvent([], {
+      method: "item/started",
+      params: {
+        item: { id: "commentary-1", type: "agentMessage", phase: "commentary" },
+      },
+    });
+    messages = applyConversationEvent(messages, {
+      method: "item/agentMessage/delta",
+      params: { itemId: "commentary-1", delta: "Je vérifie les contrats ciblés." },
+    });
+    messages = applyConversationEvent(messages, {
+      method: "item/completed",
+      params: {
+        item: {
+          id: "commentary-1",
+          type: "agentMessage",
+          phase: "commentary",
+          text: "Je vérifie les contrats ciblés.",
+        },
+      },
+    });
+    messages = applyConversationEvent(messages, {
+      method: "item/started",
+      params: {
+        item: {
+          id: "command-commented",
+          type: "commandExecution",
+          command: "npm run test:contract",
+          status: "inProgress",
+        },
+      },
+    });
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0]).toMatchObject({
+      id: "commentary-1",
+      phase: "commentary",
+      content: "",
+      tools: [
+        {
+          id: "command-commented",
+          description: "Je vérifie les contrats ciblés.",
+        },
+      ],
+    });
+  });
+
+  it("conserve un message final même lorsqu’un outil le suit", () => {
+    const messages = applyConversationEvent([
+      {
+        id: "answer",
+        role: "assistant",
+        phase: "final_answer",
+        content: "Le résultat est prêt.",
+      },
+    ], {
+      method: "item/started",
+      params: {
+        item: {
+          id: "late-command",
+          type: "commandExecution",
+          command: "true",
+          status: "inProgress",
+        },
+      },
+    });
+
+    expect(messages[0].content).toBe("Le résultat est prêt.");
+    expect(messages[0].tools?.[0].description).toBeUndefined();
+  });
+
+  it("conserve une narration trop longue comme message séparé", () => {
+    const narration = "x".repeat(281);
+    const messages = applyConversationEvent([
+      {
+        id: "long-commentary",
+        role: "assistant",
+        phase: "commentary",
+        content: narration,
+      },
+    ], {
+      method: "item/started",
+      params: {
+        item: {
+          id: "command-after-long-commentary",
+          type: "commandExecution",
+          command: "true",
+          status: "inProgress",
+        },
+      },
+    });
+
+    expect(messages[0].content).toBe(narration);
+    expect(messages[0].tools?.[0].description).toBeUndefined();
+  });
+
   it("attache puis finalise un outil sur le dernier message agent", () => {
     const started = applyConversationEvent([assistantMessage], {
       method: "item/started",

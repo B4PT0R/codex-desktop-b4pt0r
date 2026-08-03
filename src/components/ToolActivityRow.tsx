@@ -167,7 +167,14 @@ export const ToolActivityRow = memo(function ToolActivityRow({
         type="button"
       >
         <ToolIcon kind={tool.kind} />
-        <strong>{tool.title}</strong>
+        {tool.description ? (
+          <span className="tool-row-heading">
+            <strong>{tool.description}</strong>
+            <small>{tool.title}</small>
+          </span>
+        ) : (
+          <strong>{tool.title}</strong>
+        )}
         <ToolMetrics tool={tool} />
         <ToolStatus background={yieldRunning} status={tool.status} />
         <ChevronDown className="tool-row-chevron" />

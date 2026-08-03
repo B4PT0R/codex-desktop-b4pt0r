@@ -127,6 +127,37 @@ describe("reprise de conversation", () => {
     ]);
   });
 
+  it("restaure un commentaire court comme description de l’action suivante", () => {
+    const messages = messagesFromThread({
+      id: "thread-commentary",
+      turns: [
+        {
+          items: [
+            {
+              id: "commentary",
+              type: "agentMessage",
+              phase: "commentary",
+              text: "Je contrôle la compilation.",
+            },
+            {
+              id: "build",
+              type: "commandExecution",
+              command: "npm run build",
+              status: "completed",
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0].content).toBe("");
+    expect(messages[0].tools?.[0]).toMatchObject({
+      id: "build",
+      description: "Je contrôle la compilation.",
+    });
+  });
+
   it("restaure un réveil planifié comme une modalité distincte", () => {
     expect(
       messagesFromThread({

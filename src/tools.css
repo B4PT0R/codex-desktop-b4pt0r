@@ -153,16 +153,39 @@
   flex: 0 0 auto;
 }
 
-.tool-row-header strong {
+.tool-row-header > strong,
+.tool-row-heading {
   display: block;
   min-width: 0;
   flex: 1;
+}
+
+.tool-row-header strong,
+.tool-row-heading small {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tool-row-header strong {
   overflow: hidden;
   color: #b3b3ae;
   font-size: 11px;
   font-weight: 500;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+.tool-row-heading small {
+  margin-top: 1px;
+  color: #767672;
+  font-size: 9px;
+  line-height: 1.2;
+}
+
+.tool-row:has(.tool-row-heading) .tool-row-header {
+  min-height: 38px;
 }
 
 .tool-details-shell {
