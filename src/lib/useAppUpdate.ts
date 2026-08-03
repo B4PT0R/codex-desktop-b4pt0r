@@ -63,6 +63,7 @@ export function useAppUpdate(
   const [error, setError] = useState<string>();
   const operationRef = useRef<"check" | "install" | "codex" | null>(null);
   const initialCheckStartedRef = useRef(false);
+  const versionsGeneration = useRef(0);
 
   useEffect(() => {
     if (!enabled) return;
@@ -74,16 +75,20 @@ export function useAppUpdate(
       return;
     }
     let disposed = false;
+    const generation = ++versionsGeneration.current;
     setLoadingVersions(true);
     void invoke<AppVersions>("read_app_versions")
       .then((result) => {
-        if (!disposed) setVersions(result);
+        if (!disposed && versionsGeneration.current === generation)
+          setVersions(result);
       })
       .catch((cause) => {
-        if (!disposed) setError(errorMessage(cause));
+        if (!disposed && versionsGeneration.current === generation)
+          setError(errorMessage(cause));
       })
       .finally(() => {
-        if (!disposed) setLoadingVersions(false);
+        if (!disposed && versionsGeneration.current === generation)
+          setLoadingVersions(false);
       });
     return () => {
       disposed = true;
@@ -169,7 +174,9 @@ export function useAppUpdate(
   const updateCodex = useCallback(async () => {
     if (!native || operationRef.current) return false;
     operationRef.current = "codex";
+    versionsGeneration.current += 1;
     setCodexUpdating(true);
+    setLoadingVersions(false);
     setCodexUpdateInstalled(false);
     setError(undefined);
     try {

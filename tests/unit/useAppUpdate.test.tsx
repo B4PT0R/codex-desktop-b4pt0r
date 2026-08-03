@@ -77,4 +77,38 @@ describe("mises à jour de l’application", () => {
     expect(invokeMock).toHaveBeenCalledWith("check_for_updates");
     expect(result.current.codexUpdateInstalled).toBe(true);
   });
+
+  it("ignore une ancienne lecture des versions après une mise à jour", async () => {
+    const initialRead = deferred<typeof versions>();
+    const updatedVersions = {
+      ...versions,
+      codexVersion: "codex-cli 0.147.0",
+    };
+    invokeMock.mockImplementation(async (command) => {
+      if (command === "read_app_versions") return initialRead.promise;
+      if (command === "update_codex") return updatedVersions;
+      if (command === "check_for_updates") return status;
+      throw new Error(`Unexpected command: ${command}`);
+    });
+    const { result } = renderHook(() => useAppUpdate(true));
+
+    await act(async () => {
+      expect(await result.current.updateCodex()).toBe(true);
+    });
+    expect(result.current.versions).toEqual(updatedVersions);
+
+    initialRead.resolve(versions);
+    await act(async () => initialRead.promise);
+
+    expect(result.current.versions).toEqual(updatedVersions);
+    expect(result.current.loadingVersions).toBe(false);
+  });
 });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
