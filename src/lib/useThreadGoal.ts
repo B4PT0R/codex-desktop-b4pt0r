@@ -79,6 +79,7 @@ export function useThreadGoal(connected: boolean, threadId?: string) {
       if (!threadId || mutationInFlight.current) return false;
       const target = threadId;
       const version = ++mutationGeneration.current;
+      generation.current += 1;
       mutationInFlight.current = true;
       setSaving(true);
       setError(undefined);
@@ -134,6 +135,7 @@ export function useThreadGoal(connected: boolean, threadId?: string) {
     if (!threadId || mutationInFlight.current) return false;
     const target = threadId;
     const version = ++mutationGeneration.current;
+    generation.current += 1;
     mutationInFlight.current = true;
     setSaving(true);
     setError(undefined);

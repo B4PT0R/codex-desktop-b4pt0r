@@ -96,6 +96,22 @@ describe("objectif persistant du thread", () => {
     await act(() => first);
   });
 
+  it("ignore une relecture devenue obsolète après une mutation", async () => {
+    const refresh = deferred<{ goal: typeof goal }>();
+    requestMock
+      .mockReturnValueOnce(refresh.promise)
+      .mockResolvedValueOnce({ goal: { ...goal, status: "paused" } });
+    const { result } = renderHook(() => useThreadGoal(true, "thread-1"));
+
+    await act(() => result.current.setPaused(true));
+    expect(result.current.goal?.status).toBe("paused");
+
+    refresh.resolve({ goal });
+    await act(async () => refresh.promise);
+
+    expect(result.current.goal?.status).toBe("paused");
+  });
+
   it("isole une mutation tardive du thread suivant", async () => {
     const oldMutation = deferred<{ goal: typeof goal }>();
     const nextGoal = {
