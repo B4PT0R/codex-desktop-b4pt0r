@@ -110,4 +110,23 @@ describe("contrôle Realtime du tray", () => {
       }),
     );
   });
+
+  it("rend un échec d’abonnement au tray visible au niveau natif", async () => {
+    mocks.listen.mockRejectedValue(new Error("tray listener unavailable"));
+
+    renderHook(() =>
+      useRealtimeTray({
+        connected: true,
+        recording: false,
+        onToggle: vi.fn(),
+      }),
+    );
+
+    await waitFor(() =>
+      expect(mocks.invoke).toHaveBeenCalledWith("set_tray_realtime_state", {
+        state: "error",
+        message: "tray listener unavailable",
+      }),
+    );
+  });
 });

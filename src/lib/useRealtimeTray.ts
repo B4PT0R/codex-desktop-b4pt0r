@@ -52,7 +52,9 @@ export function useRealtimeTray({
         unlisten = cleanup;
         setListenerReady(true);
       })
-      .catch(() => undefined);
+      .catch((error) => {
+        if (!disposed) safelyReportRealtimeTrayError(error);
+      });
     return () => {
       disposed = true;
       setListenerReady(false);
