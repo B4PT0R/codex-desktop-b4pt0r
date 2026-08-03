@@ -3,6 +3,19 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.5.6] - 2026-08-03
+
+### Fixed
+
+- Async settings, goal, update, Realtime voice and external-import controllers
+  now reject stale reads across mutations, workspace changes and reconnects.
+- Auto-review denials stay scoped to their thread, while composer choices and
+  duplicate operations acquire synchronous ownership before awaiting App Server.
+- Managed configuration no longer retains obsolete requirements after a failed
+  refresh or disconnect.
+- Realtime tray listener failures reach the native error state, and failed file
+  searches no longer issue requests for a session that never started.
+
 ## [0.5.5] - 2026-08-03
 
 ### Added

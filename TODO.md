@@ -9,7 +9,7 @@ detail belongs in `CHANGELOG.md` and Git.
 ## Baseline
 
 Codex Desktop Linux is a functional independent Electron client for the
-official `codex app-server`. The current public release is **v0.5.5**. The local
+official `codex app-server`. The current public release is **v0.5.6**. The local
 development baseline now uses installed `codex-cli 0.146.0`.
 
 The daily workflow covers conversation replay and concurrent activity,
@@ -169,6 +169,11 @@ experimental schemas, reviewed the official `rust-v0.146.0` source delta, and
 passed all 53 installed-schema contract tests. Changes are additive for the
 client's current surface; the removed experimental `AppMetadata.firstPartyType`
 field was never consumed. The added pinning contract is now covered end to end.
+
+Release v0.5.6 additionally passed Linux DEB/RPM/AppImage packaging and clean
+Debian stable and Fedora native-package/AppImage headless launch smoke tests.
+Its release candidate retains the current 732 frontend/unit, 132 Electron and
+53 installed-schema contract test baseline against `codex-cli 0.146.0`.
 
 Release v0.5.5 additionally passed Linux DEB/RPM/AppImage packaging and clean
 Debian stable and Fedora native-package/AppImage headless launch smoke tests.
