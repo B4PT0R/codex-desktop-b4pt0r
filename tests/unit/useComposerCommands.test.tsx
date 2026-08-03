@@ -160,4 +160,32 @@ describe("orchestration des commandes du composer", () => {
     rerender({ threadId: "thread-2" });
     expect(result.current.choiceRequest).toBeUndefined();
   });
+
+  it("sérialise deux validations du même choix", async () => {
+    const mutation = deferred<boolean>();
+    const changePermission = vi.fn().mockReturnValue(mutation.promise);
+    const { result } = renderHook(() =>
+      useComposerCommands(
+        options({
+          runtimeMutations: {
+            ...options().runtimeMutations,
+            changePermission,
+          },
+        }),
+      ),
+    );
+    act(() => void result.current.execute(command("/permissions")));
+
+    let first!: Promise<void>;
+    let second!: Promise<void>;
+    act(() => {
+      first = result.current.selectChoice(":danger-full-access");
+      second = result.current.selectChoice(":danger-full-access");
+    });
+
+    await act(() => second);
+    expect(changePermission).toHaveBeenCalledOnce();
+    mutation.resolve(true);
+    await act(() => first);
+  });
 });

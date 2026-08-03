@@ -82,6 +82,7 @@ export function useComposerCommands(options: ComposerCommandOptions) {
     useState<ComposerCommandChoiceRequest>();
   const [headerRequest, setHeaderRequest] = useState<HeaderCommandRequest>();
   const choiceSequence = useRef(0);
+  const pendingChoice = useRef<number | undefined>(undefined);
   const headerSequence = useRef(0);
   const activeThread = useRef(threadId);
   activeThread.current = threadId;
@@ -146,7 +147,21 @@ export function useComposerCommands(options: ComposerCommandOptions) {
 
   async function selectChoice(choiceId: string) {
     const current = choiceRequest;
-    if (!current) return;
+    if (!current || pendingChoice.current === current.id) return;
+    pendingChoice.current = current.id;
+    try {
+      await applyChoice(current, choiceId);
+    } finally {
+      if (pendingChoice.current === current.id) {
+        pendingChoice.current = undefined;
+      }
+    }
+  }
+
+  async function applyChoice(
+    current: ComposerCommandChoiceRequest,
+    choiceId: string,
+  ) {
     const targetThread = threadId;
     const selectedLabel =
       current.choices.find((choice) => choice.id === choiceId)?.label ?? choiceId;

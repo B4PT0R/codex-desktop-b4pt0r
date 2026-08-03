@@ -31,8 +31,9 @@ Recent audits covered per-thread actions, interactive requests, global
 configuration read/write ownership, shell-command execution and managed-policy
 hydration across disconnect/reconnect. Auto-review denial approvals now use
 thread-scoped identity and synchronous duplicate ownership. Chat-presentation
-mutations now own their initial desktop-preference hydration. Earlier controller
-passes remain in Git history; revisit these sectors only with new evidence.
+mutations now own their initial desktop-preference hydration, and composer choice
+requests serialize their asynchronous selection. Earlier controller passes
+remain in Git history; revisit these sectors only with new evidence.
 
 DEB, RPM and AppImage packages are published for x86-64 Linux. Clean Debian
 stable and Fedora containers install their native package and smoke-test both
@@ -148,7 +149,7 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 726 deterministic frontend/unit tests across 129 files;
+- 727 deterministic frontend/unit tests across 129 files;
 - 132 Electron/Node tests, including App Server shutdown, recovery and the tray
   quick actions;
 - production Vite build;
