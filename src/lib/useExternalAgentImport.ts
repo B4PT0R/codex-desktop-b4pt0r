@@ -201,7 +201,13 @@ export function useExternalAgentImport({
   }, []);
 
   useEffect(() => {
-    if (enabled) void refreshHistory();
+    if (enabled) {
+      void refreshHistory();
+      return;
+    }
+    historyGeneration.current += 1;
+    errorGeneration.current += 1;
+    setHistoryLoading(false);
   }, [enabled, refreshHistory]);
 
   useEffect(() => {

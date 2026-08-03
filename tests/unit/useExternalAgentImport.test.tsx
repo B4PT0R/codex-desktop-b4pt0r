@@ -206,4 +206,26 @@ describe("contrôleur d’import d’agents", () => {
 
     expect(result.current.error).toBeUndefined();
   });
+
+  it("ignore un historique terminé pendant une désactivation", async () => {
+    const stale = deferred<{ data: Array<{ importId: string }> }>();
+    requestMock
+      .mockReturnValueOnce(stale.promise)
+      .mockResolvedValueOnce({ data: [] });
+    const { result, rerender } = renderHook(
+      ({ enabled }) => useExternalAgentImport({ cwd: "/project", enabled }),
+      { initialProps: { enabled: true } },
+    );
+    await waitFor(() => expect(result.current.historyLoading).toBe(true));
+
+    rerender({ enabled: false });
+    expect(result.current.historyLoading).toBe(false);
+    stale.resolve({ data: [{ importId: "stale-import" }] });
+    await act(async () => stale.promise);
+    expect(result.current.histories).toEqual([]);
+
+    rerender({ enabled: true });
+    await waitFor(() => expect(requestMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(result.current.historyLoading).toBe(false));
+  });
 });
