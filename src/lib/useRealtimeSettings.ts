@@ -94,13 +94,21 @@ export function useRealtimeSettings(
         setVoices(fallbackRealtimeVoices.v1);
       }
     } finally {
-      refreshInFlight.current = false;
-      if (generation === loadGeneration.current) setLoading(false);
+      if (generation === loadGeneration.current) {
+        refreshInFlight.current = false;
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    if (enabled) void refresh();
+    if (enabled) {
+      void refresh();
+      return;
+    }
+    loadGeneration.current += 1;
+    refreshInFlight.current = false;
+    setLoading(false);
   }, [enabled, refresh]);
 
   const setVoice = useCallback(

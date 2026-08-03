@@ -128,4 +128,31 @@ describe("préférences Realtime v3", () => {
     await act(async () => first);
     expect(result.current.voice).toBe("juniper");
   });
+
+  it("relit le catalogue après une déconnexion pendant le chargement", async () => {
+    const stale = deferred<{ voices: { v1: string[]; defaultV1: string } }>();
+    requestMock
+      .mockReturnValueOnce(stale.promise)
+      .mockResolvedValueOnce({
+        voices: { v1: ["juniper", "maple"], defaultV1: "juniper" },
+      });
+    const { result, rerender } = renderHook(
+      ({ enabled }) => useRealtimeSettings(enabled),
+      { initialProps: { enabled: true }, wrapper: I18nProvider },
+    );
+    expect(result.current.loading).toBe(true);
+
+    rerender({ enabled: false });
+    rerender({ enabled: true });
+    await waitFor(() => expect(requestMock).toHaveBeenCalledTimes(2));
+    await waitFor(() =>
+      expect(result.current.voices).toEqual(["juniper", "maple"]),
+    );
+
+    stale.resolve({ voices: { v1: ["maple"], defaultV1: "maple" } });
+    await act(async () => stale.promise);
+
+    expect(result.current.voices).toEqual(["juniper", "maple"]);
+    expect(result.current.loading).toBe(false);
+  });
 });

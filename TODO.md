@@ -36,8 +36,9 @@ requests serialize their asynchronous selection. Realtime tray subscription
 failures now reach the existing native error state instead of remaining silent.
 Thread-goal mutations now invalidate older reads before taking ownership of the
 visible goal. Codex update results likewise supersede an older initial version
-read. Earlier controller passes remain in Git history; revisit these sectors
-only with new evidence.
+read. Realtime voice-catalog reads are invalidated across disconnect/reconnect
+instead of blocking fresh hydration. Earlier controller passes remain in Git
+history; revisit these sectors only with new evidence.
 
 DEB, RPM and AppImage packages are published for x86-64 Linux. Clean Debian
 stable and Fedora containers install their native package and smoke-test both
@@ -153,7 +154,7 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 730 deterministic frontend/unit tests across 129 files;
+- 731 deterministic frontend/unit tests across 129 files;
 - 132 Electron/Node tests, including App Server shutdown, recovery and the tray
   quick actions;
 - production Vite build;
