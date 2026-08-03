@@ -65,4 +65,35 @@ describe("présentation du chat", () => {
       localStorage.getItem("codex-desktop.keepActionGroupsCollapsed"),
     ).toBe("false");
   });
+
+  it("refuse les mutations avant la fin de l’hydratation", async () => {
+    const settings = deferred<{
+      version: number;
+      maxVisibleActionsPerGroup: number;
+    }>();
+    invokeMock.mockReturnValueOnce(settings.promise);
+    vi.doMock("../../src/lib/nativeBridge", () => ({
+      invoke: invokeMock,
+      isDesktopApp: () => true,
+    }));
+    const { useChatPresentationSettings } =
+      await import("../../src/lib/useChatPresentationSettings");
+    const { result } = renderHook(() => useChatPresentationSettings());
+
+    expect(result.current.loading).toBe(true);
+    expect(await result.current.setMaxVisibleActions(2)).toBe(false);
+    expect(invokeMock).toHaveBeenCalledOnce();
+
+    settings.resolve({ version: 1, maxVisibleActionsPerGroup: 4 });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.maxVisibleActions).toBe(4);
+  });
 });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}

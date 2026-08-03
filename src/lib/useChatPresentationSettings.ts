@@ -29,7 +29,7 @@ export function useChatPresentationSettings(): ChatPresentationSettingsControlle
     useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const savingRef = useRef(false);
+  const operation = useRef(true);
   const [error, setError] = useState<string>();
 
   useEffect(() => {
@@ -49,7 +49,10 @@ export function useChatPresentationSettings(): ChatPresentationSettingsControlle
         if (!disposed) setError(errorMessage(cause));
       })
       .finally(() => {
-        if (!disposed) setLoading(false);
+        if (!disposed) {
+          operation.current = false;
+          setLoading(false);
+        }
       });
     return () => {
       disposed = true;
@@ -58,8 +61,8 @@ export function useChatPresentationSettings(): ChatPresentationSettingsControlle
 
   const setMaxVisibleActions = useCallback(
     async (value: number) => {
-      if (savingRef.current || !isValidMaxVisibleActions(value)) return false;
-      savingRef.current = true;
+      if (operation.current || !isValidMaxVisibleActions(value)) return false;
+      operation.current = true;
       const previous = maxVisibleActions;
       setMaxVisibleActionsState(value);
       setSaving(true);
@@ -74,7 +77,7 @@ export function useChatPresentationSettings(): ChatPresentationSettingsControlle
         setError(errorMessage(cause));
         return false;
       } finally {
-        savingRef.current = false;
+        operation.current = false;
         setSaving(false);
       }
     },
@@ -83,8 +86,8 @@ export function useChatPresentationSettings(): ChatPresentationSettingsControlle
 
   const setShowReasoningItems = useCallback(
     async (value: boolean) => {
-      if (savingRef.current) return false;
-      savingRef.current = true;
+      if (operation.current) return false;
+      operation.current = true;
       const previous = showReasoningItems;
       setShowReasoningItemsState(value);
       setSaving(true);
@@ -97,7 +100,7 @@ export function useChatPresentationSettings(): ChatPresentationSettingsControlle
         setError(errorMessage(cause));
         return false;
       } finally {
-        savingRef.current = false;
+        operation.current = false;
         setSaving(false);
       }
     },
@@ -106,8 +109,8 @@ export function useChatPresentationSettings(): ChatPresentationSettingsControlle
 
   const setKeepActionGroupsCollapsed = useCallback(
     async (value: boolean) => {
-      if (savingRef.current) return false;
-      savingRef.current = true;
+      if (operation.current) return false;
+      operation.current = true;
       const previous = keepActionGroupsCollapsed;
       setKeepActionGroupsCollapsedState(value);
       setSaving(true);
@@ -120,7 +123,7 @@ export function useChatPresentationSettings(): ChatPresentationSettingsControlle
         setError(errorMessage(cause));
         return false;
       } finally {
-        savingRef.current = false;
+        operation.current = false;
         setSaving(false);
       }
     },
