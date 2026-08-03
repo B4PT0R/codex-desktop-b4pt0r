@@ -28,9 +28,9 @@ as explicit toggle states; immediate execution remains an agent-facing command
 rather than a lifecycle-altering ordinary card action.
 
 Recent audits covered per-thread actions, interactive requests, global
-configuration read/write ownership and shell-command execution. Earlier
-controller passes remain in Git history; revisit these sectors only with new
-evidence.
+configuration read/write ownership, shell-command execution and managed-policy
+hydration across disconnect/reconnect. Earlier controller passes remain in Git
+history; revisit these sectors only with new evidence.
 
 DEB, RPM and AppImage packages are published for x86-64 Linux. Clean Debian
 stable and Fedora containers install their native package and smoke-test both
@@ -146,7 +146,7 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 721 deterministic frontend/unit tests across 129 files;
+- 723 deterministic frontend/unit tests across 129 files;
 - 132 Electron/Node tests, including App Server shutdown, recovery and the tray
   quick actions;
 - production Vite build;

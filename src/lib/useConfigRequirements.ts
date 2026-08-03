@@ -30,7 +30,12 @@ export function useConfigRequirements(enabled: boolean) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!enabled || !isDesktopApp()) return;
+    if (!enabled || !isDesktopApp()) {
+      setRequirements(emptyRequirements);
+      setError(undefined);
+      setLoading(false);
+      return;
+    }
     let disposed = false;
     setLoading(true);
     setError(undefined);
