@@ -197,7 +197,7 @@ describe("événements de conversation", () => {
     ]);
   });
 
-  it("déplace un commentaire court dans l’en-tête de l’outil suivant", () => {
+  it("conserve un commentaire comme narration avant les outils suivants", () => {
     let messages = applyConversationEvent([], {
       method: "item/started",
       params: {
@@ -235,11 +235,11 @@ describe("événements de conversation", () => {
     expect(messages[0]).toMatchObject({
       id: "commentary-1",
       phase: "commentary",
-      content: "",
+      content: "Je vérifie les contrats ciblés.",
       tools: [
         {
           id: "command-commented",
-          description: "Je vérifie les contrats ciblés.",
+          title: "Commande",
         },
       ],
     });
@@ -266,7 +266,6 @@ describe("événements de conversation", () => {
     });
 
     expect(messages[0].content).toBe("Le résultat est prêt.");
-    expect(messages[0].tools?.[0].description).toBeUndefined();
   });
 
   it("conserve une narration trop longue comme message séparé", () => {
@@ -291,7 +290,6 @@ describe("événements de conversation", () => {
     });
 
     expect(messages[0].content).toBe(narration);
-    expect(messages[0].tools?.[0].description).toBeUndefined();
   });
 
   it("attache puis finalise un outil sur le dernier message agent", () => {

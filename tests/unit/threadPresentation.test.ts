@@ -127,7 +127,7 @@ describe("reprise de conversation", () => {
     ]);
   });
 
-  it("restaure un commentaire court comme description de l’action suivante", () => {
+  it("restaure un commentaire comme narration avant l’action suivante", () => {
     const messages = messagesFromThread({
       id: "thread-commentary",
       turns: [
@@ -151,10 +151,10 @@ describe("reprise de conversation", () => {
     });
 
     expect(messages).toHaveLength(1);
-    expect(messages[0].content).toBe("");
+    expect(messages[0].content).toBe("Je contrôle la compilation.");
     expect(messages[0].tools?.[0]).toMatchObject({
       id: "build",
-      description: "Je contrôle la compilation.",
+      title: "Commande",
     });
   });
 

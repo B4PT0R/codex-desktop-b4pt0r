@@ -265,7 +265,6 @@ export function readmeDemoConversation(): ChatMessage[] {
         {
           id: "readme-search",
           kind: "webSearch",
-          description: "I’ll locate the navigation owners and their responsive rules.",
           title: "Inspect workspace navigation",
           detail: 'rg "Sidebar|conversation|workspace" src tests',
           status: "done",
@@ -274,7 +273,6 @@ export function readmeDemoConversation(): ChatMessage[] {
         {
           id: "readme-tests",
           kind: "commandExecution",
-          description: "I’ll run the focused interface tests before changing the layout.",
           title: "Run interface tests",
           detail: "npm test",
           status: "done",
@@ -285,7 +283,6 @@ export function readmeDemoConversation(): ChatMessage[] {
         {
           id: "readme-files",
           kind: "fileChange",
-          description: "I’ll apply the verified navigation and theme adjustments.",
           title: "Update navigation and theme",
           detail: "Sidebar.tsx, appearance.css, rendering tests",
           status: "done",

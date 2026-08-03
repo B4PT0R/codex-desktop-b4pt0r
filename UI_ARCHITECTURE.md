@@ -107,12 +107,12 @@ comme une réponse de l’agent.
 
 Les outils d’une même vague partagent un groupe stable. Les cartes restent
 repliables et les jobs de fond conservent leur statut sans bloquer visuellement
-les actions suivantes. Un `agentMessage` explicitement classé `commentary`,
-court et immédiatement suivi d’un outil devient l’intitulé principal de cette
-carte ; le type d’action reste affiché en second. Les phases finales, inconnues
-ou les narrations longues restent des messages afin de ne pas inventer une
-association absente du protocole. Les sous-agents sont des actions ordinaires
-dont le détail contient un transcript enfant borné et réhydratable.
+les actions suivantes. Un `agentMessage` classé `commentary` reste une narration
+intermédiaire dans le fil : il peut introduire plusieurs actions et ne doit pas
+être associé à un appel individuel sans relation explicite du protocole. Les
+titres d’action sont dérivés uniquement des champs structurés de l’item. Les
+sous-agents sont des actions ordinaires dont le détail contient un transcript
+enfant borné et réhydratable.
 
 L’historique est paginé. Les deltas fréquents sont regroupés dans des mises à
 jour React interruptibles ; le compositeur, les demandes bloquantes et la

@@ -224,7 +224,7 @@ function startItem(
       },
     ];
   }
-  let tool = toolFromItem(item, t);
+  const tool = toolFromItem(item, t);
   const signal = signalFromItem(item, t);
   let next = messages;
 
@@ -249,21 +249,6 @@ function startItem(
             ...(existing.progress ? { progress: existing.progress } : {}),
           };
         }),
-      });
-      return signal ? appendSignal(next, signal) : next;
-    }
-    const last = next.at(-1);
-    const description =
-      last?.role === "assistant" && last.phase === "commentary"
-        ? shortToolDescription(last.content)
-        : undefined;
-    if (description && last) {
-      tool = { ...tool, description };
-      next = replaceAt(next, next.length - 1, {
-        ...last,
-        content: "",
-        streaming: false,
-        tools: [...(last.tools ?? []), tool],
       });
       return signal ? appendSignal(next, signal) : next;
     }
@@ -358,11 +343,7 @@ function completeItem(
     const hasTool = message.tools?.some((tool) => tool.id === item.id);
     const hasSignal = message.signals?.some((signal) => signal.id === item.id);
     const completedAgentText =
-      item.type === "agentMessage" &&
-      !(message.phase === "commentary" &&
-        message.tools?.some((tool) => tool.description))
-        ? stringValue(item.text)
-        : undefined;
+      item.type === "agentMessage" ? stringValue(item.text) : undefined;
     next = replaceAt(messages, index, {
       ...message,
       ...(message.id === item.id || message.sourceItemId === item.id
@@ -419,11 +400,6 @@ function completeItem(
     );
   }
   return next;
-}
-
-function shortToolDescription(value: string) {
-  const description = value.replace(/\s+/g, " ").trim();
-  return description && description.length <= 280 ? description : undefined;
 }
 
 function messagePhase(value: unknown): ChatMessage["phase"] {

@@ -63,26 +63,6 @@ function finishLiveAction(stepClosed = false) {
 }
 
 describe("activité des outils", () => {
-  it("affiche l’intention agent dans l’en-tête avec le type d’action en second", () => {
-    render(
-      <ToolGroup
-        tools={[
-          {
-            ...command("check", "done"),
-            description: "Je vérifie la compilation avant de continuer.",
-          },
-        ]}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: /1 action effectuée/ }));
-    const header = screen.getByRole("button", {
-      name: /Je vérifie la compilation avant de continuer.*Commande check/,
-    });
-    expect(header).toBeVisible();
-    expect(screen.getByText("Commande check")).toBeVisible();
-  });
-
   it("reste replié pendant une action quand la vue compacte est imposée", () => {
     const first = command("first");
     const { rerender } = render(

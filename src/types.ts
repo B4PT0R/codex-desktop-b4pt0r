@@ -11,8 +11,6 @@ export type ToolCall = {
     | "sleep"
     | "imageGeneration";
   title: string;
-  /** Short agent commentary immediately introducing this action. */
-  description?: string;
   detail: string;
   status: "running" | "done" | "error";
   output?: string;
