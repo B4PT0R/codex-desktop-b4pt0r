@@ -44,6 +44,12 @@ Keep the current functional surface frozen while running bounded stabilization,
 failure-path, simplification and maintainability passes. Prefer evidence from
 daily use and focused tests over speculative rewrites or new settings.
 
+Long shared card inventories keep their natural height through six entries,
+then scroll within the `CardStack` while leaving any controls above the list
+visible. Their contained overscroll prevents wheel input from chaining into the
+settings page while the pointer remains over the list. This applies consistently
+to Apps, Plugins, MCP servers and other inventory-backed settings surfaces.
+
 Client-context lot: thread creation and resume read the configured developer
 instructions effective for the target workspace, append a bounded Codex Desktop
 Linux identity with client/backend versions and the package-embedded canonical

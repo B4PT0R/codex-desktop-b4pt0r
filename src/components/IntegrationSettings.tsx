@@ -67,6 +67,7 @@ export function AppsSettings({ apps }: { apps: AppsController }) {
         />
         <CardStack
         className="integration-list"
+        max_cards={6}
         controlBar={<SettingsControlsBar
           actions={
           <>
@@ -145,6 +146,7 @@ export function SkillsSettings({
       {skills.error && <InventoryError message={skills.error} />}
       <CardStack
         className="integration-list"
+        max_cards={6}
         controlBar={<SettingsControlsBar
           actions={
           <><SettingsControlsBarButton icon={Plus} onClick={() => setCreating(true)}>{t("integrations.skills.createAction")}</SettingsControlsBarButton><InventoryRefresh
@@ -204,6 +206,7 @@ export function PluginsSettings({
     {plugins.error && <InventoryError message={plugins.error} />}
     <CardStack
       className="integration-list"
+      max_cards={6}
       controlBar={<SettingsControlsBar
         actions={<InventoryRefresh
           loading={plugins.loading}
@@ -274,6 +277,7 @@ export function McpSettings({
       )}
       <CardStack
         className="integration-list mcp-server-list"
+        max_cards={6}
         controlBar={<SettingsControlsBar
           actions={
           <>

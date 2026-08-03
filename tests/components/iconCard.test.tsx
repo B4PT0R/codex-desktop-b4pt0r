@@ -70,4 +70,30 @@ describe("carte à icône commune", () => {
     expect(container.querySelector(".card-stack > .settings-controls-bar"))
       .toHaveTextContent("État");
   });
+
+  it("borne les longues piles au nombre de cartes demandé", () => {
+    const { container, rerender } = render(
+      <CardStack>
+        {Array.from({ length: 11 }, (_, index) => (
+          <IconCard key={index} title={`Carte ${index + 1}`} />
+        ))}
+      </CardStack>,
+    );
+
+    expect(container.querySelector(".card-stack-scroll-region")).toBeNull();
+
+    rerender(
+      <CardStack max_cards={6} controlBar={<div className="settings-controls-bar">État</div>}>
+        {Array.from({ length: 11 }, (_, index) => (
+          <IconCard key={index} title={`Carte ${index + 1}`} />
+        ))}
+      </CardStack>,
+    );
+
+    const scrollRegion = container.querySelector(".card-stack-scroll-region");
+    expect(scrollRegion).toHaveAttribute("tabindex", "0");
+    expect(scrollRegion?.querySelectorAll(":scope > .icon-card")).toHaveLength(11);
+    expect(container.querySelector(":scope > .card-stack > .settings-controls-bar"))
+      .toHaveTextContent("État");
+  });
 });

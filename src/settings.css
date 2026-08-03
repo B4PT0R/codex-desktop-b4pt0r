@@ -261,6 +261,23 @@
   background: #20201e;
 }
 
+.card-stack-scroll-region {
+  max-height: var(--card-stack-max-height);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.card-stack-scroll-region:has(> .icon-card.compact) {
+  max-height: var(--card-stack-compact-max-height);
+}
+
+.card-stack-scroll-region:focus-visible {
+  outline: 2px solid #777772;
+  outline-offset: -2px;
+}
+
 .settings-controls-bar {
   display: flex;
   align-items: center;
