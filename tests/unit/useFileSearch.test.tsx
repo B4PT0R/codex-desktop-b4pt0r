@@ -70,10 +70,19 @@ describe("recherche fuzzy de fichiers", () => {
     vi.useRealTimers();
   });
 
-  it("rend visible une erreur de démarrage", async () => {
+  it("conserve une erreur de démarrage sans interroger une session inexistante", async () => {
     requestMock.mockRejectedValueOnce(new Error("backend absent"));
     const { result } = renderHook(() => useFileSearch(true, "/work"));
     await waitFor(() => expect(result.current.error).toBe("backend absent"));
+
+    vi.useFakeTimers();
+    act(() => result.current.search("App"));
+    await act(() => vi.advanceTimersByTimeAsync(120));
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.error).toBe("backend absent");
+    expect(requestMock).toHaveBeenCalledOnce();
+    vi.useRealTimers();
   });
 
   it("ignore l’échec tardif d’une requête remplacée", async () => {

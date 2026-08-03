@@ -37,8 +37,10 @@ failures now reach the existing native error state instead of remaining silent.
 Thread-goal mutations now invalidate older reads before taking ownership of the
 visible goal. Codex update results likewise supersede an older initial version
 read. Realtime voice-catalog reads are invalidated across disconnect/reconnect
-instead of blocking fresh hydration. Earlier controller passes remain in Git
-history; revisit these sectors only with new evidence.
+instead of blocking fresh hydration. Failed fuzzy-file-search sessions retain
+their actionable startup error without issuing updates or cleanup for a session
+that never started. Earlier controller passes remain in Git history; revisit
+these sectors only with new evidence.
 
 DEB, RPM and AppImage packages are published for x86-64 Linux. Clean Debian
 stable and Fedora containers install their native package and smoke-test both

@@ -28,17 +28,20 @@ const INITIAL_STATE: FileSearchState = {
 export function useFileSearch(active: boolean, root: string) {
   const [state, setState] = useState(INITIAL_STATE);
   const session = useRef<string | undefined>(undefined);
+  const sessionError = useRef<string | undefined>(undefined);
   const latestQuery = useRef("");
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     if (!active || !root) {
+      sessionError.current = undefined;
       setState(INITIAL_STATE);
       return;
     }
 
     const sessionId = crypto.randomUUID();
     session.current = sessionId;
+    sessionError.current = undefined;
     let disposed = false;
     const unsubscribe = subscribeAppServerMessages((message) => {
       if (
@@ -66,22 +69,32 @@ export function useFileSearch(active: boolean, root: string) {
       "fuzzyFileSearch/sessionStart",
       fuzzyFileSearchSessionStartParams(sessionId, root),
     ).catch((cause) => {
-      if (!disposed)
+      if (!disposed && session.current === sessionId) {
+        const error = cause instanceof Error ? cause.message : String(cause);
+        session.current = undefined;
+        sessionError.current = error;
+        if (timer.current) {
+          clearTimeout(timer.current);
+          timer.current = undefined;
+        }
         setState({
           ...INITIAL_STATE,
-          error: cause instanceof Error ? cause.message : String(cause),
+          error,
         });
+      }
     });
 
     return () => {
       disposed = true;
       unsubscribe();
       if (timer.current) clearTimeout(timer.current);
-      if (session.current === sessionId) session.current = undefined;
-      void request(
-        "fuzzyFileSearch/sessionStop",
-        fuzzyFileSearchSessionStopParams(sessionId),
-      ).catch(() => undefined);
+      if (session.current === sessionId) {
+        session.current = undefined;
+        void request(
+          "fuzzyFileSearch/sessionStop",
+          fuzzyFileSearchSessionStopParams(sessionId),
+        ).catch(() => undefined);
+      }
     };
   }, [active, root]);
 
@@ -93,6 +106,10 @@ export function useFileSearch(active: boolean, root: string) {
     }
     if (!query.trim()) {
       setState(INITIAL_STATE);
+      return;
+    }
+    if (sessionError.current) {
+      setState({ ...INITIAL_STATE, error: sessionError.current });
       return;
     }
     setState((current) => ({ ...current, loading: true, error: undefined }));
