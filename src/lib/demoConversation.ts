@@ -34,7 +34,7 @@ export function demoConversation(): ChatMessage[] {
         {
           id: "demo-plan",
           kind: "plan",
-          title: "Plan d’implémentation",
+          title: "Plan",
           steps: [
             { step: "Inspecter le shell et le layout", status: "completed" },
             { step: "Masquer le menu Electron", status: "completed" },
@@ -243,7 +243,7 @@ export function readmeDemoConversation(): ChatMessage[] {
         {
           id: "readme-plan",
           kind: "plan",
-          title: "Implementation plan",
+          title: "Plan",
           steps: [
             { step: "Review the conversation layout", status: "completed" },
             { step: "Group threads by workspace", status: "completed" },
@@ -506,6 +506,7 @@ export const demoThreads: ThreadSummary[] = [
   },
   {
     id: "demo-audio",
+    isPinned: true,
     name: "Stabiliser Realtime v3",
     cwd: "/home/baptiste/dev/codex-desktop-b4pt0r",
   },
@@ -585,6 +586,7 @@ export const readmeDemoThreads: ThreadSummary[] = [
   },
   {
     id: "readme-realtime",
+    isPinned: true,
     name: "Stabilize Realtime voice",
     cwd: "/home/developer/projects/codex-desktop-linux",
   },

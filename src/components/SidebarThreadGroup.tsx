@@ -10,6 +10,7 @@ type SidebarThreadGroupProps = {
   threads: ThreadSummary[];
   onArchive: (thread: ThreadSummary) => void;
   onDelete: (thread: ThreadSummary) => void;
+  onPin: (thread: ThreadSummary, isPinned: boolean) => void;
   onResume: (threadId: string) => void;
   onToggle: () => void;
 };
@@ -20,6 +21,7 @@ export function SidebarThreadGroup({
   lockedOpen,
   onArchive,
   onDelete,
+  onPin,
   onResume,
   onToggle,
   selectedThreadId,
@@ -49,6 +51,7 @@ export function SidebarThreadGroup({
             key={thread.id}
             onArchive={onArchive}
             onDelete={onDelete}
+            onPin={onPin}
             onResume={onResume}
             selected={selectedThreadId === thread.id}
             thread={thread}

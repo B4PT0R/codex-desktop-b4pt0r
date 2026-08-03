@@ -74,7 +74,7 @@ describe("conversation de démonstration", () => {
     expect(messages[0]?.content).toContain("workspace navigation");
     expect(messages.flatMap((message) => message.signals ?? [])).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ title: "Implementation plan" }),
+        expect.objectContaining({ title: "Plan" }),
         expect.objectContaining({ title: "Context compacted" }),
       ]),
     );

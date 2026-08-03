@@ -1,4 +1,4 @@
-import { Archive, Trash2 } from "lucide-react";
+import { Archive, Pin, Trash2 } from "lucide-react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { ThreadSummary } from "../types";
 import { IconButton } from "./IconButton";
@@ -9,6 +9,7 @@ type SidebarThreadRowProps = {
   thread: ThreadSummary;
   onArchive: (thread: ThreadSummary) => void;
   onDelete: (thread: ThreadSummary) => void;
+  onPin: (thread: ThreadSummary, isPinned: boolean) => void;
   onResume: (threadId: string) => void;
 };
 
@@ -16,6 +17,7 @@ export function SidebarThreadRow({
   actions = true,
   onArchive,
   onDelete,
+  onPin,
   onResume,
   selected,
   thread,
@@ -24,7 +26,7 @@ export function SidebarThreadRow({
   const label = thread.name || thread.preview || t("sidebar.untitled");
 
   return (
-    <div className="thread-row">
+    <div className={`thread-row${thread.isPinned ? " pinned" : ""}`}>
       <button
         className={selected ? "selected" : ""}
         onClick={() => onResume(thread.id)}
@@ -42,6 +44,22 @@ export function SidebarThreadRow({
       </button>
       {actions && (
         <>
+          <IconButton
+            aria-label={`${
+              thread.isPinned ? t("sidebar.unpin") : t("sidebar.pin")
+            } ${label}`}
+            aria-pressed={thread.isPinned === true}
+            className="thread-pin"
+            data-active={thread.isPinned === true}
+            icon={Pin}
+            title={
+              thread.isPinned
+                ? t("sidebar.unpinTitle")
+                : t("sidebar.pinTitle")
+            }
+            onClick={() => onPin(thread, !thread.isPinned)}
+            variant="tertiary"
+          />
           <IconButton
             className="thread-archive"
             aria-label={`${t("sidebar.archive")} ${label}`}

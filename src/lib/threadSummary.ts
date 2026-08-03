@@ -6,6 +6,9 @@ import { scheduledTaskFromPrompt } from "./scheduledTaskMessage";
 export function threadSummary(thread: AppServerThread): ThreadSummary {
   return {
     id: thread.id,
+    ...(typeof thread.isPinned === "boolean"
+      ? { isPinned: thread.isPinned }
+      : {}),
     name: thread.name,
     preview: cleanPreview(
       thread.preview ??

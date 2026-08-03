@@ -437,7 +437,7 @@ function planSignal(
   return {
     id: "demo-live-plan",
     kind: "plan",
-    title: "Plan de vérification",
+    title: "Plan",
     status,
     steps: labels.map((step, index) => ({
       step,

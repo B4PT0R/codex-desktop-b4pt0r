@@ -97,6 +97,79 @@ afterEach(() => {
 });
 
 describe("connexion App Server", () => {
+  it("charge toutes les pages de conversations et déduplique les recouvrements", async () => {
+    mockedRequest.mockImplementation(async (method, params) => {
+      if (method === "model/list") return { data: [] };
+      if (
+        method === "thread/list" &&
+        params &&
+        typeof params === "object" &&
+        "cursor" in params
+      ) {
+        return {
+          data: [
+            {
+              id: "thread-overlap",
+              cwd: "/project",
+            },
+            {
+              id: "thread-older-pinned",
+              isPinned: true,
+              cwd: "/older-project",
+            },
+          ],
+          nextCursor: null,
+        };
+      }
+      return {
+        data: [
+          {
+            id: "thread-recent",
+            cwd: "/project",
+          },
+          { id: "thread-overlap", cwd: "/project" },
+        ],
+        nextCursor: "older-page",
+      };
+    });
+    const options = callbacks();
+    renderHook(() => useAppServerConnection(options));
+
+    await waitFor(() => expect(options.onInitialized).toHaveBeenCalledOnce());
+    expect(mockedRequest).toHaveBeenNthCalledWith(2, "thread/list", {
+      limit: 100,
+      sortKey: "updated_at",
+    });
+    expect(mockedRequest).toHaveBeenNthCalledWith(3, "thread/list", {
+      cursor: "older-page",
+      limit: 100,
+      sortKey: "updated_at",
+    });
+    expect(options.onInitialized).toHaveBeenCalledWith([], [
+      expect.objectContaining({ id: "thread-recent" }),
+      expect.objectContaining({ id: "thread-overlap" }),
+      expect.objectContaining({ id: "thread-older-pinned", isPinned: true }),
+    ]);
+  });
+
+  it("arrête une pagination dont le curseur se répète", async () => {
+    mockedRequest.mockImplementation(async (method, params) => {
+      if (method === "model/list") return { data: [] };
+      return {
+        data: [{ id: "thread-recent", cwd: "/project" }],
+        nextCursor: "same-cursor",
+      };
+    });
+    const options = callbacks();
+    renderHook(() => useAppServerConnection(options));
+
+    await waitFor(() => expect(options.onInitialized).toHaveBeenCalledOnce());
+    expect(options.onInitialized).toHaveBeenCalledWith([], [
+      expect.objectContaining({ id: "thread-recent" }),
+    ]);
+    expect(mockedRequest).toHaveBeenCalledTimes(3);
+  });
+
   it("charge les catalogues initiaux et utilise les callbacks les plus récents", async () => {
     const first = callbacks();
     const second = callbacks();
@@ -109,7 +182,7 @@ describe("connexion App Server", () => {
     expect(result.current.connected).toBe(true);
     expect(mockedRequest).toHaveBeenCalledWith("model/list", { limit: 50 });
     expect(mockedRequest).toHaveBeenCalledWith("thread/list", {
-      limit: 30,
+      limit: 100,
       sortKey: "updated_at",
     });
     expect(first.onInitialized).toHaveBeenCalledWith(
@@ -168,7 +241,7 @@ describe("connexion App Server", () => {
     expect(mockedRestart).toHaveBeenCalledOnce();
     expect(mockedRequest).toHaveBeenCalledWith("model/list", { limit: 50 });
     expect(mockedRequest).toHaveBeenCalledWith("thread/list", {
-      limit: 30,
+      limit: 100,
       sortKey: "updated_at",
     });
     expect(options.onInitialized).toHaveBeenCalledTimes(2);

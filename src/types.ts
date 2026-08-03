@@ -127,6 +127,7 @@ export type Quota = {
 export type ThreadStatus = "notLoaded" | "idle" | "active" | "systemError";
 export type ThreadSummary = {
   id: string;
+  isPinned?: boolean;
   name?: string | null;
   preview?: string;
   updatedAt?: number;

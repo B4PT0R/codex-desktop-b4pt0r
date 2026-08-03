@@ -66,6 +66,7 @@ import {
   threadServiceTierUpdateParams,
   threadShellCommandParams,
   threadSetNameParams,
+  threadPinParams,
   threadStartParams,
   threadUnsubscribeParams,
   threadTurnsListParams,
@@ -367,6 +368,9 @@ describe("contrat Codex installé", () => {
       threadSetNameParams("thr_1", "Nouveau nom"),
     );
     validates("ThreadCompactStartParams", threadCompactParams("thr_1"));
+  });
+  it("accepte la mutation des conversations épinglées", () => {
+    validates("ThreadMetadataUpdateParams", threadPinParams("thr_1", true));
   });
   it("accepte la création d’une branche", () =>
     validates("ThreadForkParams", threadForkParams("thr_1")));

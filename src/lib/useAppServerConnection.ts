@@ -40,15 +40,12 @@ export function useAppServerConnection(options: Options) {
   async function hydrateCatalogs(shouldApply: () => boolean = () => true) {
     const [models, history] = await Promise.all([
       request<ModelListResponse>("model/list", { limit: 50 }),
-      request<ThreadListResponse>("thread/list", {
-        limit: 30,
-        sortKey: "updated_at",
-      }),
+      loadAllThreads(),
     ]);
     if (shouldApply())
       callbacks.current.onInitialized(
         normalizeModels(models),
-        (history.data ?? []).map(threadSummary),
+        history,
       );
   }
 
@@ -212,6 +209,34 @@ export function useAppServerConnection(options: Options) {
     restartError,
     restarting,
   };
+}
+
+const THREAD_CATALOG_PAGE_SIZE = 100;
+const MAX_THREAD_CATALOG_PAGES = 1_000;
+
+async function loadAllThreads(): Promise<ThreadSummary[]> {
+  const threads: ThreadSummary[] = [];
+  const threadIds = new Set<string>();
+  const cursors = new Set<string>();
+  let cursor: string | undefined;
+
+  for (let page = 0; page < MAX_THREAD_CATALOG_PAGES; page += 1) {
+    const response = await request<ThreadListResponse>("thread/list", {
+      limit: THREAD_CATALOG_PAGE_SIZE,
+      sortKey: "updated_at",
+      ...(cursor ? { cursor } : {}),
+    });
+    for (const item of response.data ?? []) {
+      if (threadIds.has(item.id)) continue;
+      threadIds.add(item.id);
+      threads.push(threadSummary(item));
+    }
+    const nextCursor = response.nextCursor ?? undefined;
+    if (!nextCursor || cursors.has(nextCursor)) break;
+    cursors.add(nextCursor);
+    cursor = nextCursor;
+  }
+  return threads;
 }
 
 export function normalizeModels(response: ModelListResponse): Model[] {

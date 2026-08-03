@@ -61,6 +61,49 @@ beforeEach(() => {
 });
 
 describe("actions de conversation", () => {
+  it("épingle une conversation avec l’état autoritatif du serveur", async () => {
+    mockedRequest.mockResolvedValueOnce({
+      thread: {
+        id: "thread-1",
+        isPinned: true,
+        name: "Original",
+        cwd: "/project",
+      },
+    });
+    const { result } = renderHook(useHarness);
+
+    await act(async () => {
+      expect(
+        await result.current.actions.setPinned(result.current.threads[0], true),
+      ).toBe(true);
+    });
+
+    expect(mockedRequest).toHaveBeenCalledWith("thread/metadata/update", {
+      threadId: "thread-1",
+      isPinned: true,
+    });
+    expect(result.current.threads[0]?.isPinned).toBe(true);
+  });
+
+  it("conserve l’état local si App Server ne confirme pas l’épinglage", async () => {
+    mockedRequest.mockResolvedValueOnce({
+      thread: { id: "thread-1", isPinned: false, cwd: "/project" },
+    });
+    const { result } = renderHook(useHarness);
+
+    await act(async () => {
+      expect(
+        await result.current.actions.setPinned(result.current.threads[0], true),
+      ).toBe(false);
+    });
+
+    expect(result.current.threads[0]?.isPinned).toBeUndefined();
+    expect(result.current.onError).toHaveBeenCalledWith(
+      "Impossible de modifier l’épinglage de cette conversation",
+      expect.any(Error),
+    );
+  });
+
   it("confirme un renommage avec les métadonnées persistées du serveur", async () => {
     mockedRequest
       .mockResolvedValueOnce({})

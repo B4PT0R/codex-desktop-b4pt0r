@@ -1,6 +1,7 @@
 import { useRef, useState, type Dispatch, type SetStateAction } from "react";
 import type {
   ThreadForkResponse,
+  ThreadMetadataUpdateResponse,
   ThreadReadResponse,
 } from "./appServerTypes";
 import { request } from "./codex";
@@ -9,6 +10,7 @@ import {
   threadCompactParams,
   threadDeleteParams,
   threadForkParams,
+  threadPinParams,
   threadReadParams,
   threadSetNameParams,
   threadUnarchiveParams,
@@ -161,6 +163,26 @@ export function useThreadActions({
     });
   }
 
+  async function setPinned(thread: ThreadSummary, isPinned: boolean) {
+    return runThreadAction(thread.id, false, async () => {
+      try {
+        const response = await request<ThreadMetadataUpdateResponse>(
+          "thread/metadata/update",
+          threadPinParams(thread.id, isPinned),
+        );
+        const summary = threadSummary(response.thread);
+        if (summary.id !== thread.id || summary.isPinned !== isPinned) {
+          throw new Error("App Server did not persist the pin state");
+        }
+        setThreads((items) => restoreThread(items, summary));
+        return true;
+      } catch (error) {
+        onError(t("thread.pinError"), error);
+        return false;
+      }
+    });
+  }
+
   async function compact() {
     if (!activeThreadId || busy) return false;
     const threadId = activeThreadId;
@@ -218,6 +240,7 @@ export function useThreadActions({
     dismissArchiveNotice,
     fork,
     rename,
+    setPinned,
     unarchive,
   };
 }

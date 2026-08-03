@@ -43,6 +43,7 @@ function renderSidebar(
   onDelete = vi.fn().mockResolvedValue(true),
   onWidthChange = vi.fn(),
   onWidthCommit = vi.fn(),
+  onPin = vi.fn(),
 ) {
   const search = searchController();
   render(
@@ -55,6 +56,7 @@ function renderSidebar(
       search={search}
       onArchive={onArchive}
       onDelete={onDelete}
+      onPin={onPin}
       onClose={vi.fn()}
       onNewChat={onNewChat}
       onOpenSettings={vi.fn()}
@@ -68,6 +70,7 @@ function renderSidebar(
     onArchive,
     onDelete,
     onNewChat,
+    onPin,
     onWidthChange,
     onWidthCommit,
     search,
@@ -75,6 +78,50 @@ function renderSidebar(
 }
 
 describe("barre latérale", () => {
+  it("isole les conversations épinglées et permet de les désépingler", () => {
+    const onPin = vi.fn();
+    render(
+      <I18nProvider>
+        <Sidebar
+          cwd=""
+          open
+          width={260}
+          threads={threads.map((thread) =>
+            thread.id === "gamma" ? { ...thread, isPinned: true } : thread,
+          )}
+          search={searchController()}
+          onArchive={vi.fn()}
+          onDelete={vi.fn()}
+          onPin={onPin}
+          onClose={vi.fn()}
+          onNewChat={vi.fn()}
+          onOpenSettings={vi.fn()}
+          onResume={vi.fn()}
+          onSelectDirectory={vi.fn()}
+          onWidthChange={vi.fn()}
+          onWidthCommit={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+
+    const pinned = screen.getByRole("navigation", {
+      name: /Pinned|Épinglées/,
+    });
+    expect(pinned).toHaveTextContent("Polir la sidebar");
+    expect(
+      screen.getByRole("button", { name: "desktop" }),
+    ).toHaveTextContent("1");
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Unpin Polir la sidebar|Désépingler Polir la sidebar/,
+      }),
+    );
+    expect(onPin).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "gamma", isPinned: true }),
+      false,
+    );
+  });
+
   it("filtre les conversations par titre, aperçu ou dossier", () => {
     const { search } = renderSidebar();
     fireEvent.change(screen.getByRole("searchbox"), {
@@ -93,6 +140,7 @@ describe("barre latérale", () => {
           threads={threads}
           onArchive={vi.fn()}
           onDelete={vi.fn()}
+          onPin={vi.fn()}
           onClose={vi.fn()}
           onNewChat={vi.fn()}
           onOpenSettings={vi.fn()}
@@ -177,6 +225,7 @@ describe("barre latérale", () => {
           search={searchController()}
           onArchive={vi.fn()}
           onDelete={vi.fn()}
+          onPin={vi.fn()}
           onClose={vi.fn()}
           onNewChat={vi.fn()}
           onOpenSettings={vi.fn()}
@@ -216,6 +265,7 @@ describe("barre latérale", () => {
           search={searchController()}
           onArchive={vi.fn()}
           onDelete={vi.fn()}
+          onPin={vi.fn()}
           onClose={vi.fn()}
           onNewChat={vi.fn()}
           onOpenSettings={vi.fn()}
@@ -273,6 +323,7 @@ describe("barre latérale", () => {
           threads={[]}
           onArchive={vi.fn()}
           onDelete={vi.fn()}
+          onPin={vi.fn()}
           onClose={vi.fn()}
           onNewChat={vi.fn()}
           onOpenSettings={vi.fn()}

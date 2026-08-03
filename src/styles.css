@@ -254,6 +254,10 @@ textarea:focus-visible {
   flex: 0 0 auto;
   overflow: visible;
 }
+.sidebar > .sidebar-pinned-threads {
+  flex: 0 0 auto;
+  overflow: visible;
+}
 .sidebar-default-thread + .section-title {
   margin-top: 14px;
 }
@@ -350,7 +354,15 @@ textarea:focus-visible {
   align-items: center;
   gap: 7px;
   min-width: 0;
-  padding-right: 62px;
+  padding-right: 10px;
+  transition: padding-right 120ms ease;
+}
+.thread-row.pinned > button:first-child {
+  padding-right: 38px;
+}
+.thread-row:hover > button:first-child,
+.thread-row:focus-within > button:first-child {
+  padding-right: 90px;
 }
 .thread-running,
 .thread-error {
@@ -365,6 +377,7 @@ textarea:focus-visible {
   background: #c77777;
   box-shadow: none;
 }
+.thread-pin,
 .thread-archive,
 .thread-delete {
   position: absolute;
@@ -377,22 +390,36 @@ textarea:focus-visible {
   opacity: 0;
   transition: opacity 120ms ease;
 }
-.thread-archive {
-  right: 32px;
-}
-.thread-delete {
+.thread-pin {
   right: 4px;
 }
+.thread-archive {
+  right: 60px;
+}
+.thread-delete {
+  right: 32px;
+}
+.thread-pin svg,
 .thread-archive svg,
 .thread-delete svg {
   width: 14px;
 }
+.thread-pin[data-active="true"] {
+  color: #a7a79f;
+  opacity: 0.72;
+}
+.thread-pin[data-active="true"] svg {
+  fill: currentColor;
+}
+.thread-row:hover .thread-pin,
+.thread-row:focus-within .thread-pin,
 .thread-row:hover .thread-archive,
 .thread-row:focus-within .thread-archive,
 .thread-row:hover .thread-delete,
 .thread-row:focus-within .thread-delete {
   opacity: 1;
 }
+.thread-pin:hover,
 .thread-archive:hover,
 .thread-delete:hover {
   background: #2a2a28;

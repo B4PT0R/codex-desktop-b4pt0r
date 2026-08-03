@@ -146,6 +146,7 @@ export type AppServerTurn = {
 
 export type AppServerThread = {
   id: string;
+  isPinned?: boolean;
   parentThreadId?: string | null;
   agentNickname?: string | null;
   agentRole?: string | null;
@@ -197,6 +198,9 @@ export type ThreadRuntimeResponse = {
 export type ThreadStartResponse = ThreadRuntimeResponse;
 export type ThreadForkResponse = ThreadRuntimeResponse;
 export type ThreadReadResponse = {
+  thread: AppServerThread;
+};
+export type ThreadMetadataUpdateResponse = {
   thread: AppServerThread;
 };
 export type ThreadResumeResponse = {

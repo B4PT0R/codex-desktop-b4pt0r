@@ -1206,6 +1206,17 @@ export default function App() {
           }
           return deleted;
         }}
+        onPin={(thread, isPinned) => {
+          if (isDemoPreview()) {
+            setThreads((items) =>
+              items.map((item) =>
+                item.id === thread.id ? { ...item, isPinned } : item,
+              ),
+            );
+            return;
+          }
+          void threadActions.setPinned(thread, isPinned);
+        }}
         onClose={() => setSidebar(false)}
         onNewChat={newChat}
         onOpenSettings={() => setSettings("general")}

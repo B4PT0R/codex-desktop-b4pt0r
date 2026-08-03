@@ -322,9 +322,9 @@ describe("historique de conversation", () => {
     });
 
     expect(
-      screen.getByRole("region", { name: "Réponse de l’agent textuel" }),
+      screen.getByRole("region", { name: "Agent textuel" }),
     ).toHaveTextContent("Détail complet");
-    expect(screen.getByText("Agent vocal Realtime")).toBeVisible();
+    expect(screen.getByText("Agent vocal")).toBeVisible();
     expect(screen.getByText("Synthèse vocale prioritaire.")).toBeVisible();
 
     rerender(
@@ -345,7 +345,7 @@ describe("historique de conversation", () => {
     );
     act(() => vi.advanceTimersByTime(500));
     expect(
-      screen.getByRole("button", { name: "Réponse de l’agent textuel" }),
+      screen.getByRole("button", { name: "Agent textuel" }),
     ).toHaveAttribute("aria-expanded", "false");
   });
 

@@ -67,6 +67,11 @@ provenance, versions, partial-load failures and administrator-disabled state are
 visible. The development-only catalog/read/install/uninstall methods remain
 unused and clearly separated from the functional installed view.
 
+Codex 0.146 alignment: conversations can be pinned through App Server's stable
+metadata update contract. The sidebar now consumes every page of the interactive
+thread catalog, keeps pinned conversations in a compact dedicated section and
+uses the server response as the source of truth for every toggle.
+
 ## Durable constraints
 
 - App Server-hydrated thread state is authoritative. A notification may alter
@@ -131,18 +136,18 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 715 deterministic frontend/unit tests across 129 files;
+- 720 deterministic frontend/unit tests across 129 files;
 - 130 Electron/Node tests, including App Server shutdown, recovery and the tray
   quick actions;
 - production Vite build;
 - production dependency audit with zero vulnerabilities;
 - `git diff --check`.
 
-The Codex 0.146 compatibility pass generated and compared stable and
+The Codex 0.146 compatibility and pinning pass generated and compared stable and
 experimental schemas, reviewed the official `rust-v0.146.0` source delta, and
-passed all 52 installed-schema contract tests. Changes are additive for the
+passed all 53 installed-schema contract tests. Changes are additive for the
 client's current surface; the removed experimental `AppMetadata.firstPartyType`
-field was never consumed, so no implementation adaptation is required.
+field was never consumed. The added pinning contract is now covered end to end.
 
 Release v0.5.4 additionally passed 52 installed-schema contract tests against
 `codex-cli 0.145.0`, Linux DEB/RPM/AppImage packaging, and native/AppImage

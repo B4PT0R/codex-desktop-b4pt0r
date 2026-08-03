@@ -28,6 +28,7 @@ type SidebarProps = {
   onOpenSettings: () => void;
   onArchive: (thread: ThreadSummary) => void;
   onDelete: (thread: ThreadSummary) => Promise<boolean>;
+  onPin: (thread: ThreadSummary, isPinned: boolean) => void;
   onResume: (threadId: string) => void;
   onSelectDirectory: () => void;
   onWidthChange: (width: number) => void;
@@ -47,6 +48,7 @@ export function Sidebar({
   onOpenSettings,
   onArchive,
   onDelete,
+  onPin,
   onResume,
   onSelectDirectory,
   onWidthChange,
@@ -76,13 +78,22 @@ export function Sidebar({
   const threadGroups = useMemo(() => {
     const groups = new Map<string, ThreadSummary[]>();
     for (const thread of visibleThreads) {
-      if (!search.query.trim() && thread.id === defaultThreadId) continue;
+      if (
+        !search.query.trim() &&
+        (thread.id === defaultThreadId || thread.isPinned)
+      )
+        continue;
       const key = thread.cwd || t("sidebar.otherThreads");
       groups.set(key, [...(groups.get(key) ?? []), thread]);
     }
     return [...groups.entries()];
   }, [defaultThreadId, search.query, t, visibleThreads]);
   const searching = Boolean(search.query.trim());
+  const pinnedThreads = searching
+    ? []
+    : threads.filter(
+        (thread) => thread.isPinned && thread.id !== defaultThreadId,
+      );
   const resolvedDefaultThread = defaultThreadId
     ? threads.find((thread) => thread.id === defaultThreadId)
     : undefined;
@@ -174,10 +185,32 @@ export function Sidebar({
               actions={Boolean(resolvedDefaultThread)}
               onArchive={onArchive}
               onDelete={setDeleteCandidate}
+              onPin={onPin}
               onResume={onResume}
               selected={selectedThreadId === defaultThread.id}
               thread={defaultThread}
             />
+          </nav>
+        </>
+      )}
+      {pinnedThreads.length > 0 && (
+        <>
+          <div className="section-title">{t("sidebar.pinnedThreads")}</div>
+          <nav
+            aria-label={t("sidebar.pinnedThreads")}
+            className="sidebar-pinned-threads"
+          >
+            {pinnedThreads.map((thread) => (
+              <SidebarThreadRow
+                key={thread.id}
+                onArchive={onArchive}
+                onDelete={setDeleteCandidate}
+                onPin={onPin}
+                onResume={onResume}
+                selected={selectedThreadId === thread.id}
+                thread={thread}
+              />
+            ))}
           </nav>
         </>
       )}
@@ -195,6 +228,7 @@ export function Sidebar({
             lockedOpen={searching}
             onArchive={onArchive}
             onDelete={setDeleteCandidate}
+            onPin={onPin}
             onResume={onResume}
             onToggle={() =>
               setExpandedGroup((current) =>

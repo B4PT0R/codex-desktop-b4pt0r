@@ -117,11 +117,14 @@
   color: #85857f;
 }
 
+:root[data-theme="light"] .thread-pin,
 :root[data-theme="light"] .thread-archive,
 :root[data-theme="light"] .thread-delete {
   color: #777770;
 }
 
+:root[data-theme="light"] .thread-pin:hover,
+:root[data-theme="light"] .thread-pin:focus-visible,
 :root[data-theme="light"] .thread-archive:hover,
 :root[data-theme="light"] .thread-archive:focus-visible {
   color: #41413d;

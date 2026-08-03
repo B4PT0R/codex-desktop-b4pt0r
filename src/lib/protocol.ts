@@ -415,6 +415,9 @@ export function threadUnarchiveParams(threadId: string) {
 export function threadSetNameParams(threadId: string, name: string) {
   return { threadId, name };
 }
+export function threadPinParams(threadId: string, isPinned: boolean) {
+  return { threadId, isPinned };
+}
 export function threadCompactParams(threadId: string) {
   return { threadId };
 }
