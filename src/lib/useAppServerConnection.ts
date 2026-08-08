@@ -20,6 +20,7 @@ type Options = {
   onMessage: (message: AppServerMessage) => void;
   onNewChat: () => void;
   onRecovered?: () => Promise<unknown>;
+  onThreadsRefreshed: (threads: ThreadSummary[]) => void;
 };
 
 const RECONNECT_DELAYS_MS = [1_000, 3_000, 10_000, 30_000] as const;
@@ -35,6 +36,9 @@ export function useAppServerConnection(options: Options) {
   const [restartError, setRestartError] = useState<string>();
   const [restarting, setRestarting] = useState(false);
   const restartingRef = useRef(false);
+  const connectedRef = useRef(false);
+  const catalogReadyRef = useRef(false);
+  const threadRefreshGeneration = useRef(0);
   const recoverNow = useRef<() => Promise<boolean>>(async () => false);
 
   async function hydrateCatalogs(shouldApply: () => boolean = () => true) {
@@ -42,11 +46,21 @@ export function useAppServerConnection(options: Options) {
       request<ModelListResponse>("model/list", { limit: 50 }),
       loadAllThreads(),
     ]);
-    if (shouldApply())
+    if (shouldApply()) {
       callbacks.current.onInitialized(
         normalizeModels(models),
         history,
       );
+      catalogReadyRef.current = true;
+    }
+  }
+
+  async function refreshThreads(shouldApply: () => boolean = () => true) {
+    const generation = threadRefreshGeneration.current + 1;
+    threadRefreshGeneration.current = generation;
+    const history = await loadAllThreads();
+    if (generation === threadRefreshGeneration.current && shouldApply())
+      callbacks.current.onThreadsRefreshed(history);
   }
 
   useEffect(() => {
@@ -68,6 +82,7 @@ export function useAppServerConnection(options: Options) {
 
     const handleConnection = (nextConnected: boolean, error?: Error) => {
       if (disposed) return;
+      connectedRef.current = nextConnected;
       setConnected(nextConnected);
       if (nextConnected) {
         clearReconnectTimer();
@@ -154,6 +169,24 @@ export function useAppServerConnection(options: Options) {
     };
     recoverNow.current = recover;
 
+    const handleWindowFocus = () => {
+      if (
+        !connectedRef.current ||
+        !catalogReadyRef.current ||
+        recoveryInFlight ||
+        restartingRef.current
+      )
+        return;
+      void refreshThreads(() => !disposed).catch((error) => {
+        if (!disposed)
+          callbacks.current.onError(
+            translate.current("app.initializationIncomplete"),
+            error,
+          );
+      });
+    };
+    window.addEventListener("focus", handleWindowFocus);
+
     void establishConnection()
       .then(async () => {
         if (!isDesktopApp() || disposed) return;
@@ -172,6 +205,10 @@ export function useAppServerConnection(options: Options) {
 
     return () => {
       disposed = true;
+      connectedRef.current = false;
+      catalogReadyRef.current = false;
+      threadRefreshGeneration.current += 1;
+      window.removeEventListener("focus", handleWindowFocus);
       clearReconnectTimer();
       recoverNow.current = async () => false;
       cleanup?.();

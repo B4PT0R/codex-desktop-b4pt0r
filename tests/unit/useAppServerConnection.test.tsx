@@ -44,6 +44,7 @@ function callbacks() {
     onMessage: vi.fn(),
     onNewChat: vi.fn(),
     onRecovered: vi.fn(),
+    onThreadsRefreshed: vi.fn(),
   };
 }
 
@@ -194,6 +195,37 @@ describe("connexion App Server", () => {
     act(() => receiveMessage?.({ method: "turn/started" }));
     expect(first.onMessage).not.toHaveBeenCalled();
     expect(second.onMessage).toHaveBeenCalledWith({ method: "turn/started" });
+  });
+
+  it("rafraîchit les conversations créées par un autre client au retour dans la fenêtre", async () => {
+    const options = callbacks();
+    renderHook(() => useAppServerConnection(options));
+    await waitFor(() => expect(options.onInitialized).toHaveBeenCalledOnce());
+
+    mockedRequest.mockImplementation(async (method) => {
+      if (method === "thread/list")
+        return {
+          data: [
+            {
+              id: "remote-discussion",
+              cwd: "/home/user/Documents/Codex/2026-08-05-discussion",
+              preview: "Discussion depuis les vacances",
+            },
+          ],
+        };
+      return { data: [] };
+    });
+
+    act(() => window.dispatchEvent(new Event("focus")));
+
+    await waitFor(() =>
+      expect(options.onThreadsRefreshed).toHaveBeenCalledWith([
+        expect.objectContaining({
+          id: "remote-discussion",
+          preview: "Discussion depuis les vacances",
+        }),
+      ]),
+    );
   });
 
   it("rend une déconnexion visible et pilote une reconnexion", async () => {

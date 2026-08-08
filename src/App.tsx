@@ -321,10 +321,7 @@ export default function App() {
             "medium",
         );
       }
-      for (const thread of history) {
-        turnCoordinator.observeStatus(thread.id, thread.status);
-      }
-      setThreads(history);
+      applyThreadCatalog(history);
     },
     onMessage: handle,
     onNewChat: newChat,
@@ -332,7 +329,15 @@ export default function App() {
       const activeThreadId = activeThreadRef.current;
       if (activeThreadId) await threadHistory.resume(activeThreadId);
     },
+    onThreadsRefreshed: applyThreadCatalog,
   });
+
+  function applyThreadCatalog(history: ThreadSummary[]) {
+    for (const thread of history) {
+      turnCoordinator.observeStatus(thread.id, thread.status);
+    }
+    setThreads(history);
+  }
   const subagents = useSubagentTranscripts({
     enabled: connection.connected && !isDemoPreview(),
     parentThreadId: threadId,

@@ -1,6 +1,6 @@
 # Codex Desktop Linux — Handoff
 
-Last updated: 2026-08-03
+Last updated: 2026-08-08
 
 Read `AGENTS.md` before contributing. Durable protocol and interface decisions
 belong in `APP_SERVER_COVERAGE.md` and `UI_ARCHITECTURE.md`; completed release
@@ -51,6 +51,11 @@ installations; RPM, AppImage and unknown families use an explicit manual
 handoff to the validated release.
 
 ## Active objective
+
+Cross-client history synchronization: the complete App Server thread catalog is
+refreshed when the desktop window regains focus, so chats created through Remote
+Control or another Codex surface appear without restarting the app. Concurrent
+refreshes discard stale results and preserve the initial model catalog owner.
 
 Keep the current functional surface frozen while running bounded stabilization,
 failure-path, simplification and maintainability passes. Prefer evidence from
@@ -157,7 +162,7 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 732 deterministic frontend/unit tests across 129 files;
+- 733 deterministic frontend/unit tests across 129 files;
 - 132 Electron/Node tests, including App Server shutdown, recovery and the tray
   quick actions;
 - production Vite build;
