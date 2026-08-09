@@ -53,6 +53,54 @@ describe("présentation des messages", () => {
     ]);
   });
 
+  it("répare une coupure de ligne entre deux fragments de prose", () => {
+    const messages: ChatMessage[] = [
+      {
+        id: "voice-1",
+        role: "assistant",
+        modality: "realtimeVoice",
+        content: "Je vérifie le résultat",
+      },
+      {
+        id: "voice-2",
+        role: "assistant",
+        modality: "realtimeVoice",
+        content: "avant de continuer",
+      },
+    ];
+
+    expect(messagesForPresentation(messages, true)[0].content).toBe(
+      "Je vérifie le résultat avant de continuer",
+    );
+  });
+
+  it("conserve un paragraphe autour de la ponctuation et du Markdown", () => {
+    const messages: ChatMessage[] = [
+      {
+        id: "voice-1",
+        role: "assistant",
+        modality: "realtimeVoice",
+        content: "Vérification terminée.",
+      },
+      {
+        id: "voice-2",
+        role: "assistant",
+        modality: "realtimeVoice",
+        content: "Suite du compte rendu",
+      },
+      {
+        id: "voice-3",
+        role: "assistant",
+        modality: "realtimeVoice",
+        content: "- Premier point",
+      },
+    ];
+
+    expect(messagesForPresentation(messages, true)[0].content).toBe(
+      "Vérification terminée.\n\nSuite du compte rendu\n\n- Premier point",
+    );
+  });
+
   it("retire le raisonnement sans laisser les groupes d’actions séparés", () => {
     const messages: ChatMessage[] = [
       { id: "user", role: "user", content: "Go" },

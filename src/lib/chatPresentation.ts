@@ -61,16 +61,24 @@ function groupConsecutiveRealtimeVoice(messages: ChatMessage[]) {
     }
     if (previous) {
       grouped ??= messages.slice(0, index);
+      const previousContent = previous.content.trimEnd();
+      const nextContent = message.content.trimStart();
       grouped[grouped.length - 1] = {
         ...previous,
-        content: [previous.content.trimEnd(), message.content.trimStart()]
-          .filter(Boolean)
-          .join("\n\n"),
+        content: mergeRealtimeVoiceContent(previousContent, nextContent),
         streaming: Boolean(previous.streaming || message.streaming),
       };
     }
   }
   return grouped ?? messages;
+}
+
+function mergeRealtimeVoiceContent(previous: string, next: string) {
+  if (!previous) return next;
+  if (!next) return previous;
+  const splitInsideProse = /[\p{L}\p{N}]$/u.test(previous) &&
+    /^[\p{L}\p{N}]/u.test(next);
+  return `${previous}${splitInsideProse ? " " : "\n\n"}${next}`;
 }
 
 function hasVisibleContent(message: ChatMessage) {
