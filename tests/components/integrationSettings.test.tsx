@@ -143,6 +143,26 @@ describe("réglages des intégrations", () => {
     expect(screen.getByText("Géré par l’administrateur")).toBeVisible();
   });
 
+  it("explique un plugin indisponible pour le forfait", () => {
+    const integrations = controller({
+      plugins: {
+        data: [{
+          id: "premium@workspace",
+          name: "premium",
+          marketplaceName: "workspace",
+          installed: true,
+          enabled: false,
+          availability: "AVAILABLE",
+          disabledReason: "plan_not_eligible",
+        }],
+        loading: false,
+      },
+    });
+    render(<PluginsSettings integrations={integrations} />);
+    expect(screen.getByRole("switch", { name: "premium" })).toBeDisabled();
+    expect(screen.getByText("Non disponible avec ce forfait")).toBeVisible();
+  });
+
   it("assiste la création progressive d’un skill", async () => {
     const createSkill = vi.fn().mockResolvedValue(true);
     render(<SkillCreateDialog creating={false} onCancel={vi.fn()} onCreate={createSkill} />);

@@ -568,15 +568,20 @@ describe("constructeurs JSON-RPC", () => {
     expect(realtimeListVoicesParams()).toEqual({});
     expect(
       realtimeStartParams("thr", { type: "websocket" }, "juniper"),
-    ).toMatchObject({
+    ).toEqual({
+      threadId: "thr",
       transport: { type: "websocket" },
       version: "v3",
       model: "gpt-live-1-codex",
       voice: "juniper",
       includeStartupContext: true,
       outputModality: "audio",
+      flushTranscriptTailOnSessionEnd: true,
+      codexResponseHandoffMode: "bemTags",
+      codexResponseItemPrefix: null,
       codexResponsesAsItems: false,
       initialItems: [],
+      realtimeSessionId: null,
     });
     const dictation = realtimeStartParams(
       "thr",

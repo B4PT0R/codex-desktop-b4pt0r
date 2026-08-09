@@ -13,6 +13,7 @@ describe("questions de Codex", () => {
         method: "item/tool/requestUserInput",
         params: {
           autoResolutionMs: 60_000,
+          isBlocking: false,
           questions: [
             {
               id: "scope",
@@ -29,6 +30,7 @@ describe("questions de Codex", () => {
     ).toEqual({
       requestId: 42,
       autoResolutionMs: 60_000,
+      isBlocking: false,
       questions: [
         {
           id: "scope",
@@ -52,6 +54,26 @@ describe("questions de Codex", () => {
     expect(
       userInputFromMessage({ id: 1, method: "warning", params: {} }),
     ).toBeUndefined();
+  });
+
+  it("préfère l’indicateur bloquant 0.147 au délai historique", () => {
+    expect(
+      userInputFromMessage({
+        id: 2,
+        method: "item/tool/requestUserInput",
+        params: {
+          isBlocking: true,
+          autoResolutionMs: 60_000,
+          questions: [{
+            id: "scope",
+            header: "Portée",
+            question: "Quelle portée ?",
+            isOther: false,
+            isSecret: false,
+          }],
+        },
+      })?.isBlocking,
+    ).toBe(true);
   });
 
   it("construit la réponse attendue par App Server", () => {

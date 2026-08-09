@@ -1,6 +1,6 @@
 # Codex Desktop Linux — Handoff
 
-Last updated: 2026-08-08
+Last updated: 2026-08-09
 
 Read `AGENTS.md` before contributing. Durable protocol and interface decisions
 belong in `APP_SERVER_COVERAGE.md` and `UI_ARCHITECTURE.md`; completed release
@@ -10,7 +10,7 @@ detail belongs in `CHANGELOG.md` and Git.
 
 Codex Desktop Linux is a functional independent Electron client for the
 official `codex app-server`. The current public release is **v0.5.6**. The local
-development baseline now uses installed `codex-cli 0.146.0`.
+development baseline now uses installed `codex-cli 0.147.0`.
 
 The daily workflow covers conversation replay and concurrent activity,
 streaming Markdown/LaTeX, reasoning, plans, tools, approvals, diffs, files,
@@ -56,6 +56,10 @@ Cross-client history synchronization: the complete App Server thread catalog is
 refreshed when the desktop window regains focus, so chats created through Remote
 Control or another Codex surface appear without restarting the app. Concurrent
 refreshes discard stale results and preserve the initial model catalog owner.
+Projectless chats materialized in Codex's synthetic `Documents/Codex` workspace
+are presented in a flat Discussions section immediately above Recent projects;
+the compatibility classifier remains isolated until App Server exposes its
+internal `workspace_kind` on thread responses.
 
 Keep the current functional surface frozen while running bounded stabilization,
 failure-path, simplification and maintainability passes. Prefer evidence from
@@ -83,12 +87,12 @@ provenance, versions, partial-load failures and administrator-disabled state are
 visible. The development-only catalog/read/install/uninstall methods remain
 unused and clearly separated from the functional installed view.
 
-Codex 0.146 alignment: conversations can be pinned through App Server's stable
-metadata update contract. The sidebar now consumes every page of the interactive
-thread catalog, keeps pinned conversations in a compact dedicated section and
-uses the server response as the source of truth for every toggle.
+Codex 0.147 alignment: conversations are pinned through App Server's stable
+built-in Pinned section. The sidebar maps server section metadata to its existing
+pin concept, consumes every page of the interactive thread catalog and confirms
+each move by rereading the authoritative thread.
 
-Runtime compatibility: the packaged client declares Codex CLI 0.146.0 as its
+Runtime compatibility: the packaged client declares Codex CLI 0.147.0 as its
 minimum supported backend. Stable client and CLI releases are polled together
 at startup and hourly; General and the top bar expose separate update actions.
 CLI installation remains owned by the selected binary through `codex update`,
@@ -126,7 +130,7 @@ individual action titles are derived only from structured tool-item fields.
 
 - Scheduled tasks require the app to remain running in the tray and the machine
   awake; missed intervals are not replayed in a burst.
-- App Server 0.146 exposes no atomic start-if-idle request, so another App
+- App Server 0.147 exposes no atomic start-if-idle request, so another App
   Server client can still race between idle observation and `turn/start`.
 - Quitting interrupts scheduled work; closing the window preserves the hidden
   renderer and App Server.
@@ -162,18 +166,26 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 733 deterministic frontend/unit tests across 129 files;
+- 740 deterministic frontend/unit tests across 130 files;
 - 132 Electron/Node tests, including App Server shutdown, recovery and the tray
   quick actions;
 - production Vite build;
 - production dependency audit with zero vulnerabilities;
 - `git diff --check`.
 
-The Codex 0.146 compatibility and pinning pass generated and compared stable and
-experimental schemas, reviewed the official `rust-v0.146.0` source delta, and
-passed all 53 installed-schema contract tests. Changes are additive for the
-client's current surface; the removed experimental `AppMetadata.firstPartyType`
-field was never consumed. The added pinning contract is now covered end to end.
+The Codex 0.147 compatibility pass generated and compared stable and experimental
+schemas, reviewed the official `rust-v0.147.0` source delta and adapted the one
+breaking product overlap: pinning moved from `isPinned` metadata to the stable
+built-in Pinned section and `thread/section/move`. The other observed additions
+(model specialties, MCP annotations and image transparency)
+remain queued by product seam rather than being mixed into the compatibility
+fix. Agent questions now consume authoritative blocking semantics, and Plugins
+explain App Server's administrator, plan and required-App unavailability reasons.
+Realtime v3 now uses the 0.147 BEM handoff contract instead of an obsolete
+ignored prefix, preserving commentary/final phases while relying on App Server's
+new default entry/exit mode instructions. The delegation acknowledgement filler
+remains server-owned pending a focused audible comparison.
+All 53 installed-schema contract tests pass against `codex-cli 0.147.0`.
 
 Release v0.5.6 additionally passed Linux DEB/RPM/AppImage packaging and clean
 Debian stable and Fedora native-package/AppImage headless launch smoke tests.

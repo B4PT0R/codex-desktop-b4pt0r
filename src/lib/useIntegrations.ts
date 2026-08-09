@@ -379,6 +379,7 @@ export function useIntegrations({
     async (plugin: AppServerPlugin, nextEnabled: boolean) => {
       if (
         plugin.availability === "DISABLED_BY_ADMIN" ||
+        plugin.disabledReason !== undefined ||
         updatingPluginIds.current.has(plugin.id)
       ) return;
       updatingPluginIds.current.add(plugin.id);

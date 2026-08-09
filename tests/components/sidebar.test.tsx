@@ -78,6 +78,54 @@ function renderSidebar(
 }
 
 describe("barre latérale", () => {
+  it("place les discussions sans workspace au-dessus des projets récents", () => {
+    render(
+      <I18nProvider>
+        <Sidebar
+          cwd=""
+          open
+          width={260}
+          threads={[
+            ...threads,
+            {
+              id: "discussion",
+              kind: "discussion",
+              name: "Échanger quelques idées",
+              cwd: "/home/user/Documents/Codex/2026-08-09-echanger",
+            },
+          ]}
+          search={searchController()}
+          onArchive={vi.fn()}
+          onDelete={vi.fn().mockResolvedValue(true)}
+          onPin={vi.fn()}
+          onClose={vi.fn()}
+          onNewChat={vi.fn()}
+          onOpenSettings={vi.fn()}
+          onResume={vi.fn()}
+          onSelectDirectory={vi.fn()}
+          onWidthChange={vi.fn()}
+          onWidthCommit={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+
+    const discussions = screen.getByRole("navigation", {
+      name: "Discussions",
+    });
+    expect(discussions).toHaveTextContent("Échanger quelques idées");
+    expect(
+      screen.queryByRole("button", { name: "2026-08-09-echanger" }),
+    ).not.toBeInTheDocument();
+    const discussionHeading = screen.getByText("Discussions", {
+      selector: ".section-title",
+    });
+    const projectsHeading = screen.getByText(/Recent projects|Projets récents/);
+    expect(
+      discussionHeading.compareDocumentPosition(projectsHeading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it("isole les conversations épinglées et permet de les désépingler", () => {
     const onPin = vi.fn();
     render(

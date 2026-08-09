@@ -201,9 +201,6 @@ export type ThreadForkResponse = ThreadRuntimeResponse;
 export type ThreadReadResponse = {
   thread: AppServerThread;
 };
-export type ThreadMetadataUpdateResponse = {
-  thread: AppServerThread;
-};
 export type ThreadResumeResponse = {
   thread: AppServerThread;
   cwd: string;
@@ -241,11 +238,18 @@ export type AppServerPlugin = {
   installed: boolean;
   enabled: boolean;
   availability: "AVAILABLE" | "DISABLED_BY_ADMIN";
+  disabledReason?: PluginDisabledReason;
   localVersion?: string;
   version?: string;
   displayName?: string;
   description?: string;
 };
+
+export type PluginDisabledReason =
+  | "disabled_by_admin"
+  | "plan_not_eligible"
+  | "required_app_unavailable"
+  | "unknown";
 
 export type PluginInstalledResponse = {
   marketplaces: Array<{
@@ -257,6 +261,9 @@ export type PluginInstalledResponse = {
       installed: boolean;
       enabled: boolean;
       availability?: "AVAILABLE" | "DISABLED_BY_ADMIN";
+      disabledReason?: PluginDisabledReason | null;
+      eligiblePlanTypes?: string[] | null;
+      installedAt?: number | null;
       localVersion?: string | null;
       version?: string | null;
       interface?: {

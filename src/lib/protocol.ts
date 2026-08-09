@@ -338,7 +338,9 @@ export function realtimeStartParams(
       ? {
           model: "gpt-live-1-codex",
           voice,
-          codexResponseHandoffPrefix: "",
+          // V3 preserves Codex message phases so the realtime intermediary can
+          // treat progress as context and final answers as speakable output.
+          codexResponseHandoffMode: "bemTags",
           codexResponseItemPrefix: null,
           codexResponsesAsItems: false,
           initialItems,
@@ -415,8 +417,11 @@ export function threadUnarchiveParams(threadId: string) {
 export function threadSetNameParams(threadId: string, name: string) {
   return { threadId, name };
 }
-export function threadPinParams(threadId: string, isPinned: boolean) {
-  return { threadId, isPinned };
+export function threadSectionMoveParams(
+  threadId: string,
+  sectionId: string | null,
+) {
+  return { threadId, sectionId, beforeThreadId: null };
 }
 export function threadCompactParams(threadId: string) {
   return { threadId };

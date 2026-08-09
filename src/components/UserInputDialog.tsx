@@ -145,7 +145,7 @@ export function UserInputDialog({
             </fieldset>
           ))}
         </div>
-        {request.autoResolutionMs !== undefined && (
+        {!request.isBlocking && (
           <p className="hint">{t("userInput.autoResolution")}</p>
         )}
         <IconButton

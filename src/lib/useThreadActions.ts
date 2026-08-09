@@ -1,7 +1,6 @@
 import { useRef, useState, type Dispatch, type SetStateAction } from "react";
 import type {
   ThreadForkResponse,
-  ThreadMetadataUpdateResponse,
   ThreadReadResponse,
 } from "./appServerTypes";
 import { request } from "./codex";
@@ -10,8 +9,8 @@ import {
   threadCompactParams,
   threadDeleteParams,
   threadForkParams,
-  threadPinParams,
   threadReadParams,
+  threadSectionMoveParams,
   threadSetNameParams,
   threadUnarchiveParams,
 } from "./protocol";
@@ -20,6 +19,7 @@ import { useI18n } from "../i18n/I18nProvider";
 import type { ThreadTurnCoordinator } from "./threadTurnCoordinator";
 import { threadSummary } from "./threadSummary";
 import { restoreThread } from "./threadReconciliation";
+import { PINNED_THREAD_SECTION_ID } from "./threadSections";
 
 export type ArchivedThread = {
   thread: ThreadSummary;
@@ -166,9 +166,16 @@ export function useThreadActions({
   async function setPinned(thread: ThreadSummary, isPinned: boolean) {
     return runThreadAction(thread.id, false, async () => {
       try {
-        const response = await request<ThreadMetadataUpdateResponse>(
-          "thread/metadata/update",
-          threadPinParams(thread.id, isPinned),
+        await request(
+          "thread/section/move",
+          threadSectionMoveParams(
+            thread.id,
+            isPinned ? PINNED_THREAD_SECTION_ID : null,
+          ),
+        );
+        const response = await request<ThreadReadResponse>(
+          "thread/read",
+          threadReadParams(thread.id),
         );
         const summary = threadSummary(response.thread);
         if (summary.id !== thread.id || summary.isPinned !== isPinned) {

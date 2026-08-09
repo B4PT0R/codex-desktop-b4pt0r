@@ -17,6 +17,7 @@ describe("dialogue de question agent", () => {
       <UserInputDialog
         request={{
           requestId: 1,
+          isBlocking: true,
           questions: [
             {
               id: "scope",
@@ -64,6 +65,7 @@ describe("dialogue de question agent", () => {
         request={{
           requestId: "request-2",
           autoResolutionMs: 60_000,
+          isBlocking: false,
           questions: [
             {
               id: "credential",
@@ -100,6 +102,7 @@ describe("dialogue de question agent", () => {
         <UserInputDialog
           request={{
             requestId: 3,
+            isBlocking: true,
             questions: [
               {
                 id: "scope",

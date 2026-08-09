@@ -82,7 +82,9 @@ ni restaurer un choix remplacé, ni ressusciter un élément supprimé.
 
 ### Navigation
 
-La sidebar crée, recherche, reprend et organise les conversations par workspace.
+La sidebar crée, recherche et reprend les conversations. Les discussions sans
+workspace occupent une section plate dédiée immédiatement avant les projets ;
+les autres conversations restent organisées par workspace.
 La page récente reste bornée ; la recherche interroge l’historique persistant.
 Les groupes fonctionnent comme un accordéon, sauf pendant une recherche où tous
 les groupes pertinents peuvent être ouverts.
@@ -242,6 +244,13 @@ parent persistant dans l’ordre. Le hook de domaine possède les deltas, la
 finalisation, l’injection et tous les chemins d’arrêt. Une session lancée depuis
 le tray garde le renderer caché vivant ; montrer la fenêtre rattache la
 présentation sans recréer la session WebRTC.
+
+Avec App Server 0.147, le backend applique ses instructions de transition à
+l’entrée et à la sortie du mode vocal. Le client sélectionne le routage BEM v3
+afin que les phases commentary servent de contexte à l’intermédiaire tandis que
+les réponses finales restent explicitement parlables. Il n’impose pas
+`delegationAckFiller` : la valeur serveur demeure autoritative jusqu’à ce qu’un
+essai audio réel justifie un choix produit explicite.
 
 Le Scheduler persiste des tâches ponctuelles, périodiques ou hebdomadaires et
 cible le thread courant, le thread par défaut, un nouveau thread ou un thread

@@ -29,6 +29,7 @@ export function normalizeInstalledPlugins(
         plugin.interface?.shortDescription,
         2_000,
       );
+      const disabledReason = normalizeDisabledReason(plugin.disabledReason);
       return [{
         id: plugin.id.slice(0, 1_000),
         name: plugin.name.slice(0, 512),
@@ -39,6 +40,7 @@ export function normalizeInstalledPlugins(
         availability: plugin.availability === "DISABLED_BY_ADMIN"
           ? "DISABLED_BY_ADMIN" as const
           : "AVAILABLE" as const,
+        ...(disabledReason ? { disabledReason } : {}),
         ...(localVersion ? { localVersion } : {}),
         ...(version ? { version } : {}),
         ...(displayName ? { displayName } : {}),
@@ -46,6 +48,15 @@ export function normalizeInstalledPlugins(
       }];
     });
   });
+}
+
+function normalizeDisabledReason(value: unknown) {
+  return value === "disabled_by_admin" ||
+      value === "plan_not_eligible" ||
+      value === "required_app_unavailable" ||
+      value === "unknown"
+    ? value
+    : undefined;
 }
 
 export function pluginMarketplaceErrorCount(response: PluginInstalledResponse) {

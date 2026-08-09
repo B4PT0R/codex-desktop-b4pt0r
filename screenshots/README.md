@@ -4,9 +4,9 @@ The repository keeps only the current public showcase rather than an archive of
 every visual iteration. Historical captures remain available through Git.
 
 - `showcase-light-1240x820.png` — English light-theme conversation showing
-  a pinned conversation above workspace-grouped threads, reasoning, compact
-  tool activity, Realtime modalities, compaction, composer controls, context,
-  and quotas.
+  pinned and projectless discussions above workspace-grouped threads,
+  reasoning, compact tool activity, Realtime modalities, compaction, composer
+  controls, context, and quotas.
 - `showcase-dark-1240x820.png` — English dark-theme continuation showing the
   Realtime hierarchy and active Plan immediately above the composer.
 - `update-available-light-1164x860.png` — light-theme conversation showing the

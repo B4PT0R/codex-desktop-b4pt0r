@@ -77,7 +77,7 @@ export function AppUpdateSettings({
         <IconCard
           title={t("settings.updates.codex")}
           subtitle={t("settings.updates.codexDetail", {
-            version: controller.versions?.minimumCodexVersion ?? "0.146.0",
+            version: controller.versions?.minimumCodexVersion ?? "0.147.0",
           })}
           trailing={<div className="settings-browser-status">
             <code className="app-version-value">

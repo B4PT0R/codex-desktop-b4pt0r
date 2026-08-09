@@ -585,6 +585,12 @@ export const readmeDemoThreads: ThreadSummary[] = [
     status: "active",
   },
   {
+    id: "readme-discussion",
+    kind: "discussion",
+    name: "Plan the week",
+    cwd: "/home/developer/Documents/Codex/2026-08-09-plan-the-week",
+  },
+  {
     id: "readme-realtime",
     isPinned: true,
     name: "Stabilize Realtime voice",

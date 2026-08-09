@@ -93,7 +93,7 @@ unavailable.
 ## Requirements
 
 - A recent x86-64 Linux desktop environment with GTK 3, NSS, and ALSA.
-- Codex CLI **0.146.0 or newer**, installed, authenticated, and available as
+- Codex CLI **0.147.0 or newer**, installed, authenticated, and available as
   `codex` in `PATH`.
 - Node.js 22.12 or newer when building from source.
 

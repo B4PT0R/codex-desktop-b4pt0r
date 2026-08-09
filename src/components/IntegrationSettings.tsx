@@ -10,7 +10,11 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import type { AppInfo, McpAuthStatus } from "../lib/appServerTypes";
+import type {
+  AppInfo,
+  AppServerPlugin,
+  McpAuthStatus,
+} from "../lib/appServerTypes";
 import type { IntegrationsController } from "../lib/useIntegrations";
 import type { AppConfigurationEditorData, AppsController } from "../lib/useApps";
 import { useI18n } from "../i18n/I18nProvider";
@@ -221,7 +225,9 @@ export function PluginsSettings({
       ) : plugins.data.length === 0 ? (
         <InventoryEmpty label={t("integrations.plugins.empty")} />
       ) : plugins.data.map((plugin) => {
-        const managed = plugin.availability === "DISABLED_BY_ADMIN";
+        const unavailable =
+          plugin.availability === "DISABLED_BY_ADMIN" ||
+          plugin.disabledReason !== undefined;
         const marketplace = plugin.marketplaceDisplayName || plugin.marketplaceName;
         const version = plugin.localVersion || plugin.version;
         return <IconCard
@@ -231,11 +237,11 @@ export function PluginsSettings({
           title={plugin.displayName || plugin.name}
           trailing={<IconToggle
             checked={plugin.enabled}
-            disabled={managed || integrations.updatingPlugins.includes(plugin.id)}
+            disabled={unavailable || integrations.updatingPlugins.includes(plugin.id)}
             label={plugin.displayName || plugin.name}
             onCheckedChange={(checked) => void integrations.setPluginEnabled(plugin, checked)}
-            text={managed
-              ? t("integrations.plugins.managed")
+            text={unavailable
+              ? pluginDisabledReason(plugin.disabledReason, t)
               : plugin.enabled
                 ? t("integrations.enabled")
                 : t("integrations.disabled")}
@@ -255,6 +261,23 @@ export function PluginsSettings({
       />
     </CardStack>
   </section>;
+}
+
+function pluginDisabledReason(
+  reason: AppServerPlugin["disabledReason"],
+  t: ReturnType<typeof useI18n>["t"],
+) {
+  switch (reason) {
+    case "plan_not_eligible":
+      return t("integrations.plugins.planNotEligible");
+    case "required_app_unavailable":
+      return t("integrations.plugins.requiredAppUnavailable");
+    case "unknown":
+      return t("integrations.plugins.unavailable");
+    case "disabled_by_admin":
+    default:
+      return t("integrations.plugins.managed");
+  }
 }
 
 export function McpSettings({

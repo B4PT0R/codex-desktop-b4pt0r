@@ -48,6 +48,7 @@ describe("inventaire des intégrations", () => {
           installed: true,
           enabled: true,
           availability: "AVAILABLE",
+          disabledReason: "required_app_unavailable",
           localVersion: "1.2.3",
           interface: {
             displayName: "Google Drive",
@@ -73,7 +74,29 @@ describe("inventaire des intégrations", () => {
       marketplaceDisplayName: "OpenAI",
       localVersion: "1.2.3",
       enabled: true,
+      disabledReason: "required_app_unavailable",
     })]);
+  });
+
+  it("refuse localement une activation interdite par App Server", async () => {
+    requestMock.mockResolvedValue({ marketplaces: [] });
+    const { result } = renderHook(() => useIntegrations({
+      cwd: "/project",
+      enabled: false,
+      pluginsEnabled: false,
+    }));
+    await act(async () => {
+      await result.current.setPluginEnabled({
+        id: "premium",
+        name: "Premium",
+        marketplaceName: "openai",
+        installed: true,
+        enabled: false,
+        availability: "AVAILABLE",
+        disabledReason: "plan_not_eligible",
+      }, true);
+    });
+    expect(requestMock).not.toHaveBeenCalled();
   });
 
   it("bascule un plugin via la configuration App Server puis recharge ses capacités", async () => {

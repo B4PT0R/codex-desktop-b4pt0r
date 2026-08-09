@@ -83,7 +83,11 @@ export function Sidebar({
         (thread.id === defaultThreadId || thread.isPinned)
       )
         continue;
-      const key = thread.cwd || t("sidebar.otherThreads");
+      if (!search.query.trim() && thread.kind === "discussion") continue;
+      const key =
+        thread.kind === "discussion"
+          ? t("sidebar.discussions")
+          : thread.cwd || t("sidebar.otherThreads");
       groups.set(key, [...(groups.get(key) ?? []), thread]);
     }
     return [...groups.entries()];
@@ -93,6 +97,14 @@ export function Sidebar({
     ? []
     : threads.filter(
         (thread) => thread.isPinned && thread.id !== defaultThreadId,
+      );
+  const discussionThreads = searching
+    ? []
+    : threads.filter(
+        (thread) =>
+          thread.kind === "discussion" &&
+          thread.id !== defaultThreadId &&
+          !thread.isPinned,
       );
   const resolvedDefaultThread = defaultThreadId
     ? threads.find((thread) => thread.id === defaultThreadId)
@@ -201,6 +213,27 @@ export function Sidebar({
             className="sidebar-pinned-threads"
           >
             {pinnedThreads.map((thread) => (
+              <SidebarThreadRow
+                key={thread.id}
+                onArchive={onArchive}
+                onDelete={setDeleteCandidate}
+                onPin={onPin}
+                onResume={onResume}
+                selected={selectedThreadId === thread.id}
+                thread={thread}
+              />
+            ))}
+          </nav>
+        </>
+      )}
+      {discussionThreads.length > 0 && (
+        <>
+          <div className="section-title">{t("sidebar.discussions")}</div>
+          <nav
+            aria-label={t("sidebar.discussions")}
+            className="sidebar-discussions"
+          >
+            {discussionThreads.map((thread) => (
               <SidebarThreadRow
                 key={thread.id}
                 onArchive={onArchive}

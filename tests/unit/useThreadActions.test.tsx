@@ -62,14 +62,19 @@ beforeEach(() => {
 
 describe("actions de conversation", () => {
   it("épingle une conversation avec l’état autoritatif du serveur", async () => {
-    mockedRequest.mockResolvedValueOnce({
-      thread: {
-        id: "thread-1",
-        isPinned: true,
-        name: "Original",
-        cwd: "/project",
-      },
-    });
+    mockedRequest
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({
+        thread: {
+          id: "thread-1",
+          section: {
+            id: "01984de2-8f74-7c91-a3b2-5c5e937cf318",
+            name: "Pinned",
+          },
+          name: "Original",
+          cwd: "/project",
+        },
+      });
     const { result } = renderHook(useHarness);
 
     await act(async () => {
@@ -78,17 +83,24 @@ describe("actions de conversation", () => {
       ).toBe(true);
     });
 
-    expect(mockedRequest).toHaveBeenCalledWith("thread/metadata/update", {
+    expect(mockedRequest).toHaveBeenNthCalledWith(1, "thread/section/move", {
       threadId: "thread-1",
-      isPinned: true,
+      sectionId: "01984de2-8f74-7c91-a3b2-5c5e937cf318",
+      beforeThreadId: null,
+    });
+    expect(mockedRequest).toHaveBeenNthCalledWith(2, "thread/read", {
+      threadId: "thread-1",
+      includeTurns: false,
     });
     expect(result.current.threads[0]?.isPinned).toBe(true);
   });
 
   it("conserve l’état local si App Server ne confirme pas l’épinglage", async () => {
-    mockedRequest.mockResolvedValueOnce({
-      thread: { id: "thread-1", isPinned: false, cwd: "/project" },
-    });
+    mockedRequest
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({
+        thread: { id: "thread-1", section: null, cwd: "/project" },
+      });
     const { result } = renderHook(useHarness);
 
     await act(async () => {

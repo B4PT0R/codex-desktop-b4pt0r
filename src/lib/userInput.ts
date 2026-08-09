@@ -16,6 +16,7 @@ export type UserInputQuestion = {
 
 export type UserInputRequest = {
   autoResolutionMs?: number;
+  isBlocking: boolean;
   questions: UserInputQuestion[];
   requestId: number | string;
 };
@@ -36,10 +37,15 @@ export function userInputFromMessage(
     return question ? [question] : [];
   });
   if (questions.length === 0) return undefined;
+  const autoResolutionMs = nonNegativeNumber(params.autoResolutionMs);
   return {
     requestId: message.id,
     questions,
-    autoResolutionMs: nonNegativeNumber(params.autoResolutionMs),
+    ...(autoResolutionMs !== undefined ? { autoResolutionMs } : {}),
+    isBlocking:
+      typeof params.isBlocking === "boolean"
+        ? params.isBlocking
+        : autoResolutionMs === undefined,
   };
 }
 

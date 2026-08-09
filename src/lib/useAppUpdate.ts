@@ -70,7 +70,7 @@ export function useAppUpdate(
     if (!native) {
       setVersions({
         clientVersion: __APP_VERSION__,
-        minimumCodexVersion: "0.146.0",
+        minimumCodexVersion: "0.147.0",
       });
       return;
     }

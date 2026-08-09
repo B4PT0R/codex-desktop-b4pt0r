@@ -66,7 +66,7 @@ import {
   threadServiceTierUpdateParams,
   threadShellCommandParams,
   threadSetNameParams,
-  threadPinParams,
+  threadSectionMoveParams,
   threadStartParams,
   threadUnsubscribeParams,
   threadTurnsListParams,
@@ -370,7 +370,14 @@ describe("contrat Codex installé", () => {
     validates("ThreadCompactStartParams", threadCompactParams("thr_1"));
   });
   it("accepte la mutation des conversations épinglées", () => {
-    validates("ThreadMetadataUpdateParams", threadPinParams("thr_1", true));
+    validates(
+      "ThreadSectionMoveParams",
+      threadSectionMoveParams(
+        "thr_1",
+        "01984de2-8f74-7c91-a3b2-5c5e937cf318",
+      ),
+    );
+    validates("ThreadSectionMoveParams", threadSectionMoveParams("thr_1", null));
   });
   it("accepte la création d’une branche", () =>
     validates("ThreadForkParams", threadForkParams("thr_1")));
