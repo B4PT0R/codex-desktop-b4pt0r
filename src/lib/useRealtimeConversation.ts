@@ -614,10 +614,16 @@ export function useRealtimeConversation({
         .map((id) => textAgentParts.current.get(id)?.trim())
         .filter(Boolean)
         .join("\n\n");
+      const segments = [...textAgentSegments.current];
       if (itemId && text) {
         updateTranscript((messages) => messages.map((entry) =>
           entry.id === itemId
-            ? { ...entry, content: text, streaming: false }
+            ? {
+                ...entry,
+                content: text,
+                realtimeSegments: segments,
+                streaming: false,
+              }
             : entry
         ));
         persistTranscript("assistant", itemId, text, "text");

@@ -12,6 +12,7 @@ import type { ComponentProps } from "react";
 import { Conversation } from "../../src/components/Conversation";
 import { I18nProvider } from "../../src/i18n/I18nProvider";
 import { closedStepRevealDelay } from "../../src/lib/toolActivityTiming";
+import type { ChatMessage } from "../../src/types";
 
 afterEach(() => {
   cleanup();
@@ -389,6 +390,50 @@ describe("historique de conversation", () => {
     const after = screen.getByText("Lecture terminée.");
     expect(before.compareDocumentPosition(tool) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(tool.compareDocumentPosition(after) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("conserve la timeline d’outils après la finalisation du Text Agent", () => {
+    vi.useFakeTimers();
+    const message: ChatMessage = {
+      id: "delegation-finalized",
+      role: "assistant",
+      modality: "realtimeText",
+      content: "Je lis.\n\nLecture terminée.",
+      streaming: true,
+      realtimeSegments: [
+        { id: "before", type: "text", content: "Je lis." },
+        { id: "tool-1", type: "tool" },
+        { id: "after", type: "text", content: "Lecture terminée." },
+      ],
+      tools: [{
+        id: "tool-1",
+        kind: "commandExecution",
+        title: "Commande",
+        detail: "git status --short",
+        status: "done",
+      }],
+    };
+    const { rerender } = render(
+      <I18nProvider>
+        <Conversation activity="talking" messages={[message]} />
+      </I18nProvider>,
+    );
+
+    rerender(
+      <I18nProvider>
+        <Conversation
+          activity={null}
+          messages={[{ ...message, streaming: false }]}
+        />
+      </I18nProvider>,
+    );
+    act(() => vi.advanceTimersByTime(500));
+    fireEvent.click(screen.getByRole("button", { name: "Agent textuel" }));
+
+    const textAgent = screen.getByRole("region", { name: "Agent textuel" });
+    expect(textAgent).toHaveTextContent("Je lis.");
+    expect(textAgent).toHaveTextContent("Commande");
+    expect(textAgent).toHaveTextContent("Lecture terminée.");
   });
 
   it("garde les actions du Text Agent repliées pendant leur exécution", () => {

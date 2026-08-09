@@ -48,7 +48,7 @@ export function RealtimeTextMessage({
 
   return (
     <section
-      className={`realtime-text-message${expanded ? " expanded" : ""}`}
+      className={`realtime-text-message${expanded ? " expanded" : ""}${message.streaming ? " streaming" : ""}`}
       aria-label={t("conversation.realtime.text")}
     >
       <button

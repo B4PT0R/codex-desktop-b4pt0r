@@ -106,6 +106,12 @@
   opacity: 1;
 }
 
+/* Streaming content changes intrinsic height on every delta. Animating that
+ * track makes the whole Text Agent card pulse even when expansion is stable. */
+.realtime-text-message.streaming .realtime-text-body {
+  transition: none;
+}
+
 .realtime-text-message.expanded .realtime-text-body > div {
   padding-bottom: 10px;
 }

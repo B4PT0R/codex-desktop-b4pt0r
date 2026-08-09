@@ -644,6 +644,12 @@ describe("cycle de vie de la conversation Realtime", () => {
         id: "commentary-1",
         content: "Je vérifie.\n\nVérification terminée.",
         modality: "realtimeText",
+        realtimeSegments: [
+          { id: "commentary-1", type: "text", content: "Je vérifie." },
+          { id: "tool-1", type: "tool" },
+          { id: "final-1", type: "text", content: "Vérification terminée." },
+        ],
+        tools: [expect.objectContaining({ id: "tool-1", status: "done" })],
         streaming: false,
       }),
     ]);
