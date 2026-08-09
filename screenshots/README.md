@@ -32,6 +32,8 @@ every visual iteration. Historical captures remain available through Git.
   with password registration, one-time 18+ declaration and explicit validation.
 - `adult-mode-footer-light-1164x860.png` — active Adult Mode heart indicator beside
   the context-compaction gauge in the conversation footer.
+- `realtime-text-tools-light-1164x860.png` — delegated Text Agent response with
+  its tool summary grouped inside the expandable Realtime item.
 - `settings-scheduler-light-1164x860.png` — light-theme Scheduler baseline
   distinguishing recurring schedule state from completed one-shot tasks.
 - `settings-skills-light-1164x860.png` — light-theme Skills baseline showing

@@ -1,5 +1,5 @@
 import { AudioWaveform, ChevronDown, MessageSquareText } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { ChatMessage } from "../types";
 import { Markdown } from "./Markdown";
@@ -19,7 +19,13 @@ export function RealtimeVoiceMessage({ message }: { message: ChatMessage }) {
   );
 }
 
-export function RealtimeTextMessage({ message }: { message: ChatMessage }) {
+export function RealtimeTextMessage({
+  details,
+  message,
+}: {
+  details?: ReactNode;
+  message: ChatMessage;
+}) {
   const { t } = useI18n();
   const [expanded, setExpanded] = useState(Boolean(message.streaming));
   const wasStreaming = useRef(Boolean(message.streaming));
@@ -53,6 +59,7 @@ export function RealtimeTextMessage({ message }: { message: ChatMessage }) {
       <div className="realtime-text-body" aria-hidden={!expanded}>
         <div>
           <Markdown streaming={message.streaming}>{message.content}</Markdown>
+          {details}
         </div>
       </div>
     </section>

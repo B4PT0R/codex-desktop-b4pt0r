@@ -311,6 +311,13 @@ describe("historique de conversation", () => {
           modality: "realtimeText",
           content: "Détail complet de l’agent textuel.",
           streaming: true,
+          tools: [{
+            id: "tool-text",
+            kind: "commandExecution",
+            title: "Commande",
+            detail: "git status --short",
+            status: "done",
+          }],
         },
         {
           id: "voice",
@@ -321,9 +328,9 @@ describe("historique de conversation", () => {
       ],
     });
 
-    expect(
-      screen.getByRole("region", { name: "Agent textuel" }),
-    ).toHaveTextContent("Détail complet");
+    const textAgent = screen.getByRole("region", { name: "Agent textuel" });
+    expect(textAgent).toHaveTextContent("Détail complet");
+    expect(textAgent.querySelector(".tool-group")).not.toBeNull();
     expect(screen.getByText("Agent vocal")).toBeVisible();
     expect(screen.getByText("Synthèse vocale prioritaire.")).toBeVisible();
 

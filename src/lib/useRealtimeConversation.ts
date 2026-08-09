@@ -90,6 +90,7 @@ export function useRealtimeConversation({
   const assistantSegmentText = useRef("");
   const assistantResponseSegmented = useRef(false);
   const delegationInProgress = useRef(false);
+  const textAgentMessageId = useRef<string | undefined>(undefined);
   const userMessageId = useRef<string | undefined>(undefined);
   const transcriptDisplayRequested = useRef(true);
   const bufferedTranscripts = useRef(new Map<string, ChatMessage[]>());
@@ -162,6 +163,7 @@ export function useRealtimeConversation({
     assistantSegmentText.current = "";
     assistantResponseSegmented.current = false;
     delegationInProgress.current = false;
+    textAgentMessageId.current = undefined;
     userMessageId.current = undefined;
     preRealtimeMessageIds.current = new Set();
     transcriptDisplayRequested.current = true;
@@ -437,28 +439,70 @@ export function useRealtimeConversation({
           assistantResponseSegmented.current = true;
         }
       }
+      const params = appServerRecord(message.params);
+      const item = appServerRecord(params?.item);
+      const agentMessageId = message.method === "item/agentMessage/delta"
+        ? appServerString(params?.itemId)
+        : appServerString(item?.type) === "agentMessage"
+          ? appServerString(item?.id)
+          : undefined;
+      if (agentMessageId) textAgentMessageId.current = agentMessageId;
+      const anchorMessageId = textAgentMessageId.current;
       const preexistingMessageIds = preRealtimeMessageIds.current;
-      updateTranscript((messages) =>
-        markRealtimeConversationUpdates(
+      updateTranscript((messages) => {
+        const anchorIndex = anchorMessageId
+          ? messages.findIndex(({ id }) => id === anchorMessageId)
+          : -1;
+        if (!agentMessageId && anchorIndex >= 0) {
+          const delegatedMessages = messages.slice(0, anchorIndex + 1);
+          return [
+            ...markRealtimeConversationUpdates(
+              delegatedMessages,
+              applyConversationEvent(
+                delegatedMessages,
+                message,
+                translateRef.current,
+              ),
+              preexistingMessageIds,
+            ),
+            ...messages.slice(anchorIndex + 1),
+          ];
+        }
+        return markRealtimeConversationUpdates(
           messages,
           applyConversationEvent(messages, message, translateRef.current),
           preexistingMessageIds,
-        ),
-      );
+        );
+      });
       if (message.method === "item/completed") {
-        const item = appServerRecord(appServerRecord(message.params)?.item);
         if (appServerString(item?.type) === "agentMessage") {
           const itemId = appServerString(item?.id);
           const text = appServerString(item?.text)?.trim();
           if (itemId && text) {
             persistTranscript("assistant", itemId, text, "text");
           }
-          delegationInProgress.current = false;
         }
       }
       return true;
     },
     [persistTranscript, updateTranscript],
+  );
+
+  const handleForkLifecycle = useCallback(
+    (message: AppServerMessage, eventThreadId?: string) => {
+      if (
+        message.method !== "turn/completed" ||
+        !realtimeConversationScope(
+          eventThreadId,
+          activeThreadId.current,
+          parentThreadId.current,
+        )
+      ) return false;
+      delegationInProgress.current = false;
+      textAgentMessageId.current = undefined;
+      return true;
+    },
+    [],
   );
 
   const handleMessage = useCallback(
@@ -570,6 +614,7 @@ export function useRealtimeConversation({
 
   return {
     handleConversationEvent,
+    handleForkLifecycle,
     recording,
     starting,
     headlessParentThreadId,

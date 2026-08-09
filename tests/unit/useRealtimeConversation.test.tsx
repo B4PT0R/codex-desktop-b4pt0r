@@ -523,6 +523,36 @@ describe("cycle de vie de la conversation Realtime", () => {
         method: "thread/realtime/transcript/delta",
         params: { threadId: "realtime-child", role: "assistant", delta: "Après." },
       });
+      result.current.conversation.handleConversationEvent({
+        method: "item/started",
+        params: {
+          threadId: "realtime-child",
+          item: {
+            id: "tool-1",
+            type: "commandExecution",
+            command: "git status --short",
+            status: "inProgress",
+          },
+        },
+      }, "realtime-child");
+      result.current.conversation.handleConversationEvent({
+        method: "item/completed",
+        params: {
+          threadId: "realtime-child",
+          item: {
+            id: "tool-1",
+            type: "commandExecution",
+            command: "git status --short",
+            status: "completed",
+            aggregatedOutput: "",
+            exitCode: 0,
+          },
+        },
+      }, "realtime-child");
+      result.current.conversation.handleForkLifecycle({
+        method: "turn/completed",
+        params: { threadId: "realtime-child" },
+      }, "realtime-child");
       result.current.conversation.handleMessage({
         method: "thread/realtime/transcript/done",
         params: {
@@ -535,7 +565,11 @@ describe("cycle de vie de la conversation Realtime", () => {
 
     expect(result.current.messages).toEqual([
       expect.objectContaining({ content: "Avant.", modality: "realtimeVoice" }),
-      expect.objectContaining({ content: "Texte.", modality: "realtimeText" }),
+      expect.objectContaining({
+        content: "Texte.",
+        modality: "realtimeText",
+        tools: [expect.objectContaining({ id: "tool-1", status: "done" })],
+      }),
       expect.objectContaining({ content: "Après.", modality: "realtimeVoice" }),
     ]);
   });

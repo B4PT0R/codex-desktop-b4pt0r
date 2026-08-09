@@ -274,6 +274,52 @@ const ConversationMessage = memo(function ConversationMessage({
     return () => window.clearTimeout(timer);
   }, [message.revealAfter]);
 
+  const renderTools = () => presentedTools.tools.length > 0 && (
+    <ToolGroup
+      backgroundToolIds={presentedTools.backgroundToolIds}
+      keepCollapsed={keepActionGroupsCollapsed}
+      maxVisibleActions={maxVisibleActions}
+      tools={presentedTools.tools}
+      onReviewDiff={onReviewDiff}
+      renderSubagentMessages={
+        depth >= 4
+          ? undefined
+          : (childMessages, childComplete) =>
+              messagesForPresentation(
+                childMessages,
+                showReasoningItems,
+              ).map((childMessage, childIndex, presentedChildren) => {
+                const tracksSubagents = hasSubagentTool(childMessage);
+                return (
+                  <ConversationMessage
+                    backgroundToolIds={backgroundToolIds}
+                    depth={depth + 1}
+                    keepActionGroupsCollapsed={keepActionGroupsCollapsed}
+                    key={childMessage.id}
+                    maxVisibleActions={maxVisibleActions}
+                    message={childMessage}
+                    onReviewDiff={onReviewDiff}
+                    showReasoningItems={showReasoningItems}
+                    stepClosed={
+                      childIndex < presentedChildren.length - 1 ||
+                      childComplete
+                    }
+                    subagentError={tracksSubagents ? subagentError : undefined}
+                    subagentTranscripts={
+                      tracksSubagents
+                        ? subagentTranscripts
+                        : EMPTY_SUBAGENT_TRANSCRIPTS
+                    }
+                  />
+                );
+              })
+      }
+      stepClosed={stepClosed}
+      subagentError={subagentError}
+      subagentTranscripts={subagentTranscripts}
+    />
+  );
+
   if (!revealed) return null;
 
   return (
@@ -301,7 +347,7 @@ const ConversationMessage = memo(function ConversationMessage({
         ) : message.modality === "realtimeVoice" ? (
           <RealtimeVoiceMessage message={message} />
         ) : message.modality === "realtimeText" ? (
-          <RealtimeTextMessage message={message} />
+          <RealtimeTextMessage details={renderTools()} message={message} />
         ) : message.modality === "scheduledTask" ? (
           <ScheduledTaskMessage message={message} />
         ) : message.modality === "commandResult" ? (
@@ -315,53 +361,7 @@ const ConversationMessage = memo(function ConversationMessage({
         {trailingSignals && trailingSignals.length > 0 && (
           <SignalCards signals={trailingSignals} />
         )}{" "}
-        {presentedTools.tools.length > 0 && (
-          <ToolGroup
-            backgroundToolIds={presentedTools.backgroundToolIds}
-            keepCollapsed={keepActionGroupsCollapsed}
-            maxVisibleActions={maxVisibleActions}
-            tools={presentedTools.tools}
-            onReviewDiff={onReviewDiff}
-            renderSubagentMessages={
-              depth >= 4
-                ? undefined
-                : (childMessages, childComplete) =>
-                    messagesForPresentation(
-                      childMessages,
-                      showReasoningItems,
-                    ).map((childMessage, childIndex, presentedChildren) => {
-                      const tracksSubagents = hasSubagentTool(childMessage);
-                      return (
-                        <ConversationMessage
-                          backgroundToolIds={backgroundToolIds}
-                          depth={depth + 1}
-                          keepActionGroupsCollapsed={keepActionGroupsCollapsed}
-                          key={childMessage.id}
-                          maxVisibleActions={maxVisibleActions}
-                          message={childMessage}
-                          onReviewDiff={onReviewDiff}
-                          showReasoningItems={showReasoningItems}
-                          stepClosed={
-                            childIndex < presentedChildren.length - 1 ||
-                            childComplete
-                          }
-                          subagentError={
-                            tracksSubagents ? subagentError : undefined
-                          }
-                          subagentTranscripts={
-                            tracksSubagents
-                              ? subagentTranscripts
-                              : EMPTY_SUBAGENT_TRANSCRIPTS
-                          }
-                        />
-                      );
-                    })
-            }
-            stepClosed={stepClosed}
-            subagentError={subagentError}
-            subagentTranscripts={subagentTranscripts}
-          />
-        )}
+        {message.modality !== "realtimeText" && renderTools()}
         {generatedImages && generatedImages.length > 0 && (
           <GeneratedImageWidget artifacts={generatedImages} />
         )}

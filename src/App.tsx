@@ -612,6 +612,7 @@ export default function App() {
     automations.handleMessage(msg);
     const affectsActiveThread =
       !routed.threadId || routed.threadId === activeThreadRef.current;
+    realtimeConversation.handleForkLifecycle(msg, routed.threadId);
     if (affectsActiveThread && routed.activity !== undefined) {
       viewStateGuard.observe("activity");
       setActivity(routed.activity);
