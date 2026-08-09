@@ -91,6 +91,8 @@ export function useRealtimeConversation({
   const assistantResponseSegmented = useRef(false);
   const delegationInProgress = useRef(false);
   const textAgentMessageId = useRef<string | undefined>(undefined);
+  const textAgentPartOrder = useRef<string[]>([]);
+  const textAgentParts = useRef(new Map<string, string>());
   const userMessageId = useRef<string | undefined>(undefined);
   const transcriptDisplayRequested = useRef(true);
   const bufferedTranscripts = useRef(new Map<string, ChatMessage[]>());
@@ -164,6 +166,8 @@ export function useRealtimeConversation({
     assistantResponseSegmented.current = false;
     delegationInProgress.current = false;
     textAgentMessageId.current = undefined;
+    textAgentPartOrder.current = [];
+    textAgentParts.current.clear();
     userMessageId.current = undefined;
     preRealtimeMessageIds.current = new Set();
     transcriptDisplayRequested.current = true;
@@ -446,8 +450,55 @@ export function useRealtimeConversation({
         : appServerString(item?.type) === "agentMessage"
           ? appServerString(item?.id)
           : undefined;
-      if (agentMessageId) textAgentMessageId.current = agentMessageId;
+      const firstAgentPart = agentMessageId !== undefined &&
+        !textAgentParts.current.has(agentMessageId);
+      if (agentMessageId && firstAgentPart) {
+        textAgentPartOrder.current.push(agentMessageId);
+        textAgentParts.current.set(agentMessageId, "");
+      }
+      if (agentMessageId && !textAgentMessageId.current) {
+        textAgentMessageId.current = agentMessageId;
+      }
       const anchorMessageId = textAgentMessageId.current;
+      let groupedMessage = message;
+      if (agentMessageId && anchorMessageId) {
+        if (message.method === "item/agentMessage/delta") {
+          const delta = appServerString(params?.delta) ?? "";
+          textAgentParts.current.set(
+            agentMessageId,
+            `${textAgentParts.current.get(agentMessageId) ?? ""}${delta}`,
+          );
+          groupedMessage = {
+            ...message,
+            params: {
+              ...params,
+              itemId: anchorMessageId,
+              delta: `${firstAgentPart && textAgentPartOrder.current.length > 1 ? "\n\n" : ""}${delta}`,
+            },
+          };
+        } else if (item) {
+          const completedText = appServerString(item.text);
+          if (message.method === "item/completed" && completedText !== undefined) {
+            textAgentParts.current.set(agentMessageId, completedText);
+          }
+          groupedMessage = {
+            ...message,
+            params: {
+              ...params,
+              item: {
+                ...item,
+                id: anchorMessageId,
+                ...(message.method === "item/completed"
+                  ? { text: textAgentPartOrder.current
+                    .map((id) => textAgentParts.current.get(id)?.trim())
+                    .filter(Boolean)
+                    .join("\n\n") }
+                  : {}),
+              },
+            },
+          };
+        }
+      }
       const preexistingMessageIds = preRealtimeMessageIds.current;
       updateTranscript((messages) => {
         const anchorIndex = anchorMessageId
@@ -460,7 +511,7 @@ export function useRealtimeConversation({
               delegatedMessages,
               applyConversationEvent(
                 delegatedMessages,
-                message,
+                groupedMessage,
                 translateRef.current,
               ),
               preexistingMessageIds,
@@ -470,19 +521,10 @@ export function useRealtimeConversation({
         }
         return markRealtimeConversationUpdates(
           messages,
-          applyConversationEvent(messages, message, translateRef.current),
+          applyConversationEvent(messages, groupedMessage, translateRef.current),
           preexistingMessageIds,
         );
       });
-      if (message.method === "item/completed") {
-        if (appServerString(item?.type) === "agentMessage") {
-          const itemId = appServerString(item?.id);
-          const text = appServerString(item?.text)?.trim();
-          if (itemId && text) {
-            persistTranscript("assistant", itemId, text, "text");
-          }
-        }
-      }
       return true;
     },
     [persistTranscript, updateTranscript],
@@ -498,11 +540,26 @@ export function useRealtimeConversation({
           parentThreadId.current,
         )
       ) return false;
+      const itemId = textAgentMessageId.current;
+      const text = textAgentPartOrder.current
+        .map((id) => textAgentParts.current.get(id)?.trim())
+        .filter(Boolean)
+        .join("\n\n");
+      if (itemId && text) {
+        updateTranscript((messages) => messages.map((entry) =>
+          entry.id === itemId
+            ? { ...entry, content: text, streaming: false }
+            : entry
+        ));
+        persistTranscript("assistant", itemId, text, "text");
+      }
       delegationInProgress.current = false;
       textAgentMessageId.current = undefined;
+      textAgentPartOrder.current = [];
+      textAgentParts.current.clear();
       return true;
     },
-    [],
+    [persistTranscript, updateTranscript],
   );
 
   const handleMessage = useCallback(

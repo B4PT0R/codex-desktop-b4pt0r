@@ -460,6 +460,10 @@ describe("cycle de vie de la conversation Realtime", () => {
           },
         },
       }, "realtime-child");
+      result.current.conversation.handleForkLifecycle({
+        method: "turn/completed",
+        params: { threadId: "realtime-child" },
+      }, "realtime-child");
     });
 
     expect(result.current.messages).toEqual([
@@ -477,6 +481,70 @@ describe("cycle de vie de la conversation Realtime", () => {
         items: [expect.objectContaining({
           id: "msg_rtt_text-agent-1",
           role: "assistant",
+        })],
+      }),
+    ));
+  });
+
+  it("regroupe commentary, outils et final dans un seul item Text Agent", async () => {
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([]);
+      const [, setActivity] = useState<AgentActivity>(null);
+      return {
+        messages,
+        conversation: useRealtimeConversation({
+          activeParentThreadId: "persistent-parent",
+          setActivity,
+          setMessages,
+          showError: vi.fn(),
+          translate: defaultTranslate,
+        }),
+      };
+    });
+    await act(() => result.current.conversation.start({
+      parentThreadId: "persistent-parent",
+      model: "gpt-5.4",
+      voice: "juniper",
+    }));
+    act(() => {
+      for (const [id, phase, text] of [
+        ["commentary-1", "commentary", "Je vérifie."],
+        ["final-1", "final", "Vérification terminée."],
+      ] as const) {
+        result.current.conversation.handleConversationEvent({
+          method: "item/started",
+          params: { threadId: "realtime-child", item: { id, type: "agentMessage", phase, text: "" } },
+        }, "realtime-child");
+        result.current.conversation.handleConversationEvent({
+          method: "item/agentMessage/delta",
+          params: { threadId: "realtime-child", itemId: id, delta: text },
+        }, "realtime-child");
+        result.current.conversation.handleConversationEvent({
+          method: "item/completed",
+          params: { threadId: "realtime-child", item: { id, type: "agentMessage", phase, text } },
+        }, "realtime-child");
+      }
+      result.current.conversation.handleForkLifecycle({
+        method: "turn/completed",
+        params: { threadId: "realtime-child" },
+      }, "realtime-child");
+    });
+    expect(result.current.messages).toEqual([
+      expect.objectContaining({
+        id: "commentary-1",
+        content: "Je vérifie.\n\nVérification terminée.",
+        modality: "realtimeText",
+        streaming: false,
+      }),
+    ]);
+    await waitFor(() => expect(requestMock).toHaveBeenCalledWith(
+      "thread/inject_items",
+      expect.objectContaining({
+        items: [expect.objectContaining({
+          id: "msg_rtt_commentary-1",
+          content: [expect.objectContaining({
+            text: "Je vérifie.\n\nVérification terminée.",
+          })],
         })],
       }),
     ));
