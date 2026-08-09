@@ -32,6 +32,7 @@ import {
   finalizeInterruptedRealtimeMessages,
   finalizeRealtimeUserMessage,
   finalizeRealtimeVoiceMessage,
+  dedupeLiveRealtimeTextPersistence,
   markRealtimeConversationUpdates,
   markRealtimeTextUpdates,
   realtimeConversationScope,
@@ -412,7 +413,7 @@ export function useRealtimeConversation({
     return (previous: ChatMessage[], next: ChatMessage[]) =>
       markRealtimeTextUpdates(
         previous,
-        next,
+        dedupeLiveRealtimeTextPersistence(previous, next),
         active,
         preexistingMessageIds,
       );

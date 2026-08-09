@@ -34,6 +34,18 @@ export function isRealtimeTextItemId(itemId: string) {
   return itemId.startsWith(realtimeTextItemPrefix);
 }
 
+export function dedupeLiveRealtimeTextPersistence(
+  previous: ChatMessage[],
+  next: ChatMessage[],
+) {
+  const sourceIds = new Set(previous.map((message) =>
+    realtimeTextItemId(message.id)
+  ));
+  return next.filter(
+    (message) => !isRealtimeTextItemId(message.id) || !sourceIds.has(message.id),
+  );
+}
+
 function stableIdHash(value: string) {
   let hash = 0x811c9dc5;
   for (let index = 0; index < value.length; index += 1) {

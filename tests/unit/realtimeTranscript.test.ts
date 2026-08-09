@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   appendRealtimeUserDelta,
   appendRealtimeVoiceDelta,
+  dedupeLiveRealtimeTextPersistence,
   finalizeInterruptedRealtimeMessages,
   finalizeRealtimeUserMessage,
   finalizeRealtimeVoiceMessage,
@@ -17,6 +18,22 @@ import {
 } from "../../src/lib/realtimeTranscript";
 
 describe("transcript Realtime visible", () => {
+  it("masque la copie persistée live mais la conserve au replay", () => {
+    const source = {
+      id: "text-agent-1",
+      role: "assistant" as const,
+      content: "Réponse",
+      modality: "realtimeText" as const,
+    };
+    const persisted = {
+      ...source,
+      id: "msg_rtt_text-agent-1",
+    };
+    expect(dedupeLiveRealtimeTextPersistence([source], [source, persisted]))
+      .toEqual([source]);
+    expect(dedupeLiveRealtimeTextPersistence([], [persisted]))
+      .toEqual([persisted]);
+  });
   it("route les messages du fork actif vers son parent visible", () => {
     expect(
       realtimeConversationScope("fork-1", "fork-1", "parent-1"),
