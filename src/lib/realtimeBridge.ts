@@ -33,6 +33,14 @@ export async function acceptRealtimeAnswer(threadId: string, sdp: string) {
   await realtime.acceptRealtimeAnswer(threadId, sdp);
 }
 
+export async function sendRealtimeText(text: string) {
+  if (!realtimeModule) {
+    throw new Error("No active Realtime conversation is available.");
+  }
+  const realtime = await realtimeModule;
+  await realtime.sendRealtimeText(text);
+}
+
 export function playRealtimeAudio(
   threadId: string,
   audio: { data: string; sampleRate: number; numChannels: number },

@@ -8,6 +8,7 @@ const createRealtimeThreadMock = vi.hoisted(() => vi.fn());
 const acceptRealtimeAnswerMock = vi.hoisted(() => vi.fn());
 const playRealtimeAudioMock = vi.hoisted(() => vi.fn());
 const startRealtimeMock = vi.hoisted(() => vi.fn());
+const sendRealtimeTextMock = vi.hoisted(() => vi.fn());
 const stopRealtimeMock = vi.hoisted(() => vi.fn());
 const realtimeInstructionItemsMock = vi.hoisted(() => vi.fn());
 
@@ -21,6 +22,7 @@ vi.mock("../../src/lib/realtimeBridge", () => ({
   acceptRealtimeAnswer: acceptRealtimeAnswerMock,
   playRealtimeAudio: playRealtimeAudioMock,
   startRealtime: startRealtimeMock,
+  sendRealtimeText: sendRealtimeTextMock,
   stopRealtime: stopRealtimeMock,
 }));
 vi.mock("../../src/lib/realtimeInstructions", () => ({
@@ -48,6 +50,7 @@ beforeEach(() => {
   acceptRealtimeAnswerMock.mockReset();
   playRealtimeAudioMock.mockReset();
   startRealtimeMock.mockReset().mockResolvedValue(undefined);
+  sendRealtimeTextMock.mockReset().mockResolvedValue(undefined);
   stopRealtimeMock.mockReset().mockResolvedValue(undefined);
   realtimeInstructionItemsMock.mockReset().mockResolvedValue([
     { role: "developer", text: "Effective AGENTS.md instructions" },
@@ -55,6 +58,44 @@ beforeEach(() => {
 });
 
 describe("cycle de vie de la conversation Realtime", () => {
+  it("envoie un message saisi dans la session Realtime et le persiste dans le parent", async () => {
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([]);
+      const [, setActivity] = useState<AgentActivity>(null);
+      return {
+        conversation: useRealtimeConversation({
+          activeParentThreadId: "persistent-parent",
+          setActivity,
+          setMessages,
+          showError: vi.fn(),
+          translate: defaultTranslate,
+        }),
+        messages,
+      };
+    });
+
+    await act(() => result.current.conversation.start({
+      parentThreadId: "persistent-parent",
+      model: "gpt-5.4",
+      voice: "juniper",
+    }));
+    await act(() => result.current.conversation.sendText("Message écrit"));
+
+    expect(sendRealtimeTextMock).toHaveBeenCalledWith("Message écrit");
+    expect(result.current.messages.at(-1)).toMatchObject({
+      role: "user",
+      content: "Message écrit",
+      streaming: false,
+    });
+    await waitFor(() => expect(requestMock).toHaveBeenCalledWith(
+      "thread/inject_items",
+      expect.objectContaining({
+        threadId: "persistent-parent",
+        items: [expect.objectContaining({ role: "user" })],
+      }),
+    ));
+  });
+
   it("refuse un second démarrage pendant l'initialisation", async () => {
     const creation = deferred<{
       thread: { id: string };

@@ -3,6 +3,40 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [0.5.7] - 2026-08-09
+
+### Added
+
+- Projectless conversations now live in a dedicated Discussions section and
+  can be created consistently from the home composer, tray, default
+  conversation and New chat flow without pretending to belong to a repository.
+- Experimental Adult Mode can be enabled from Configuration behind an explicit
+  18+ declaration and a locally registered password. Its prompt is applied to
+  new or reopened conversations and Realtime sessions, while a discreet heart
+  indicator keeps the active preference visible beside context usage.
+
+### Changed
+
+- New chat now distinguishes a simple discussion from a project conversation;
+  project-folder selection belongs to the active thread menu rather than the
+  global sidebar.
+- Codex 0.147 compatibility adopts stable thread sections and the current
+  Realtime handoff contract, while exposing clearer plugin-unavailability and
+  blocking-question metadata.
+
+### Fixed
+
+- Conversation history refreshes after cross-client activity so Remote Control
+  and other App Server clients do not leave the desktop catalog stale.
+- Realtime resume preserves textual-agent delegation and transcript replay
+  across stop/start cycles, including live and replayed Text Agent items from
+  the isolated Realtime fork.
+- Messages typed in the composer during an active voice session now remain in
+  that Realtime conversation instead of starting or steering a parent-thread
+  text turn.
+- Adult Mode activation reports incomplete passwords, mismatched confirmation
+  and a missing age declaration instead of leaving its action silently disabled.
+
 ## [0.5.6] - 2026-08-03
 
 ### Fixed

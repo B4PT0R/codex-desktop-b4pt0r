@@ -9,6 +9,7 @@ import type { RealtimeVoice } from "./appServerTypes";
 import {
   acceptRealtimeAnswer,
   playRealtimeAudio,
+  sendRealtimeText,
   startRealtime,
   stopRealtime,
 } from "./realtimeBridge";
@@ -268,6 +269,18 @@ export function useRealtimeConversation({
   }, [finish, releaseFork]);
 
   const stop = useCallback(() => terminate(true), [terminate]);
+
+  const sendText = useCallback(async (text: string) => {
+    if (!activeThreadId.current || !recording) {
+      throw new Error(translateRef.current("app.realtimeUnavailable"));
+    }
+    await sendRealtimeText(text);
+    const messageId = crypto.randomUUID();
+    updateTranscript((messages) =>
+      finalizeRealtimeUserMessage(messages, messageId, text),
+    );
+    persistTranscript("user", messageId, text, "text");
+  }, [persistTranscript, recording, updateTranscript]);
 
   const reset = useCallback(() => {
     void terminate(true);
@@ -737,6 +750,7 @@ export function useRealtimeConversation({
     captureMessageDecorator,
     handleMessage,
     reset,
+    sendText,
     start,
     stop,
   };

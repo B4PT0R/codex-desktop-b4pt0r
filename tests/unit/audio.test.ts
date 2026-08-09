@@ -6,6 +6,7 @@ vi.mock("../../src/lib/codex", () => ({ request: requestMock }));
 
 import {
   acceptRealtimeAnswer,
+  sendRealtimeText,
   startRealtime,
   stopRealtime,
 } from "../../src/lib/realtime";
@@ -22,11 +23,17 @@ function installWebRtc() {
     getAudioTracks: () => [track],
     getTracks: () => [track],
   };
+  const eventsChannel = {
+    readyState: "open",
+    send: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  };
   const pc = {
     addTrack: vi.fn(),
     addTransceiver: vi.fn(),
     close: vi.fn(),
-    createDataChannel: vi.fn(),
+    createDataChannel: vi.fn(() => eventsChannel),
     createOffer: vi.fn(async () => ({ type: "offer", sdp: "v=0" })),
     setLocalDescription: vi.fn(async () => undefined),
     setRemoteDescription: vi.fn(async () => undefined),
@@ -49,7 +56,7 @@ function installWebRtc() {
     value: { getUserMedia },
   });
   requestMock.mockResolvedValue(undefined);
-  return { getUserMedia, pc, stream, track };
+  return { eventsChannel, getUserMedia, pc, stream, track };
 }
 
 describe("audio realtime Electron", () => {
@@ -89,6 +96,32 @@ describe("audio realtime Electron", () => {
       type: "answer",
       sdp: "answer",
     });
+  });
+
+  it("injecte le texte et déclenche la réponse sur le canal Realtime actif", async () => {
+    const { eventsChannel } = installWebRtc();
+    await startRealtime("thread-1", "juniper", "conversation");
+
+    await sendRealtimeText("Continue par écrit");
+
+    expect(eventsChannel.send.mock.calls.map(([event]) => JSON.parse(event)))
+      .toEqual([
+        {
+          type: "conversation.item.create",
+          item: {
+            type: "message",
+            role: "user",
+            content: [{ type: "input_text", text: "Continue par écrit" }],
+          },
+        },
+        { type: "response.create" },
+      ]);
+  });
+
+  it("refuse le texte quand aucune session Realtime n'est active", async () => {
+    await expect(sendRealtimeText("Message perdu")).rejects.toThrow(
+      "No active Realtime conversation",
+    );
   });
 
   it("arrête le micro, la connexion et la session distante", async () => {

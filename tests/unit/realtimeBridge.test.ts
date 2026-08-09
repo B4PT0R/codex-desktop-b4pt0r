@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 const realtime = vi.hoisted(() => ({
   acceptRealtimeAnswer: vi.fn(),
   playRealtimeAudio: vi.fn(),
+  sendRealtimeText: vi.fn(),
   startRealtime: vi.fn(),
   stopRealtime: vi.fn(),
 }));
@@ -11,6 +12,7 @@ vi.mock("../../src/lib/realtime", () => realtime);
 import {
   acceptRealtimeAnswer,
   playRealtimeAudio,
+  sendRealtimeText,
   startRealtime,
   stopRealtime,
 } from "../../src/lib/realtimeBridge";
@@ -35,6 +37,9 @@ describe("chargement différé du realtime", () => {
       "thread-1",
       "answer",
     );
+
+    await sendRealtimeText("Bonjour en texte");
+    expect(realtime.sendRealtimeText).toHaveBeenCalledWith("Bonjour en texte");
 
     playRealtimeAudio("thread-1", {
       data: "AA==",

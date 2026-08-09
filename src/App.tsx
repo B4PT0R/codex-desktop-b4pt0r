@@ -769,6 +769,21 @@ export default function App() {
 
   async function send(text: string, context: TurnContextItem[]) {
     if (threadHistory.resuming) return;
+    if (recording) {
+      if (context.length) {
+        showError(
+          t("app.realtimeUnavailable"),
+          t("app.realtimeTextContextUnsupported"),
+        );
+        return;
+      }
+      try {
+        await realtimeConversation.sendText(text);
+      } catch (error) {
+        showError(t("app.realtimeUnavailable"), error);
+      }
+      return;
+    }
     if (text.trimStart().startsWith("!")) {
       shellCommand.requestExecution(text.trimStart().slice(1));
       return;

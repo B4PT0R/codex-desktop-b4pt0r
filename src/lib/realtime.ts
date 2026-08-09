@@ -4,6 +4,7 @@ import type { RealtimeVoice } from "./appServerTypes";
 import type { RealtimeInitialItem } from "./realtimeInstructions";
 
 let connection: RTCPeerConnection | undefined;
+let eventsChannel: RTCDataChannel | undefined;
 let microphone: MediaStream | undefined;
 let output: HTMLAudioElement | undefined;
 let activeThread: string | undefined;
@@ -56,7 +57,7 @@ export async function startRealtime(
       output = audio;
     }
 
-    pc.createDataChannel("oai-events");
+    eventsChannel = pc.createDataChannel("oai-events");
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
     connection = pc;
@@ -76,6 +77,27 @@ export async function startRealtime(
     await stopRealtime(false);
     throw error;
   }
+}
+
+export async function sendRealtimeText(text: string) {
+  const threadId = activeThread;
+  const channel = eventsChannel;
+  if (!threadId || !channel) {
+    throw new Error("No active Realtime conversation is available.");
+  }
+  await waitForOpenChannel(channel);
+  if (threadId !== activeThread || channel !== eventsChannel) {
+    throw new Error("The Realtime conversation ended before the message was sent.");
+  }
+  channel.send(JSON.stringify({
+    type: "conversation.item.create",
+    item: {
+      type: "message",
+      role: "user",
+      content: [{ type: "input_text", text }],
+    },
+  }));
+  channel.send(JSON.stringify({ type: "response.create" }));
 }
 
 export async function acceptRealtimeAnswer(threadId: string, sdp: string) {
@@ -102,6 +124,7 @@ export async function stopRealtime(notify = true) {
   microphone = undefined;
   connection?.close();
   connection = undefined;
+  eventsChannel = undefined;
   if (output) {
     output.pause();
     output.srcObject = null;
@@ -114,6 +137,34 @@ export async function stopRealtime(notify = true) {
       // The remote session may already be closed.
     }
   }
+}
+
+function waitForOpenChannel(channel: RTCDataChannel) {
+  if (channel.readyState === "open") return Promise.resolve();
+  if (channel.readyState === "closing" || channel.readyState === "closed") {
+    return Promise.reject(new Error("The Realtime data channel is closed."));
+  }
+  return new Promise<void>((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("The Realtime data channel did not become ready."));
+    }, 5_000);
+    const onOpen = () => {
+      cleanup();
+      resolve();
+    };
+    const onClose = () => {
+      cleanup();
+      reject(new Error("The Realtime data channel closed before sending."));
+    };
+    const cleanup = () => {
+      window.clearTimeout(timeout);
+      channel.removeEventListener("open", onOpen);
+      channel.removeEventListener("close", onClose);
+    };
+    channel.addEventListener("open", onOpen, { once: true });
+    channel.addEventListener("close", onClose, { once: true });
+  });
 }
 
 function reportRealtimeFailure(error: unknown) {

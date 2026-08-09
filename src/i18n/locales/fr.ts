@@ -578,6 +578,8 @@ export const fr = {
     "Guides et références pour construire et automatiser avec Codex.",
   "app.connectionError": "Erreur de connexion",
   "app.realtimeUnavailable": "Realtime indisponible",
+  "app.realtimeTextContextUnsupported":
+    "Les pièces jointes, mentions de fichiers et Skills ne peuvent pas encore être envoyés dans une session vocale active.",
   "app.realtimeDictationConflict":
     "Arrêtez la dictée avant de lancer une session Realtime.",
   "app.realtimeTranscriptSaveError":

@@ -9,7 +9,7 @@ detail belongs in `CHANGELOG.md` and Git.
 ## Baseline
 
 Codex Desktop Linux is a functional independent Electron client for the
-official `codex app-server`. The current public release is **v0.5.6**. The local
+official `codex app-server`. The current public release is **v0.5.7**. The local
 development baseline now uses installed `codex-cli 0.147.0`.
 
 The daily workflow covers conversation replay and concurrent activity,
@@ -140,6 +140,9 @@ individual action titles are derived only from structured tool-item fields.
   display but poison inherited delegated turns under Codex 0.147, so affected
   conversations require a fresh thread until App Server exposes a safe
   history-rewrite contract.
+- While Realtime is active, ordinary composer text belongs to its WebRTC
+  conversation and is persisted back into the parent transcript; it must never
+  fall through to a parent `turn/start` or `turn/steer` request.
 - Client preferences live in `~/.codex/codex-desktop-linux.json`; official
   Codex configuration remains in `config.toml`. Installation, update and normal
   startup do not rewrite either domain or server-owned thread metadata.
@@ -193,7 +196,7 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 751 deterministic frontend/unit tests across 134 files;
+- 766 deterministic frontend/unit tests across 134 files;
 - 135 Electron/Node tests, including App Server shutdown, recovery, synthetic
   Discussion workspaces and the tray
   quick actions;
@@ -224,7 +227,13 @@ explain App Server's administrator, plan and required-App unavailability reasons
 Realtime v3 now uses the 0.147 BEM handoff contract instead of an obsolete
 ignored prefix, preserving commentary/final phases while relying on App Server's
 new default entry/exit mode instructions. The delegation acknowledgement filler
-remains server-owned pending a focused audible comparison.
+remains server-owned pending a focused audible comparison. Ordinary agent events
+from the isolated Realtime fork are buffered into the visible parent without its
+internal user prompt; completed Text Agent messages are injected with `msg_rtt_`
+IDs so live rendering and replay retain their dedicated presentation.
+Composer text submitted during an active voice session now uses Realtime
+`conversation.item.create` followed by `response.create`; focused WebRTC,
+lazy-bridge and transcript-owner regressions cover routing and persistence.
 All 53 installed-schema contract tests pass against `codex-cli 0.147.0`.
 
 Release v0.5.6 additionally passed Linux DEB/RPM/AppImage packaging and clean

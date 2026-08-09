@@ -564,6 +564,8 @@ export const en: Record<MessageKey, string> = {
   "app.previewSnippet": "Guides and references for building with Codex.",
   "app.connectionError": "Connection error",
   "app.realtimeUnavailable": "Realtime unavailable",
+  "app.realtimeTextContextUnsupported":
+    "Attachments, file mentions, and Skills cannot be sent through an active voice session yet.",
   "app.realtimeDictationConflict":
     "Stop dictation before starting a Realtime session.",
   "app.realtimeTranscriptSaveError":
