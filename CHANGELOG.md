@@ -5,11 +5,27 @@ follows semantic versioning while the public interface is taking shape.
 
 ## [Unreleased]
 
+## [0.5.8] - 2026-08-09
+
+### Added
+
+- Voice settings now accepts optional custom instructions for Realtime tone,
+  pronunciation and attitude while preserving Codex defaults when left empty.
+
 ### Fixed
 
 - Application quit now closes the managed Chromium session before terminating
   its process and waits boundedly for a clean exit. Abrupt host loss no longer
   surfaces Chromium's crash-restore bubble on the next managed launch.
+- Realtime-only Discussions remain available in the sidebar even while App
+  Server omits parents containing injected transcripts but no ordinary turns.
+- New empty Discussions propagate their effective developer instructions to
+  the fallback delegated Text Agent, keeping Adult Mode and global guidance
+  aligned with the Voice Agent.
+- Composer text sent during Realtime uses the current v3
+  `session.context.append` contract instead of rejected legacy client events.
+- Realtime startup prioritizes the bounded vocal instruction bundle so custom
+  voice and Adult Mode guidance are not displaced by large project context.
 
 ## [0.5.7] - 2026-08-09
 

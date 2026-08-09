@@ -2,7 +2,7 @@
   "name": "codex-desktop-linux",
   "productName": "Codex Desktop",
   "desktopName": "codex-desktop.desktop",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "codexCompatibility": {
     "minimumVersion": "0.147.0"
   },

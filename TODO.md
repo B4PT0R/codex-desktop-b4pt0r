@@ -9,7 +9,7 @@ detail belongs in `CHANGELOG.md` and Git.
 ## Baseline
 
 Codex Desktop Linux is a functional independent Electron client for the
-official `codex app-server`. The current public release is **v0.5.7**. The local
+official `codex app-server`. The current public release is **v0.5.8**. The local
 development baseline now uses installed `codex-cli 0.147.0`.
 
 The daily workflow covers conversation replay and concurrent activity,
