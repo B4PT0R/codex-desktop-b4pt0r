@@ -530,6 +530,7 @@ export default function App() {
     model,
     openThread: threadHistory.resume,
     realtimeConversation,
+    resolveDeveloperInstructions: readDesktopDeveloperInstructions,
     setThreads,
     translate: t,
     voice: realtime.voice,

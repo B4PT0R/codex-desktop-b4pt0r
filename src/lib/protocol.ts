@@ -91,8 +91,15 @@ export function automationThreadStartParams(cwd?: string, ephemeral = false) {
     ...(ephemeral ? { ephemeral: true } : {}),
   };
 }
-export function automationThreadResumeParams(threadId: string) {
-  return { threadId, excludeTurns: true };
+export function automationThreadResumeParams(
+  threadId: string,
+  developerInstructions?: string,
+) {
+  return {
+    threadId,
+    excludeTurns: true,
+    ...(developerInstructions ? { developerInstructions } : {}),
+  };
 }
 export function automationTurnStartParams(
   threadId: string,

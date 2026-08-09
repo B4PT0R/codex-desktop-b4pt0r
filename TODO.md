@@ -164,6 +164,10 @@ at three quarters of the available chat width.
   ephemeral delegated text thread with the parent's effective developer
   instructions. This keeps Adult Mode and other global developer guidance
   aligned between the vocal intermediary and Text Agent.
+- Tray-created default conversations receive the same effective developer
+  instructions on parent creation and resume before any Realtime fork. Naming
+  a fresh parent can otherwise make it forkable while preserving an empty
+  developer context, leaving Adult Mode visible only to the Voice Agent.
 - While Realtime is active, ordinary composer text belongs to its WebRTC
   conversation and is persisted back into the parent transcript; it must never
   fall through to a parent `turn/start` or `turn/steer` request. Realtime v3

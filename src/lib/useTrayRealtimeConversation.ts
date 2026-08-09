@@ -34,6 +34,7 @@ type TrayRealtimeConversationOptions = {
   activeThreadId?: string;
   openThread: (threadId: string) => Promise<boolean>;
   realtimeConversation: RealtimeConversationController;
+  resolveDeveloperInstructions: (cwd?: string) => Promise<string | undefined>;
   setThreads: Dispatch<SetStateAction<ThreadSummary[]>>;
   translate: Translate;
   voice: RealtimeVoice;
@@ -136,6 +137,7 @@ export async function handleTrayRealtimeRequest(
     model: options.model,
     createDiscussionWorkspace: () =>
       createDiscussionWorkspace("Let's discuss anything"),
+    resolveDeveloperInstructions: options.resolveDeveloperInstructions,
   });
   const resolvedThread = threadSummary(resolved.response.thread);
   const settings = threadRuntimeSettings(resolved.response);

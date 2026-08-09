@@ -211,6 +211,13 @@ describe("constructeurs JSON-RPC", () => {
       excludeTurns: true,
     });
     expect(
+      automationThreadResumeParams("thread-1", "Adult developer instructions"),
+    ).toEqual({
+      threadId: "thread-1",
+      excludeTurns: true,
+      developerInstructions: "Adult developer instructions",
+    });
+    expect(
       automationTurnStartParams("thread-1", "Veille", "Inspecte le dépôt"),
     ).toEqual({
       threadId: "thread-1",

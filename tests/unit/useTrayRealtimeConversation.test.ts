@@ -60,6 +60,9 @@ function options() {
         start,
         stop,
       },
+      resolveDeveloperInstructions: vi
+        .fn()
+        .mockResolvedValue("Adult developer instructions"),
       setThreads: (
         update:
           | ThreadSummary[]

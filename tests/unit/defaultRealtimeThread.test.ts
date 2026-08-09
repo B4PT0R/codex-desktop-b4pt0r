@@ -20,6 +20,9 @@ describe("thread parent Realtime du tray", () => {
         threadId: "thread-default",
         model: "gpt-5.4",
         createDiscussionWorkspace: vi.fn(),
+        resolveDeveloperInstructions: vi
+          .fn()
+          .mockResolvedValue("Adult developer instructions"),
       }),
     ).resolves.toEqual({
       response,
@@ -29,6 +32,7 @@ describe("thread parent Realtime du tray", () => {
     expect(request).toHaveBeenCalledWith("thread/resume", {
       threadId: "thread-default",
       excludeTurns: true,
+      developerInstructions: "Adult developer instructions",
     });
     expect(request).toHaveBeenCalledOnce();
   });
@@ -86,6 +90,9 @@ describe("thread parent Realtime du tray", () => {
         createDiscussionWorkspace: vi.fn().mockResolvedValue(
           "/home/user/Documents/Codex/2026-08-09-discussion",
         ),
+        resolveDeveloperInstructions: vi
+          .fn()
+          .mockResolvedValue("Adult developer instructions"),
       }),
     ).resolves.toEqual({
       response: {
@@ -101,6 +108,7 @@ describe("thread parent Realtime du tray", () => {
     expect(request).toHaveBeenNthCalledWith(2, "thread/start", {
       cwd: "/home/user/Documents/Codex/2026-08-09-discussion",
       model: "gpt-5.4",
+      developerInstructions: "Adult developer instructions",
       dynamicTools: schedulerDynamicTools(),
     });
     expect(request).toHaveBeenNthCalledWith(3, "thread/name/set", {

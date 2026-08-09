@@ -31,13 +31,16 @@ export async function resolveDefaultRealtimeThread(
     threadId?: string;
     model: string;
     createDiscussionWorkspace: () => Promise<string>;
+    resolveDeveloperInstructions?: (cwd?: string) => Promise<string | undefined>;
   },
 ): Promise<DefaultRealtimeThread> {
   if (options.threadId) {
     try {
+      const developerInstructions =
+        await options.resolveDeveloperInstructions?.();
       const response = await request<ThreadRuntimeResponse>(
         "thread/resume",
-        automationThreadResumeParams(options.threadId),
+        automationThreadResumeParams(options.threadId, developerInstructions),
       );
       return {
         response: await applyDefaultName(request, response, false),
@@ -50,9 +53,19 @@ export async function resolveDefaultRealtimeThread(
   }
 
   const discussionCwd = await options.createDiscussionWorkspace();
+  const developerInstructions =
+    await options.resolveDeveloperInstructions?.(discussionCwd);
   const response = await request<ThreadRuntimeResponse>(
     "thread/start",
-    threadStartParams(discussionCwd, options.model),
+    threadStartParams(
+      discussionCwd,
+      options.model,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      developerInstructions,
+    ),
   );
   return {
     response: await applyDefaultName(request, response, true),
