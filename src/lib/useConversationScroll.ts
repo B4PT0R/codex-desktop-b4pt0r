@@ -70,18 +70,14 @@ export function useConversationScroll(
       typeof ResizeObserver === "undefined"
     )
       return;
-    const observer = new ResizeObserver((entries) => {
+    const observer = new ResizeObserver(() => {
       if (!following.current) return;
       cancelFrame(frame.current);
-      if (entries.some((entry) => entry.target === containerElement)) {
-        frame.current = undefined;
-        scrollToBottom(containerElement, "auto");
-        return;
-      }
-      frame.current = scheduleFrame(() => {
-        frame.current = undefined;
-        scrollToBottom(containerElement, "auto");
-      });
+      frame.current = undefined;
+      // ResizeObserver runs after layout and before paint. Scroll in the same
+      // callback so Chromium never presents the new content height with the
+      // previous scroll position for one frame.
+      scrollToBottom(containerElement, "auto");
     });
     observer.observe(contentElement);
     observer.observe(containerElement);

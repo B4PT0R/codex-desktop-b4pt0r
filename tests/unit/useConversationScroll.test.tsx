@@ -76,10 +76,8 @@ describe("défilement de conversation", () => {
   });
 
   it("laisse le ResizeObserver piloter le streaming sans scroll concurrent", () => {
-    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
-      callback(0);
-      return 1;
-    });
+    const requestAnimationFrame = vi.fn();
+    vi.stubGlobal("requestAnimationFrame", requestAnimationFrame);
     const { container, rerender } = render(<ScrollHarness content="Début" />);
     const scroller = container.querySelector("section")!;
     const content = container.querySelector("div")!;
@@ -101,6 +99,7 @@ describe("défilement de conversation", () => {
     });
     expect(scrollTo).toHaveBeenCalledOnce();
     expect(scrollTo).toHaveBeenCalledWith({ behavior: "auto", top: 1_200 });
+    expect(requestAnimationFrame).not.toHaveBeenCalled();
   });
 
   it("préserve la lecture lorsque l’utilisateur a remonté la conversation", () => {
