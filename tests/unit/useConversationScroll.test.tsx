@@ -19,9 +19,9 @@ class ResizeObserverMock {
   unobserve = vi.fn();
 }
 
-function ScrollHarness() {
+function ScrollHarness({ content = "Réponse" }: { content?: string }) {
   const scroll = useConversationScroll(
-    [{ id: "message", role: "assistant", content: "Réponse" }],
+    [{ id: "message", role: "assistant", content, streaming: true }],
     null,
   );
   return (
@@ -30,7 +30,7 @@ function ScrollHarness() {
       onWheel={scroll.onWheel}
       ref={scroll.container}
     >
-      <div ref={scroll.content}>Réponse</div>
+      <div ref={scroll.content}>{content}</div>
     </section>
   );
 }
@@ -73,6 +73,34 @@ describe("défilement de conversation", () => {
       behavior: "auto",
       top: 1_200,
     });
+  });
+
+  it("laisse le ResizeObserver piloter le streaming sans scroll concurrent", () => {
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+      callback(0);
+      return 1;
+    });
+    const { container, rerender } = render(<ScrollHarness content="Début" />);
+    const scroller = container.querySelector("section")!;
+    const content = container.querySelector("div")!;
+    const scrollTo = vi.fn();
+    scroller.scrollTo = scrollTo;
+    Object.defineProperty(scroller, "scrollHeight", {
+      configurable: true,
+      value: 1_200,
+    });
+
+    rerender(<ScrollHarness content="Début prolongé" />);
+    expect(scrollTo).not.toHaveBeenCalled();
+
+    act(() => {
+      resizeCallback(
+        [{ target: content } as ResizeObserverEntry],
+        {} as ResizeObserver,
+      );
+    });
+    expect(scrollTo).toHaveBeenCalledOnce();
+    expect(scrollTo).toHaveBeenCalledWith({ behavior: "auto", top: 1_200 });
   });
 
   it("préserve la lecture lorsque l’utilisateur a remonté la conversation", () => {

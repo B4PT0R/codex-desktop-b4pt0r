@@ -48,6 +48,12 @@ export function useConversationScroll(
       return;
     }
     if (!liveTailChanged || !following.current || !tail) return;
+    // The observer below owns geometry-driven following in Chromium. Scheduling
+    // another scroll for every immutable streaming-message update makes token
+    // deltas and tool notifications race the actual resize callback, producing
+    // visible one-frame repositioning. Retain this path only as a fallback for
+    // environments without ResizeObserver.
+    if (typeof ResizeObserver !== "undefined") return;
     cancelFrame(frame.current);
     frame.current = scheduleFrame(() => {
       frame.current = undefined;
