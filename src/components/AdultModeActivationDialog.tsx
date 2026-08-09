@@ -21,6 +21,9 @@ export function AdultModeActivationDialog({
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [invalid, setInvalid] = useState(false);
+  const [validationError, setValidationError] = useState<
+    "age" | "mismatch" | "short" | undefined
+  >();
   const [saving, setSaving] = useState(false);
   const { dialogRef, onDialogKeyDown } = useDialogFocus<HTMLFormElement>({
     onEscape: onCancel,
@@ -38,9 +41,21 @@ export function AdultModeActivationDialog({
         onKeyDown={onDialogKeyDown}
         onSubmit={(event) => {
           event.preventDefault();
-          if (!adult || password.length < 8 || mismatch) return;
+          if (password.length < 8) {
+            setValidationError("short");
+            return;
+          }
+          if (mismatch) {
+            setValidationError("mismatch");
+            return;
+          }
+          if (!adult) {
+            setValidationError("age");
+            return;
+          }
           setSaving(true);
           setInvalid(false);
+          setValidationError(undefined);
           void onSubmit(password)
             .then((success) => setInvalid(!success))
             .finally(() => setSaving(false));
@@ -75,10 +90,18 @@ export function AdultModeActivationDialog({
                 <IconToggle checked={adult} label={t("settings.config.adultMode.ageConfirmation")} onCheckedChange={setAdult} />
               </div>
             </CardStack>}
-            {(invalid || (confirmation.length > 0 && mismatch)) && <small className="field-error">{t(invalid ? "settings.config.adultMode.invalidPassword" : "settings.config.adultMode.passwordMismatch")}</small>}
+            {(invalid || validationError) && <small className="field-error" role="alert">
+              {t(invalid
+                ? "settings.config.adultMode.invalidPassword"
+                : validationError === "short"
+                  ? "settings.config.adultMode.passwordTooShort"
+                  : validationError === "mismatch"
+                    ? "settings.config.adultMode.passwordMismatch"
+                    : "settings.config.adultMode.ageRequired")}
+            </small>}
           </div>
         </div>
-        <div className="modal-actions"><button type="button" onClick={onCancel}>{t("common.cancel")}</button><button className="primary" disabled={saving || !adult || password.length < 8 || mismatch} type="submit">{t("settings.config.adultMode.activate")}</button></div>
+        <div className="modal-actions"><button type="button" onClick={onCancel}>{t("common.cancel")}</button><button className="primary" disabled={saving} type="submit">{t(saving ? "settings.config.adultMode.activating" : "settings.config.adultMode.activate")}</button></div>
       </form>
     </div>
   );

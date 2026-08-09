@@ -1235,8 +1235,13 @@ export const en: Record<MessageKey, string> = {
   "settings.config.adultMode.ageConfirmationDetail":
     "This declaration is recorded when the password is created.",
   "settings.config.adultMode.invalidPassword": "Incorrect password.",
+  "settings.config.adultMode.passwordTooShort":
+    "The password must contain at least 8 characters.",
   "settings.config.adultMode.passwordMismatch": "Passwords do not match.",
+  "settings.config.adultMode.ageRequired":
+    "Confirm that you are 18 or older to continue.",
   "settings.config.adultMode.activate": "Enable",
+  "settings.config.adultMode.activating": "Enabling…",
   "settings.config.suppressUnstableWarning.title":
     "Hide unstable feature warnings",
   "settings.config.suppressUnstableWarning.detail":

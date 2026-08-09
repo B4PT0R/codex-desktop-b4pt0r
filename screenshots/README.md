@@ -29,7 +29,7 @@ every visual iteration. Historical captures remain available through Git.
   showing the experimental Adult Mode preference alongside advanced runtime
   and developer-instruction controls.
 - `adult-mode-activation-light-1164x860.png` — local Adult Mode activation gate
-  with password registration, one-time 18+ declaration and disabled submit state.
+  with password registration, one-time 18+ declaration and explicit validation.
 - `adult-mode-footer-light-1164x860.png` — active Adult Mode heart indicator beside
   the context-compaction gauge in the conversation footer.
 - `settings-scheduler-light-1164x860.png` — light-theme Scheduler baseline

@@ -1156,6 +1156,8 @@ describe("centre de réglages", () => {
     ).toBeVisible();
     fireEvent.click(screen.getByRole("switch", { name: "Mode Adulte" }));
     expect(screen.getByRole("dialog", { name: "Activer le Mode Adulte" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Activer" }));
+    expect(screen.getByRole("alert")).toHaveTextContent(/au moins 8 caractères/);
     fireEvent.change(screen.getByLabelText(/Mot de passe \(8 caractères minimum\)/), { target: { value: "correct horse" } });
     fireEvent.change(screen.getByLabelText("Confirmer le mot de passe"), { target: { value: "correct horse" } });
     fireEvent.click(screen.getByLabelText("Je confirme avoir 18 ans ou plus."));

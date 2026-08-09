@@ -98,7 +98,9 @@ registered password; only its salted PBKDF2 derivative is stored in the desktop
 settings JSON. The 18+ declaration is collected only during initial password
 registration; later reactivations require the registered password alone.
 An always-visible heart indicator beside the context gauge makes the active
-state explicit in the conversation composer footer.
+state explicit in the conversation composer footer. Activation validation is
+actionable: submitting an incomplete form explains the missing password,
+confirmation or age declaration instead of leaving a silently disabled action.
 
 Installed-plugin lot: the Plugins settings page now reads the authoritative
 `plugin/installed` inventory for the active workspace and toggles supported

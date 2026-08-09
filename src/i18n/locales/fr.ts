@@ -1266,8 +1266,13 @@ export const fr = {
   "settings.config.adultMode.ageConfirmationDetail":
     "Cette déclaration est enregistrée lors de la création du mot de passe.",
   "settings.config.adultMode.invalidPassword": "Mot de passe incorrect.",
+  "settings.config.adultMode.passwordTooShort":
+    "Le mot de passe doit comporter au moins 8 caractères.",
   "settings.config.adultMode.passwordMismatch": "Les mots de passe ne correspondent pas.",
+  "settings.config.adultMode.ageRequired":
+    "Confirme que tu as 18 ans ou plus pour continuer.",
   "settings.config.adultMode.activate": "Activer",
+  "settings.config.adultMode.activating": "Activation…",
   "settings.config.suppressUnstableWarning.title":
     "Masquer les avertissements de fonctionnalités instables",
   "settings.config.suppressUnstableWarning.detail":
