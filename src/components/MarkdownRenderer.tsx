@@ -159,8 +159,14 @@ function markdownTextLength(node: ReactNode): number {
 }
 
 export const StreamingMarkdownRenderer = memo(
-  function StreamingMarkdownRenderer({ children }: { children: string }) {
-    const source = useThrottledMarkdown(children);
+  function StreamingMarkdownRenderer({
+    children,
+    streaming = true,
+  }: {
+    children: string;
+    streaming?: boolean;
+  }) {
+    const source = useThrottledMarkdown(children, streaming);
     return <MarkdownRenderer>{source}</MarkdownRenderer>;
   },
 );
@@ -170,7 +176,7 @@ export const StreamingMarkdownRenderer = memo(
  * once per visual frame budget. The latest source is never dropped, and the
  * non-streaming renderer receives the final value immediately on completion.
  */
-function useThrottledMarkdown(source: string) {
+function useThrottledMarkdown(source: string, streaming: boolean) {
   const [rendered, setRendered] = useState(source);
   const latest = useRef(source);
   const lastRenderAt = useRef(Date.now());
@@ -209,7 +215,7 @@ function useThrottledMarkdown(source: string) {
     [],
   );
 
-  return rendered;
+  return streaming ? rendered : source;
 }
 
 type BrowserTaskScheduler = {

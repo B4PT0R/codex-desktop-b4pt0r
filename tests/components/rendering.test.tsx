@@ -146,6 +146,18 @@ describe("rendu du chat", () => {
       await screen.findByRole("heading", { name: "Résultat final" }),
     ).toBeVisible();
   });
+  it("conserve le même arbre Markdown lors de la finalisation du stream", async () => {
+    const { container, rerender } = render(
+      <Markdown streaming>{"Paragraphe **final**"}</Markdown>,
+    );
+    await screen.findByText("final");
+    const markdownTree = container.firstElementChild;
+
+    rerender(<Markdown>{"Paragraphe **final**"}</Markdown>);
+
+    expect(container.firstElementChild).toBe(markdownTree);
+    expect(screen.getByText("final")).toBeVisible();
+  });
   it("regroupe les deltas rapides sans dépasser 32 ms entre deux rendus", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-07-29T00:00:00Z"));
