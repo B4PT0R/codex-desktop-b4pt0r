@@ -32,13 +32,17 @@ import {
   finalizeInterruptedRealtimeMessages,
   finalizeRealtimeUserMessage,
   finalizeRealtimeVoiceMessage,
+  markRealtimeConversationUpdates,
   markRealtimeTextUpdates,
+  realtimeConversationScope,
+  realtimeTextItemId,
   realtimeVoiceItemId,
   reserveRealtimeUserMessage,
 } from "./realtimeTranscript";
 import type { AgentActivity } from "./activity";
 import type { ChatMessage, Personality } from "../types";
 import type { Translate } from "../i18n/I18nProvider";
+import { applyConversationEvent } from "./conversationEvents";
 
 type RealtimeConversationOptions = {
   activeParentThreadId?: string;
@@ -83,6 +87,9 @@ export function useRealtimeConversation({
   const transcriptWriteQueue = useRef<Promise<void>>(Promise.resolve());
   const preRealtimeMessageIds = useRef<ReadonlySet<string>>(new Set());
   const assistantMessageId = useRef<string | undefined>(undefined);
+  const assistantSegmentText = useRef("");
+  const assistantResponseSegmented = useRef(false);
+  const delegationInProgress = useRef(false);
   const userMessageId = useRef<string | undefined>(undefined);
   const transcriptDisplayRequested = useRef(true);
   const bufferedTranscripts = useRef(new Map<string, ChatMessage[]>());
@@ -152,6 +159,9 @@ export function useRealtimeConversation({
     activeThreadId.current = undefined;
     parentThreadId.current = undefined;
     assistantMessageId.current = undefined;
+    assistantSegmentText.current = "";
+    assistantResponseSegmented.current = false;
+    delegationInProgress.current = false;
     userMessageId.current = undefined;
     preRealtimeMessageIds.current = new Set();
     transcriptDisplayRequested.current = true;
@@ -187,6 +197,7 @@ export function useRealtimeConversation({
       role: "user" | "assistant",
       messageId: string,
       transcript: string,
+      modality: "text" | "voice" = "voice",
     ) => {
       const persistentThreadId = parentThreadId.current;
       if (!persistentThreadId || !transcript) return;
@@ -198,7 +209,9 @@ export function useRealtimeConversation({
             persistentThreadId,
             role,
             transcript,
-            realtimeVoiceItemId(role, messageId),
+            modality === "text"
+              ? realtimeTextItemId(messageId)
+              : realtimeVoiceItemId(role, messageId),
           ),
         ).then(() => undefined);
       transcriptWriteQueue.current = transcriptWriteQueue.current
@@ -399,6 +412,55 @@ export function useRealtimeConversation({
       );
   }, [transcriptIsVisible]);
 
+  const handleConversationEvent = useCallback(
+    (message: AppServerMessage, eventThreadId?: string) => {
+      if (!realtimeConversationScope(
+        eventThreadId,
+        activeThreadId.current,
+        parentThreadId.current,
+      )) return false;
+      if (!delegationInProgress.current) {
+        delegationInProgress.current = true;
+        const voiceMessageId = assistantMessageId.current;
+        const voiceTranscript = assistantSegmentText.current.trim();
+        if (voiceMessageId) {
+          updateTranscript((messages) =>
+            finalizeRealtimeVoiceMessage(
+              messages,
+              voiceMessageId,
+              voiceTranscript,
+            ),
+          );
+          persistTranscript("assistant", voiceMessageId, voiceTranscript);
+          assistantMessageId.current = undefined;
+          assistantSegmentText.current = "";
+          assistantResponseSegmented.current = true;
+        }
+      }
+      const preexistingMessageIds = preRealtimeMessageIds.current;
+      updateTranscript((messages) =>
+        markRealtimeConversationUpdates(
+          messages,
+          applyConversationEvent(messages, message, translateRef.current),
+          preexistingMessageIds,
+        ),
+      );
+      if (message.method === "item/completed") {
+        const item = appServerRecord(appServerRecord(message.params)?.item);
+        if (appServerString(item?.type) === "agentMessage") {
+          const itemId = appServerString(item?.id);
+          const text = appServerString(item?.text)?.trim();
+          if (itemId && text) {
+            persistTranscript("assistant", itemId, text, "text");
+          }
+          delegationInProgress.current = false;
+        }
+      }
+      return true;
+    },
+    [persistTranscript, updateTranscript],
+  );
+
   const handleMessage = useCallback(
     (message: AppServerMessage) => {
       if (!message.method?.startsWith("thread/realtime/")) return false;
@@ -441,13 +503,15 @@ export function useRealtimeConversation({
             ),
           );
         } else {
+          const delta = appServerString(params?.delta) ?? "";
           assistantMessageId.current ??= crypto.randomUUID();
           const messageId = assistantMessageId.current;
+          assistantSegmentText.current += delta;
           updateTranscript((messages) =>
             appendRealtimeVoiceDelta(
               messages,
               messageId,
-              appServerString(params?.delta) ?? "",
+              delta,
             ),
           );
         }
@@ -456,13 +520,20 @@ export function useRealtimeConversation({
         const role = params?.role === "user" ? "user" : "assistant";
         const transcript = appServerString(params?.text)?.trim() ?? "";
         if (role === "assistant") {
-          assistantMessageId.current ??= crypto.randomUUID();
-          const messageId = assistantMessageId.current;
-          updateTranscript((messages) =>
-            finalizeRealtimeVoiceMessage(messages, messageId, transcript),
-          );
-          persistTranscript(role, messageId, transcript);
+          const segmented = assistantResponseSegmented.current;
+          const segmentTranscript = assistantSegmentText.current.trim();
+          if (assistantMessageId.current || (!segmented && transcript)) {
+            assistantMessageId.current ??= crypto.randomUUID();
+            const messageId = assistantMessageId.current;
+            const finalTranscript = segmented ? segmentTranscript : transcript;
+            updateTranscript((messages) =>
+              finalizeRealtimeVoiceMessage(messages, messageId, finalTranscript),
+            );
+            persistTranscript(role, messageId, finalTranscript);
+          }
           assistantMessageId.current = undefined;
+          assistantSegmentText.current = "";
+          assistantResponseSegmented.current = false;
         } else {
           userMessageId.current ??= crypto.randomUUID();
           const messageId = userMessageId.current;
@@ -498,6 +569,7 @@ export function useRealtimeConversation({
   );
 
   return {
+    handleConversationEvent,
     recording,
     starting,
     headlessParentThreadId,
@@ -521,7 +593,8 @@ function mergeBufferedTranscript(
   const additions = buffered.filter(
     (message) =>
       !existingIds.has(message.id) &&
-      !existingIds.has(realtimeVoiceItemId(message.role, message.id)),
+      !existingIds.has(realtimeVoiceItemId(message.role, message.id)) &&
+      !existingIds.has(realtimeTextItemId(message.id)),
   );
   return additions.length ? [...messages, ...additions] : messages;
 }

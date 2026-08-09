@@ -6,7 +6,10 @@ import type {
 import { applyConversationEvent } from "./conversationEvents";
 import type { ChatMessage } from "../types";
 import { defaultTranslate, type Translate } from "../i18n/translate";
-import { isRealtimeVoiceItemId } from "./realtimeTranscript";
+import {
+  isRealtimeTextItemId,
+  isRealtimeVoiceItemId,
+} from "./realtimeTranscript";
 import { scheduledTaskFromPrompt } from "./scheduledTaskMessage";
 
 /** Rebuilds the visible conversation from persisted App Server thread items. */
@@ -86,6 +89,8 @@ function messagesFromTurns(
               : {}),
             ...(isRealtimeVoiceItemId(item.id)
               ? { modality: "realtimeVoice" as const }
+              : isRealtimeTextItemId(item.id)
+                ? { modality: "realtimeText" as const }
               : {}),
             ...(itemRunning ? { streaming: true } : {}),
           },

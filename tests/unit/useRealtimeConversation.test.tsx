@@ -419,6 +419,127 @@ describe("cycle de vie de la conversation Realtime", () => {
     expect(showError).not.toHaveBeenCalled();
   });
 
+  it("rend et persiste la réponse textuelle déléguée par le fork", async () => {
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([]);
+      const [, setActivity] = useState<AgentActivity>(null);
+      return {
+        messages,
+        conversation: useRealtimeConversation({
+          activeParentThreadId: "persistent-parent",
+          setActivity,
+          setMessages,
+          showError: vi.fn(),
+          translate: defaultTranslate,
+        }),
+      };
+    });
+
+    await act(() => result.current.conversation.start({
+      parentThreadId: "persistent-parent",
+      model: "gpt-5.4",
+      voice: "juniper",
+    }));
+    act(() => {
+      result.current.conversation.handleConversationEvent({
+        method: "item/agentMessage/delta",
+        params: {
+          threadId: "realtime-child",
+          itemId: "text-agent-1",
+          delta: "Réponse du Text Agent",
+        },
+      }, "realtime-child");
+      result.current.conversation.handleConversationEvent({
+        method: "item/completed",
+        params: {
+          threadId: "realtime-child",
+          item: {
+            id: "text-agent-1",
+            type: "agentMessage",
+            text: "Réponse du Text Agent",
+          },
+        },
+      }, "realtime-child");
+    });
+
+    expect(result.current.messages).toEqual([
+      expect.objectContaining({
+        id: "text-agent-1",
+        content: "Réponse du Text Agent",
+        modality: "realtimeText",
+        streaming: false,
+      }),
+    ]);
+    await waitFor(() => expect(requestMock).toHaveBeenCalledWith(
+      "thread/inject_items",
+      expect.objectContaining({
+        threadId: "persistent-parent",
+        items: [expect.objectContaining({
+          id: "msg_rtt_text-agent-1",
+          role: "assistant",
+        })],
+      }),
+    ));
+  });
+
+  it("sépare la voix reprise après une délégation textuelle", async () => {
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([]);
+      const [, setActivity] = useState<AgentActivity>(null);
+      return {
+        messages,
+        conversation: useRealtimeConversation({
+          activeParentThreadId: "persistent-parent",
+          setActivity,
+          setMessages,
+          showError: vi.fn(),
+          translate: defaultTranslate,
+        }),
+      };
+    });
+
+    await act(() => result.current.conversation.start({
+      parentThreadId: "persistent-parent",
+      model: "gpt-5.4",
+      voice: "juniper",
+    }));
+    act(() => {
+      result.current.conversation.handleMessage({
+        method: "thread/realtime/transcript/delta",
+        params: { threadId: "realtime-child", role: "assistant", delta: "Avant." },
+      });
+      result.current.conversation.handleConversationEvent({
+        method: "item/agentMessage/delta",
+        params: { threadId: "realtime-child", itemId: "text-agent", delta: "Texte." },
+      }, "realtime-child");
+      result.current.conversation.handleConversationEvent({
+        method: "item/completed",
+        params: {
+          threadId: "realtime-child",
+          item: { id: "text-agent", type: "agentMessage", text: "Texte." },
+        },
+      }, "realtime-child");
+      result.current.conversation.handleMessage({
+        method: "thread/realtime/transcript/delta",
+        params: { threadId: "realtime-child", role: "assistant", delta: "Après." },
+      });
+      result.current.conversation.handleMessage({
+        method: "thread/realtime/transcript/done",
+        params: {
+          threadId: "realtime-child",
+          role: "assistant",
+          text: "Avant. Après.",
+        },
+      });
+    });
+
+    expect(result.current.messages).toEqual([
+      expect.objectContaining({ content: "Avant.", modality: "realtimeVoice" }),
+      expect.objectContaining({ content: "Texte.", modality: "realtimeText" }),
+      expect.objectContaining({ content: "Après.", modality: "realtimeVoice" }),
+    ]);
+  });
+
   it("ignore les notifications tardives d’un ancien fork et libère le fork actif", async () => {
     const showError = vi.fn();
     const { result } = renderHook(() => {

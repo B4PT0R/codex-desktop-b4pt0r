@@ -6,13 +6,42 @@ import {
   finalizeRealtimeUserMessage,
   finalizeRealtimeVoiceMessage,
   isRealtimeVoiceItemId,
+  isRealtimeTextItemId,
   isVisibleRealtimeTranscript,
+  markRealtimeConversationUpdates,
   markRealtimeTextUpdates,
+  realtimeConversationScope,
   realtimeVoiceItemId,
+  realtimeTextItemId,
   reserveRealtimeUserMessage,
 } from "../../src/lib/realtimeTranscript";
 
 describe("transcript Realtime visible", () => {
+  it("route les messages du fork actif vers son parent visible", () => {
+    expect(
+      realtimeConversationScope("fork-1", "fork-1", "parent-1"),
+    ).toBe("parent-1");
+    expect(
+      realtimeConversationScope("fork-2", "fork-1", "parent-1"),
+    ).toBeUndefined();
+    expect(
+      realtimeConversationScope("fork-1", "fork-1", undefined),
+    ).toBeUndefined();
+  });
+
+  it("bufferise la réponse textuelle sans exposer le prompt interne", () => {
+    expect(markRealtimeConversationUpdates([], [
+      { id: "internal", role: "user", content: "delegated prompt" },
+      { id: "answer", role: "assistant", content: "résultat" },
+    ])).toEqual([
+      {
+        id: "answer",
+        role: "assistant",
+        content: "résultat",
+        modality: "realtimeText",
+      },
+    ]);
+  });
   it("génère des identifiants Responses valides et relit le format historique", () => {
     const id = realtimeVoiceItemId(
       "user",
@@ -25,6 +54,13 @@ describe("transcript Realtime visible", () => {
       .toBe(true);
     expect(isRealtimeVoiceItemId("realtime_voice_assistant_message-legacy"))
       .toBe(true);
+    expect(realtimeTextItemId("backend-message-1")).toBe(
+      "msg_rtt_backend-message-1",
+    );
+    expect(isRealtimeTextItemId("msg_rtt_backend-message-1")).toBe(true);
+    const longTextId = realtimeTextItemId(`msg_${"a".repeat(100)}`);
+    expect(longTextId).toMatch(/^msg_rtt_/);
+    expect(longTextId.length).toBeLessThanOrEqual(64);
   });
 
   it("affiche les deux rôles de la conversation vocale", () => {

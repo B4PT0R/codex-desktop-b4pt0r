@@ -5,6 +5,7 @@ export type RealtimeTranscriptRole = "assistant" | "user";
 // rollout is later submitted as context for a delegated Codex turn, and the
 // complete ID must remain within the API's 64-character limit.
 const realtimeVoiceItemPrefix = "msg_rtv_";
+const realtimeTextItemPrefix = "msg_rtt_";
 const oversizedRealtimeVoiceItemPrefix = "msg_realtime_voice_";
 const legacyRealtimeVoiceItemPrefix = "realtime_voice_";
 
@@ -23,8 +24,55 @@ export function isRealtimeVoiceItemId(itemId: string) {
   );
 }
 
+export function realtimeTextItemId(messageId: string) {
+  const itemId = `${realtimeTextItemPrefix}${messageId}`;
+  if (itemId.length <= 64) return itemId;
+  return `${realtimeTextItemPrefix}${stableIdHash(messageId)}_${messageId.slice(-40)}`;
+}
+
+export function isRealtimeTextItemId(itemId: string) {
+  return itemId.startsWith(realtimeTextItemPrefix);
+}
+
+function stableIdHash(value: string) {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(36);
+}
+
 export function isVisibleRealtimeTranscript(role: RealtimeTranscriptRole) {
   return role === "assistant" || role === "user";
+}
+
+export function realtimeConversationScope(
+  eventThreadId: string | undefined,
+  realtimeThreadId: string | undefined,
+  parentThreadId: string | undefined,
+) {
+  return eventThreadId !== undefined &&
+    eventThreadId === realtimeThreadId &&
+    parentThreadId !== undefined
+    ? parentThreadId
+    : undefined;
+}
+
+export function markRealtimeConversationUpdates(
+  previous: ChatMessage[],
+  next: ChatMessage[],
+  preexistingMessageIds: ReadonlySet<string> = new Set(),
+) {
+  const previousIds = new Set(previous.map((message) => message.id));
+  return markRealtimeTextUpdates(
+    previous,
+    next.filter(
+      (message) => message.role !== "user" || previousIds.has(message.id),
+    ),
+    true,
+    preexistingMessageIds,
+  );
 }
 
 export function markRealtimeTextUpdates(

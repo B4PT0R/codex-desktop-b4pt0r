@@ -618,7 +618,12 @@ export default function App() {
     }
     if (schedulerTools.handleMessage(msg)) return;
     if (interactiveRequests.handleMessage(msg)) return;
-    if (affectsActiveThread && routed.conversationEvent) {
+    if (
+      routed.conversationEvent &&
+      realtimeConversation.handleConversationEvent(msg, routed.threadId)
+    ) {
+      // The Realtime fork buffers this event for its parent conversation.
+    } else if (affectsActiveThread && routed.conversationEvent) {
       conversationEvents.enqueue(
         msg,
         routed.threadId ?? activeThreadRef.current,

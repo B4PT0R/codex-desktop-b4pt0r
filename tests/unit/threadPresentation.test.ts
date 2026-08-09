@@ -95,6 +95,24 @@ describe("reprise de conversation", () => {
     expect(messagesFromThread({ id: "thread-1" })).toEqual([]);
   });
 
+  it("rejoue une réponse Text Agent persistée avec sa présentation Realtime", () => {
+    expect(messagesFromThread({
+      id: "thread-realtime",
+      turns: [{
+        items: [{
+          id: "msg_rtt_backend-message-1",
+          type: "agentMessage",
+          text: "Réponse déléguée.",
+        }],
+      }],
+    })).toEqual([{
+      id: "msg_rtt_backend-message-1",
+      role: "assistant",
+      content: "Réponse déléguée.",
+      modality: "realtimeText",
+    }]);
+  });
+
   it("ignore les messages agent vides entre deux outils au replay", () => {
     const messages = messagesFromThread({
       id: "thread-1",
@@ -272,6 +290,24 @@ describe("reprise de conversation", () => {
         modality: "realtimeVoice",
       },
     ]);
+  });
+
+  it("restaure l’identité du Text Agent depuis l’identifiant persistant", () => {
+    expect(messagesFromThread({
+      id: "thread-1",
+      turns: [{
+        items: [{
+          id: "msg_rtt_text-agent-1",
+          type: "agentMessage",
+          text: "Réponse déléguée",
+        }],
+      }],
+    })).toEqual([{
+      id: "msg_rtt_text-agent-1",
+      role: "assistant",
+      content: "Réponse déléguée",
+      modality: "realtimeText",
+    }]);
   });
 
   it("restaure les images générées et résultats web structurés", () => {
