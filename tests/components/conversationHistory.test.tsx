@@ -329,6 +329,9 @@ describe("historique de conversation", () => {
     });
 
     const textAgent = screen.getByRole("region", { name: "Agent textuel" });
+    expect(screen.getByRole("status", {
+      name: "Tour de l’agent textuel en cours",
+    })).toBeVisible();
     expect(textAgent).toHaveTextContent("Détail complet");
     expect(textAgent.querySelector(".tool-group")).not.toBeNull();
     expect(screen.getByText("Agent vocal")).toBeVisible();
@@ -351,6 +354,9 @@ describe("historique de conversation", () => {
       </I18nProvider>,
     );
     act(() => vi.advanceTimersByTime(500));
+    expect(screen.queryByRole("status", {
+      name: "Tour de l’agent textuel en cours",
+    })).toBeNull();
     expect(
       screen.getByRole("button", { name: "Agent textuel" }),
     ).toHaveAttribute("aria-expanded", "false");

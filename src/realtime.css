@@ -48,7 +48,7 @@
   width: 100%;
   height: 31px;
   padding: 0 9px;
-  grid-template-columns: 16px 1fr 15px;
+  grid-template-columns: 16px 1fr 14px 15px;
   align-items: center;
   gap: 7px;
   color: #8fb3df;
@@ -68,6 +68,18 @@
 
 .realtime-text-chevron {
   transition: transform 180ms ease;
+}
+
+.realtime-text-status {
+  display: grid;
+  width: 14px;
+  height: 14px;
+  place-items: center;
+}
+
+.realtime-text-status svg {
+  width: 12px;
+  height: 12px;
 }
 
 .realtime-text-message.expanded .realtime-text-chevron {

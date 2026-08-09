@@ -34,6 +34,8 @@ every visual iteration. Historical captures remain available through Git.
   the context-compaction gauge in the conversation footer.
 - `realtime-text-tools-light-1164x860.png` — delegated Text Agent response with
   its tool summary grouped inside the expandable Realtime item.
+- `realtime-text-spinner-light-1164x860.png` — active delegated Text Agent turn
+  with its compact progress spinner in the expandable Realtime item header.
 - `settings-scheduler-light-1164x860.png` — light-theme Scheduler baseline
   distinguishing recurring schedule state from completed one-shot tasks.
 - `settings-skills-light-1164x860.png` — light-theme Skills baseline showing

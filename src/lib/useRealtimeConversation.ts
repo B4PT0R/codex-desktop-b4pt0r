@@ -501,12 +501,18 @@ export function useRealtimeConversation({
       }
       const preexistingMessageIds = preRealtimeMessageIds.current;
       updateTranscript((messages) => {
+        const keepDelegationActive = (next: ChatMessage[]) =>
+          anchorMessageId
+            ? next.map((entry) => entry.id === anchorMessageId
+              ? { ...entry, streaming: true }
+              : entry)
+            : next;
         const anchorIndex = anchorMessageId
           ? messages.findIndex(({ id }) => id === anchorMessageId)
           : -1;
         if (!agentMessageId && anchorIndex >= 0) {
           const delegatedMessages = messages.slice(0, anchorIndex + 1);
-          return [
+          return keepDelegationActive([
             ...markRealtimeConversationUpdates(
               delegatedMessages,
               applyConversationEvent(
@@ -517,13 +523,13 @@ export function useRealtimeConversation({
               preexistingMessageIds,
             ),
             ...messages.slice(anchorIndex + 1),
-          ];
+          ]);
         }
-        return markRealtimeConversationUpdates(
+        return keepDelegationActive(markRealtimeConversationUpdates(
           messages,
           applyConversationEvent(messages, groupedMessage, translateRef.current),
           preexistingMessageIds,
-        );
+        ));
       });
       return true;
     },

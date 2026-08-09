@@ -595,6 +595,7 @@ export const fr = {
   "conversation.history.loadOlder": "Charger les échanges précédents",
   "conversation.realtime.voice": "Agent vocal",
   "conversation.realtime.text": "Agent textuel",
+  "conversation.realtime.textActive": "Tour de l’agent textuel en cours",
   "chat.sidebar.show": "Afficher la barre latérale",
   "chat.actions.label": "Actions de la conversation",
   "chat.actions.name": "Nom de la conversation",

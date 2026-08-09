@@ -460,6 +460,16 @@ describe("cycle de vie de la conversation Realtime", () => {
           },
         },
       }, "realtime-child");
+    });
+    expect(result.current.messages).toEqual([
+      expect.objectContaining({
+        id: "text-agent-1",
+        content: "Réponse du Text Agent",
+        modality: "realtimeText",
+        streaming: true,
+      }),
+    ]);
+    act(() => {
       result.current.conversation.handleForkLifecycle({
         method: "turn/completed",
         params: { threadId: "realtime-child" },
@@ -524,6 +534,16 @@ describe("cycle de vie de la conversation Realtime", () => {
           params: { threadId: "realtime-child", item: { id, type: "agentMessage", phase, text } },
         }, "realtime-child");
       }
+    });
+    expect(result.current.messages).toEqual([
+      expect.objectContaining({
+        id: "commentary-1",
+        content: "Je vérifie.\n\nVérification terminée.",
+        modality: "realtimeText",
+        streaming: true,
+      }),
+    ]);
+    act(() => {
       result.current.conversation.handleForkLifecycle({
         method: "turn/completed",
         params: { threadId: "realtime-child" },

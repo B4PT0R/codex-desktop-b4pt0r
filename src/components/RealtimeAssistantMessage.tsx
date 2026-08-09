@@ -1,4 +1,4 @@
-import { AudioWaveform, ChevronDown, MessageSquareText } from "lucide-react";
+import { AudioWaveform, ChevronDown, LoaderCircle, MessageSquareText } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { ChatMessage } from "../types";
@@ -54,6 +54,13 @@ export function RealtimeTextMessage({
       >
         <MessageSquareText />
         <span>{t("conversation.realtime.text")}</span>
+        <span
+          aria-label={message.streaming ? t("conversation.realtime.textActive") : undefined}
+          className="realtime-text-status"
+          role={message.streaming ? "status" : undefined}
+        >
+          {message.streaming && <LoaderCircle aria-hidden="true" className="spin" />}
+        </span>
         <ChevronDown className="realtime-text-chevron" />
       </button>
       <div className="realtime-text-body" aria-hidden={!expanded}>

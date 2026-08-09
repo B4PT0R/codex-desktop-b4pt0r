@@ -580,6 +580,7 @@ export const en: Record<MessageKey, string> = {
   "conversation.history.loadOlder": "Load earlier messages",
   "conversation.realtime.voice": "Voice agent",
   "conversation.realtime.text": "Text agent",
+  "conversation.realtime.textActive": "Text agent turn in progress",
   "chat.sidebar.show": "Show sidebar",
   "chat.actions.label": "Conversation actions",
   "chat.actions.name": "Conversation name",
