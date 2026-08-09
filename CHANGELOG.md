@@ -5,6 +5,17 @@ follows semantic versioning while the public interface is taking shape.
 
 ## [Unreleased]
 
+## [0.5.9] - 2026-08-10
+
+### Fixed
+
+- Tray-created Realtime conversations now initialize their persistent parent
+  with the effective global developer instructions before delegation.
+- Every Realtime fork explicitly receives the same effective developer
+  instructions, keeping Adult Mode and other global guidance available to the
+  delegated Text Agent even when App Server does not retain the parent's
+  session-level overrides.
+
 ## [0.5.8] - 2026-08-09
 
 ### Added
