@@ -63,11 +63,69 @@ export function appendToolOutput(
   t: Translate = defaultTranslate,
 ) {
   return boundedText(
-    (current ?? "") + delta,
+    normalizeTerminalOutput((current ?? "") + delta),
     50_000,
     t("tool.details.output"),
     t,
   );
+}
+
+export function normalizeTerminalOutput(value: string) {
+  const lines = [""];
+  let column = 0;
+  for (let index = 0; index < value.length;) {
+    const character = value[index];
+    if (character === "\u001b") {
+      if (value[index + 1] === "[") {
+        const match = /^\u001b\[([0-?]*)([ -/]*)([@-~])/.exec(value.slice(index));
+        if (match) {
+          const parameter = Number.parseInt(match[1].split(";")[0] || "0", 10);
+          const command = match[3];
+          if (command === "K") {
+            if (parameter === 2) {
+              lines[lines.length - 1] = "";
+              column = 0;
+            } else if (parameter === 1) {
+              lines[lines.length - 1] = lines[lines.length - 1].slice(column);
+              column = 0;
+            } else {
+              lines[lines.length - 1] = lines[lines.length - 1].slice(0, column);
+            }
+          } else if (command === "G") {
+            column = Math.max(0, (parameter || 1) - 1);
+          } else if (command === "C") {
+            column += parameter || 1;
+          } else if (command === "D") {
+            column = Math.max(0, column - (parameter || 1));
+          }
+          index += match[0].length;
+          continue;
+        }
+      }
+      const osc = /^\u001b\][^\u0007]*(?:\u0007|\u001b\\)/.exec(value.slice(index));
+      if (osc) {
+        index += osc[0].length;
+        continue;
+      }
+      index += Math.min(2, value.length - index);
+      continue;
+    }
+    if (character === "\n") {
+      lines.push("");
+      column = 0;
+    } else if (character === "\r") {
+      column = 0;
+    } else if (character === "\b") {
+      column = Math.max(0, column - 1);
+    } else if (character === "\t" || character >= " ") {
+      const line = lines[lines.length - 1];
+      lines[lines.length - 1] =
+        line.slice(0, column) + character + line.slice(column + 1);
+      column += 1;
+    }
+    index += 1;
+  }
+  return lines.join("\n");
 }
 
 export function patchDetails(
@@ -189,7 +247,7 @@ function finalDetails(
       ...(stringValue(item.aggregatedOutput)
         ? {
             output: boundedText(
-              stringValue(item.aggregatedOutput)!,
+              normalizeTerminalOutput(stringValue(item.aggregatedOutput)!),
               50_000,
               t("tool.details.output"),
               t,

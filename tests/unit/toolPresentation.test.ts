@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   appendToolOutput,
+  normalizeTerminalOutput,
   toolFromItem,
   toolStatus,
 } from "../../src/lib/toolPresentation";
@@ -217,6 +218,31 @@ describe("feedbacks d’outils", () => {
     expect(output).toContain("[sortie précédente tronquée]");
     expect(output.endsWith("fin")).toBe(true);
     expect(output.length).toBeLessThan(50_100);
+  });
+
+  it("interprète les réécritures de progression ANSI du terminal", () => {
+    const streamed = [1, 2, 3]
+      .reduce(
+        (output, step) => appendToolOutput(
+          output,
+          `\u001b[2K\u001b[1Grendering chunks (${step})...`,
+        ),
+        "",
+      );
+    expect(streamed).toBe("rendering chunks (3)...");
+    expect(normalizeTerminalOutput(
+      "\u001b[32mready\u001b[0m\n\u001b]8;;https://example.com\u0007link\u001b]8;;\u0007",
+    )).toBe("ready\nlink");
+  });
+
+  it("normalise aussi la sortie agrégée au replay", () => {
+    expect(toolFromItem({
+      id: "vite",
+      type: "commandExecution",
+      command: "npm run build",
+      aggregatedOutput:
+        "rendering chunks (1)...\u001b[2K\u001b[1Grendering chunks (8)...",
+    })?.output).toBe("rendering chunks (8)...");
   });
 
   it("présente les outils avec le pack anglais", () => {
