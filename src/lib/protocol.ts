@@ -52,6 +52,7 @@ export function realtimeThreadForkParams(
   model: string,
   permission?: Permission,
   approvalPolicy?: ApprovalPolicy,
+  developerInstructions?: string,
 ) {
   return {
     threadId,
@@ -59,6 +60,7 @@ export function realtimeThreadForkParams(
     model,
     ...(permission ? { permissions: permission } : {}),
     ...(approvalPolicy ? { approvalPolicy } : {}),
+    ...(developerInstructions ? { developerInstructions } : {}),
     ephemeral: true,
     excludeTurns: true,
   };

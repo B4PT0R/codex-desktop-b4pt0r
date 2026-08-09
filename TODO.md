@@ -168,6 +168,10 @@ at three quarters of the available chat width.
   instructions on parent creation and resume before any Realtime fork. Naming
   a fresh parent can otherwise make it forkable while preserving an empty
   developer context, leaving Adult Mode visible only to the Voice Agent.
+- Every ephemeral Realtime fork also receives the effective developer
+  instructions explicitly. Do not rely on the persistent parent rollout to
+  retain session-level overrides: Codex 0.147 can fork such a parent without
+  carrying Adult Mode into the delegated Text Agent.
 - While Realtime is active, ordinary composer text belongs to its WebRTC
   conversation and is persisted back into the parent transcript; it must never
   fall through to a parent `turn/start` or `turn/steer` request. Realtime v3

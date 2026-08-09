@@ -26,6 +26,8 @@ export async function createRealtimeThread(
   request: RealtimeThreadRequest,
   options: RealtimeThreadOptions,
 ) {
+  const developerInstructions =
+    await options.resolveDeveloperInstructions?.();
   try {
     return await request<ThreadStartResponse>(
       "thread/fork",
@@ -35,12 +37,11 @@ export async function createRealtimeThread(
         options.model,
         options.permission,
         options.approvalPolicy,
+        developerInstructions,
       ),
     );
   } catch (error) {
     if (!isMissingThreadRolloutError(error)) throw error;
-    const developerInstructions =
-      await options.resolveDeveloperInstructions?.();
     return request<ThreadStartResponse>(
       "thread/start",
       realtimeEphemeralThreadStartParams(

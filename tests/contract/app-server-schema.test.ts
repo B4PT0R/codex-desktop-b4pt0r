@@ -312,6 +312,8 @@ describe("contrat Codex installé", () => {
         "/tmp/project",
         "gpt-5.4",
         ":workspace",
+        undefined,
+        "Desktop developer instructions",
       ),
     ));
   it("accepte un thread Realtime éphémère sans parent persistant", () =>

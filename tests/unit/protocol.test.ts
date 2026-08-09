@@ -629,6 +629,18 @@ describe("constructeurs JSON-RPC", () => {
       ephemeral: true,
       excludeTurns: true,
     });
+    expect(
+      realtimeThreadForkParams(
+        "parent",
+        "/work",
+        "gpt-5.4",
+        ":workspace",
+        "on-request",
+        "Adult developer instructions",
+      ),
+    ).toMatchObject({
+      developerInstructions: "Adult developer instructions",
+    });
   });
   it("démarre un thread vocal éphémère quand le parent n’a pas encore de rollout", () => {
     expect(

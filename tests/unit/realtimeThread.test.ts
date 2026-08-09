@@ -37,6 +37,7 @@ describe("thread éphémère Realtime", () => {
       model: "gpt-5.4",
       permissions: ":workspace",
       approvalPolicy: "on-request",
+      developerInstructions: "Adult developer instructions",
       ephemeral: true,
       excludeTurns: true,
     });
@@ -58,7 +59,26 @@ describe("thread éphémère Realtime", () => {
 
     await expect(createRealtimeThread(request, options)).rejects.toBe(error);
     expect(request).toHaveBeenCalledOnce();
-    expect(options.resolveDeveloperInstructions).not.toHaveBeenCalled();
+    expect(options.resolveDeveloperInstructions).toHaveBeenCalledOnce();
+  });
+
+  it("injecte les instructions effectives dans un fork disponible", async () => {
+    const forkedThread = { thread: { id: "realtime" } };
+    const request = vi.fn().mockResolvedValue(forkedThread);
+
+    await expect(createRealtimeThread(request, options)).resolves.toBe(
+      forkedThread,
+    );
+    expect(request).toHaveBeenCalledWith("thread/fork", {
+      threadId: "parent",
+      cwd: "/work",
+      model: "gpt-5.4",
+      permissions: ":workspace",
+      approvalPolicy: "on-request",
+      developerInstructions: "Adult developer instructions",
+      ephemeral: true,
+      excludeTurns: true,
+    });
   });
 
   it("reconnaît uniquement l’erreur d’absence de rollout", () => {
