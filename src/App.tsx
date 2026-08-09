@@ -83,6 +83,7 @@ import type {
 } from "./types";
 import { useI18n } from "./i18n/I18nProvider";
 import { useAppServerConnection } from "./lib/useAppServerConnection";
+import { useAutoCollapseSidebar } from "./lib/useAutoCollapseSidebar";
 import { useThreadSearch } from "./lib/useThreadSearch";
 import { useShellCommand } from "./lib/useShellCommand";
 import { useExternalAgentImport } from "./lib/useExternalAgentImport";
@@ -193,6 +194,7 @@ export default function App() {
     [appsEnabled, setAppsEnabled] = useState(false),
     [workPanel, setWorkPanel] = useState<ToolCall>();
   const [newChatDialogOpen, setNewChatDialogOpen] = useState(false);
+  useAutoCollapseSidebar(sidebarWidth, sidebar, setSidebar);
   const [draftThreadKind, setDraftThreadKind] = useState<"discussion" | "project">(
     "discussion",
   );

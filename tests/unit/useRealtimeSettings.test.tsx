@@ -56,6 +56,27 @@ describe("préférences Realtime v3", () => {
     );
   });
 
+  it("enregistre des instructions vocales facultatives", async () => {
+    requestMock.mockResolvedValue({
+      voices: { v1: ["juniper"], defaultV1: "juniper" },
+    });
+    loadMock.mockResolvedValue({
+      version: 1,
+      realtimeVoice: "juniper",
+      realtimeVoiceInstructions: "Ton chaleureux",
+    });
+    updateMock.mockResolvedValue({ version: 1 });
+    const { result } = renderHook(() => useRealtimeSettings(true), {
+      wrapper: I18nProvider,
+    });
+    await waitFor(() => expect(result.current.voiceInstructions).toBe("Ton chaleureux"));
+    await act(() => result.current.setVoiceInstructions("  Français neutre  "));
+    expect(updateMock).toHaveBeenCalledWith({
+      realtimeVoiceInstructions: "Français neutre",
+    });
+    expect(result.current.voiceInstructions).toBe("Français neutre");
+  });
+
   it("revient à la voix précédente si la persistance échoue", async () => {
     requestMock.mockResolvedValue({
       voices: {

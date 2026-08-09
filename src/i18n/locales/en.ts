@@ -1330,6 +1330,18 @@ export const en: Record<MessageKey, string> = {
   "settings.voice.voice": "Voice",
   "settings.voice.voiceDetail":
     "Response voice used by Realtime v3; saved for future conversations.",
+  "settings.voice.instructions": "Voice instructions",
+  "settings.voice.instructionsDetail":
+    "Optional guidance for tone, pronunciation, and attitude in new voice sessions.",
+  "settings.voice.instructionsEdit": "Edit",
+  "settings.voice.instructionsDialogTitle": "Voice instructions",
+  "settings.voice.instructionsDialogDetail":
+    "These instructions are appended only to new Realtime voice sessions.",
+  "settings.voice.instructionsEditor": "Custom prompt",
+  "settings.voice.instructionsPlaceholder":
+    "For example: Speak in neutral French, warmly and at a measured pace…",
+  "settings.voice.instructionsEmptyDetail":
+    "Leave this empty to keep Codex's default voice behavior.",
   "settings.voice.protocol": "Realtime protocol",
   "settings.voice.protocolDetail":
     "Uses Codex Voice behavior over WebRTC, with WebSocket audio fallback.",

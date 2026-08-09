@@ -443,12 +443,17 @@ textarea:focus-visible {
   padding-top: 8px;
 }
 .sidebar-bottom button {
-  font-size: 12px;
+  font-weight: 500;
 }
 .sidebar-bottom .icon-button.icon-button-labeled {
   width: 100%;
   padding: 9px 10px;
   border-radius: 7px;
+  font-size: 14px;
+}
+
+.sidebar-bottom .icon-button-label {
+  line-height: 1.25;
 }
 .sidebar-bottom
   .icon-button.icon-button-labeled
@@ -1123,7 +1128,7 @@ header button svg {
   animation: spin 1s linear infinite;
 }
 footer {
-  width: min(800px, calc(100% - 40px));
+  width: min(800px, 75%);
   margin: 0 auto 16px;
   position: relative;
 }
@@ -2071,7 +2076,6 @@ footer {
   }
 
   footer {
-    width: calc(100% - 24px);
     margin-bottom: 12px;
   }
 }

@@ -134,11 +134,13 @@ const externalAgentImport = {
 };
 const realtime = {
   voice: "juniper" as const,
+  voiceInstructions: "",
   voices: ["juniper", "maple"] as const,
   loading: false,
   saving: false,
   refresh: vi.fn(),
   setVoice: vi.fn(),
+  setVoiceInstructions: vi.fn().mockResolvedValue(true),
 };
 const webSearch = {
   advanced: {
@@ -320,6 +322,39 @@ function renderSettings(
 }
 
 describe("centre de réglages", () => {
+  it("édite les instructions propres aux nouvelles sessions vocales", async () => {
+    const setVoiceInstructions = vi.fn().mockResolvedValue(true);
+    renderSettings({
+      section: "voice",
+      realtime: {
+        ...realtime,
+        voiceInstructions: "Parle posément.",
+        setVoiceInstructions,
+      },
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Modifier" }),
+    );
+    const editor = screen.getByRole("textbox", {
+      name: "Prompt personnalisé",
+    });
+    expect(editor).toHaveValue("Parle posément.");
+    fireEvent.change(editor, {
+      target: { value: "Français neutre et chaleureux." },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Enregistrer" }),
+    );
+
+    await waitFor(() => {
+      expect(setVoiceInstructions).toHaveBeenCalledWith(
+        "Français neutre et chaleureux.",
+      );
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
+
   it("demande un redémarrage après l’installation de la mise à jour", () => {
     renderSettings({
       appUpdate: {

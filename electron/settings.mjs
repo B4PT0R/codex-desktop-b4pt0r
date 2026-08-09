@@ -16,6 +16,7 @@ const writableSettings = new Set([
   "locale",
   "maxVisibleActionsPerGroup",
   "realtimeVoice",
+  "realtimeVoiceInstructions",
   "showReasoningItems",
   "sharedBrowserEnabled",
   "sidebarWidth",
@@ -153,6 +154,13 @@ function validatePatch(patch) {
       patch.realtimeVoice.length > 64)
   ) {
     throw new Error("Unsupported realtime voice");
+  }
+  if (
+    Object.hasOwn(patch, "realtimeVoiceInstructions") &&
+    (typeof patch.realtimeVoiceInstructions !== "string" ||
+      patch.realtimeVoiceInstructions.length > 32_768)
+  ) {
+    throw new Error("Unsupported realtime voice instructions");
   }
   if (
     Object.hasOwn(patch, "defaultThreadId") &&

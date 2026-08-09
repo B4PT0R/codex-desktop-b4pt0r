@@ -124,6 +124,16 @@ Action narration: App Server `agentMessage` items marked as `commentary` remain
 intermediate chat narration. They may introduce several related actions, so
 individual action titles are derived only from structured tool-item fields.
 
+Voice customization: the Voice settings page owns an optional desktop-persisted
+prompt for tone, pronunciation and attitude. It is empty by default and appended
+only to new Realtime sessions, after the existing effective instructions; text
+threads and the delegated backend remain unchanged.
+
+Responsive navigation: the sidebar closes automatically when the viewport is
+narrower than three times its current width, including after user resizing, and
+returns after widening only when it was previously open. The composer is capped
+at three quarters of the available chat width.
+
 ## Durable constraints
 
 - App Server-hydrated thread state is authoritative. A notification may alter
@@ -200,14 +210,19 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 776 deterministic frontend/unit tests across 134 files;
-- 138 Electron/Node tests, including App Server and shared-browser shutdown,
+- 782 deterministic frontend/unit tests across 135 files;
+- 139 Electron/Node tests, including App Server and shared-browser shutdown,
   recovery, synthetic
   Discussion workspaces and the tray
   quick actions;
 - production Vite build;
 - production dependency audit with zero vulnerabilities;
 - `git diff --check`.
+
+The optional Voice-instructions editor was reviewed in the deterministic light
+preview at 1164×860. Its compact modal, labeled icon action, empty-default copy
+and keyboard focus behavior use the existing Settings primitives; the curated
+Voice baseline was added with no browser console errors.
 
 The Discussion/project creation lot was reviewed in the deterministic light
 preview at 1240×820 and 840×620. The New chat choice dialog, project-folder

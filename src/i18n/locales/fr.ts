@@ -1364,6 +1364,18 @@ export const fr = {
   "settings.voice.voice": "Voix",
   "settings.voice.voiceDetail":
     "Voix de réponse utilisée par Realtime v3, conservée pour les prochaines conversations.",
+  "settings.voice.instructions": "Instructions vocales",
+  "settings.voice.instructionsDetail":
+    "Consignes facultatives de ton, de prononciation et d’attitude pour les nouvelles sessions vocales.",
+  "settings.voice.instructionsEdit": "Modifier",
+  "settings.voice.instructionsDialogTitle": "Instructions vocales",
+  "settings.voice.instructionsDialogDetail":
+    "Ces instructions sont ajoutées uniquement aux nouvelles sessions vocales Realtime.",
+  "settings.voice.instructionsEditor": "Prompt personnalisé",
+  "settings.voice.instructionsPlaceholder":
+    "Par exemple : parle dans un français neutre, chaleureusement et à un rythme posé…",
+  "settings.voice.instructionsEmptyDetail":
+    "Laissez ce champ vide pour conserver le comportement vocal par défaut de Codex.",
   "settings.voice.protocol": "Protocole Realtime",
   "settings.voice.protocolDetail":
     "Utilise Codex Voice via WebRTC, avec repli audio WebSocket.",

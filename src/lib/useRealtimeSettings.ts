@@ -12,6 +12,7 @@ import {
 
 export type RealtimeSettingsController = {
   voice: RealtimeVoice;
+  voiceInstructions: string;
   voices: RealtimeVoice[];
   loading: boolean;
   saving: boolean;
@@ -19,6 +20,7 @@ export type RealtimeSettingsController = {
   persistenceError?: string;
   refresh: () => Promise<void>;
   setVoice: (voice: RealtimeVoice) => Promise<void>;
+  setVoiceInstructions: (instructions: string) => Promise<boolean>;
 };
 
 export function useRealtimeSettings(
@@ -31,6 +33,7 @@ export function useRealtimeSettings(
   const [voices, setVoices] = useState<RealtimeVoice[]>(
     fallbackRealtimeVoices.v1,
   );
+  const [voiceInstructions, setVoiceInstructionsState] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
@@ -51,6 +54,9 @@ export function useRealtimeSettings(
           isRealtimeVoice(settings.realtimeVoice)
         ) {
           setVoiceState(settings.realtimeVoice);
+        }
+        if (!disposed && typeof settings.realtimeVoiceInstructions === "string") {
+          setVoiceInstructionsState(settings.realtimeVoiceInstructions);
         }
       })
       .catch((cause) => {
@@ -141,8 +147,28 @@ export function useRealtimeSettings(
     [voice, voices],
   );
 
+  const setVoiceInstructions = useCallback(async (instructions: string) => {
+    if (saveInFlight.current) return false;
+    saveInFlight.current = true;
+    setSaving(true);
+    setPersistenceError(undefined);
+    try {
+      const normalized = instructions.trim();
+      await updateDesktopSettings({ realtimeVoiceInstructions: normalized });
+      setVoiceInstructionsState(normalized);
+      return true;
+    } catch (cause) {
+      setPersistenceError(errorMessage(cause));
+      return false;
+    } finally {
+      saveInFlight.current = false;
+      setSaving(false);
+    }
+  }, []);
+
   return {
     voice,
+    voiceInstructions,
     voices,
     loading,
     saving,
@@ -150,6 +176,7 @@ export function useRealtimeSettings(
     persistenceError,
     refresh,
     setVoice,
+    setVoiceInstructions,
   };
 }
 

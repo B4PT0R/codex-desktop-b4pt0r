@@ -5,6 +5,7 @@ import { request } from "./codex";
 import { configReadParams } from "./protocol";
 import type { ClientVersions } from "./clientContext";
 import { configuredDeveloperInstructions } from "./adultMode";
+import { readDesktopSettingsSnapshot } from "./desktopSettings";
 
 export type RealtimeInitialItem = {
   role: "developer" | "user" | "assistant";
@@ -34,10 +35,18 @@ export async function realtimeInstructionItems(
     { threadId, developerInstructions },
   );
   const effectiveInstructions = instructions.content.trim();
+  const voiceInstructions = (await readDesktopSettingsSnapshot())
+    .realtimeVoiceInstructions?.trim();
+  const composedInstructions = [
+    await configuredDeveloperInstructions(effectiveInstructions, versions),
+    voiceInstructions
+      ? `<voice_instructions>\n${voiceInstructions}\n</voice_instructions>`
+      : undefined,
+  ].filter(Boolean).join("\n\n");
   return [
     {
       role: "developer",
-      text: await configuredDeveloperInstructions(effectiveInstructions, versions),
+      text: composedInstructions,
     },
   ];
 }

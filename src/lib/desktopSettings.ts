@@ -13,6 +13,7 @@ export type DesktopSettings = {
   showReasoningItems?: boolean;
   defaultThreadId?: string;
   realtimeVoice?: string;
+  realtimeVoiceInstructions?: string;
   sidebarWidth?: number;
   adultModeEnabled?: boolean;
   adultModeCredential?: import("./adultModeCredential").AdultModeCredential;
@@ -31,6 +32,7 @@ export type DesktopSettingsPatch = Partial<
     | "showReasoningItems"
     | "defaultThreadId"
     | "realtimeVoice"
+    | "realtimeVoiceInstructions"
     | "sidebarWidth"
     | "adultModeEnabled"
     | "adultModeCredential"
@@ -41,6 +43,7 @@ const legacyLocaleKey = "codex-desktop.locale";
 const legacyWorkspaceKey = "codex-desktop.cwd";
 const browserAppearanceKey = "codex-desktop.appearance";
 const browserVoiceKey = "codex-desktop.realtimeVoice";
+const browserVoiceInstructionsKey = "codex-desktop.realtimeVoiceInstructions";
 const browserDefaultThreadKey = "codex-desktop.defaultThreadId";
 const browserSidebarWidthKey = "codex-desktop.sidebarWidth";
 const browserMaxVisibleActionsKey = "codex-desktop.maxVisibleActionsPerGroup";
@@ -113,6 +116,10 @@ function browserSettings(): DesktopSettings {
     ...(localStorage.getItem(browserVoiceKey)
       ? { realtimeVoice: localStorage.getItem(browserVoiceKey) ?? undefined }
       : {}),
+    ...(localStorage.getItem(browserVoiceInstructionsKey) !== null
+      ? { realtimeVoiceInstructions:
+          localStorage.getItem(browserVoiceInstructionsKey) ?? "" }
+      : {}),
     ...(localStorage.getItem(browserDefaultThreadKey)
       ? {
           defaultThreadId:
@@ -154,6 +161,12 @@ function writeBrowserSettings(settings: DesktopSettings) {
   );
   if (settings.realtimeVoice) {
     localStorage.setItem(browserVoiceKey, settings.realtimeVoice);
+  }
+  if (settings.realtimeVoiceInstructions !== undefined) {
+    localStorage.setItem(
+      browserVoiceInstructionsKey,
+      settings.realtimeVoiceInstructions,
+    );
   }
   if (settings.defaultThreadId) {
     localStorage.setItem(browserDefaultThreadKey, settings.defaultThreadId);
@@ -231,6 +244,13 @@ function validatePatch(patch: DesktopSettingsPatch) {
   }
   if (patch.realtimeVoice && !isRealtimeVoice(patch.realtimeVoice)) {
     throw new Error("Unsupported realtime voice");
+  }
+  if (
+    patch.realtimeVoiceInstructions !== undefined &&
+    (typeof patch.realtimeVoiceInstructions !== "string" ||
+      patch.realtimeVoiceInstructions.length > 32_768)
+  ) {
+    throw new Error("Unsupported realtime voice instructions");
   }
   if (
     patch.defaultThreadId !== undefined &&

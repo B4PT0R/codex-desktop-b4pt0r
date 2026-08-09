@@ -1147,6 +1147,14 @@
   resize: vertical;
 }
 
+.voice-instructions-dialog {
+  width: min(520px, calc(var(--interface-viewport-width, 100vw) - 32px));
+}
+
+.voice-instructions-dialog .settings-form-dialog-body textarea {
+  min-height: 126px;
+}
+
 .settings-form-dialog-body small {
   color: #858580;
   line-height: 1.4;

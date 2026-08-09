@@ -9,11 +9,12 @@ vi.mock("../../src/lib/nativeBridge", () => ({
 }));
 vi.mock("../../src/lib/codex", () => ({ request: requestMock }));
 vi.mock("../../src/lib/desktopSettings", () => ({
-  readDesktopSettingsSnapshot: () => Promise.resolve({ version: 1 }),
+  readDesktopSettingsSnapshot: vi.fn(() => Promise.resolve({ version: 1 })),
 }));
 
 import { realtimeInstructionItems } from "../../src/lib/realtimeInstructions";
 import { codexDesktopDeveloperInstructions } from "../../src/lib/clientContext";
+import { readDesktopSettingsSnapshot } from "../../src/lib/desktopSettings";
 
 const versions = {
   clientVersion: "0.5.1",
@@ -81,6 +82,24 @@ describe("instructions initiales Realtime", () => {
     isDesktopAppMock.mockReturnValue(false);
     await expect(realtimeInstructionItems("preview")).resolves.toEqual([]);
     expect(requestMock).toHaveBeenCalledOnce();
+  });
+
+  it("ajoute les instructions vocales non vides sans remplacer le contexte", async () => {
+    vi.mocked(readDesktopSettingsSnapshot).mockResolvedValueOnce({
+      version: 1,
+      realtimeVoiceInstructions: "Parle lentement et sans accent régional.",
+    });
+    invokeMock.mockImplementation((method) =>
+      method === "read_app_versions"
+        ? Promise.resolve(versions)
+        : Promise.resolve({ content: "Base instructions", sourceCount: 1 }),
+    );
+
+    const [item] = await realtimeInstructionItems("thread-voice");
+    expect(item.text).toContain("Base instructions");
+    expect(item.text).toContain(
+      "<voice_instructions>\nParle lentement et sans accent régional.\n</voice_instructions>",
+    );
   });
 
   it("n'ouvre pas Realtime si la configuration effective est indisponible", async () => {

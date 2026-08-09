@@ -77,6 +77,7 @@ test("rejects malformed values even when they are falsy", async () => {
     { fontSize: null },
     { lastWorkspace: {} },
     { realtimeVoice: 0 },
+    { realtimeVoiceInstructions: null },
     { sharedBrowserEnabled: null },
     { adultModeEnabled: "yes" },
   ];
@@ -85,6 +86,19 @@ test("rejects malformed values even when they are falsy", async () => {
     await assert.rejects(updateSettings(file, patch), /Unsupported|too long/);
   }
   assert.deepEqual(await readSettings(file), { version: SETTINGS_VERSION });
+});
+
+test("validates persisted Realtime voice instructions", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "codex-settings-"));
+  const file = path.join(directory, "settings.json");
+  const updated = await updateSettings(file, {
+    realtimeVoiceInstructions: "Speak warmly.",
+  });
+  assert.equal(updated.realtimeVoiceInstructions, "Speak warmly.");
+  await assert.rejects(
+    updateSettings(file, { realtimeVoiceInstructions: "x".repeat(32_769) }),
+    /Unsupported realtime voice instructions/,
+  );
 });
 
 test("serializes concurrent patches without losing either preference", async () => {

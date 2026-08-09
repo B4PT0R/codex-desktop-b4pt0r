@@ -25,6 +25,12 @@ every visual iteration. Historical captures remain available through Git.
   grouped into Application, Agents & Capabilities, Extensions and Advanced.
 - `settings-appearance-light-1164x860.png` — light-theme Appearance baseline
   showing aligned conversation-density controls and compact-view toggles.
+- `settings-voice-instructions-light-1164x860.png` — light-theme Voice
+  baseline showing the compact editor for optional Realtime-only tone,
+  pronunciation and attitude instructions.
+- `conversation-responsive-light-740x760.png` — narrow light-theme conversation
+  baseline with the sidebar automatically collapsed and the composer capped at
+  three quarters of the available chat width.
 - `settings-config-light-1164x860.png` — light-theme Configuration baseline
   showing the experimental Adult Mode preference alongside advanced runtime
   and developer-instruction controls.
