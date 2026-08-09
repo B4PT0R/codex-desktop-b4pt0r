@@ -3,31 +3,45 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { readThreadInstructions } from "./thread-instructions.mjs";
+import {
+  globalThreadInstructionSources,
+  readThreadInstructions,
+} from "./thread-instructions.mjs";
 
-test("renders developer and loaded instruction sources in effective order", async (t) => {
+test("renders developer and selected global guidance in effective order", async (t) => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "codex-instructions-"));
   t.after(() => rm(directory, { recursive: true }));
   const globalFile = path.join(directory, "global-AGENTS.md");
-  const workspaceFile = path.join(directory, "workspace-AGENTS.md");
   await writeFile(globalFile, "Global instructions", "utf8");
-  await writeFile(workspaceFile, "Workspace instructions", "utf8");
 
   const result = await readThreadInstructions(
-    [globalFile, workspaceFile],
+    [globalFile],
     "Developer instructions",
   );
 
-  assert.equal(result.sourceCount, 2);
+  assert.equal(result.sourceCount, 1);
   assert.ok(
     result.content.indexOf("Developer instructions") <
       result.content.indexOf("Global instructions"),
   );
-  assert.ok(
-    result.content.indexOf("Global instructions") <
-      result.content.indexOf("Workspace instructions"),
+  assert.match(result.content, /global AGENTS\.md guidance/);
+});
+
+test("selects only global AGENTS guidance for the Realtime intermediary", () => {
+  assert.deepEqual(
+    globalThreadInstructionSources(
+      [
+        "/home/alice/.codex/AGENTS.md",
+        "/work/project/AGENTS.md",
+        "/home/alice/.codex/AGENTS.override.md",
+      ],
+      "/home/alice/.codex/AGENTS.md",
+    ),
+    [
+      "/home/alice/.codex/AGENTS.md",
+      "/home/alice/.codex/AGENTS.override.md",
+    ],
   );
-  assert.match(result.content, /normal hierarchy/);
 });
 
 test("keeps developer instructions when no AGENTS source is available", async () => {

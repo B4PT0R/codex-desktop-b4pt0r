@@ -44,7 +44,10 @@ import {
   readGlobalAgents,
   writeGlobalAgents,
 } from "./global-agents.mjs";
-import { readThreadInstructions } from "./thread-instructions.mjs";
+import {
+  globalThreadInstructionSources,
+  readThreadInstructions,
+} from "./thread-instructions.mjs";
 import {
   generatedImageSaveOptions,
   saveGeneratedImage,
@@ -215,8 +218,12 @@ function registerIpc() {
   });
   ipcMain.handle("desktop:read_thread_instructions", (event, args) => {
     trusted(event);
+    const globalFile = globalAgentsPath(app.getPath("home"), process.env);
     return readThreadInstructions(
-      appServer.instructionSources(args?.threadId),
+      globalThreadInstructionSources(
+        appServer.instructionSources(args?.threadId),
+        globalFile,
+      ),
       args?.developerInstructions,
     );
   });

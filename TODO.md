@@ -128,6 +128,10 @@ Voice customization: the Voice settings page owns an optional desktop-persisted
 prompt for tone, pronunciation and attitude. It is empty by default and appended
 only to new Realtime sessions, after the existing effective instructions; text
 threads and the delegated backend remain unchanged.
+The vocal intermediary receives global developer preferences and global
+`AGENTS.md` guidance, but not workspace/project `AGENTS.md` files: Codex already
+applies those to the delegated text agent, while its bounded Realtime startup
+context provides thread continuity and workspace orientation.
 
 Responsive navigation: the sidebar closes automatically when the viewport is
 narrower than three times its current width, including after user resizing, and

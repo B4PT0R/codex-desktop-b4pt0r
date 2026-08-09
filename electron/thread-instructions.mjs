@@ -44,13 +44,24 @@ export async function readThreadInstructions(sources, developerInstructions) {
   }
   if (sections.length === 0) return { content: "", sourceCount: 0 };
   const content = [
-    "These are the effective developer instructions and AGENTS.md sources loaded by Codex for this thread. Apply all of them throughout this Realtime conversation. AGENTS.md sources follow their normal hierarchy: later, more specific sources take precedence when guidance conflicts.",
+    "These are the effective global developer instructions and global AGENTS.md guidance loaded by Codex. Apply them throughout this Realtime conversation.",
     ...sections,
   ].join("\n\n");
   return {
     content: truncateMiddleUtf8(content, MAX_REALTIME_INSTRUCTION_BYTES),
     sourceCount,
   };
+}
+
+export function globalThreadInstructionSources(sources, globalAgentsFile) {
+  if (!Array.isArray(sources) || typeof globalAgentsFile !== "string") return [];
+  const globalDirectory = path.dirname(path.resolve(globalAgentsFile));
+  return sources.filter((source) => {
+    if (typeof source !== "string" || !path.isAbsolute(source)) return false;
+    const resolved = path.resolve(source);
+    return path.dirname(resolved) === globalDirectory &&
+      ["AGENTS.md", "AGENTS.override.md"].includes(path.basename(resolved));
+  });
 }
 
 function truncateMiddleUtf8(value, maxBytes) {

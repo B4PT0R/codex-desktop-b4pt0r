@@ -102,6 +102,30 @@ describe("instructions initiales Realtime", () => {
     );
   });
 
+  it("conserve ensemble le Mode Adulte et les instructions vocales", async () => {
+    vi.mocked(readDesktopSettingsSnapshot).mockResolvedValue({
+      version: 1,
+      adultModeEnabled: true,
+      realtimeVoiceInstructions: "Adopte le ton vocal personnalisé.",
+    });
+    invokeMock.mockImplementation((method) =>
+      method === "read_app_versions"
+        ? Promise.resolve(versions)
+        : Promise.resolve({ content: "Global guidance", sourceCount: 1 }),
+    );
+
+    const [item] = await realtimeInstructionItems("thread-voice");
+    expect(item.text).toContain("Global guidance");
+    expect(item.text).toContain("# Adult Mode");
+    expect(item.text).toContain("## Adult Mode Status");
+    expect(item.text).toContain(
+      "<voice_instructions>\nAdopte le ton vocal personnalisé.\n</voice_instructions>",
+    );
+    expect(item.text.indexOf("# Adult Mode")).toBeLessThan(
+      item.text.indexOf("<voice_instructions>"),
+    );
+  });
+
   it("n'ouvre pas Realtime si la configuration effective est indisponible", async () => {
     requestMock.mockRejectedValue(new Error("config unavailable"));
 
