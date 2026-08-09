@@ -211,3 +211,19 @@ test("validates and clears the default thread", async () => {
     /Unsupported default thread/,
   );
 });
+
+test("persists the bounded Realtime parent catalog", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "codex-settings-"));
+  const file = path.join(directory, "settings.json");
+  const updated = await updateSettings(file, {
+    realtimeParentThreadIds: ["thread-voice", "thread-older"],
+  });
+  assert.deepEqual(updated.realtimeParentThreadIds, [
+    "thread-voice",
+    "thread-older",
+  ]);
+  await assert.rejects(
+    updateSettings(file, { realtimeParentThreadIds: [""] }),
+    /Unsupported realtime parent threads/,
+  );
+});

@@ -107,6 +107,12 @@ import {
   type ThreadRuntimeSettings,
 } from "./lib/threadRuntimeSettings";
 import { startedThreadSummary, threadSummary } from "./lib/threadSummary";
+import {
+  hydrateRealtimeParents,
+  mergeRememberedRealtimeParents,
+  readRememberedRealtimeParents,
+  rememberRealtimeParentThread,
+} from "./lib/realtimeParentCatalog";
 import { useConfigRequirements } from "./lib/useConfigRequirements";
 import {
   markThreadClosed,
@@ -224,6 +230,7 @@ export default function App() {
   const dictationSequence = useRef(0);
   const realtimeStartGeneration = useRef(0);
   const realtimeStartPending = useRef(false);
+  const rememberedRealtimeParents = useRef(new Set<string>());
   const [cwd, setCwd] = useState("");
   const showError = useCallback((title: string, error: unknown) => {
     setMessages((items) => [
@@ -297,8 +304,18 @@ export default function App() {
   });
   const realtime = useRealtimeSettings(settings === "voice");
   const defaultThread = useDefaultThreadSettings(threads);
+  const handleParentTranscriptPersisted = useCallback(
+    (parentThreadId: string) => {
+      rememberedRealtimeParents.current.add(parentThreadId);
+      void rememberRealtimeParentThread(parentThreadId).catch((error) =>
+        showError(t("app.realtimeTranscriptSaveError"), error),
+      );
+    },
+    [showError, t],
+  );
   const realtimeConversation = useRealtimeConversation({
     activeParentThreadId: threadId,
+    onParentTranscriptPersisted: handleParentTranscriptPersisted,
     setActivity,
     setMessages,
     showError,
@@ -336,11 +353,41 @@ export default function App() {
     onThreadsRefreshed: applyThreadCatalog,
   });
 
+  useEffect(() => {
+    if (!connection.connected || isDemoPreview()) return;
+    let disposed = false;
+    void readRememberedRealtimeParents()
+      .then(async (threadIds) => {
+        if (disposed) return;
+        rememberedRealtimeParents.current = new Set(threadIds);
+        const summaries = await hydrateRealtimeParents(threadIds);
+        if (disposed) return;
+        setThreads((current) =>
+          summaries.reduce(
+            (catalog, summary) => restoreThread(catalog, summary),
+            current,
+          ),
+        );
+      })
+      .catch(() => {
+        // A reconnect retries; ordinary App Server history remains usable.
+      });
+    return () => {
+      disposed = true;
+    };
+  }, [connection.connected]);
+
   function applyThreadCatalog(history: ThreadSummary[]) {
     for (const thread of history) {
       turnCoordinator.observeStatus(thread.id, thread.status);
     }
-    setThreads(history);
+    setThreads((current) =>
+      mergeRememberedRealtimeParents(
+        history,
+        current,
+        rememberedRealtimeParents.current,
+      ),
+    );
   }
   const subagents = useSubagentTranscripts({
     enabled: connection.connected && !isDemoPreview(),

@@ -14,6 +14,7 @@ export type DesktopSettings = {
   defaultThreadId?: string;
   realtimeVoice?: string;
   realtimeVoiceInstructions?: string;
+  realtimeParentThreadIds?: string[];
   sidebarWidth?: number;
   adultModeEnabled?: boolean;
   adultModeCredential?: import("./adultModeCredential").AdultModeCredential;
@@ -33,6 +34,7 @@ export type DesktopSettingsPatch = Partial<
     | "defaultThreadId"
     | "realtimeVoice"
     | "realtimeVoiceInstructions"
+    | "realtimeParentThreadIds"
     | "sidebarWidth"
     | "adultModeEnabled"
     | "adultModeCredential"
@@ -259,6 +261,16 @@ function validatePatch(patch: DesktopSettingsPatch) {
       patch.defaultThreadId.length > 1_024)
   ) {
     throw new Error("Unsupported default thread");
+  }
+  if (
+    patch.realtimeParentThreadIds !== undefined &&
+    (!Array.isArray(patch.realtimeParentThreadIds) ||
+      patch.realtimeParentThreadIds.length > 100 ||
+      patch.realtimeParentThreadIds.some(
+        (id) => typeof id !== "string" || id.length === 0 || id.length > 1_024,
+      ))
+  ) {
+    throw new Error("Unsupported realtime parent threads");
   }
   if (
     patch.sidebarWidth !== undefined &&

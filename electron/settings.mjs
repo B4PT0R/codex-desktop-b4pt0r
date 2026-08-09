@@ -17,6 +17,7 @@ const writableSettings = new Set([
   "maxVisibleActionsPerGroup",
   "realtimeVoice",
   "realtimeVoiceInstructions",
+  "realtimeParentThreadIds",
   "showReasoningItems",
   "sharedBrowserEnabled",
   "sidebarWidth",
@@ -170,6 +171,16 @@ function validatePatch(patch) {
       patch.defaultThreadId.length > 1_024)
   ) {
     throw new Error("Unsupported default thread");
+  }
+  if (
+    Object.hasOwn(patch, "realtimeParentThreadIds") &&
+    (!Array.isArray(patch.realtimeParentThreadIds) ||
+      patch.realtimeParentThreadIds.length > 100 ||
+      patch.realtimeParentThreadIds.some(
+        (id) => typeof id !== "string" || id.length === 0 || id.length > 1_024,
+      ))
+  ) {
+    throw new Error("Unsupported realtime parent threads");
   }
   if (
     Object.hasOwn(patch, "automations") &&

@@ -154,6 +154,12 @@ at three quarters of the available chat width.
   display but poison inherited delegated turns under Codex 0.147, so affected
   conversations require a fresh thread until App Server exposes a safe
   history-rewrite contract.
+- App Server 0.147 persists `thread/inject_items` transcript history but omits
+  parents without ordinary turns from `thread/list`. Codex Desktop temporarily
+  keeps a bounded list of Realtime parents in desktop settings, rehydrates them
+  with `thread/read`, and merges them into Discussions without fabricating a
+  model turn. Remove this compatibility path when the server catalogs injected
+  histories directly.
 - While Realtime is active, ordinary composer text belongs to its WebRTC
   conversation and is persisted back into the parent transcript; it must never
   fall through to a parent `turn/start` or `turn/steer` request.
@@ -214,8 +220,8 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 782 deterministic frontend/unit tests across 135 files;
-- 139 Electron/Node tests, including App Server and shared-browser shutdown,
+- 786 deterministic frontend/unit tests across 136 files;
+- 141 Electron/Node tests, including App Server and shared-browser shutdown,
   recovery, synthetic
   Discussion workspaces and the tray
   quick actions;

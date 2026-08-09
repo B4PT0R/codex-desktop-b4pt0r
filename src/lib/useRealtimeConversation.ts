@@ -49,6 +49,7 @@ import { toolFromItem } from "./toolPresentation";
 
 type RealtimeConversationOptions = {
   activeParentThreadId?: string;
+  onParentTranscriptPersisted?: (threadId: string) => void;
   setActivity: Dispatch<SetStateAction<AgentActivity>>;
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   showError: (title: string, error: unknown) => void;
@@ -71,6 +72,7 @@ type TranscriptUpdate = (messages: ChatMessage[]) => ChatMessage[];
 
 export function useRealtimeConversation({
   activeParentThreadId,
+  onParentTranscriptPersisted,
   setActivity,
   setMessages,
   showError,
@@ -88,6 +90,7 @@ export function useRealtimeConversation({
   const terminationOperation = useRef<Promise<void> | undefined>(undefined);
   const releasingThreadIds = useRef(new Set<string>());
   const transcriptWriteQueue = useRef<Promise<void>>(Promise.resolve());
+  const reportedPersistentParents = useRef(new Set<string>());
   const preRealtimeMessageIds = useRef<ReadonlySet<string>>(new Set());
   const assistantMessageId = useRef<string | undefined>(undefined);
   const assistantSegmentText = useRef("");
@@ -224,7 +227,12 @@ export function useRealtimeConversation({
               ? realtimeTextItemId(messageId)
               : realtimeVoiceItemId(role, messageId),
           ),
-        ).then(() => undefined);
+        ).then(() => {
+          if (!reportedPersistentParents.current.has(persistentThreadId)) {
+            reportedPersistentParents.current.add(persistentThreadId);
+            onParentTranscriptPersisted?.(persistentThreadId);
+          }
+        });
       transcriptWriteQueue.current = transcriptWriteQueue.current
         .then(write, write)
         .catch((error) =>
@@ -234,7 +242,7 @@ export function useRealtimeConversation({
           ),
         );
     },
-    [],
+    [onParentTranscriptPersisted],
   );
 
   const terminate = useCallback((notifyRemote = true) => {
