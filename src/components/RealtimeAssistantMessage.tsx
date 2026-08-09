@@ -1,5 +1,5 @@
 import { AudioWaveform, ChevronDown, LoaderCircle, MessageSquareText } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { ChatMessage } from "../types";
 import { Markdown } from "./Markdown";
@@ -32,7 +32,9 @@ export function RealtimeTextMessage({
   const [expanded, setExpanded] = useState(Boolean(message.streaming));
   const wasStreaming = useRef(Boolean(message.streaming));
 
-  useEffect(() => {
+  // Streaming can flip while protocol items are being regrouped. Synchronize
+  // expansion before paint so the previous state never flashes for one frame.
+  useLayoutEffect(() => {
     if (message.streaming) {
       wasStreaming.current = true;
       setExpanded(true);
