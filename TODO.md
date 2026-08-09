@@ -160,9 +160,16 @@ at three quarters of the available chat width.
   with `thread/read`, and merges them into Discussions without fabricating a
   model turn. Remove this compatibility path when the server catalogs injected
   histories directly.
+- When an empty parent has no rollout to fork, the Realtime fallback starts its
+  ephemeral delegated text thread with the parent's effective developer
+  instructions. This keeps Adult Mode and other global developer guidance
+  aligned between the vocal intermediary and Text Agent.
 - While Realtime is active, ordinary composer text belongs to its WebRTC
   conversation and is persisted back into the parent transcript; it must never
-  fall through to a parent `turn/start` or `turn/steer` request.
+  fall through to a parent `turn/start` or `turn/steer` request. Realtime v3
+  receives that text through `session.context.append` on the `speakable`
+  channel; legacy `conversation.item.create` and `response.create` client events
+  are not accepted by the frameless protocol.
 - Client preferences live in `~/.codex/codex-desktop-linux.json`; official
   Codex configuration remains in `config.toml`. Installation, update and normal
   startup do not rewrite either domain or server-owned thread metadata.

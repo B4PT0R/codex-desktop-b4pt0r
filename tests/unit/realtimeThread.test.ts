@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createRealtimeThread,
   isMissingThreadRolloutError,
@@ -11,9 +11,14 @@ const options = {
   permission: ":workspace",
   personality: "friendly" as const,
   approvalPolicy: "on-request" as const,
+  resolveDeveloperInstructions: vi
+    .fn()
+    .mockResolvedValue("Adult developer instructions"),
 };
 
 describe("thread éphémère Realtime", () => {
+  beforeEach(() => options.resolveDeveloperInstructions.mockClear());
+
   it("remplace le fork impossible d’un thread vide par un nouveau thread", async () => {
     const fallbackThread = { thread: { id: "realtime" } };
     const request = vi
@@ -41,8 +46,10 @@ describe("thread éphémère Realtime", () => {
       permissions: ":workspace",
       personality: "friendly",
       approvalPolicy: "on-request",
+      developerInstructions: "Adult developer instructions",
       ephemeral: true,
     });
+    expect(options.resolveDeveloperInstructions).toHaveBeenCalledOnce();
   });
 
   it("ne masque pas les autres échecs du fork", async () => {
@@ -51,6 +58,7 @@ describe("thread éphémère Realtime", () => {
 
     await expect(createRealtimeThread(request, options)).rejects.toBe(error);
     expect(request).toHaveBeenCalledOnce();
+    expect(options.resolveDeveloperInstructions).not.toHaveBeenCalled();
   });
 
   it("reconnaît uniquement l’erreur d’absence de rollout", () => {

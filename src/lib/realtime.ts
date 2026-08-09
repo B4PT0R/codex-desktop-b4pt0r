@@ -90,14 +90,10 @@ export async function sendRealtimeText(text: string) {
     throw new Error("The Realtime conversation ended before the message was sent.");
   }
   channel.send(JSON.stringify({
-    type: "conversation.item.create",
-    item: {
-      type: "message",
-      role: "user",
-      content: [{ type: "input_text", text }],
-    },
+    type: "session.context.append",
+    channel: "speakable",
+    content: [{ type: "input_text", text }],
   }));
-  channel.send(JSON.stringify({ type: "response.create" }));
 }
 
 export async function acceptRealtimeAnswer(threadId: string, sdp: string) {

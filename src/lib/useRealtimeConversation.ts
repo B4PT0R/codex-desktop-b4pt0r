@@ -50,6 +50,7 @@ import { toolFromItem } from "./toolPresentation";
 type RealtimeConversationOptions = {
   activeParentThreadId?: string;
   onParentTranscriptPersisted?: (threadId: string) => void;
+  resolveDeveloperInstructions?: (cwd?: string) => Promise<string | undefined>;
   setActivity: Dispatch<SetStateAction<AgentActivity>>;
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   showError: (title: string, error: unknown) => void;
@@ -73,6 +74,7 @@ type TranscriptUpdate = (messages: ChatMessage[]) => ChatMessage[];
 export function useRealtimeConversation({
   activeParentThreadId,
   onParentTranscriptPersisted,
+  resolveDeveloperInstructions,
   setActivity,
   setMessages,
   showError,
@@ -315,7 +317,12 @@ export function useRealtimeConversation({
       let createdThreadId: string | undefined;
       const operation = (async () => {
         try {
-          const started = await createRealtimeThread(request, options);
+          const started = await createRealtimeThread(request, {
+            ...options,
+            resolveDeveloperInstructions: resolveDeveloperInstructions
+              ? () => resolveDeveloperInstructions(options.cwd)
+              : undefined,
+          });
           const threadId = started.thread.id as string;
           createdThreadId = threadId;
           if (startGeneration.current !== generation) {
@@ -389,6 +396,7 @@ export function useRealtimeConversation({
       finish,
       recording,
       releaseFork,
+      resolveDeveloperInstructions,
       terminate,
       transcriptIsVisible,
     ],

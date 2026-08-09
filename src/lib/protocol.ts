@@ -69,6 +69,7 @@ export function realtimeEphemeralThreadStartParams(
   permission?: Permission,
   personality?: Personality,
   approvalPolicy?: ApprovalPolicy,
+  developerInstructions?: string,
 ) {
   const { dynamicTools: _dynamicTools, ...params } = threadStartParams(
     cwd,
@@ -76,6 +77,8 @@ export function realtimeEphemeralThreadStartParams(
     permission,
     personality,
     approvalPolicy,
+    undefined,
+    developerInstructions,
   );
   return {
     ...params,

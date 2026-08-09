@@ -19,6 +19,7 @@ type RealtimeThreadOptions = {
   permission?: Permission;
   personality?: Personality;
   approvalPolicy?: ApprovalPolicy;
+  resolveDeveloperInstructions?: () => Promise<string | undefined>;
 };
 
 export async function createRealtimeThread(
@@ -38,6 +39,8 @@ export async function createRealtimeThread(
     );
   } catch (error) {
     if (!isMissingThreadRolloutError(error)) throw error;
+    const developerInstructions =
+      await options.resolveDeveloperInstructions?.();
     return request<ThreadStartResponse>(
       "thread/start",
       realtimeEphemeralThreadStartParams(
@@ -46,6 +49,7 @@ export async function createRealtimeThread(
         options.permission,
         options.personality,
         options.approvalPolicy,
+        developerInstructions,
       ),
     );
   }

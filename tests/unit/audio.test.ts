@@ -107,14 +107,10 @@ describe("audio realtime Electron", () => {
     expect(eventsChannel.send.mock.calls.map(([event]) => JSON.parse(event)))
       .toEqual([
         {
-          type: "conversation.item.create",
-          item: {
-            type: "message",
-            role: "user",
-            content: [{ type: "input_text", text: "Continue par écrit" }],
-          },
+          type: "session.context.append",
+          channel: "speakable",
+          content: [{ type: "input_text", text: "Continue par écrit" }],
         },
-        { type: "response.create" },
       ]);
   });
 

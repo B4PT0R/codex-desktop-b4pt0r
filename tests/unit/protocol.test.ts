@@ -631,6 +631,7 @@ describe("constructeurs JSON-RPC", () => {
         ":workspace",
         "friendly",
         "on-request",
+        "Adult developer instructions",
       ),
     ).toEqual({
       cwd: "/work",
@@ -638,6 +639,7 @@ describe("constructeurs JSON-RPC", () => {
       permissions: ":workspace",
       personality: "friendly",
       approvalPolicy: "on-request",
+      developerInstructions: "Adult developer instructions",
       ephemeral: true,
     });
     expect(

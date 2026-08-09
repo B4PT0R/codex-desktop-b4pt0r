@@ -316,6 +316,7 @@ export default function App() {
   const realtimeConversation = useRealtimeConversation({
     activeParentThreadId: threadId,
     onParentTranscriptPersisted: handleParentTranscriptPersisted,
+    resolveDeveloperInstructions: readDesktopDeveloperInstructions,
     setActivity,
     setMessages,
     showError,

@@ -321,6 +321,9 @@ describe("contrat Codex installé", () => {
         "/tmp/project",
         "gpt-5.4",
         ":workspace",
+        undefined,
+        undefined,
+        "Adult developer instructions",
       ),
     ));
   it("accepte thread/unarchive", () =>
