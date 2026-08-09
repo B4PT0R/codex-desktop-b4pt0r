@@ -391,6 +391,34 @@ describe("historique de conversation", () => {
     expect(tool.compareDocumentPosition(after) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it("garde les actions du Text Agent repliées pendant leur exécution", () => {
+    renderConversation({
+      activity: "talking",
+      messages: [{
+        id: "delegation-running",
+        role: "assistant",
+        modality: "realtimeText",
+        content: "Je vérifie.",
+        streaming: true,
+        realtimeSegments: [
+          { id: "intro", type: "text", content: "Je vérifie." },
+          { id: "tool-running", type: "tool" },
+        ],
+        tools: [{
+          id: "tool-running",
+          kind: "commandExecution",
+          title: "Commande",
+          detail: "git status --short",
+          status: "running",
+        }],
+      }],
+    });
+
+    expect(screen.getByRole("button", { name: /Action en cours/ }))
+      .toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByText("git status --short")).not.toBeVisible();
+  });
+
   it("promeut l’image générée hors de la mini-timeline déléguée", () => {
     renderConversation({
       activity: null,

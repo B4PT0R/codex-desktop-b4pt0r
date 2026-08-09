@@ -34,6 +34,9 @@ follows semantic versioning while the public interface is taking shape.
 - Messages typed in the composer during an active voice session now remain in
   that Realtime conversation instead of starting or steering a parent-thread
   text turn.
+- Realtime presentation keeps delegated streams inside their Text Agent card,
+  leaves nested action groups calmly collapsed, and combines consecutive Voice
+  Agent messages into one readable block.
 - Adult Mode activation reports incomplete passwords, mismatched confirmation
   and a missing age declaration instead of leaving its action silently disabled.
 

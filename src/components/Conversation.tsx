@@ -274,10 +274,13 @@ const ConversationMessage = memo(function ConversationMessage({
     return () => window.clearTimeout(timer);
   }, [message.revealAfter]);
 
-  const renderTools = (tools = presentedTools.tools) => tools.length > 0 && (
+  const renderTools = (
+    tools = presentedTools.tools,
+    keepCollapsed = keepActionGroupsCollapsed,
+  ) => tools.length > 0 && (
     <ToolGroup
       backgroundToolIds={presentedTools.backgroundToolIds}
-      keepCollapsed={keepActionGroupsCollapsed}
+      keepCollapsed={keepCollapsed}
       maxVisibleActions={maxVisibleActions}
       tools={tools}
       onReviewDiff={onReviewDiff}
@@ -346,7 +349,7 @@ const ConversationMessage = memo(function ConversationMessage({
       if (tools.length) {
         nodes.push(
           <div className="realtime-tool-segment" key={`tools-${[...toolIds].join("-")}`}>
-            {renderTools(tools)}
+            {renderTools(tools, true)}
           </div>,
         );
       }

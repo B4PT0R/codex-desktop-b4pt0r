@@ -549,6 +549,7 @@ export function useRealtimeConversation({
             ? next.map((entry) => entry.id === anchorMessageId
               ? {
                   ...entry,
+                  modality: "realtimeText" as const,
                   realtimeSegments: [...textAgentSegments.current],
                   streaming: true,
                 }

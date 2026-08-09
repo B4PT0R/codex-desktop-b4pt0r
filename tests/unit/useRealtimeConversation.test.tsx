@@ -558,14 +558,37 @@ describe("cycle de vie de la conversation Realtime", () => {
       voice: "juniper",
     }));
     act(() => {
+      result.current.conversation.handleConversationEvent({
+        method: "item/started",
+        params: {
+          threadId: "realtime-child",
+          item: {
+            id: "commentary-1",
+            type: "agentMessage",
+            phase: "commentary",
+            text: "",
+          },
+        },
+      }, "realtime-child");
+    });
+    expect(result.current.messages).toEqual([
+      expect.objectContaining({
+        id: "commentary-1",
+        modality: "realtimeText",
+        streaming: true,
+      }),
+    ]);
+    act(() => {
       for (const [id, phase, text] of [
         ["commentary-1", "commentary", "Je vérifie."],
         ["final-1", "final", "Vérification terminée."],
       ] as const) {
-        result.current.conversation.handleConversationEvent({
-          method: "item/started",
-          params: { threadId: "realtime-child", item: { id, type: "agentMessage", phase, text: "" } },
-        }, "realtime-child");
+        if (id !== "commentary-1") {
+          result.current.conversation.handleConversationEvent({
+            method: "item/started",
+            params: { threadId: "realtime-child", item: { id, type: "agentMessage", phase, text: "" } },
+          }, "realtime-child");
+        }
         result.current.conversation.handleConversationEvent({
           method: "item/agentMessage/delta",
           params: { threadId: "realtime-child", itemId: id, delta: text },

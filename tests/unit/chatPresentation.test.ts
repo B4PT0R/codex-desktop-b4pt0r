@@ -18,6 +18,41 @@ describe("présentation des messages", () => {
     expect(messagesForPresentation(messages, true)).toBe(messages);
   });
 
+  it("regroupe uniquement les prises de parole Realtime consécutives", () => {
+    const messages: ChatMessage[] = [
+      {
+        id: "voice-1",
+        role: "assistant",
+        modality: "realtimeVoice",
+        content: "Première phrase.",
+      },
+      {
+        id: "voice-2",
+        role: "assistant",
+        modality: "realtimeVoice",
+        content: "Deuxième phrase.",
+        streaming: true,
+      },
+      { id: "user", role: "user", content: "Réponse." },
+      {
+        id: "voice-3",
+        role: "assistant",
+        modality: "realtimeVoice",
+        content: "Nouvelle prise de parole.",
+      },
+    ];
+
+    expect(messagesForPresentation(messages, true)).toEqual([
+      {
+        ...messages[0],
+        content: "Première phrase.\n\nDeuxième phrase.",
+        streaming: true,
+      },
+      messages[2],
+      messages[3],
+    ]);
+  });
+
   it("retire le raisonnement sans laisser les groupes d’actions séparés", () => {
     const messages: ChatMessage[] = [
       { id: "user", role: "user", content: "Go" },

@@ -5,10 +5,11 @@ export function messagesForPresentation(
   messages: ChatMessage[],
   showReasoningItems: boolean,
 ): ChatMessage[] {
-  if (showReasoningItems) return messages;
+  const groupedMessages = groupConsecutiveRealtimeVoice(messages);
+  if (showReasoningItems) return groupedMessages;
 
   const presented: ChatMessage[] = [];
-  for (const message of messages) {
+  for (const message of groupedMessages) {
     const reasoningSeparator =
       message.role === "assistant" &&
       !message.content.trim() &&
@@ -42,6 +43,34 @@ export function messagesForPresentation(
     presented.push(normalized);
   }
   return presented;
+}
+
+function groupConsecutiveRealtimeVoice(messages: ChatMessage[]) {
+  let grouped: ChatMessage[] | undefined;
+  for (let index = 0; index < messages.length; index += 1) {
+    const message = messages[index];
+    const previous = grouped?.at(-1) ?? messages[index - 1];
+    const merge =
+      previous?.role === "assistant" &&
+      previous.modality === "realtimeVoice" &&
+      message.role === "assistant" &&
+      message.modality === "realtimeVoice";
+    if (!merge) {
+      if (grouped) grouped.push(message);
+      continue;
+    }
+    if (previous) {
+      grouped ??= messages.slice(0, index);
+      grouped[grouped.length - 1] = {
+        ...previous,
+        content: [previous.content.trimEnd(), message.content.trimStart()]
+          .filter(Boolean)
+          .join("\n\n"),
+        streaming: Boolean(previous.streaming || message.streaming),
+      };
+    }
+  }
+  return grouped ?? messages;
 }
 
 function hasVisibleContent(message: ChatMessage) {
