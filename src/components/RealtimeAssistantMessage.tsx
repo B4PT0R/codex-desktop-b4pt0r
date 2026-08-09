@@ -20,9 +20,11 @@ export function RealtimeVoiceMessage({ message }: { message: ChatMessage }) {
 }
 
 export function RealtimeTextMessage({
+  content,
   details,
   message,
 }: {
+  content?: ReactNode;
   details?: ReactNode;
   message: ChatMessage;
 }) {
@@ -65,7 +67,7 @@ export function RealtimeTextMessage({
       </button>
       <div className="realtime-text-body" aria-hidden={!expanded}>
         <div>
-          <Markdown streaming={message.streaming}>{message.content}</Markdown>
+          {content ?? <Markdown streaming={message.streaming}>{message.content}</Markdown>}
           {details}
         </div>
       </div>

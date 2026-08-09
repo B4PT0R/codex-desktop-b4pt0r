@@ -533,6 +533,27 @@ describe("cycle de vie de la conversation Realtime", () => {
           method: "item/completed",
           params: { threadId: "realtime-child", item: { id, type: "agentMessage", phase, text } },
         }, "realtime-child");
+        if (id === "commentary-1") {
+          result.current.conversation.handleConversationEvent({
+            method: "item/started",
+            params: { threadId: "realtime-child", item: {
+              id: "tool-1",
+              type: "commandExecution",
+              command: "git status --short",
+              status: "inProgress",
+            } },
+          }, "realtime-child");
+          result.current.conversation.handleConversationEvent({
+            method: "item/completed",
+            params: { threadId: "realtime-child", item: {
+              id: "tool-1",
+              type: "commandExecution",
+              command: "git status --short",
+              status: "completed",
+              exitCode: 0,
+            } },
+          }, "realtime-child");
+        }
       }
     });
     expect(result.current.messages).toEqual([
@@ -540,6 +561,11 @@ describe("cycle de vie de la conversation Realtime", () => {
         id: "commentary-1",
         content: "Je vérifie.\n\nVérification terminée.",
         modality: "realtimeText",
+        realtimeSegments: [
+          { id: "commentary-1", type: "text", content: "Je vérifie." },
+          { id: "tool-1", type: "tool" },
+          { id: "final-1", type: "text", content: "Vérification terminée." },
+        ],
         streaming: true,
       }),
     ]);

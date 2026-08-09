@@ -1,5 +1,5 @@
 import { Folder, LoaderCircle, Sparkles } from "lucide-react";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 import type { AgentActivity } from "../lib/activity";
 import type { ChatMessage, SubagentTranscript, ToolCall } from "../types";
@@ -274,12 +274,12 @@ const ConversationMessage = memo(function ConversationMessage({
     return () => window.clearTimeout(timer);
   }, [message.revealAfter]);
 
-  const renderTools = () => presentedTools.tools.length > 0 && (
+  const renderTools = (tools = presentedTools.tools) => tools.length > 0 && (
     <ToolGroup
       backgroundToolIds={presentedTools.backgroundToolIds}
       keepCollapsed={keepActionGroupsCollapsed}
       maxVisibleActions={maxVisibleActions}
-      tools={presentedTools.tools}
+      tools={tools}
       onReviewDiff={onReviewDiff}
       renderSubagentMessages={
         depth >= 4
@@ -320,6 +320,40 @@ const ConversationMessage = memo(function ConversationMessage({
     />
   );
 
+  const renderRealtimeSegments = () => {
+    const segments = message.realtimeSegments;
+    if (!segments?.length) return undefined;
+    const nodes: ReactNode[] = [];
+    for (let index = 0; index < segments.length; index += 1) {
+      const segment = segments[index];
+      if (segment.type === "text") {
+        if (segment.content) {
+          nodes.push(
+            <div className="realtime-text-segment" key={`text-${segment.id}`}>
+              <Markdown streaming={message.streaming}>{segment.content}</Markdown>
+            </div>,
+          );
+        }
+        continue;
+      }
+      const toolIds = new Set<string>();
+      while (index < segments.length && segments[index].type === "tool") {
+        toolIds.add(segments[index].id);
+        index += 1;
+      }
+      index -= 1;
+      const tools = presentedTools.tools.filter((tool) => toolIds.has(tool.id));
+      if (tools.length) {
+        nodes.push(
+          <div className="realtime-tool-segment" key={`tools-${[...toolIds].join("-")}`}>
+            {renderTools(tools)}
+          </div>,
+        );
+      }
+    }
+    return nodes;
+  };
+
   if (!revealed) return null;
 
   return (
@@ -347,7 +381,11 @@ const ConversationMessage = memo(function ConversationMessage({
         ) : message.modality === "realtimeVoice" ? (
           <RealtimeVoiceMessage message={message} />
         ) : message.modality === "realtimeText" ? (
-          <RealtimeTextMessage details={renderTools()} message={message} />
+          <RealtimeTextMessage
+            content={renderRealtimeSegments()}
+            details={message.realtimeSegments ? undefined : renderTools()}
+            message={message}
+          />
         ) : message.modality === "scheduledTask" ? (
           <ScheduledTaskMessage message={message} />
         ) : message.modality === "commandResult" ? (

@@ -44,6 +44,7 @@ import type { AgentActivity } from "./activity";
 import type { ChatMessage, Personality } from "../types";
 import type { Translate } from "../i18n/I18nProvider";
 import { applyConversationEvent } from "./conversationEvents";
+import { toolFromItem } from "./toolPresentation";
 
 type RealtimeConversationOptions = {
   activeParentThreadId?: string;
@@ -94,6 +95,7 @@ export function useRealtimeConversation({
   const textAgentMessageId = useRef<string | undefined>(undefined);
   const textAgentPartOrder = useRef<string[]>([]);
   const textAgentParts = useRef(new Map<string, string>());
+  const textAgentSegments = useRef<NonNullable<ChatMessage["realtimeSegments"]>>([]);
   const userMessageId = useRef<string | undefined>(undefined);
   const transcriptDisplayRequested = useRef(true);
   const bufferedTranscripts = useRef(new Map<string, ChatMessage[]>());
@@ -169,6 +171,7 @@ export function useRealtimeConversation({
     textAgentMessageId.current = undefined;
     textAgentPartOrder.current = [];
     textAgentParts.current.clear();
+    textAgentSegments.current = [];
     userMessageId.current = undefined;
     preRealtimeMessageIds.current = new Set();
     transcriptDisplayRequested.current = true;
@@ -456,6 +459,11 @@ export function useRealtimeConversation({
       if (agentMessageId && firstAgentPart) {
         textAgentPartOrder.current.push(agentMessageId);
         textAgentParts.current.set(agentMessageId, "");
+        textAgentSegments.current.push({
+          id: agentMessageId,
+          type: "text",
+          content: "",
+        });
       }
       if (agentMessageId && !textAgentMessageId.current) {
         textAgentMessageId.current = agentMessageId;
@@ -469,6 +477,11 @@ export function useRealtimeConversation({
             agentMessageId,
             `${textAgentParts.current.get(agentMessageId) ?? ""}${delta}`,
           );
+          textAgentSegments.current = textAgentSegments.current.map((segment) =>
+            segment.type === "text" && segment.id === agentMessageId
+              ? { ...segment, content: `${segment.content}${delta}` }
+              : segment
+          );
           groupedMessage = {
             ...message,
             params: {
@@ -481,6 +494,11 @@ export function useRealtimeConversation({
           const completedText = appServerString(item.text);
           if (message.method === "item/completed" && completedText !== undefined) {
             textAgentParts.current.set(agentMessageId, completedText);
+            textAgentSegments.current = textAgentSegments.current.map((segment) =>
+              segment.type === "text" && segment.id === agentMessageId
+                ? { ...segment, content: completedText }
+                : segment
+            );
           }
           groupedMessage = {
             ...message,
@@ -500,17 +518,47 @@ export function useRealtimeConversation({
           };
         }
       }
+      if (!agentMessageId && item && toolFromItem(item, translateRef.current)) {
+        const toolId = appServerString(item?.id) ?? appServerString(params?.itemId);
+        if (
+          toolId &&
+          !textAgentSegments.current.some(
+            (segment) => segment.type === "tool" && segment.id === toolId,
+          )
+        ) {
+          textAgentSegments.current.push({ id: toolId, type: "tool" });
+        }
+      }
       const preexistingMessageIds = preRealtimeMessageIds.current;
       updateTranscript((messages) => {
         const keepDelegationActive = (next: ChatMessage[]) =>
           anchorMessageId
             ? next.map((entry) => entry.id === anchorMessageId
-              ? { ...entry, streaming: true }
+              ? {
+                  ...entry,
+                  realtimeSegments: [...textAgentSegments.current],
+                  streaming: true,
+                }
               : entry)
             : next;
         const anchorIndex = anchorMessageId
           ? messages.findIndex(({ id }) => id === anchorMessageId)
           : -1;
+        if (agentMessageId && anchorIndex >= 0) {
+          const content = textAgentPartOrder.current
+            .map((id) => textAgentParts.current.get(id)?.trim())
+            .filter(Boolean)
+            .join("\n\n");
+          return messages.map((entry, index) => index === anchorIndex
+            ? {
+                ...entry,
+                content,
+                realtimeSegments: [...textAgentSegments.current],
+                streaming: true,
+              }
+            : entry
+          );
+        }
         if (!agentMessageId && anchorIndex >= 0) {
           const delegatedMessages = messages.slice(0, anchorIndex + 1);
           return keepDelegationActive([
@@ -564,6 +612,7 @@ export function useRealtimeConversation({
       textAgentMessageId.current = undefined;
       textAgentPartOrder.current = [];
       textAgentParts.current.clear();
+      textAgentSegments.current = [];
       return true;
     },
     [persistTranscript, updateTranscript],

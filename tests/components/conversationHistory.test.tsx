@@ -362,6 +362,75 @@ describe("historique de conversation", () => {
     ).toHaveAttribute("aria-expanded", "false");
   });
 
+  it("préserve l’ordre texte, outils, puis texte dans le tour délégué", () => {
+    renderConversation({
+      activity: "talking",
+      messages: [{
+        id: "delegation",
+        role: "assistant",
+        modality: "realtimeText",
+        content: "Je lis.\n\nLecture terminée.",
+        realtimeSegments: [
+          { id: "before", type: "text", content: "Je lis." },
+          { id: "tool-1", type: "tool" },
+          { id: "after", type: "text", content: "Lecture terminée." },
+        ],
+        tools: [{
+          id: "tool-1",
+          kind: "commandExecution",
+          title: "Commande",
+          detail: "git status --short",
+          status: "done",
+        }],
+      }],
+    });
+    const before = screen.getByText("Je lis.");
+    const tool = screen.getByText("Commande");
+    const after = screen.getByText("Lecture terminée.");
+    expect(before.compareDocumentPosition(tool) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(tool.compareDocumentPosition(after) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("promeut l’image générée hors de la mini-timeline déléguée", () => {
+    renderConversation({
+      activity: null,
+      messages: [{
+        id: "delegated-image",
+        role: "assistant",
+        modality: "realtimeText",
+        content: "Je génère l’image.",
+        realtimeSegments: [
+          { id: "intro", type: "text", content: "Je génère l’image." },
+          { id: "image-tool", type: "tool" },
+        ],
+        tools: [{
+          id: "image-tool",
+          kind: "imageGeneration",
+          title: "Génération d’image",
+          detail: "Un camping sous les étoiles",
+          status: "done",
+          artifacts: [{
+            type: "generatedImage",
+            dataUrl: "data:image/png;base64,iVBORw0KGgo=",
+            prompt: "Un camping sous les étoiles",
+          }],
+        }],
+      }],
+    });
+
+    const textAgent = screen.getByRole("region", { name: "Agent textuel" });
+    const image = screen.getByRole("img", {
+      name: "Un camping sous les étoiles",
+    });
+    const widget = image.closest(".generated-image-widget");
+    expect(textAgent).toHaveTextContent("Génération d’image");
+    expect(widget).toBeVisible();
+    expect(textAgent).not.toContainElement(widget);
+    expect(
+      textAgent.compareDocumentPosition(widget!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it("attend la fin du repli technique avant de révéler le texte suivant", () => {
     vi.useFakeTimers();
     const now = Date.now();

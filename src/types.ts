@@ -81,6 +81,11 @@ export type ChatMessage = {
   title?: string;
   content: string;
   tools?: ToolCall[];
+  /** Ordered live content inside one delegated Realtime Text Agent turn. */
+  realtimeSegments?: Array<
+    | { id: string; type: "text"; content: string }
+    | { id: string; type: "tool" }
+  >;
   signals?: AgentSignal[];
   streaming?: boolean;
   attachments?: string[];
