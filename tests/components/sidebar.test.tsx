@@ -48,7 +48,6 @@ function renderSidebar(
   const search = searchController();
   render(
     <Sidebar
-      cwd=""
       open
       selectedThreadId="alpha"
       width={260}
@@ -61,7 +60,6 @@ function renderSidebar(
       onNewChat={onNewChat}
       onOpenSettings={vi.fn()}
       onResume={vi.fn()}
-      onSelectDirectory={vi.fn()}
       onWidthChange={onWidthChange}
       onWidthCommit={onWidthCommit}
     />,
@@ -82,7 +80,6 @@ describe("barre latérale", () => {
     render(
       <I18nProvider>
         <Sidebar
-          cwd=""
           open
           width={260}
           threads={[
@@ -102,7 +99,6 @@ describe("barre latérale", () => {
           onNewChat={vi.fn()}
           onOpenSettings={vi.fn()}
           onResume={vi.fn()}
-          onSelectDirectory={vi.fn()}
           onWidthChange={vi.fn()}
           onWidthCommit={vi.fn()}
         />
@@ -131,7 +127,6 @@ describe("barre latérale", () => {
     render(
       <I18nProvider>
         <Sidebar
-          cwd=""
           open
           width={260}
           threads={threads.map((thread) =>
@@ -145,7 +140,6 @@ describe("barre latérale", () => {
           onNewChat={vi.fn()}
           onOpenSettings={vi.fn()}
           onResume={vi.fn()}
-          onSelectDirectory={vi.fn()}
           onWidthChange={vi.fn()}
           onWidthCommit={vi.fn()}
         />
@@ -181,7 +175,6 @@ describe("barre latérale", () => {
     render(
       <I18nProvider>
         <Sidebar
-          cwd=""
           open
           width={260}
           search={search}
@@ -193,7 +186,6 @@ describe("barre latérale", () => {
           onNewChat={vi.fn()}
           onOpenSettings={vi.fn()}
           onResume={vi.fn()}
-          onSelectDirectory={vi.fn()}
           onWidthChange={vi.fn()}
           onWidthCommit={vi.fn()}
         />
@@ -264,7 +256,6 @@ describe("barre latérale", () => {
     render(
       <I18nProvider>
         <Sidebar
-          cwd=""
           defaultThreadId="gamma"
           open
           selectedThreadId="alpha"
@@ -278,7 +269,6 @@ describe("barre latérale", () => {
           onNewChat={vi.fn()}
           onOpenSettings={vi.fn()}
           onResume={onResume}
-          onSelectDirectory={vi.fn()}
           onWidthChange={vi.fn()}
           onWidthCommit={vi.fn()}
         />
@@ -305,7 +295,6 @@ describe("barre latérale", () => {
     render(
       <I18nProvider>
         <Sidebar
-          cwd=""
           defaultThreadId="configured-outside-recent-page"
           open
           width={260}
@@ -318,7 +307,6 @@ describe("barre latérale", () => {
           onNewChat={vi.fn()}
           onOpenSettings={vi.fn()}
           onResume={onResume}
-          onSelectDirectory={vi.fn()}
           onWidthChange={vi.fn()}
           onWidthCommit={vi.fn()}
         />
@@ -364,7 +352,6 @@ describe("barre latérale", () => {
     render(
       <I18nProvider>
         <Sidebar
-          cwd=""
           open
           width={260}
           search={searchController()}
@@ -376,7 +363,6 @@ describe("barre latérale", () => {
           onNewChat={vi.fn()}
           onOpenSettings={vi.fn()}
           onResume={vi.fn()}
-          onSelectDirectory={vi.fn()}
           onWidthChange={vi.fn()}
           onWidthCommit={vi.fn()}
         />

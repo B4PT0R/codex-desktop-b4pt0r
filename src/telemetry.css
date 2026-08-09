@@ -30,6 +30,20 @@
 .context-gauge {
   color: #75a37b !important;
 }
+.adult-mode-indicator {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  color: #c27d88;
+  background: #302527;
+}
+.adult-mode-indicator svg {
+  width: 12px;
+  height: 12px;
+}
 .context-gauge.warning {
   color: #d39a58 !important;
 }

@@ -28,6 +28,18 @@ export function threadSummary(thread: AppServerThread): ThreadSummary {
   };
 }
 
+/** Applies runtime cwd before classifying a newly started thread. */
+export function startedThreadSummary(
+  thread: AppServerThread,
+  cwd: string | undefined,
+  fallbackName: string,
+): ThreadSummary {
+  return {
+    ...threadSummary({ ...thread, cwd }),
+    name: thread.name ?? fallbackName,
+  };
+}
+
 /**
  * Projectless Codex chats currently receive a synthetic cwd below the user's
  * Documents/Codex directory. App Server does not expose workspace_kind on

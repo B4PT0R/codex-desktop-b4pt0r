@@ -78,6 +78,7 @@ test("rejects malformed values even when they are falsy", async () => {
     { lastWorkspace: {} },
     { realtimeVoice: 0 },
     { sharedBrowserEnabled: null },
+    { adultModeEnabled: "yes" },
   ];
 
   for (const patch of malformed) {
@@ -150,8 +151,22 @@ test("validates persisted chat presentation preferences", async () => {
   assert.equal(updated.showReasoningItems, false);
   await assert.rejects(
     updateSettings(file, { showReasoningItems: "no" }),
-    /Unsupported chat presentation preference/,
+    /Unsupported boolean desktop preference/,
   );
+});
+
+test("validates the persisted Adult Mode preference", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "codex-settings-"));
+  const file = path.join(directory, "settings.json");
+  const updated = await updateSettings(file, { adultModeEnabled: true });
+  assert.equal(updated.adultModeEnabled, true);
+  await assert.rejects(
+    updateSettings(file, { adultModeEnabled: "yes" }),
+    /Unsupported boolean desktop preference/,
+  );
+  const credential = { algorithm: "PBKDF2-SHA-256", hash: "hash", iterations: 310_000, salt: "salt" };
+  assert.deepEqual((await updateSettings(file, { adultModeCredential: credential })).adultModeCredential, credential);
+  await assert.rejects(updateSettings(file, { adultModeCredential: { ...credential, iterations: 1 } }), /Unsupported Adult Mode credential/);
 });
 
 test("validates the persisted shared browser state", async () => {

@@ -3,6 +3,7 @@ import {
   Check,
   ChevronDown,
   GitFork,
+  FolderOpen,
   FileText,
   Menu,
   LoaderCircle,
@@ -63,6 +64,7 @@ type ChatHeaderProps = {
   onReconnect: () => void;
   onReload: () => Promise<boolean>;
   onRename: (name: string) => Promise<boolean>;
+  onSelectDirectory?: () => Promise<void>;
   onSetDefaultThread?: () => Promise<boolean>;
 };
 
@@ -88,6 +90,7 @@ export function ChatHeader({
   onReconnect,
   onReload,
   onRename,
+  onSelectDirectory,
   onSetDefaultThread,
 }: ChatHeaderProps) {
   const { t } = useI18n();
@@ -255,6 +258,20 @@ export function ChatHeader({
                     </span>
                   </div>
                 )}
+                {onSelectDirectory && <button
+                  className="thread-menu-action"
+                  disabled={busy || saving}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    void onSelectDirectory();
+                  }}
+                >
+                  <FolderOpen />
+                  <span>
+                    <strong>{t("chat.actions.changeFolder")}</strong>
+                    <small>{cwd || t("chat.actions.changeFolderDetail")}</small>
+                  </span>
+                </button>}
                 <button
                   className="thread-menu-action"
                   disabled={busy || saving || !connected}

@@ -14,6 +14,8 @@ export type DesktopSettings = {
   defaultThreadId?: string;
   realtimeVoice?: string;
   sidebarWidth?: number;
+  adultModeEnabled?: boolean;
+  adultModeCredential?: import("./adultModeCredential").AdultModeCredential;
 };
 
 export type DesktopSettingsPatch = Partial<
@@ -30,6 +32,8 @@ export type DesktopSettingsPatch = Partial<
     | "defaultThreadId"
     | "realtimeVoice"
     | "sidebarWidth"
+    | "adultModeEnabled"
+    | "adultModeCredential"
   >
 >;
 
@@ -43,6 +47,8 @@ const browserMaxVisibleActionsKey = "codex-desktop.maxVisibleActionsPerGroup";
 const browserShowReasoningKey = "codex-desktop.showReasoningItems";
 const browserKeepActionsCollapsedKey =
   "codex-desktop.keepActionGroupsCollapsed";
+const browserAdultModeKey = "codex-desktop.adultModeEnabled";
+const browserAdultModeCredentialKey = "codex-desktop.adultModeCredential";
 let loadPromise: Promise<DesktopSettings> | undefined;
 let writeQueue: Promise<DesktopSettings> = Promise.resolve({ version: 1 });
 
@@ -65,6 +71,13 @@ export function updateDesktopSettings(
     .then(() => loadDesktopSettings())
     .then(() => invoke<DesktopSettings>("update_desktop_settings", { patch }));
   return writeQueue;
+}
+
+/** Reads current persisted values without replacing the one-time UI hydration. */
+export function readDesktopSettingsSnapshot(): Promise<DesktopSettings> {
+  return isNative()
+    ? invoke<DesktopSettings>("read_desktop_settings")
+    : Promise.resolve(browserSettings());
 }
 
 async function loadDesktopSettingsOnce(): Promise<DesktopSettings> {
@@ -91,6 +104,7 @@ function browserSettings(): DesktopSettings {
   const appearance = parseBrowserAppearance(
     localStorage.getItem(browserAppearanceKey),
   );
+  const credential = localStorage.getItem(browserAdultModeCredentialKey);
   return {
     version: 1,
     ...(locale === "fr" || locale === "en" ? { locale } : {}),
@@ -113,9 +127,14 @@ function browserSettings(): DesktopSettings {
       "showReasoningItems",
       localStorage.getItem(browserShowReasoningKey),
     ),
+    ...(credential ? { adultModeCredential: JSON.parse(credential) as DesktopSettings["adultModeCredential"] } : {}),
     ...parseBrowserBoolean(
       "keepActionGroupsCollapsed",
       localStorage.getItem(browserKeepActionsCollapsedKey),
+    ),
+    ...parseBrowserBoolean(
+      "adultModeEnabled",
+      localStorage.getItem(browserAdultModeKey),
     ),
   };
 }
@@ -165,9 +184,21 @@ function writeBrowserSettings(settings: DesktopSettings) {
       String(settings.keepActionGroupsCollapsed),
     );
   }
+  if (settings.adultModeEnabled !== undefined) {
+    localStorage.setItem(browserAdultModeKey, String(settings.adultModeEnabled));
+  }
+  if (settings.adultModeCredential) {
+    localStorage.setItem(browserAdultModeCredentialKey, JSON.stringify(settings.adultModeCredential));
+  }
 }
 
 function validatePatch(patch: DesktopSettingsPatch) {
+  if (patch.adultModeCredential !== undefined &&
+    (patch.adultModeCredential.algorithm !== "PBKDF2-SHA-256" ||
+      patch.adultModeCredential.iterations < 100_000 ||
+      !patch.adultModeCredential.hash || !patch.adultModeCredential.salt)) {
+    throw new Error("Unsupported Adult Mode credential");
+  }
   if (patch.locale && patch.locale !== "fr" && patch.locale !== "en") {
     throw new Error("Unsupported desktop locale");
   }
@@ -228,9 +259,10 @@ function validatePatch(patch: DesktopSettingsPatch) {
   for (const value of [
     patch.showReasoningItems,
     patch.keepActionGroupsCollapsed,
+    patch.adultModeEnabled,
   ]) {
     if (value !== undefined && typeof value !== "boolean") {
-      throw new Error("Unsupported chat presentation preference");
+      throw new Error("Unsupported boolean desktop preference");
     }
   }
 }

@@ -11,6 +11,7 @@ import type { AutomationsController } from "../lib/automations";
 import type { CapabilityCatalog } from "../lib/useCapabilityCatalog";
 import type { CodexGlobalSettingsController } from "../lib/useCodexGlobalSettings";
 import type { ChatPresentationSettingsController } from "../lib/useChatPresentationSettings";
+import type { AdultModeSettingsController } from "../lib/useAdultModeSettings";
 import type { ConfigRequirements } from "../lib/useConfigRequirements";
 import type { ExternalAgentImportController } from "../lib/useExternalAgentImport";
 import type { DefaultThreadSettingsController } from "../lib/useDefaultThreadSettings";
@@ -49,6 +50,7 @@ export type SettingsViewProps = {
   apps: AppsController;
   capabilities: CapabilityCatalog;
   chatPresentation: ChatPresentationSettingsController;
+  adultMode: AdultModeSettingsController;
   configRequirements?: ConfigRequirements & {
     error?: string;
     loading?: boolean;
@@ -160,7 +162,7 @@ function SettingsSection(props: SettingsViewProps) {
         />
       );
     case "config":
-      return <CodexConfigSettings globalSettings={props.webSearch} />;
+      return <CodexConfigSettings adultMode={props.adultMode} globalSettings={props.webSearch} />;
     case "apps":
       return <AppsSettings apps={props.apps} />;
     case "skills":

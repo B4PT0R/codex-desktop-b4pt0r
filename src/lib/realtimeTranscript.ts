@@ -1,7 +1,12 @@
 import type { ChatMessage } from "../types";
 
 export type RealtimeTranscriptRole = "assistant" | "user";
-const realtimeVoiceItemPrefix = "realtime_voice_";
+// Injected Response API message IDs must retain the `msg` prefix when the
+// rollout is later submitted as context for a delegated Codex turn, and the
+// complete ID must remain within the API's 64-character limit.
+const realtimeVoiceItemPrefix = "msg_rtv_";
+const oversizedRealtimeVoiceItemPrefix = "msg_realtime_voice_";
+const legacyRealtimeVoiceItemPrefix = "realtime_voice_";
 
 export function realtimeVoiceItemId(
   role: RealtimeTranscriptRole,
@@ -11,7 +16,11 @@ export function realtimeVoiceItemId(
 }
 
 export function isRealtimeVoiceItemId(itemId: string) {
-  return itemId.startsWith(realtimeVoiceItemPrefix);
+  return (
+    itemId.startsWith(realtimeVoiceItemPrefix) ||
+    itemId.startsWith(oversizedRealtimeVoiceItemPrefix) ||
+    itemId.startsWith(legacyRealtimeVoiceItemPrefix)
+  );
 }
 
 export function isVisibleRealtimeTranscript(role: RealtimeTranscriptRole) {

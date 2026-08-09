@@ -654,13 +654,13 @@ describe("constructeurs JSON-RPC", () => {
         "thr",
         "user",
         "Question vocale",
-        "realtime_voice_user_1",
+        "msg_rtv_user_1",
       ),
     ).toEqual({
       threadId: "thr",
       items: [
         {
-          id: "realtime_voice_user_1",
+          id: "msg_rtv_user_1",
           type: "message",
           role: "user",
           content: [{ type: "input_text", text: "Question vocale" }],
@@ -672,13 +672,13 @@ describe("constructeurs JSON-RPC", () => {
         "thr",
         "assistant",
         "Réponse vocale",
-        "realtime_voice_assistant_1",
+        "msg_rtv_assistant_1",
       ),
     ).toEqual({
       threadId: "thr",
       items: [
         {
-          id: "realtime_voice_assistant_1",
+          id: "msg_rtv_assistant_1",
           type: "message",
           role: "assistant",
           content: [{ type: "output_text", text: "Réponse vocale" }],

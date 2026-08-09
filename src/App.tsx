@@ -4,6 +4,7 @@ import { ApprovalDialog } from "./components/ApprovalDialog";
 import { ArchiveNotice } from "./components/ArchiveNotice";
 import { ChatFooter } from "./components/ChatFooter";
 import { ChatHeader } from "./components/ChatHeader";
+import { NewChatDialog } from "./components/NewChatDialog";
 import { Conversation } from "./components/Conversation";
 import { SettingsLoader } from "./components/SettingsLoader";
 import { ShellCommandDialog } from "./components/ShellCommandDialog";
@@ -60,7 +61,8 @@ import {
 import { useCapabilityCatalog } from "./lib/useCapabilityCatalog";
 import { useAccount } from "./lib/useAccount";
 import { useAppUpdate } from "./lib/useAppUpdate";
-import { codexDesktopDeveloperInstructions } from "./lib/clientContext";
+import { configuredDeveloperInstructions } from "./lib/adultMode";
+import { useAdultModeSettings } from "./lib/useAdultModeSettings";
 import { useApps } from "./lib/useApps";
 import { useAutomations } from "./lib/useAutomations";
 import { useSchedulerTools } from "./lib/useSchedulerTools";
@@ -103,7 +105,7 @@ import {
   threadRuntimeSettings,
   type ThreadRuntimeSettings,
 } from "./lib/threadRuntimeSettings";
-import { threadSummary } from "./lib/threadSummary";
+import { startedThreadSummary, threadSummary } from "./lib/threadSummary";
 import { useConfigRequirements } from "./lib/useConfigRequirements";
 import {
   markThreadClosed,
@@ -117,6 +119,7 @@ import { useThreadRuntimeState } from "./lib/useThreadRuntimeState";
 import { useThreadRuntimeMutations } from "./lib/useThreadRuntimeMutations";
 import { useSubagentTranscripts } from "./lib/useSubagentTranscripts";
 import { ThreadNavigationGuard } from "./lib/threadNavigationGuard";
+import { createDiscussionWorkspace } from "./lib/discussionWorkspace";
 import "./styles.css";
 import "./primitives.css";
 import "./realtime.css";
@@ -164,7 +167,6 @@ export default function App() {
   const { t } = useI18n();
   configureCodexTranslation(t);
   const activeThreadRef = useRef<string | undefined>(undefined);
-  const workspaceChanged = useRef(false);
   const [messages, setMessages] = useState<ChatMessage[]>(
       initialPreviewMessages,
     ),
@@ -190,6 +192,11 @@ export default function App() {
     [settings, setSettings] = useState<SettingsSectionId | null>(null),
     [appsEnabled, setAppsEnabled] = useState(false),
     [workPanel, setWorkPanel] = useState<ToolCall>();
+  const [newChatDialogOpen, setNewChatDialogOpen] = useState(false);
+  const [draftThreadKind, setDraftThreadKind] = useState<"discussion" | "project">(
+    "discussion",
+  );
+  const [draftProjectCwd, setDraftProjectCwd] = useState("");
   const [turnCoordinator] = useState(() => new ThreadTurnCoordinator());
   const [viewStateGuard] = useState(() => new ThreadViewStateGuard());
   const [threadNavigationGuard] = useState(() => new ThreadNavigationGuard());
@@ -215,9 +222,7 @@ export default function App() {
   const dictationSequence = useRef(0);
   const realtimeStartGeneration = useRef(0);
   const realtimeStartPending = useRef(false);
-  const [cwd, setCwd] = useState(
-    () => localStorage.getItem("codex-desktop.cwd") ?? "",
-  );
+  const [cwd, setCwd] = useState("");
   const showError = useCallback((title: string, error: unknown) => {
     setMessages((items) => [
       ...items,
@@ -241,9 +246,6 @@ export default function App() {
     void import("./lib/desktopSettings")
       .then(({ loadDesktopSettings }) => loadDesktopSettings())
       .then((settings) => {
-        if (!disposed && !workspaceChanged.current && settings.lastWorkspace) {
-          setCwd(settings.lastWorkspace);
-        }
         if (!disposed && settings.sidebarWidth) {
           setSidebarWidth(settings.sidebarWidth);
         }
@@ -324,7 +326,7 @@ export default function App() {
       applyThreadCatalog(history);
     },
     onMessage: handle,
-    onNewChat: newChat,
+    onNewChat: () => newChat("discussion"),
     onRecovered: async () => {
       const activeThreadId = activeThreadRef.current;
       if (activeThreadId) await threadHistory.resume(activeThreadId);
@@ -371,6 +373,7 @@ export default function App() {
     configRequirements.allowedWebSearchModes,
   );
   const chatPresentation = useChatPresentationSettings();
+  const adultMode = useAdultModeSettings();
   const backgroundTerminals = useBackgroundTerminals({
     busy,
     connected: connection.connected,
@@ -538,7 +541,11 @@ export default function App() {
       ]);
     },
   });
-  function newChat() {
+  function newChat(
+    kind: "discussion" | "project" = "discussion",
+    projectCwd = "",
+  ) {
+    setNewChatDialogOpen(false);
     threadNavigationGuard.navigate();
     realtimeStartGeneration.current += 1;
     realtimeStartPending.current = false;
@@ -553,9 +560,24 @@ export default function App() {
     threadHistory.reset();
     setBusy(false);
     runtime.resetForNewThread();
+    setDraftThreadKind(kind);
+    setDraftProjectCwd(projectCwd);
+    setCwd(projectCwd);
+  }
+  function requestNewChat() {
+    setNewChatDialogOpen(true);
+  }
+  async function chooseProjectChat() {
+    const selected = isDesktopApp()
+      ? await open({ directory: true, multiple: false })
+      : "/home/developer/projects/new-project";
+    if (typeof selected !== "string") return;
+    setNewChatDialogOpen(false);
+    newChat("project", selected);
   }
   activeThreadRef.current = threadId;
   async function selectDirectory() {
+    if (!threadId) return;
     const selected = await open({
       directory: true,
       multiple: false,
@@ -570,7 +592,9 @@ export default function App() {
           );
           setThreads((items) =>
             items.map((item) =>
-              item.id === threadId ? { ...item, cwd: selected } : item,
+              item.id === threadId
+                ? { ...item, cwd: selected, kind: undefined }
+                : item,
             ),
           );
         } catch (error) {
@@ -578,7 +602,6 @@ export default function App() {
           return;
         }
       }
-      persistWorkspace(selected);
       setCwd(selected);
     }
   }
@@ -687,15 +710,18 @@ export default function App() {
     }
     realtimeConversation.handleMessage(msg);
   }
-  async function createThread() {
+  async function createThread(initialText?: string) {
     const creationGeneration = threadNavigationGuard.beginCreation();
+    const targetCwd = draftThreadKind === "discussion"
+      ? await createDiscussionWorkspace(initialText)
+      : draftProjectCwd;
     const developerInstructions = await readDesktopDeveloperInstructions(
-      cwd || undefined,
+      targetCwd || undefined,
     );
     const r = await request<ThreadStartResponse>(
       "thread/start",
       threadStartParams(
-        cwd || undefined,
+        targetCwd || undefined,
         model,
         runtime.permissionForStart,
         personalityForModel,
@@ -706,15 +732,19 @@ export default function App() {
     );
     const id = r.thread.id as string;
     const runtimeSettings = threadRuntimeSettings(r);
-    const resolvedCwd = runtimeSettings.cwd ?? cwd;
+    const resolvedCwd = runtimeSettings.cwd ?? targetCwd;
     turnCoordinator.observeStatus(id, threadSummary(r.thread).status ?? "idle");
-    setThreads((x) => [{ id, name: t("app.newChat"), cwd: resolvedCwd }, ...x]);
+    setThreads((items) => [
+      startedThreadSummary(r.thread, resolvedCwd, t("app.newChat")),
+      ...items,
+    ]);
     const activated = threadNavigationGuard.shouldActivate(creationGeneration);
     if (activated) {
       applyThreadRuntimeSettings(runtimeSettings);
       activeThreadRef.current = id;
       conversationEvents.replaceScope(id);
       setThreadId(id);
+      setCwd(resolvedCwd);
     }
     return { id, activated };
   }
@@ -725,7 +755,7 @@ export default function App() {
       configReadParams(targetCwd),
     );
     const config = appServerRecord(response.config);
-    return codexDesktopDeveloperInstructions(
+    return configuredDeveloperInstructions(
       appServerString(config?.developer_instructions),
       clientVersions,
     );
@@ -763,15 +793,22 @@ export default function App() {
     if (!isDesktopApp()) {
       const previewThreadId = threadId ?? "browser-preview";
       if (!threadId) {
+        const previewCwd =
+          draftThreadKind === "discussion"
+            ? await createDiscussionWorkspace(text)
+            : draftProjectCwd;
         const previewThread: ThreadSummary = {
           id: previewThreadId,
           name: text || t("app.newChat"),
           preview: text,
-          cwd: cwd || undefined,
+          cwd: previewCwd || undefined,
+          kind:
+            draftThreadKind === "discussion" ? "discussion" : undefined,
         };
         activeThreadRef.current = previewThreadId;
         conversationEvents.replaceScope(previewThreadId);
         setThreadId(previewThread.id);
+        setCwd(previewCwd);
         setThreads((items) => [
           previewThread,
           ...items.filter((item) => item.id !== previewThread.id),
@@ -788,7 +825,7 @@ export default function App() {
     }
     let targetThreadId = threadId;
     try {
-      const created = targetThreadId ? undefined : await createThread();
+      const created = targetThreadId ? undefined : await createThread(text);
       if (created && !created.activated) return;
       const id = targetThreadId ?? created?.id;
       if (!id) return;
@@ -942,7 +979,6 @@ export default function App() {
   function applyThreadRuntimeSettings(settings: ThreadRuntimeSettings) {
     if (settings.cwd) {
       setCwd(settings.cwd);
-      persistWorkspace(settings.cwd);
     }
     runtime.applyServerSettings(settings);
   }
@@ -960,14 +996,6 @@ export default function App() {
     } catch (error) {
       showError(t("app.threadSyncError"), error);
     }
-  }
-  function persistWorkspace(path: string) {
-    workspaceChanged.current = true;
-    void import("./lib/desktopSettings")
-      .then(({ updateDesktopSettings }) =>
-        updateDesktopSettings({ lastWorkspace: path }),
-      )
-      .catch((error) => showError(t("desktopSettings.saveError"), error));
   }
   async function restartCodexAppServer() {
     if (busy || recording || dictating || dictationProcessing) return false;
@@ -1151,6 +1179,7 @@ export default function App() {
         currentThreadId={threadId}
         currentWorkspace={cwd || undefined}
         chatPresentation={chatPresentation}
+        adultMode={adultMode}
         webSearch={webSearch}
         appServerRestart={{
           available:
@@ -1173,7 +1202,6 @@ export default function App() {
   return (
     <div className="app">
       <Sidebar
-        cwd={cwd}
         defaultThreadId={defaultThread.defaultThreadId}
         open={sidebar}
         width={sidebarWidth}
@@ -1223,10 +1251,9 @@ export default function App() {
           void threadActions.setPinned(thread, isPinned);
         }}
         onClose={() => setSidebar(false)}
-        onNewChat={newChat}
+        onNewChat={requestNewChat}
         onOpenSettings={() => setSettings("general")}
         onResume={threadHistory.resume}
-        onSelectDirectory={selectDirectory}
         onWidthChange={setSidebarWidth}
         onWidthCommit={(width) => {
           void import("./lib/desktopSettings")
@@ -1324,6 +1351,7 @@ export default function App() {
           onReconnect={() => void connection.reconnect()}
           onReload={() => threadHistory.resume(threadId!)}
           onRename={threadActions.rename}
+          onSelectDirectory={selectDirectory}
           onSetDefaultThread={async () => {
             if (!threadId) return false;
             const saved = await defaultThread.setDefaultThreadId(threadId);
@@ -1362,6 +1390,7 @@ export default function App() {
         />
         <ChatFooter
           apps={displayedApps}
+          adultModeEnabled={adultMode.enabled}
           skills={isDemoPreview() ? demoSkills : integrations.skills.data}
           skillsError={isDemoPreview() ? undefined : integrations.skills.error}
           skillsLoading={isDemoPreview() ? false : integrations.skills.loading}
@@ -1429,6 +1458,16 @@ export default function App() {
       </main>
       {workPanel && (
         <WorkPanel tool={workPanel} onClose={() => setWorkPanel(undefined)} />
+      )}
+      {newChatDialogOpen && (
+        <NewChatDialog
+          onCancel={() => setNewChatDialogOpen(false)}
+          onDiscussion={() => {
+            setNewChatDialogOpen(false);
+            newChat("discussion");
+          }}
+          onProject={() => void chooseProjectChat()}
+        />
       )}
       {interactiveRequests.approval && (
         <ApprovalDialog

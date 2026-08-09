@@ -337,7 +337,7 @@ describe("contrat Codex installé", () => {
         "thr_1",
         "user",
         "Question vocale",
-        "realtime_voice_user_1",
+        "msg_rtv_user_1",
       ),
     );
     validates(
@@ -346,7 +346,7 @@ describe("contrat Codex installé", () => {
         "thr_1",
         "assistant",
         "Réponse vocale",
-        "realtime_voice_assistant_1",
+        "msg_rtv_assistant_1",
       ),
     );
   });

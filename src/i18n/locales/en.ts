@@ -259,6 +259,9 @@ export const en: Record<MessageKey, string> = {
   "telemetry.contextTitle":
     "{used} / {window} context tokens · {total} total tokens · {output} generated in the last call",
   "telemetry.contextFree": "{percent}% context free",
+  "telemetry.adultModeEnabled": "Adult Mode enabled",
+  "telemetry.adultModeEnabledDetail":
+    "Adult Mode enabled for new or reopened conversations",
   "telemetry.compact": "Context {percent}% used. Compact now",
   "integrations.skills.description":
     "Reusable agent capabilities available to the current workspace.",
@@ -590,6 +593,8 @@ export const en: Record<MessageKey, string> = {
   "chat.actions.setDefault": "Set as default conversation",
   "chat.actions.setDefaultDetail":
     "Shared context for compatible quick actions",
+  "chat.actions.changeFolder": "Change project folder",
+  "chat.actions.changeFolderDetail": "Choose the workspace for this conversation",
   "chat.actions.fork": "Create a branch",
   "chat.actions.forkDetail": "Continue from here in a new conversation",
   "chat.actions.delete": "Delete conversation",
@@ -708,6 +713,12 @@ export const en: Record<MessageKey, string> = {
   "sidebar.navigation": "Main navigation",
   "sidebar.hide": "Hide sidebar",
   "sidebar.newChat": "New chat",
+  "newChat.title": "Start a new chat",
+  "newChat.description": "Choose whether this conversation belongs to a project.",
+  "newChat.discussion": "Discussion",
+  "newChat.discussionDetail": "A general conversation without a repository",
+  "newChat.project": "Project thread",
+  "newChat.projectDetail": "Work in a folder you select",
   "sidebar.search": "Search",
   "sidebar.searchLabel": "Search all conversations",
   "sidebar.searchResults": "Search results",
@@ -1210,6 +1221,22 @@ export const en: Record<MessageKey, string> = {
   "settings.config.experimental.title": "Experimental features",
   "settings.config.experimental.description":
     "Control how Codex reports features that are still under development.",
+  "settings.config.adultMode.title": "Adult Mode",
+  "settings.config.adultMode.detail":
+    "Experimental. Add the Adult Mode prompt to developer instructions for new and reopened conversations. This does not change service-level rules.",
+  "settings.config.adultMode.error": "Unable to save Adult Mode:",
+  "settings.config.adultMode.dialogTitle": "Enable Adult Mode",
+  "settings.config.adultMode.dialogSubtitle": "Experimental access protected locally",
+  "settings.config.adultMode.dialogDetail":
+    "This local gate does not verify your age. It records your declaration and protects activation on this device.",
+  "settings.config.adultMode.password": "Password (8 characters minimum)",
+  "settings.config.adultMode.confirmPassword": "Confirm password",
+  "settings.config.adultMode.ageConfirmation": "I confirm that I am 18 or older.",
+  "settings.config.adultMode.ageConfirmationDetail":
+    "This declaration is recorded when the password is created.",
+  "settings.config.adultMode.invalidPassword": "Incorrect password.",
+  "settings.config.adultMode.passwordMismatch": "Passwords do not match.",
+  "settings.config.adultMode.activate": "Enable",
   "settings.config.suppressUnstableWarning.title":
     "Hide unstable feature warnings",
   "settings.config.suppressUnstableWarning.detail":

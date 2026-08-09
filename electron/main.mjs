@@ -56,6 +56,7 @@ import {
 } from "./autostart.mjs";
 import { bundledSkillsRoot } from "./bundled-skills.mjs";
 import { createSkillScaffold } from "./skill-scaffold.mjs";
+import { createDiscussionWorkspace } from "./discussion-workspace.mjs";
 import { AutomationScheduler } from "./automation-scheduler.mjs";
 import { OperationQueue } from "./operation-queue.mjs";
 import {
@@ -135,6 +136,10 @@ function registerIpc() {
   ipcMain.handle("desktop:create_skill_scaffold", (event, args) => {
     trusted(event);
     return createSkillScaffold(app.getPath("home"), args);
+  });
+  ipcMain.handle("desktop:create_discussion_workspace", (event, args) => {
+    trusted(event);
+    return createDiscussionWorkspace(app.getPath("documents"), args?.title);
   });
   ipcMain.handle("desktop:read_desktop_settings", (event) => {
     trusted(event);

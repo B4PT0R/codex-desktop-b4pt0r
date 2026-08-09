@@ -61,6 +61,15 @@ are presented in a flat Discussions section immediately above Recent projects;
 the compatibility classifier remains isolated until App Server exposes its
 internal `workspace_kind` on thread responses.
 
+New conversation ownership is now explicit: sidebar New chat asks for a
+Discussion or a project folder, while first-send and Realtime entry points create
+unique projectless Discussions under `Documents/Codex`. The active thread menu
+owns folder changes; the sidebar no longer presents that thread-local mutation
+as a global workspace control. Tray New chat opens the same neutral Discussion
+draft directly. Newly started threads are normalized through the same cwd
+classifier as catalog responses, so a composer-created Discussion enters its
+sidebar section immediately rather than waiting for a catalog refresh.
+
 Keep the current functional surface frozen while running bounded stabilization,
 failure-path, simplification and maintainability passes. Prefer evidence from
 daily use and focused tests over speculative rewrites or new settings.
@@ -79,6 +88,17 @@ App Server session's `developerInstructions`. App Server still discovers and
 applies AGENTS.md separately, preserving its project hierarchy, and turns no
 longer persist repeated `additionalContext` items in rollout history. Realtime
 receives the same identity in its effective instruction bundle.
+
+Experimental Adult Mode is disabled by default and persisted as a desktop-owned
+preference, not a Codex `config.toml` key. Configuration exposes one toggle; when
+enabled, the package-embedded prompt is composed into developer instructions for
+interactive thread creation/resume and Realtime initialization. Every activation
+from the disabled state requires an explicit 18+ declaration and the locally
+registered password; only its salted PBKDF2 derivative is stored in the desktop
+settings JSON. The 18+ declaration is collected only during initial password
+registration; later reactivations require the registered password alone.
+An always-visible heart indicator beside the context gauge makes the active
+state explicit in the conversation composer footer.
 
 Installed-plugin lot: the Plugins settings page now reads the authoritative
 `plugin/installed` inventory for the active workspace and toggles supported
@@ -112,7 +132,12 @@ individual action titles are derived only from structured tool-item fields.
   shutdown before escalating to process signals.
 - Realtime uses ephemeral voice forks and injects finalized exchanges into the
   persistent parent in order. Injected voice items are not assumed to replay as
-  ordinary chat, so the visual cache remains bounded and local.
+  ordinary chat, so the visual cache remains bounded and local. Injection now
+  uses Responses-compatible `msg_rtv_*` identifiers within the API's 64-character
+  limit. Legacy and oversized transcript identifiers remain recognizable for
+  display but poison inherited delegated turns under Codex 0.147, so affected
+  conversations require a fresh thread until App Server exposes a safe
+  history-rewrite contract.
 - Client preferences live in `~/.codex/codex-desktop-linux.json`; official
   Codex configuration remains in `config.toml`. Installation, update and normal
   startup do not rewrite either domain or server-owned thread metadata.
@@ -166,12 +191,25 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 740 deterministic frontend/unit tests across 130 files;
-- 132 Electron/Node tests, including App Server shutdown, recovery and the tray
+- 751 deterministic frontend/unit tests across 134 files;
+- 135 Electron/Node tests, including App Server shutdown, recovery, synthetic
+  Discussion workspaces and the tray
   quick actions;
 - production Vite build;
 - production dependency audit with zero vulnerabilities;
 - `git diff --check`.
+
+The Discussion/project creation lot was reviewed in the deterministic light
+preview at 1240×820 and 840×620. The New chat choice dialog, project-folder
+action in the thread menu and sidebar composition were inspected with no browser
+console errors; the light showcase baseline was refreshed.
+
+The Adult Mode preference and activation gate were reviewed in the light
+Configuration preview at 1164×860. The gate reuses the standard settings dialog,
+alert, field, toggle, icon and action primitives; its curated baseline was added
+with no browser console errors. Its active-state heart indicator was compared
+against the unmodified footer at 1164×860 and checked again at 840×620; it remains
+grouped with the context and quota metrics without crowding the primary controls.
 
 The Codex 0.147 compatibility pass generated and compared stable and experimental
 schemas, reviewed the official `rust-v0.147.0` source delta and adapted the one

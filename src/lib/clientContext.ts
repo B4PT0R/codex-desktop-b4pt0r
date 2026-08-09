@@ -28,9 +28,11 @@ export function codexDesktopContext(versions: ClientVersions = {}) {
 export function codexDesktopDeveloperInstructions(
   existing: string | null | undefined,
   versions?: ClientVersions,
+  adultModePrompt?: string,
 ) {
   return [
     existing?.trim(),
+    adultModePrompt?.trim(),
     `<codex_desktop_context>\n${codexDesktopContext(versions)}\n</codex_desktop_context>`,
   ]
     .filter(Boolean)

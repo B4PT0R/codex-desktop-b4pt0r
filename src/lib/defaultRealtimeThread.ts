@@ -16,6 +16,7 @@ type ThreadRequest = <T>(
 export type DefaultRealtimeThread = {
   response: ThreadRuntimeResponse;
   created: boolean;
+  workspace?: string;
 };
 
 /**
@@ -28,8 +29,8 @@ export async function resolveDefaultRealtimeThread(
   request: ThreadRequest,
   options: {
     threadId?: string;
-    home: string;
     model: string;
+    createDiscussionWorkspace: () => Promise<string>;
   },
 ): Promise<DefaultRealtimeThread> {
   if (options.threadId) {
@@ -41,19 +42,22 @@ export async function resolveDefaultRealtimeThread(
       return {
         response: await applyDefaultName(request, response, false),
         created: false,
+        workspace: response.cwd ?? response.thread.cwd,
       };
     } catch (error) {
       if (!isMissingThreadError(error)) throw error;
     }
   }
 
+  const discussionCwd = await options.createDiscussionWorkspace();
   const response = await request<ThreadRuntimeResponse>(
     "thread/start",
-    threadStartParams(options.home, options.model),
+    threadStartParams(discussionCwd, options.model),
   );
   return {
     response: await applyDefaultName(request, response, true),
     created: true,
+    workspace: response.cwd ?? response.thread.cwd ?? discussionCwd,
   };
 }
 

@@ -6,6 +6,8 @@ export const SETTINGS_VERSION = 1;
 const updateQueues = new Map();
 const writableSettings = new Set([
   "automations",
+  "adultModeEnabled",
+  "adultModeCredential",
   "defaultThreadId",
   "fontSize",
   "interfaceScale",
@@ -121,9 +123,21 @@ function validatePatch(patch) {
   ) {
     throw new Error("Unsupported visible actions limit");
   }
-  for (const key of ["showReasoningItems", "keepActionGroupsCollapsed"]) {
+  for (const key of [
+    "showReasoningItems",
+    "keepActionGroupsCollapsed",
+    "adultModeEnabled",
+  ]) {
     if (Object.hasOwn(patch, key) && typeof patch[key] !== "boolean") {
-      throw new Error("Unsupported chat presentation preference");
+      throw new Error("Unsupported boolean desktop preference");
+    }
+  }
+  if (Object.hasOwn(patch, "adultModeCredential")) {
+    const credential = patch.adultModeCredential;
+    if (!credential || credential.algorithm !== "PBKDF2-SHA-256" ||
+      typeof credential.hash !== "string" || typeof credential.salt !== "string" ||
+      !Number.isInteger(credential.iterations) || credential.iterations < 100_000) {
+      throw new Error("Unsupported Adult Mode credential");
     }
   }
   if (

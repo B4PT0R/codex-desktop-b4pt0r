@@ -1,5 +1,4 @@
 import {
-  Folder,
   MessageSquarePlus,
   PanelLeft,
   Search,
@@ -16,7 +15,6 @@ import { SidebarThreadRow } from "./SidebarThreadRow";
 import { IconButton } from "./IconButton";
 
 type SidebarProps = {
-  cwd: string;
   defaultThreadId?: string;
   open: boolean;
   width: number;
@@ -30,13 +28,11 @@ type SidebarProps = {
   onDelete: (thread: ThreadSummary) => Promise<boolean>;
   onPin: (thread: ThreadSummary, isPinned: boolean) => void;
   onResume: (threadId: string) => void;
-  onSelectDirectory: () => void;
   onWidthChange: (width: number) => void;
   onWidthCommit: (width: number) => void;
 };
 
 export function Sidebar({
-  cwd,
   defaultThreadId,
   open,
   width,
@@ -50,7 +46,6 @@ export function Sidebar({
   onDelete,
   onPin,
   onResume,
-  onSelectDirectory,
   onWidthChange,
   onWidthCommit,
 }: SidebarProps) {
@@ -121,21 +116,18 @@ export function Sidebar({
   const selectedGroup = selectedThread
     ? selectedThread.cwd || t("sidebar.otherThreads")
     : undefined;
-  const currentWorkspace = threadGroups.some(([group]) => group === cwd)
-    ? cwd
-    : undefined;
   const groupKeySignature = threadGroups.map(([group]) => group).join("\u0000");
 
   useEffect(() => {
     if (searching) return;
-    const preferredGroup = selectedGroup || currentWorkspace;
+    const preferredGroup = selectedGroup;
     setExpandedGroup((current) => {
       if (preferredGroup) return preferredGroup;
       return current && groupKeySignature.split("\u0000").includes(current)
         ? current
         : undefined;
     });
-  }, [currentWorkspace, groupKeySignature, searching, selectedGroup]);
+  }, [groupKeySignature, searching, selectedGroup]);
 
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
@@ -297,20 +289,6 @@ export function Sidebar({
         )}
       </nav>
       <div className="sidebar-bottom">
-        <IconButton
-          className="sidebar-bottom-action"
-          gap="large"
-          icon={Folder}
-          label={
-            <span className="cwd-label">
-              {cwd || t("sidebar.chooseFolder")}
-            </span>
-          }
-          onClick={onSelectDirectory}
-          size="large"
-          title={t("sidebar.changeFolder")}
-          variant="tertiary"
-        />
         <IconButton
           className="sidebar-bottom-action"
           gap="large"

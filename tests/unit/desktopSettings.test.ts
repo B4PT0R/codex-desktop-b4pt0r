@@ -22,6 +22,7 @@ describe("préférences desktop", () => {
 
     await updateDesktopSettings({
       locale: "en",
+      adultModeEnabled: true,
       lastWorkspace: "/work/app",
       theme: "light",
       fontSize: "large",
@@ -35,6 +36,7 @@ describe("préférences desktop", () => {
 
     expect(await loadDesktopSettings()).toEqual({
       version: 1,
+      adultModeEnabled: true,
       locale: "en",
       lastWorkspace: "/work/app",
       theme: "light",

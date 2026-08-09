@@ -5,12 +5,28 @@ import {
   finalizeInterruptedRealtimeMessages,
   finalizeRealtimeUserMessage,
   finalizeRealtimeVoiceMessage,
+  isRealtimeVoiceItemId,
   isVisibleRealtimeTranscript,
   markRealtimeTextUpdates,
+  realtimeVoiceItemId,
   reserveRealtimeUserMessage,
 } from "../../src/lib/realtimeTranscript";
 
 describe("transcript Realtime visible", () => {
+  it("génère des identifiants Responses valides et relit le format historique", () => {
+    const id = realtimeVoiceItemId(
+      "user",
+      "afa65b43-c52b-4c85-b63a-b099878e5f99",
+    );
+    expect(id).toBe("msg_rtv_user_afa65b43-c52b-4c85-b63a-b099878e5f99");
+    expect(id.length).toBeLessThanOrEqual(64);
+    expect(isRealtimeVoiceItemId("msg_rtv_assistant_message-1")).toBe(true);
+    expect(isRealtimeVoiceItemId("msg_realtime_voice_assistant_message-2"))
+      .toBe(true);
+    expect(isRealtimeVoiceItemId("realtime_voice_assistant_message-legacy"))
+      .toBe(true);
+  });
+
   it("affiche les deux rôles de la conversation vocale", () => {
     expect(isVisibleRealtimeTranscript("assistant")).toBe(true);
     expect(isVisibleRealtimeTranscript("user")).toBe(true);

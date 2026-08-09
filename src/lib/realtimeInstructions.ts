@@ -3,10 +3,8 @@ import type { ConfigReadResponse } from "./appServerTypes";
 import { appServerRecord, appServerString } from "./appServerValues";
 import { request } from "./codex";
 import { configReadParams } from "./protocol";
-import {
-  codexDesktopDeveloperInstructions,
-  type ClientVersions,
-} from "./clientContext";
+import type { ClientVersions } from "./clientContext";
+import { configuredDeveloperInstructions } from "./adultMode";
 
 export type RealtimeInitialItem = {
   role: "developer" | "user" | "assistant";
@@ -39,7 +37,7 @@ export async function realtimeInstructionItems(
   return [
     {
       role: "developer",
-      text: codexDesktopDeveloperInstructions(effectiveInstructions, versions),
+      text: await configuredDeveloperInstructions(effectiveInstructions, versions),
     },
   ];
 }

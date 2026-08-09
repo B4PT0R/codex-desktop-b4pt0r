@@ -14,6 +14,9 @@ const requestMock = vi.hoisted(() => vi.fn());
 const reportErrorMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const trayHookMock = vi.hoisted(() => vi.fn());
 const nativeMocks = vi.hoisted(() => ({
+  invoke: vi.fn().mockResolvedValue(
+    "/home/user/Documents/Codex/2026-08-09-discussion",
+  ),
   listen: vi.fn(),
 }));
 
@@ -24,6 +27,7 @@ vi.mock("../../src/lib/useRealtimeTray", () => ({
 }));
 vi.mock("../../src/lib/nativeBridge", () => ({
   isDesktopApp: () => true,
+  invoke: nativeMocks.invoke,
   listen: nativeMocks.listen,
 }));
 

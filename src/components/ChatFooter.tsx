@@ -13,9 +13,11 @@ import { QuotaQuickPicker } from "./QuotaQuickPicker";
 import { ContextGauge } from "./ContextGauge";
 import { SecurityQuickPicker } from "./SecurityQuickPicker";
 import type { ComposerCommandChoiceRequest } from "../lib/commands";
+import { AdultModeIndicator } from "./AdultModeIndicator";
 
 type ChatFooterProps = {
   apps: AppsController;
+  adultModeEnabled: boolean;
   skills: AppServerSkill[];
   skillsError?: string;
   skillsLoading: boolean;
@@ -67,6 +69,7 @@ type ChatFooterProps = {
 
 export function ChatFooter({
   apps,
+  adultModeEnabled,
   skills,
   skillsError,
   skillsLoading,
@@ -170,6 +173,7 @@ export function ChatFooter({
         />
         <SessionTelemetry reroute={telemetry?.reroute} />
         <div className="footer-metrics">
+          <AdultModeIndicator enabled={adultModeEnabled} />
           <ContextGauge
             context={telemetry?.context}
             disabled={busy || !hasThread}

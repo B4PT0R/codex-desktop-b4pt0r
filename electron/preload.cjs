@@ -6,6 +6,7 @@ const allowedCommands = new Set([
   "send_app_server",
   "read_bundled_skills_root",
   "create_skill_scaffold",
+  "create_discussion_workspace",
   "read_desktop_settings",
   "update_desktop_settings",
   "read_app_versions",

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   isCodexDiscussionWorkspace,
+  startedThreadSummary,
   threadSummary,
 } from "../../src/lib/threadSummary";
 
@@ -32,6 +33,20 @@ describe("présentation des conversations", () => {
       cwd: "/work/project",
       status: undefined,
       section: undefined,
+    });
+  });
+
+  it("classe immédiatement une discussion créée avec le cwd runtime", () => {
+    expect(
+      startedThreadSummary(
+        { id: "new-discussion" },
+        "/home/user/Documents/Codex/2026-08-09-depuis-le-composer",
+        "Nouveau chat",
+      ),
+    ).toMatchObject({
+      id: "new-discussion",
+      kind: "discussion",
+      name: "Nouveau chat",
     });
   });
 

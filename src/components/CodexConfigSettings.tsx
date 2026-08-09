@@ -13,6 +13,8 @@ import { IconButton } from "./IconButton";
 import { IconToggle } from "./IconToggle";
 import { Alert } from "./Alert";
 import { CardStack } from "./CardStack";
+import type { AdultModeSettingsController } from "../lib/useAdultModeSettings";
+import { AdultModeActivationDialog } from "./AdultModeActivationDialog";
 
 const compactLimits = [32_000, 64_000, 128_000];
 const toolOutputLimits = [4_000, 8_000, 12_000, 24_000];
@@ -20,14 +22,17 @@ const projectDocLimits = [16_384, 32_768, 65_536, 131_072];
 const credentialStores: CredentialStore[] = ["auto", "file", "keyring"];
 
 export function CodexConfigSettings({
+  adultMode,
   globalSettings,
 }: {
+  adultMode: AdultModeSettingsController;
   globalSettings: CodexGlobalSettingsController;
 }) {
   const { t } = useI18n();
   const config = useCodexConfig();
   const advanced = globalSettings.advanced;
   const [fallbackDraft, setFallbackDraft] = useState("");
+  const [adultModeDialogOpen, setAdultModeDialogOpen] = useState(false);
 
   useEffect(() => {
     setFallbackDraft(advanced.projectDocFallbackFilenames.join(", "));
@@ -174,6 +179,18 @@ export function CodexConfigSettings({
         <CardStack className="settings-fields">
           <div className="settings-toggle-row">
             <span className="settings-field-description">
+              <strong>{t("settings.config.adultMode.title")}</strong>
+              <small>{t("settings.config.adultMode.detail")}</small>
+            </span>
+            <IconToggle
+              checked={adultMode.enabled}
+              disabled={adultMode.loading || adultMode.saving}
+              label={t("settings.config.adultMode.title")}
+              onCheckedChange={(checked) => checked ? setAdultModeDialogOpen(true) : void adultMode.setEnabled(false)}
+            />
+          </div>
+          <div className="settings-toggle-row">
+            <span className="settings-field-description">
               <strong>
                 {t("settings.config.suppressUnstableWarning.title")}
               </strong>
@@ -194,6 +211,9 @@ export function CodexConfigSettings({
             />
           </div>
         </CardStack>
+
+        {adultMode.error && <Alert tone="error">{t("settings.config.adultMode.error")} {adultMode.error}</Alert>}
+        {adultModeDialogOpen && <AdultModeActivationDialog existingCredential={adultMode.hasCredential} onCancel={() => setAdultModeDialogOpen(false)} onSubmit={async (password) => { const success = await adultMode.activate(password); if (success) setAdultModeDialogOpen(false); return success; }} />}
 
         {globalSettings.error && (
           <Alert tone="error">

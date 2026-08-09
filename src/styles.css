@@ -1867,6 +1867,46 @@ footer {
 .thread-delete-modal .modal-actions {
   grid-column: 1 / -1;
 }
+.new-chat-modal {
+  width: min(520px, calc(100vw - 40px));
+}
+.new-chat-modal h2 { margin: 0 0 7px; }
+.new-chat-modal p { margin: 0; color: #aaa; font-size: 13px; }
+.new-chat-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+}
+.new-chat-choices > button {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 11px;
+  min-height: 104px;
+  padding: 15px;
+  border: 1px solid #3b3b37;
+  border-radius: 10px;
+  text-align: left;
+  background: #242422;
+}
+.new-chat-choices > button:hover,
+.new-chat-choices > button:focus-visible {
+  border-color: #62625b;
+  background: #2b2b28;
+}
+.new-chat-choices svg { width: 19px; color: #aaa; }
+.new-chat-choices span { display: grid; gap: 5px; }
+.new-chat-choices small { color: #999; line-height: 1.4; }
+.new-chat-cancel {
+  display: block;
+  margin: 16px 0 0 auto;
+  padding: 7px 11px;
+  color: #aaa;
+}
+@media (max-width: 620px) {
+  .new-chat-choices { grid-template-columns: 1fr; }
+}
 .modal-actions .danger {
   border-color: #62413c;
   background: #382825;

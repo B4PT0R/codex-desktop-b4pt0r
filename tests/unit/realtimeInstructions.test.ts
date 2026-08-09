@@ -8,6 +8,9 @@ vi.mock("../../src/lib/nativeBridge", () => ({
   isDesktopApp: isDesktopAppMock,
 }));
 vi.mock("../../src/lib/codex", () => ({ request: requestMock }));
+vi.mock("../../src/lib/desktopSettings", () => ({
+  readDesktopSettingsSnapshot: () => Promise.resolve({ version: 1 }),
+}));
 
 import { realtimeInstructionItems } from "../../src/lib/realtimeInstructions";
 import { codexDesktopDeveloperInstructions } from "../../src/lib/clientContext";
@@ -30,6 +33,8 @@ describe("instructions initiales Realtime", () => {
     invokeMock.mockImplementation((method) =>
       method === "read_app_versions"
         ? Promise.resolve(versions)
+        : method === "read_desktop_settings"
+          ? Promise.resolve({ version: 1 })
         : Promise.resolve({
             content: "Effective AGENTS.md instructions",
             sourceCount: 2,
@@ -62,6 +67,8 @@ describe("instructions initiales Realtime", () => {
     invokeMock.mockImplementation((method) =>
       method === "read_app_versions"
         ? Promise.resolve(versions)
+        : method === "read_desktop_settings"
+          ? Promise.resolve({ version: 1 })
         : Promise.resolve({ content: "", sourceCount: 0 }),
     );
     await expect(realtimeInstructionItems("thread-1")).resolves.toEqual([

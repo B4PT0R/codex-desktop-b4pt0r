@@ -248,6 +248,30 @@ describe("reprise de conversation", () => {
         modality: "realtimeVoice",
       },
     ]);
+
+    expect(
+      messagesFromThread({
+        id: "thread-1",
+        turns: [
+          {
+            items: [
+              {
+                id: "msg_rtv_assistant_message-2",
+                type: "agentMessage",
+                text: "Nouvelle réponse vocale",
+              },
+            ],
+          },
+        ],
+      }),
+    ).toEqual([
+      {
+        id: "msg_rtv_assistant_message-2",
+        role: "assistant",
+        content: "Nouvelle réponse vocale",
+        modality: "realtimeVoice",
+      },
+    ]);
   });
 
   it("restaure les images générées et résultats web structurés", () => {

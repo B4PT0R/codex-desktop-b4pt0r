@@ -74,6 +74,12 @@ Les préférences purement desktop sont persistées par Electron dans
 `config.toml`. Les états de brouillon, focus, ouverture et animation restent
 locaux à la surface qui les rend.
 
+Les enrichissements d’instructions propres au client, dont le Mode Adulte
+expérimental, sont des préférences desktop désactivées par défaut. Ils ne
+créent pas de clé Codex dans `config.toml` : lorsqu’ils sont actifs, leur prompt
+embarqué est composé à la frontière des `developerInstructions` des nouveaux
+threads, des reprises et de Realtime.
+
 Toute mutation asynchrone définit son propriétaire, sérialise les opérations
 incompatibles et invalide les lectures antérieures. Une réponse obsolète ne peut
 ni restaurer un choix remplacé, ni ressusciter un élément supprimé.
@@ -82,9 +88,11 @@ ni restaurer un choix remplacé, ni ressusciter un élément supprimé.
 
 ### Navigation
 
-La sidebar crée, recherche et reprend les conversations. Les discussions sans
-workspace occupent une section plate dédiée immédiatement avant les projets ;
-les autres conversations restent organisées par workspace.
+La sidebar crée, recherche et reprend les conversations. « New chat » demande
+explicitement une Discussion ou un thread de projet ; ce second choix ouvre le
+sélecteur de dossier. Les discussions hors repo occupent une section plate
+dédiée immédiatement avant les projets, même si App Server les matérialise dans
+un workspace synthétique privé sous `Documents/Codex`.
 La page récente reste bornée ; la recherche interroge l’historique persistant.
 Les groupes fonctionnent comme un accordéon, sauf pendant une recherche où tous
 les groupes pertinents peuvent être ouverts.
@@ -96,9 +104,10 @@ actionnables : activité, erreur et sélection.
 ### En-tête du thread
 
 L’en-tête porte l’identité du thread et son objectif autonome. Son menu regroupe
-renommage, fork, compaction, archivage, suppression confirmée et édition du
-`AGENTS.md` du workspace. Les contrôles de modèle ou de sécurité n’y sont pas
-dupliqués.
+le dossier effectif du thread, renommage, fork, compaction, archivage,
+suppression confirmée et édition du `AGENTS.md` du workspace. Le sélecteur de
+dossier n’est jamais un réglage global de sidebar. Les contrôles de modèle ou de
+sécurité n’y sont pas dupliqués.
 
 ### Conversation
 
@@ -125,6 +134,12 @@ navigation gardent la priorité.
 Le compositeur accepte texte, images, références de fichiers, Apps, Skills,
 dictée et commandes reconnues. Il envoie un nouveau tour, dirige un tour actif
 ou l’interrompt selon l’état autoritaire du thread.
+
+Depuis l’accueil neutre, un premier envoi ou un démarrage Realtime crée une
+Discussion hors repo dans un workspace synthétique unique sous
+`Documents/Codex`; le dossier personnel global n’est pas utilisé comme projet
+implicite. « Nouveau chat » depuis le tray ouvre le même brouillon de Discussion
+sans afficher le choix de projet propre à la navigation principale.
 
 La barre de session expose les réglages fréquents et effectifs : modèle, effort,
 tier de service, collaboration, permissions et approbations. Les quotas et le

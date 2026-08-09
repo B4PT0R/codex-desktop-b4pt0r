@@ -18,10 +18,14 @@ describe("thread parent Realtime du tray", () => {
     await expect(
       resolveDefaultRealtimeThread(request, {
         threadId: "thread-default",
-        home: "/home/user",
         model: "gpt-5.4",
+        createDiscussionWorkspace: vi.fn(),
       }),
-    ).resolves.toEqual({ response, created: false });
+    ).resolves.toEqual({
+      response,
+      created: false,
+      workspace: "/home/user",
+    });
     expect(request).toHaveBeenCalledWith("thread/resume", {
       threadId: "thread-default",
       excludeTurns: true,
@@ -43,8 +47,8 @@ describe("thread parent Realtime du tray", () => {
     await expect(
       resolveDefaultRealtimeThread(request, {
         threadId: "thread-default",
-        home: "/home/user",
         model: "gpt-5.4",
+        createDiscussionWorkspace: vi.fn(),
       }),
     ).resolves.toEqual({
       response: {
@@ -55,6 +59,7 @@ describe("thread parent Realtime du tray", () => {
         },
       },
       created: false,
+      workspace: "/home/user",
     });
     expect(request).toHaveBeenLastCalledWith("thread/name/set", {
       threadId: "thread-default",
@@ -62,10 +67,10 @@ describe("thread parent Realtime du tray", () => {
     });
   });
 
-  it("crée un thread persistant à la racine utilisateur si nécessaire", async () => {
+  it("crée une discussion persistante hors repo si nécessaire", async () => {
     const response = {
       thread: { id: "thread-created" },
-      cwd: "/home/user",
+      cwd: "/home/user/Documents/Codex/2026-08-09-discussion",
       model: "gpt-5.4",
     };
     const request = vi
@@ -77,8 +82,10 @@ describe("thread parent Realtime du tray", () => {
     await expect(
       resolveDefaultRealtimeThread(request, {
         threadId: "thread-deleted",
-        home: "/home/user",
         model: "gpt-5.4",
+        createDiscussionWorkspace: vi.fn().mockResolvedValue(
+          "/home/user/Documents/Codex/2026-08-09-discussion",
+        ),
       }),
     ).resolves.toEqual({
       response: {
@@ -89,9 +96,10 @@ describe("thread parent Realtime du tray", () => {
         },
       },
       created: true,
+      workspace: "/home/user/Documents/Codex/2026-08-09-discussion",
     });
     expect(request).toHaveBeenNthCalledWith(2, "thread/start", {
-      cwd: "/home/user",
+      cwd: "/home/user/Documents/Codex/2026-08-09-discussion",
       model: "gpt-5.4",
       dynamicTools: schedulerDynamicTools(),
     });
@@ -107,7 +115,7 @@ describe("thread parent Realtime du tray", () => {
       .fn()
       .mockResolvedValueOnce({
         thread: { id: "thread-incomplete" },
-        cwd: "/home/user",
+        cwd: "/home/user/Documents/Codex/2026-08-09-discussion",
         model: "gpt-5.4",
       })
       .mockRejectedValueOnce(namingError)
@@ -115,8 +123,10 @@ describe("thread parent Realtime du tray", () => {
 
     await expect(
       resolveDefaultRealtimeThread(request, {
-        home: "/home/user",
         model: "gpt-5.4",
+        createDiscussionWorkspace: vi.fn().mockResolvedValue(
+          "/home/user/Documents/Codex/2026-08-09-discussion",
+        ),
       }),
     ).rejects.toBe(namingError);
     expect(request).toHaveBeenLastCalledWith("thread/delete", {
@@ -130,8 +140,8 @@ describe("thread parent Realtime du tray", () => {
     await expect(
       resolveDefaultRealtimeThread(request, {
         threadId: "thread-default",
-        home: "/home/user",
         model: "gpt-5.4",
+        createDiscussionWorkspace: vi.fn(),
       }),
     ).rejects.toBe(error);
     expect(request).toHaveBeenCalledOnce();

@@ -15,6 +15,39 @@ afterEach(cleanup);
 beforeEach(() => localStorage.setItem("codex-desktop.locale", "fr"));
 
 describe("en-tête de conversation", () => {
+  it("place le dossier dans les actions propres au thread", () => {
+    const onSelectDirectory = vi.fn().mockResolvedValue(undefined);
+    render(
+      <I18nProvider>
+        <ChatHeader
+          busy={false}
+          connected
+          cwd="/work/project"
+          nativeApp
+          reconnecting={false}
+          sidebarOpen
+          threadId="thread-1"
+          title="Conversation"
+          onCompact={vi.fn()}
+          onDelete={vi.fn()}
+          onFork={vi.fn()}
+          onOpenSidebar={vi.fn()}
+          onReconnect={vi.fn()}
+          onReload={vi.fn()}
+          onRename={vi.fn()}
+          onSelectDirectory={onSelectDirectory}
+        />
+      </I18nProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Conversation" }));
+    const action = screen.getByRole("button", {
+      name: /Changer le dossier du projet/,
+    });
+    expect(action).toHaveTextContent("/work/project");
+    fireEvent.click(action);
+    expect(onSelectDirectory).toHaveBeenCalledOnce();
+  });
+
   it("signale discrètement une mise à jour et lance son action", () => {
     const onActivate = vi.fn();
     render(

@@ -4,6 +4,7 @@ import type { ThreadSummary } from "../types";
 import type { RealtimeVoice } from "./appServerTypes";
 import { request } from "./codex";
 import { resolveDefaultRealtimeThread } from "./defaultRealtimeThread";
+import { createDiscussionWorkspace } from "./discussionWorkspace";
 import { threadRuntimeSettings } from "./threadRuntimeSettings";
 import { threadSummary } from "./threadSummary";
 import { isDesktopApp, listen } from "./nativeBridge";
@@ -132,8 +133,9 @@ export async function handleTrayRealtimeRequest(
 
   const resolved = await resolveDefaultRealtimeThread(request, {
     threadId: options.defaultThread.defaultThreadId,
-    home: trayRequest.home,
     model: options.model,
+    createDiscussionWorkspace: () =>
+      createDiscussionWorkspace("Let's discuss anything"),
   });
   const resolvedThread = threadSummary(resolved.response.thread);
   const settings = threadRuntimeSettings(resolved.response);
@@ -151,14 +153,14 @@ export async function handleTrayRealtimeRequest(
   options.setThreads((items) => [
     {
       ...resolvedThread,
-      cwd: resolvedThread.cwd ?? settings.cwd ?? trayRequest.home,
+      cwd: resolvedThread.cwd ?? settings.cwd ?? resolved.workspace,
     },
     ...items.filter((item) => item.id !== resolvedThread.id),
   ]);
 
   const started = await options.realtimeConversation.start({
     parentThreadId: resolved.response.thread.id,
-    cwd: settings.cwd ?? trayRequest.home,
+    cwd: settings.cwd ?? resolved.workspace,
     model: settings.model ?? options.model,
     permission: settings.permission,
     personality: settings.personality,

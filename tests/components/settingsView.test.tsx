@@ -188,6 +188,14 @@ const chatPresentation = {
   setShowReasoningItems: vi.fn().mockResolvedValue(true),
   showReasoningItems: true,
 };
+const adultMode = {
+  activate: vi.fn().mockResolvedValue(true),
+  enabled: false,
+  hasCredential: false,
+  loading: false,
+  saving: false,
+  setEnabled: vi.fn().mockResolvedValue(true),
+};
 const appServerRestart = {
   available: true,
   restart: vi.fn().mockResolvedValue(true),
@@ -272,6 +280,7 @@ function renderSettings(
     apps,
     automations,
     capabilities,
+    adultMode,
     chatPresentation,
     defaultThread,
     externalAgentImport,
@@ -1133,6 +1142,35 @@ describe("centre de réglages", () => {
     fireEvent.click(close);
     expect(screen.queryByRole("dialog", { name: "config.toml" })).toBeNull();
     await waitFor(() => expect(opener).toHaveFocus());
+  });
+
+  it("protège l’activation du Mode Adulte par une déclaration et un mot de passe", async () => {
+    const activate = vi.fn().mockResolvedValue(true);
+    renderSettings({
+      section: "config",
+      adultMode: { ...adultMode, activate },
+    });
+
+    expect(
+      screen.getByText(/Ajoute le prompt Mode Adulte aux instructions développeur/),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole("switch", { name: "Mode Adulte" }));
+    expect(screen.getByRole("dialog", { name: "Activer le Mode Adulte" })).toBeVisible();
+    fireEvent.change(screen.getByLabelText(/Mot de passe \(8 caractères minimum\)/), { target: { value: "correct horse" } });
+    fireEvent.change(screen.getByLabelText("Confirmer le mot de passe"), { target: { value: "correct horse" } });
+    fireEvent.click(screen.getByLabelText("Je confirme avoir 18 ans ou plus."));
+    fireEvent.click(screen.getByRole("button", { name: "Activer" }));
+    await waitFor(() => expect(activate).toHaveBeenCalledWith("correct horse"));
+  });
+
+  it("redemande seulement le mot de passe après son enregistrement", async () => {
+    const activate = vi.fn().mockResolvedValue(true);
+    renderSettings({ section: "config", adultMode: { ...adultMode, activate, hasCredential: true } });
+    fireEvent.click(screen.getByRole("switch", { name: "Mode Adulte" }));
+    expect(screen.queryByText("Je confirme avoir 18 ans ou plus.")).toBeNull();
+    fireEvent.change(screen.getByLabelText(/Mot de passe \(8 caractères minimum\)/), { target: { value: "correct horse" } });
+    fireEvent.click(screen.getByRole("button", { name: "Activer" }));
+    await waitFor(() => expect(activate).toHaveBeenCalledWith("correct horse"));
   });
 
   it("modifie les réglages TOML avancés depuis Config", () => {

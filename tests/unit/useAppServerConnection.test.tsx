@@ -197,6 +197,20 @@ describe("connexion App Server", () => {
     expect(second.onMessage).toHaveBeenCalledWith({ method: "turn/started" });
   });
 
+  it("transmet l'action Nouveau chat du tray au propriétaire courant", async () => {
+    const options = callbacks();
+    renderHook(() => useAppServerConnection(options));
+    await waitFor(() => expect(options.onInitialized).toHaveBeenCalledOnce());
+
+    const registration = mockedListen.mock.calls.find(
+      ([event]) => event === "new-chat",
+    );
+    expect(registration).toBeDefined();
+    act(() => registration?.[1]());
+
+    expect(options.onNewChat).toHaveBeenCalledOnce();
+  });
+
   it("rafraîchit les conversations créées par un autre client au retour dans la fenêtre", async () => {
     const options = callbacks();
     renderHook(() => useAppServerConnection(options));

@@ -264,6 +264,9 @@ export const fr = {
   "telemetry.contextTitle":
     "{used} / {window} tokens de contexte · {total} tokens cumulés · {output} générés au dernier appel",
   "telemetry.contextFree": "Contexte {percent} % libre",
+  "telemetry.adultModeEnabled": "Mode Adulte actif",
+  "telemetry.adultModeEnabledDetail":
+    "Mode Adulte actif pour les conversations nouvelles ou rouvertes",
   "telemetry.compact": "Contexte utilisé à {percent} %. Compacter maintenant",
   "integrations.skills.description":
     "Capacités réutilisables de l’agent disponibles dans l’espace de travail courant.",
@@ -605,6 +608,8 @@ export const fr = {
   "chat.actions.setDefault": "Définir comme conversation par défaut",
   "chat.actions.setDefaultDetail":
     "Contexte partagé pour les actions rapides compatibles",
+  "chat.actions.changeFolder": "Changer le dossier du projet",
+  "chat.actions.changeFolderDetail": "Choisir le workspace de cette conversation",
   "chat.actions.fork": "Créer une branche",
   "chat.actions.forkDetail":
     "Poursuit depuis ici dans une nouvelle conversation",
@@ -724,6 +729,12 @@ export const fr = {
   "sidebar.navigation": "Navigation principale",
   "sidebar.hide": "Masquer la barre latérale",
   "sidebar.newChat": "Nouveau chat",
+  "newChat.title": "Démarrer un nouveau chat",
+  "newChat.description": "Choisis si cette conversation appartient à un projet.",
+  "newChat.discussion": "Discussion",
+  "newChat.discussionDetail": "Une conversation générale sans dépôt",
+  "newChat.project": "Thread de projet",
+  "newChat.projectDetail": "Travailler dans un dossier que tu sélectionnes",
   "sidebar.search": "Rechercher",
   "sidebar.searchLabel": "Rechercher dans toutes les conversations",
   "sidebar.searchResults": "Résultats de recherche",
@@ -1241,6 +1252,22 @@ export const fr = {
   "settings.config.experimental.title": "Fonctionnalités expérimentales",
   "settings.config.experimental.description":
     "Contrôlez la manière dont Codex signale les fonctionnalités encore en développement.",
+  "settings.config.adultMode.title": "Mode Adulte",
+  "settings.config.adultMode.detail":
+    "Expérimental. Ajoute le prompt Mode Adulte aux instructions développeur des conversations nouvelles ou rouvertes. Cela ne modifie pas les règles du service.",
+  "settings.config.adultMode.error": "Impossible d’enregistrer le Mode Adulte :",
+  "settings.config.adultMode.dialogTitle": "Activer le Mode Adulte",
+  "settings.config.adultMode.dialogSubtitle": "Accès expérimental protégé localement",
+  "settings.config.adultMode.dialogDetail":
+    "Cette barrière locale ne vérifie pas ton âge. Elle confirme ta déclaration et protège l’activation sur cet appareil.",
+  "settings.config.adultMode.password": "Mot de passe (8 caractères minimum)",
+  "settings.config.adultMode.confirmPassword": "Confirmer le mot de passe",
+  "settings.config.adultMode.ageConfirmation": "Je confirme avoir 18 ans ou plus.",
+  "settings.config.adultMode.ageConfirmationDetail":
+    "Cette déclaration est enregistrée lors de la création du mot de passe.",
+  "settings.config.adultMode.invalidPassword": "Mot de passe incorrect.",
+  "settings.config.adultMode.passwordMismatch": "Les mots de passe ne correspondent pas.",
+  "settings.config.adultMode.activate": "Activer",
   "settings.config.suppressUnstableWarning.title":
     "Masquer les avertissements de fonctionnalités instables",
   "settings.config.suppressUnstableWarning.detail":

@@ -370,6 +370,11 @@
   --context-track: #d8d8d2;
 }
 
+:root[data-theme="light"] .adult-mode-indicator {
+  color: #a95f6d;
+  background: #f3e5e7;
+}
+
 :root[data-theme="light"] .context-gauge-ring::after {
   background: #fff;
 }
@@ -1017,6 +1022,19 @@
 :root[data-theme="light"] .logo {
   color: #f7f7f4;
   background: #383834;
+}
+
+:root[data-theme="light"] .new-chat-modal p,
+:root[data-theme="light"] .new-chat-choices small,
+:root[data-theme="light"] .new-chat-cancel { color: #777770; }
+:root[data-theme="light"] .new-chat-choices > button {
+  border-color: #d4d4cd;
+  background: #f7f7f3;
+}
+:root[data-theme="light"] .new-chat-choices > button:hover,
+:root[data-theme="light"] .new-chat-choices > button:focus-visible {
+  border-color: #aaa9a1;
+  background: #efefea;
 }
 
 @media (prefers-reduced-motion: reduce) {
