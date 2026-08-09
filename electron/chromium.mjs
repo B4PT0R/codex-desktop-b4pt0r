@@ -23,6 +23,7 @@ const MCP_HOST = "127.0.0.1";
 const MCP_PORT = 8931;
 const MCP_URL = `http://localhost:${MCP_PORT}/mcp`;
 const MAX_INSTALL_LOG = 8_000;
+const SERVER_STOP_TIMEOUT_MS = 1_500;
 
 export const sharedBrowserEndpoint = MCP_URL;
 
@@ -172,8 +173,8 @@ export class SharedBrowserManager {
     this.#clientConnecting = undefined;
     this.#server = undefined;
     this.#serverStarting = undefined;
-    server?.kill();
     await client?.close().catch(() => undefined);
+    await stopBrowserServer(server);
   }
 
   async #installBrowser() {
@@ -245,6 +246,11 @@ export class SharedBrowserManager {
       privateDirectory(paths.profile),
       privateDirectory(paths.output),
     ]);
+    await writeFile(
+      paths.config,
+      `${JSON.stringify(sharedBrowserMcpConfig())}\n`,
+      { encoding: "utf8", mode: 0o600 },
+    );
     if (lifecycleVersion !== this.#lifecycleVersion) {
       throw new Error("Shared browser start was cancelled");
     }
@@ -255,22 +261,7 @@ export class SharedBrowserManager {
     let stderr = "";
     const child = this.#spawn(
       this.#processExecutable,
-      [
-        cli,
-        "--host",
-        MCP_HOST,
-        "--port",
-        String(MCP_PORT),
-        "--shared-browser-context",
-        "--user-data-dir",
-        paths.profile,
-        "--output-dir",
-        paths.output,
-        "--console-level",
-        "warning",
-        "--executable-path",
-        executable,
-      ],
+      sharedBrowserServerArguments(cli, executable, paths),
       {
         env: this.#nodeEnvironment(paths.browsers),
         stdio: ["ignore", "pipe", "pipe"],
@@ -399,8 +390,42 @@ export function sharedBrowserPaths(home) {
     profile: path.join(root, "browser-profile"),
     output: path.join(root, "browser-output"),
     artifacts: path.join(root, "browser-artifacts"),
+    config: path.join(root, "playwright-mcp.json"),
     serverPid: path.join(root, "playwright-mcp.pid"),
   };
+}
+
+export function sharedBrowserMcpConfig() {
+  return {
+    browser: {
+      launchOptions: {
+        // A hard host loss cannot run our shutdown path. Suppress only the
+        // recovery bubble; Chromium still retains the private profile data.
+        args: ["--hide-crash-restore-bubble"],
+      },
+    },
+  };
+}
+
+export function sharedBrowserServerArguments(cli, executable, paths) {
+  return [
+    cli,
+    "--config",
+    paths.config,
+    "--host",
+    MCP_HOST,
+    "--port",
+    String(MCP_PORT),
+    "--shared-browser-context",
+    "--user-data-dir",
+    paths.profile,
+    "--output-dir",
+    paths.output,
+    "--console-level",
+    "warning",
+    "--executable-path",
+    executable,
+  ];
 }
 
 export function isOwnedSharedBrowserProcess(
@@ -506,6 +531,28 @@ function argumentValue(argv, flag) {
 
 function delay(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+export async function stopBrowserServer(
+  server,
+  timeoutMs = SERVER_STOP_TIMEOUT_MS,
+) {
+  if (!server || server.exitCode != null) return;
+  const exited = new Promise((resolve) => {
+    server.once("exit", resolve);
+    server.once("error", resolve);
+  });
+  server.kill("SIGTERM");
+  if (await settlesWithin(exited, timeoutMs)) return;
+  server.kill("SIGKILL");
+  await settlesWithin(exited, 500);
+}
+
+function settlesWithin(promise, timeoutMs) {
+  return Promise.race([
+    promise.then(() => true),
+    delay(timeoutMs).then(() => false),
+  ]);
 }
 
 async function browserVersion(executable) {

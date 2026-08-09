@@ -150,6 +150,10 @@ individual action titles are derived only from structured tool-item fields.
   restore the previous security state before releasing its queue reservation.
 - The shared browser uses only the app-owned Playwright/MCP pair and managed
   open-source Chromium. Never assume a system Chromium installation.
+- Full application quit closes the shared-browser MCP session first, then waits
+  boundedly for its managed process before escalating. Its private Chromium
+  launch suppresses only the crash-restore bubble so an ungraceful host loss
+  does not require mutating or deleting profile data on recovery.
 - Async controllers own incompatible mutations synchronously and invalidate
   stale reads. React presentation state is not a concurrency lock.
 - Frontend style or layout work requires comparable before/after screenshots at
@@ -196,8 +200,9 @@ Server product contract.
 The current tree passes:
 
 - strict TypeScript checking;
-- 767 deterministic frontend/unit tests across 134 files;
-- 135 Electron/Node tests, including App Server shutdown, recovery, synthetic
+- 776 deterministic frontend/unit tests across 134 files;
+- 138 Electron/Node tests, including App Server and shared-browser shutdown,
+  recovery, synthetic
   Discussion workspaces and the tray
   quick actions;
 - production Vite build;

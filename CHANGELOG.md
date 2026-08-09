@@ -3,6 +3,14 @@
 This file highlights user-visible changes in Codex Desktop Linux. The project
 follows semantic versioning while the public interface is taking shape.
 
+## [Unreleased]
+
+### Fixed
+
+- Application quit now closes the managed Chromium session before terminating
+  its process and waits boundedly for a clean exit. Abrupt host loss no longer
+  surfaces Chromium's crash-restore bubble on the next managed launch.
+
 ## [0.5.7] - 2026-08-09
 
 ### Added

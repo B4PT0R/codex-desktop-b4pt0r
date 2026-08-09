@@ -6,8 +6,12 @@ import {
   playwrightCurrentTabIndex,
   SharedBrowserManager,
   sharedBrowserEndpoint,
+  sharedBrowserMcpConfig,
   sharedBrowserPaths,
+  sharedBrowserServerArguments,
+  stopBrowserServer,
 } from "./chromium.mjs";
+import { EventEmitter } from "node:events";
 
 test("focuses the existing shared browser tab without navigating it", async () => {
   const calls = [];
@@ -76,9 +80,72 @@ test("keeps the Playwright browser and profile in app-owned user data", () => {
     profile: "/home/alice/.local/share/codex-desktop/browser-profile",
     output: "/home/alice/.local/share/codex-desktop/browser-output",
     artifacts: "/home/alice/.local/share/codex-desktop/browser-artifacts",
+    config: "/home/alice/.local/share/codex-desktop/playwright-mcp.json",
     serverPid:
       "/home/alice/.local/share/codex-desktop/playwright-mcp.pid",
   });
+});
+
+test("starts managed Chromium with crash-bubble recovery isolated to its profile", () => {
+  const paths = sharedBrowserPaths("/home/alice");
+  assert.deepEqual(sharedBrowserMcpConfig(), {
+    browser: {
+      launchOptions: { args: ["--hide-crash-restore-bubble"] },
+    },
+  });
+  assert.deepEqual(
+    sharedBrowserServerArguments("/app/mcp.js", "/app/chromium", paths),
+    [
+      "/app/mcp.js",
+      "--config",
+      paths.config,
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "8931",
+      "--shared-browser-context",
+      "--user-data-dir",
+      paths.profile,
+      "--output-dir",
+      paths.output,
+      "--console-level",
+      "warning",
+      "--executable-path",
+      "/app/chromium",
+    ],
+  );
+});
+
+test("waits for managed Chromium to exit after a graceful stop request", async () => {
+  const child = new EventEmitter();
+  child.exitCode = null;
+  child.kill = (signal) => {
+    assert.equal(signal, "SIGTERM");
+    queueMicrotask(() => {
+      child.exitCode = 0;
+      child.emit("exit", 0, null);
+    });
+    return true;
+  };
+
+  await stopBrowserServer(child, 50);
+  assert.equal(child.exitCode, 0);
+});
+
+test("escalates a managed Chromium server that ignores graceful stop", async () => {
+  const signals = [];
+  const child = new EventEmitter();
+  child.exitCode = null;
+  child.kill = (signal) => {
+    signals.push(signal);
+    if (signal === "SIGKILL") {
+      queueMicrotask(() => child.emit("exit", null, "SIGKILL"));
+    }
+    return true;
+  };
+
+  await stopBrowserServer(child, 1);
+  assert.deepEqual(signals, ["SIGTERM", "SIGKILL"]);
 });
 
 test("exposes the shared MCP server only through its loopback endpoint", () => {
