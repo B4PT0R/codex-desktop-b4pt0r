@@ -101,6 +101,34 @@ describe("présentation des messages", () => {
     );
   });
 
+  it.each([
+    ["Premier paragraphe\n\n", "Deuxième paragraphe"],
+    ["Premier paragraphe", "\n\nDeuxième paragraphe"],
+    ["Premier paragraphe\n", "\nDeuxième paragraphe"],
+  ])(
+    "préserve un double retour chariot présent à la frontière des fragments",
+    (previousContent, nextContent) => {
+      const messages: ChatMessage[] = [
+        {
+          id: "voice-1",
+          role: "assistant",
+          modality: "realtimeVoice",
+          content: previousContent,
+        },
+        {
+          id: "voice-2",
+          role: "assistant",
+          modality: "realtimeVoice",
+          content: nextContent,
+        },
+      ];
+
+      expect(messagesForPresentation(messages, true)[0].content).toBe(
+        "Premier paragraphe\n\nDeuxième paragraphe",
+      );
+    },
+  );
+
   it("retire le raisonnement sans laisser les groupes d’actions séparés", () => {
     const messages: ChatMessage[] = [
       { id: "user", role: "user", content: "Go" },

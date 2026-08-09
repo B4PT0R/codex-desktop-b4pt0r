@@ -61,11 +61,9 @@ function groupConsecutiveRealtimeVoice(messages: ChatMessage[]) {
     }
     if (previous) {
       grouped ??= messages.slice(0, index);
-      const previousContent = previous.content.trimEnd();
-      const nextContent = message.content.trimStart();
       grouped[grouped.length - 1] = {
         ...previous,
-        content: mergeRealtimeVoiceContent(previousContent, nextContent),
+        content: mergeRealtimeVoiceContent(previous.content, message.content),
         streaming: Boolean(previous.streaming || message.streaming),
       };
     }
@@ -74,11 +72,20 @@ function groupConsecutiveRealtimeVoice(messages: ChatMessage[]) {
 }
 
 function mergeRealtimeVoiceContent(previous: string, next: string) {
-  if (!previous) return next;
-  if (!next) return previous;
-  const splitInsideProse = /[\p{L}\p{N}]$/u.test(previous) &&
-    /^[\p{L}\p{N}]/u.test(next);
-  return `${previous}${splitInsideProse ? " " : "\n\n"}${next}`;
+  const boundaryWhitespace = `${previous.match(/\s*$/u)?.[0] ?? ""}${
+    next.match(/^\s*/u)?.[0] ?? ""
+  }`;
+  const paragraphBoundary = /(?:\r?\n)[\t ]*(?:\r?\n)/u.test(
+    boundaryWhitespace,
+  );
+  const previousContent = previous.trimEnd();
+  const nextContent = next.trimStart();
+  if (!previousContent) return nextContent;
+  if (!nextContent) return previousContent;
+  const splitInsideProse = !paragraphBoundary &&
+    /[\p{L}\p{N}]$/u.test(previousContent) &&
+    /^[\p{L}\p{N}]/u.test(nextContent);
+  return `${previousContent}${splitInsideProse ? " " : "\n\n"}${nextContent}`;
 }
 
 function hasVisibleContent(message: ChatMessage) {
